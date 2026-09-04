@@ -48,11 +48,66 @@ generation sheets, and generation inputs must never reach the shipped bundle.
 - **QA on `#1B1712`, not white**, and always look at 96 px. That is the size the
   inventory grid actually draws.
 
-## Style
+## Style — "Gilded Iron"
 
-Painterly semi-realistic mobile-RPG loot-icon art. Hand-painted rendering, warm
-rim light upper-left, bold chunky silhouette with no feature thinner than 1/40 of
-the frame, object centred filling ~80%, flat solid background, no text, no frame.
+Flat 2D art-deco / noir line art, taken from Idle Mafia Game's own visual
+language: a **dark charcoal silhouette whose form is described entirely by thick
+line work**. Flat fills, no painterly shading, no gradients, no texture. Bold
+confident strokes like a woodcut or a logo. High contrast, iconic, legible as a
+tiny icon.
 
-`art/promoted/weapon_legendary_hero.png` is the style reference. Pass it as
-`--image` on every subsequent generation to keep 200 assets in one family.
+`art/refs/STYLE-REFERENCE.png` is the anchor. Pass it as `--image` on every
+subsequent generation to keep the whole set in one family.
+
+### Why this style, concretely
+
+It was chosen over painterly loot-icon art for four measurable reasons:
+
+1. **The tier ladder is nearly free.** Black has no hue, so recolouring only the
+   chromatic pixels swaps the tier colour and leaves the silhouette untouched.
+   One generation yields all seven tiers via `scripts/tier-tint.py`, exactly on
+   the palette in `balance/tiers.json`, consistent by construction rather than by
+   luck. Painterly art needs seven separate generations per item and they drift.
+2. **It mattes far better.** Measured on the same subject: flat line art gives
+   79k opaque / 29k semi-transparent pixels; the painterly version gave 24k / 130k.
+   Flat fills have hard edges, so there is almost no haze to clean up.
+3. **It survives 96px**, which is the size the inventory grid actually draws.
+4. **A text-to-image model reproduces it consistently.** Flat shapes and a
+   limited palette are a much smaller target than matched brushwork across 200
+   assets.
+
+### Prompt skeleton
+
+> Flat 2D vector game icon, art-deco noir style, in the visual language of a
+> vintage engraved emblem. **&lt;subject&gt;**, seen straight from the side,
+> perfectly symmetrical. The body is a solid dark charcoal silhouette. Its form
+> is described by VERY THICK, bold, heavy warm gold line art: chunky gold
+> outlines of uniform generous weight, broad gold edge highlights, simple bold
+> gold ornament. Thick confident strokes like a woodcut or a logo, not fine
+> detail. Flat fills only, no shading, no gradients, no texture. Extremely high
+> contrast, graphic and iconic, readable as a tiny icon. Centred, filling 85
+> percent of the frame. Flat solid medium teal background, RGB 45 110 110,
+> completely uniform, no vignette, no border, no frame, no text.
+
+Generate in **gold**, always. Gold is a mid-hue with strong saturation, which is
+the best source for recolouring in either direction along the ladder.
+
+### Tier production
+
+```bash
+scripts/gen-local.sh "<prompt>" art/refs/weapon_sword_02.png 1024 1024 6
+python .claude/skills/asset-gen/tools/rembg_matting.py \
+  art/refs/weapon_sword_02.png -o art/matted/weapon_sword_02.png --alpha-floor 0.06
+art/.venv/bin/python scripts/tier-tint.py \
+  art/matted/weapon_sword_02.png art/promoted --prefix weapon_sword_02
+```
+
+Roughly two minutes of compute per *design*, not per tier. `proof/art/tier-ladder.png`
+shows the result on real item cards.
+
+### Tier is never signalled by colour alone
+
+Every card carries the tier colour on the frame AND the line work, the tier name
+spelled out, and a 1–7 pip count. A gray/green/blue/violet/gold/magenta/red
+ladder is not reliably separable under deuteranopia, and roughly 8% of a
+male-skewed audience is affected.

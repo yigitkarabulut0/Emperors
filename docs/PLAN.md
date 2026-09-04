@@ -44,7 +44,7 @@ defects were found and corrected before a line of code exists.
 | Player equipment | The player has their own Weapon/Armor/Horse slots, in addition to each soldier's three |
 | Navigation | **Left vertical icon rail**, 7 icons, always visible. Bottom strip reserved for the primary action button. No bottom navbar |
 | Tier colors | gray → green → blue → **violet `#A855F7`** → gold → **magenta `#E040FB`** → red. Never color alone: every card also shows the tier name and a 1–7 pip count |
-| Art | **Painterly RPG loot-icon art.** Style test batch (~$3) approved by the owner before the full run |
+| Art | **"Gilded Iron" — flat 2D art-deco line art**, matching Idle Mafia Game's own visual language. Generated free and offline with FLUX.2-klein (Apache-2.0) on the Mac, since the Google key has zero quota. One generation per design yields all 7 tiers by recolouring the line work |
 | Battle UX | Animated round-by-round replay, with a "fast battle" toggle after the first few fights |
 | Ads | None in v1; the server-side reward endpoint and daily caps are built now, AdMob wired later |
 | Name | **Emperors** |

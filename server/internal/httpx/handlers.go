@@ -73,6 +73,12 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusForbidden, "level_too_low", err.Error())
 	case errors.Is(err, service.ErrAlreadyMaxed):
 		WriteProblem(w, r, http.StatusConflict, "already_maxed", "already at your level")
+	case errors.Is(err, service.ErrShielded):
+		WriteProblem(w, r, http.StatusConflict, "shielded", "that lord is under protection")
+	case errors.Is(err, service.ErrOnCooldown):
+		WriteProblem(w, r, http.StatusConflict, "on_cooldown", "you raided them too recently")
+	case errors.Is(err, service.ErrSelfAttack):
+		WriteProblem(w, r, http.StatusBadRequest, "self_attack", "you cannot attack yourself")
 	case errors.Is(err, service.ErrStaleAction):
 		// 409, not 400: the request was well-formed, the client is just behind.
 		// It should re-read state rather than retry blindly.
@@ -417,6 +423,50 @@ func (a *api) equipSoldier(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
+// --- attack ---
+
+func (a *api) targets(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.svc.GetTargets(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type attackReq struct {
+	TargetID  string `json:"target_id"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) attack(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req attackReq
+	if !decode(w, r, &req) {
+		return
+	}
+	tid, err := uuid.Parse(req.TargetID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "target_id must be a uuid")
+		return
+	}
+	res, err := a.svc.Attack(r.Context(), pid, tid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
 func isKnownServiceError(err error) bool {
 	for _, e := range []error{
 		service.ErrUsernameTaken, service.ErrBadCredentials, service.ErrPlayerBanned,
@@ -425,6 +475,7 @@ func isKnownServiceError(err error) bool {
 		service.ErrAlreadyPurchased, service.ErrNotEnoughGold, service.ErrInventoryFull,
 		service.ErrShopStale, service.ErrItemEquipped, service.ErrNoSlot,
 		service.ErrSlotsMaxed, service.ErrLevelTooLow, service.ErrAlreadyMaxed,
+		service.ErrShielded, service.ErrOnCooldown, service.ErrSelfAttack,
 	} {
 		if errors.Is(err, e) {
 			return true

@@ -14,7 +14,7 @@ import (
 const createPlayer = `-- name: CreatePlayer :one
 INSERT INTO app.players (username, display_name, energy_milli, reset_offset_minutes)
 VALUES ($1, $2, $3, $4)
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
 `
 
 type CreatePlayerParams struct {
@@ -56,12 +56,13 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (App
 		&i.SoldierSlots,
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const getPlayerByID = `-- name: GetPlayerByID :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed FROM app.players WHERE id = $1
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot FROM app.players WHERE id = $1
 `
 
 func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error) {
@@ -91,12 +92,13 @@ func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, e
 		&i.SoldierSlots,
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const getPlayerByUsername = `-- name: GetPlayerByUsername :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed FROM app.players WHERE lower(username) = lower($1)
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot FROM app.players WHERE lower(username) = lower($1)
 `
 
 func (q *Queries) GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error) {
@@ -126,12 +128,13 @@ func (q *Queries) GetPlayerByUsername(ctx context.Context, lower string) (AppPla
 		&i.SoldierSlots,
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
+		&i.IsBot,
 	)
 	return i, err
 }
 
 const lockPlayer = `-- name: LockPlayer :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed FROM app.players WHERE id = $1 FOR UPDATE
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot FROM app.players WHERE id = $1 FOR UPDATE
 `
 
 // Locks the row for the duration of the transaction. Every mutating action
@@ -164,6 +167,7 @@ func (q *Queries) LockPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, erro
 		&i.SoldierSlots,
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
+		&i.IsBot,
 	)
 	return i, err
 }

@@ -10,6 +10,31 @@ import (
 	"github.com/google/uuid"
 )
 
+type AppAttackCooldown struct {
+	AttackerID uuid.UUID
+	DefenderID uuid.UUID
+	LastAt     time.Time
+	Count24h   int32
+}
+
+type AppBattle struct {
+	ID            uuid.UUID
+	AttackerID    uuid.UUID
+	DefenderID    uuid.UUID
+	Seed          int64
+	ConfigVersion int32
+	AttackerWon   bool
+	Rounds        int32
+	AttackerMight int64
+	DefenderMight int64
+	GoldStolen    int64
+	RansomPaid    int64
+	XpAwarded     int64
+	EnergySpent   int64
+	Replay        []byte
+	CreatedAt     time.Time
+}
+
 type AppGoldLedger struct {
 	ID           int64
 	PlayerID     uuid.UUID
@@ -54,6 +79,7 @@ type AppPlayer struct {
 	SoldierSlots       int32
 	FreeSlotClaimed    bool
 	FreeRecruitClaimed bool
+	IsBot              bool
 }
 
 type AppPlayerItem struct {

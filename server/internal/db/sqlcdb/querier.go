@@ -11,6 +11,8 @@ import (
 )
 
 type Querier interface {
+	ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttackerParams) (AppPlayer, error)
+	ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefenderParams) (AppPlayer, error)
 	// Applies one collect: spends energy, credits gold and XP, and advances the
 	// action sequence. Energy is written back already settled by the caller.
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
@@ -18,12 +20,20 @@ type Querier interface {
 	BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) (AppPlayer, error)
 	ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitParams) (AppPlayer, error)
 	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
+	CountBots(ctx context.Context) (int64, error)
 	CountPlayerItems(ctx context.Context, playerID uuid.UUID) (int64, error)
+	CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer, error)
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) (AppIdentity, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (AppPlayer, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (AppSession, error)
 	CreditGold(ctx context.Context, arg CreditGoldParams) (AppPlayer, error)
 	DeletePlayerItem(ctx context.Context, arg DeletePlayerItemParams) error
+	// Candidate opponents inside a level band, excluding the player, bots-or-not by
+	// flag, the shielded, and anyone banned. Ordered by a stable pseudo-random key
+	// so the list changes between refreshes without a table scan.
+	FindTargets(ctx context.Context, arg FindTargetsParams) ([]FindTargetsRow, error)
+	GetBattle(ctx context.Context, id uuid.UUID) (AppBattle, error)
+	GetCooldown(ctx context.Context, arg GetCooldownParams) (AppAttackCooldown, error)
 	GetIdentityBySubject(ctx context.Context, arg GetIdentityBySubjectParams) (AppIdentity, error)
 	GetJobProgress(ctx context.Context, arg GetJobProgressParams) (AppPlayerJobProgress, error)
 	GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error)
@@ -32,7 +42,9 @@ type Querier interface {
 	GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (AppSession, error)
 	GetShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
 	GetSoldier(ctx context.Context, arg GetSoldierParams) (AppSoldier, error)
+	InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
+	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListItemsForSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListJobProgress(ctx context.Context, playerID uuid.UUID) ([]AppPlayerJobProgress, error)
@@ -45,6 +57,7 @@ type Querier interface {
 	LockPlayerItem(ctx context.Context, arg LockPlayerItemParams) (AppPlayerItem, error)
 	LockShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
 	LockSoldier(ctx context.Context, arg LockSoldierParams) (AppSoldier, error)
+	LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]AppPlayer, error)
 	MarkIdentityUsed(ctx context.Context, id uuid.UUID) error
 	MarkSessionUsed(ctx context.Context, id uuid.UUID) error
 	MarkShopSlotPurchased(ctx context.Context, arg MarkShopSlotPurchasedParams) (AppShopState, error)
@@ -60,6 +73,7 @@ type Querier interface {
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)
+	TouchCooldown(ctx context.Context, arg TouchCooldownParams) error
 	TouchPlayerSeen(ctx context.Context, id uuid.UUID) error
 	// Clears whatever the player is wearing in this slot, so equipping is a
 	// two-step swap that cannot transiently violate the one-item-per-slot index.

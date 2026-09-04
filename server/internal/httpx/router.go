@@ -84,6 +84,9 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/army/recruit", a.recruit)
 			r.Post("/army/train", a.train)
 			r.Post("/army/equip", a.equipSoldier)
+
+			r.Get("/attack/targets", a.targets)
+			r.Post("/attack", a.attack)
 		})
 
 		r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {

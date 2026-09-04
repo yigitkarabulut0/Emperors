@@ -29,6 +29,7 @@ Env="*res://scripts/autoload/env.gd"
 Api="*res://scripts/autoload/api.gd"
 Session="*res://scripts/autoload/session.gd"
 GameState="*res://scripts/autoload/game_state.gd"
+ArtRegistry="*res://scripts/autoload/art_registry.gd"
 Proof="*res://scripts/dev/proof.gd"
 
 [display]

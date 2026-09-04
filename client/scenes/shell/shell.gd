@@ -9,8 +9,8 @@ extends Control
 const SECTIONS := [
 	{"id": "family",    "glyph": "K", "label": "Keep",     "milestone": "M5"},
 	{"id": "collect",   "glyph": "F", "label": "Fields",   "milestone": ""},
-	{"id": "inventory", "glyph": "A", "label": "Armory",   "milestone": "M2"},
-	{"id": "shop",      "glyph": "M", "label": "Market",   "milestone": "M2"},
+	{"id": "inventory", "glyph": "A", "label": "Armory",   "milestone": ""},
+	{"id": "shop",      "glyph": "M", "label": "Market",   "milestone": ""},
 	{"id": "soldiers",  "glyph": "B", "label": "Barracks", "milestone": "M3"},
 	{"id": "attack",    "glyph": "W", "label": "War Gate", "milestone": "M4"},
 	{"id": "territory", "glyph": "T", "label": "Map",      "milestone": "M5"},
@@ -72,6 +72,12 @@ func _ready() -> void:
 	GameState.changed.connect(_on_state_changed)
 	GameState.action_failed.connect(_on_action_failed)
 	GameState.level_up.connect(func(lv: int) -> void: _flash("Level %d!" % lv, Palette.GOLD))
+
+	# Dev-only: open a specific section for a proof capture.
+	for i in OS.get_cmdline_user_args().size():
+		var a := OS.get_cmdline_user_args()
+		if a[i] == "--dev-tab" and i + 1 < a.size():
+			_current = a[i + 1]
 
 	_open(_current)
 	_on_state_changed()
@@ -180,8 +186,13 @@ func _open(id: String) -> void:
 		if s["id"] == id:
 			section = s
 
-	if id == "collect":
-		var tab := preload("res://scenes/tabs/collect.gd").new()
+	const TABS := {
+		"collect": "res://scenes/tabs/collect.gd",
+		"shop": "res://scenes/tabs/shop.gd",
+		"inventory": "res://scenes/tabs/inventory.gd",
+	}
+	if TABS.has(id):
+		var tab: Node = load(TABS[id]).new()
 		_content.add_child(tab)
 		tab.mount_action_bar(_action_host)
 		return

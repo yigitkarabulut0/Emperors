@@ -30,18 +30,12 @@ func _start() -> void:
 
 	_motto.text = str(res.data.get("motto", ""))
 
-	if Session.is_signed_in():
-		_status.text = "Restoring your realm…"
-		if await Session.try_refresh():
-			_enter_game()
-			return
-
-	# Dev-only: sign in without touching the UI, so a proof capture (which
-	# disables input) can reach the game itself. Tries login first, then falls
-	# back to register, so re-running is idempotent.
+	# Checked BEFORE the saved session: a proof capture must land on the account
+	# it names, not on whoever signed in last on this machine.
 	var dev := _dev_login_args()
 	if not dev.is_empty():
 		_status.text = "Signing in…"
+		Session.sign_out()
 		var err := await Session.login(dev[0], dev[1])
 		if err != "":
 			err = await Session.register(dev[0], dev[1])
@@ -49,6 +43,12 @@ func _start() -> void:
 			_enter_game()
 			return
 		print("[boot] dev login failed: ", err)
+
+	if Session.is_signed_in():
+		_status.text = "Restoring your realm…"
+		if await Session.try_refresh():
+			_enter_game()
+			return
 
 	_status.text = ""
 	_enter_auth()

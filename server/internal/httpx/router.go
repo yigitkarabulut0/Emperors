@@ -5,15 +5,19 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
 // Deps is what the router needs from the rest of the application. Keeping it
 // an interface set (rather than concrete services) is what lets the router be
 // tested without a database.
 type Deps struct {
-	Log     *slog.Logger
-	Health  HealthChecker
-	Version string
+	Log      *slog.Logger
+	Health   HealthChecker
+	Version  string
+	Service  service.Deps
+	Verifier TokenVerifier
 }
 
 // HealthChecker reports whether dependencies are reachable.
@@ -53,7 +57,21 @@ func NewRouter(d Deps) http.Handler {
 		WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
 
+	a := &api{svc: d.Service, log: d.Log}
+
 	r.Route("/v1", func(r chi.Router) {
+		// Unauthenticated: sign-up, sign-in and token rotation.
+		r.Post("/auth/register", a.register)
+		r.Post("/auth/login", a.login)
+		r.Post("/auth/refresh", a.refresh)
+
+		// Everything else needs a valid access token.
+		r.Group(func(r chi.Router) {
+			r.Use(RequireAuth(d.Verifier))
+			r.Get("/state", a.state)
+			r.Post("/collect", a.collect)
+		})
+
 		r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 			motto, now, err := d.Health.Motto(r)
 			if err != nil {

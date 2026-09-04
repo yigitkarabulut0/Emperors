@@ -13,11 +13,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/yigitkarabulut0/emperors/server/internal/auth"
 	"github.com/yigitkarabulut0/emperors/server/internal/config"
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
+	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 	"github.com/yigitkarabulut0/emperors/server/internal/health"
 	"github.com/yigitkarabulut0/emperors/server/internal/httpx"
 	"github.com/yigitkarabulut0/emperors/server/internal/obs"
+	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
 // version is stamped at build time with -ldflags "-X main.version=...".
@@ -69,14 +72,31 @@ func run() error {
 	}
 	log.Info("database connected", "max_conns", cfg.MaxConns)
 
+	// Fail fast on a bad balance bundle: a config that would let a player earn
+	// infinite gold must stop the boot, not reach players.
+	bundle, err := gameconfig.LoadSeed()
+	if err != nil {
+		return fmt.Errorf("game config: %w", err)
+	}
+	log.Info("game config loaded", "version", bundle.Version, "jobs", len(bundle.Jobs.Jobs))
+
+	signer, err := auth.NewSigner(cfg.TokenSeed, time.Now)
+	if err != nil {
+		return err
+	}
+
+	svc := service.Deps{Pool: pool, Config: bundle, Signer: signer, Now: time.Now}
+
 	ready := &readiness{}
 	ready.set(true)
 	srv := &http.Server{
 		Addr: cfg.Addr,
 		Handler: httpx.NewRouter(httpx.Deps{
-			Log:     log,
-			Health:  &gatedHealth{Checker: health.New(pool), ready: ready},
-			Version: version,
+			Log:      log,
+			Health:   &gatedHealth{Checker: health.New(pool), ready: ready},
+			Version:  version,
+			Service:  svc,
+			Verifier: signer,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,

@@ -4,6 +4,8 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -31,6 +33,10 @@ type Config struct {
 	ReadinessDrainLag time.Duration
 
 	LogLevel string
+
+	// TokenSeed is the 32-byte Ed25519 seed for access tokens. It must be stable:
+	// changing it invalidates every access token and logs everyone out.
+	TokenSeed []byte
 }
 
 func Load() (*Config, error) {
@@ -40,6 +46,14 @@ func Load() (*Config, error) {
 		DatabaseURL:       os.Getenv("DATABASE_URL"),
 		DatabaseURLDirect: os.Getenv("DATABASE_URL_DIRECT"),
 		LogLevel:          env("EMPERORS_LOG_LEVEL", "info"),
+	}
+
+	if seed := os.Getenv("EMPERORS_TOKEN_SEED"); seed != "" {
+		raw, decErr := base64.StdEncoding.DecodeString(seed)
+		if decErr != nil {
+			return nil, fmt.Errorf("EMPERORS_TOKEN_SEED must be base64: %w", decErr)
+		}
+		c.TokenSeed = raw
 	}
 
 	var err error
@@ -78,6 +92,20 @@ func (c *Config) validate() error {
 		}
 		c.DatabaseURLDirect = c.DatabaseURL
 	}
+	switch {
+	case len(c.TokenSeed) == 0 && c.Env == "prod":
+		problems = append(problems, "EMPERORS_TOKEN_SEED is required in prod (base64 of 32 random bytes)")
+	case len(c.TokenSeed) == 0:
+		// Dev convenience: a random seed per boot. Restarting logs you out, which
+		// is fine locally and would be unacceptable in production.
+		c.TokenSeed = make([]byte, 32)
+		if _, err := rand.Read(c.TokenSeed); err != nil {
+			problems = append(problems, "could not generate a development token seed")
+		}
+	case len(c.TokenSeed) != 32:
+		problems = append(problems, fmt.Sprintf("EMPERORS_TOKEN_SEED must decode to 32 bytes, got %d", len(c.TokenSeed)))
+	}
+
 	if c.MinConns > c.MaxConns {
 		problems = append(problems, "EMPERORS_DB_MIN_CONNS must not exceed EMPERORS_DB_MAX_CONNS")
 	}

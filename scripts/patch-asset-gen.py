@@ -16,10 +16,10 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 T = ROOT / ".claude/skills/asset-gen/tools"
 changed = []
 
-def sub(path, old, new, label):
+def sub(path, old, new, label, marker=None):
     p = T / path
     s = p.read_text()
-    if new in s:
+    if (marker or new) in s:
         print(f"  = {label} (already applied)"); return
     if old not in s:
         print(f"  ! {label}: anchor not found — MANUAL REVIEW", file=sys.stderr); return
@@ -94,6 +94,39 @@ sub("rembg_matting.py",
     out = remove_background(img, img_pil, regime=args.mode,
                             bg_thresh=args.bg_thresh, fg_thresh=args.fg_thresh,
                             bg_color_override=bg_color)""",
-    "rembg: fix --preview NameError")
+    "rembg: fix --preview NameError",
+    marker="bg_color = sample_bg_color(img)")
+
+# --- 5. alpha floor -----------------------------------------------------------
+# Background pixels keep their computed alpha_color no matter what --bg-thresh is
+# set to, so a generated background that is not perfectly uniform leaves a
+# low-alpha haze across the whole frame — a visible square halo on a dark game
+# panel. --bg-thresh cannot fix this: it reclassifies pixels, it never zeroes
+# them. An explicit floor does.
+sub("rembg_matting.py",
+    "    alpha[alpha < 0.01] = 0.0",
+    "    alpha[alpha < args_alpha_floor] = 0.0",
+    "rembg: alpha floor (kill background haze)")
+sub("rembg_matting.py",
+    "                      bg_color_override: np.ndarray | None = None) -> np.ndarray:",
+    "                      bg_color_override: np.ndarray | None = None,\n"
+    "                      args_alpha_floor: float = 0.01) -> np.ndarray:",
+    "rembg: alpha floor parameter")
+sub("rembg_matting.py",
+    '    parser.add_argument("--bg-thresh", type=float, default=None,',
+    '    parser.add_argument("--alpha-floor", type=float, default=0.06,\n'
+    '                   help="Zero any alpha below this. Raise to kill background haze "\n'
+    '                        "from a non-uniform generated background; lower to keep soft edges. Default: 0.06.")\n'
+    '    parser.add_argument("--bg-thresh", type=float, default=None,',
+    "rembg: --alpha-floor flag")
+sub("rembg_matting.py",
+    "    out = remove_background(img, img_pil, regime=args.mode,\n"
+    "                            bg_thresh=args.bg_thresh, fg_thresh=args.fg_thresh,\n"
+    "                            bg_color_override=bg_color)",
+    "    out = remove_background(img, img_pil, regime=args.mode,\n"
+    "                            bg_thresh=args.bg_thresh, fg_thresh=args.fg_thresh,\n"
+    "                            bg_color_override=bg_color,\n"
+    "                            args_alpha_floor=args.alpha_floor)",
+    "rembg: thread alpha floor into main()")
 
 print(f"\n{len(changed)} patch(es) applied." if changed else "\nAlready fully patched.")

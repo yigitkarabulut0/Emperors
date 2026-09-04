@@ -1,0 +1,315 @@
+{
+  "_comment": "xp_to_next(L) = floor(1.7*L^2.2 + 10L + 5). Energy regen is FLAT: Max Energy is a 'how long can I be away' stat, regen speed is a 'how much do I earn per day' stat. Because regen does not scale with max, buying Max Energy cannot inflate daily income \u2014 this is what bounds the entire gold supply.",
+  "level_cap": 60,
+  "energy": {
+    "base_max": 60,
+    "per_stat_point": 3,
+    "regen_base_seconds": 60,
+    "overflow": false,
+    "levelup_refill": true,
+    "regen_bonus_cap_bp": 6000
+  },
+  "stat_points_per_level": 1,
+  "levels": [
+    {
+      "level": 1,
+      "xp_to_next": 16,
+      "cumulative_xp": 0
+    },
+    {
+      "level": 2,
+      "xp_to_next": 32,
+      "cumulative_xp": 16
+    },
+    {
+      "level": 3,
+      "xp_to_next": 54,
+      "cumulative_xp": 48
+    },
+    {
+      "level": 4,
+      "xp_to_next": 80,
+      "cumulative_xp": 102
+    },
+    {
+      "level": 5,
+      "xp_to_next": 113,
+      "cumulative_xp": 182
+    },
+    {
+      "level": 6,
+      "xp_to_next": 152,
+      "cumulative_xp": 295
+    },
+    {
+      "level": 7,
+      "xp_to_next": 197,
+      "cumulative_xp": 447
+    },
+    {
+      "level": 8,
+      "xp_to_next": 249,
+      "cumulative_xp": 644
+    },
+    {
+      "level": 9,
+      "xp_to_next": 308,
+      "cumulative_xp": 893
+    },
+    {
+      "level": 10,
+      "xp_to_next": 374,
+      "cumulative_xp": 1201
+    },
+    {
+      "level": 11,
+      "xp_to_next": 447,
+      "cumulative_xp": 1575
+    },
+    {
+      "level": 12,
+      "xp_to_next": 527,
+      "cumulative_xp": 2022
+    },
+    {
+      "level": 13,
+      "xp_to_next": 614,
+      "cumulative_xp": 2549
+    },
+    {
+      "level": 14,
+      "xp_to_next": 709,
+      "cumulative_xp": 3163
+    },
+    {
+      "level": 15,
+      "xp_to_next": 812,
+      "cumulative_xp": 3872
+    },
+    {
+      "level": 16,
+      "xp_to_next": 922,
+      "cumulative_xp": 4684
+    },
+    {
+      "level": 17,
+      "xp_to_next": 1040,
+      "cumulative_xp": 5606
+    },
+    {
+      "level": 18,
+      "xp_to_next": 1166,
+      "cumulative_xp": 6646
+    },
+    {
+      "level": 19,
+      "xp_to_next": 1300,
+      "cumulative_xp": 7812
+    },
+    {
+      "level": 20,
+      "xp_to_next": 1442,
+      "cumulative_xp": 9112
+    },
+    {
+      "level": 21,
+      "xp_to_next": 1593,
+      "cumulative_xp": 10554
+    },
+    {
+      "level": 22,
+      "xp_to_next": 1751,
+      "cumulative_xp": 12147
+    },
+    {
+      "level": 23,
+      "xp_to_next": 1918,
+      "cumulative_xp": 13898
+    },
+    {
+      "level": 24,
+      "xp_to_next": 2093,
+      "cumulative_xp": 15816
+    },
+    {
+      "level": 25,
+      "xp_to_next": 2277,
+      "cumulative_xp": 17909
+    },
+    {
+      "level": 26,
+      "xp_to_next": 2469,
+      "cumulative_xp": 20186
+    },
+    {
+      "level": 27,
+      "xp_to_next": 2670,
+      "cumulative_xp": 22655
+    },
+    {
+      "level": 28,
+      "xp_to_next": 2880,
+      "cumulative_xp": 25325
+    },
+    {
+      "level": 29,
+      "xp_to_next": 3098,
+      "cumulative_xp": 28205
+    },
+    {
+      "level": 30,
+      "xp_to_next": 3325,
+      "cumulative_xp": 31303
+    },
+    {
+      "level": 31,
+      "xp_to_next": 3561,
+      "cumulative_xp": 34628
+    },
+    {
+      "level": 32,
+      "xp_to_next": 3806,
+      "cumulative_xp": 38189
+    },
+    {
+      "level": 33,
+      "xp_to_next": 4060,
+      "cumulative_xp": 41995
+    },
+    {
+      "level": 34,
+      "xp_to_next": 4323,
+      "cumulative_xp": 46055
+    },
+    {
+      "level": 35,
+      "xp_to_next": 4595,
+      "cumulative_xp": 50378
+    },
+    {
+      "level": 36,
+      "xp_to_next": 4876,
+      "cumulative_xp": 54973
+    },
+    {
+      "level": 37,
+      "xp_to_next": 5166,
+      "cumulative_xp": 59849
+    },
+    {
+      "level": 38,
+      "xp_to_next": 5466,
+      "cumulative_xp": 65015
+    },
+    {
+      "level": 39,
+      "xp_to_next": 5775,
+      "cumulative_xp": 70481
+    },
+    {
+      "level": 40,
+      "xp_to_next": 6093,
+      "cumulative_xp": 76256
+    },
+    {
+      "level": 41,
+      "xp_to_next": 6420,
+      "cumulative_xp": 82349
+    },
+    {
+      "level": 42,
+      "xp_to_next": 6757,
+      "cumulative_xp": 88769
+    },
+    {
+      "level": 43,
+      "xp_to_next": 7104,
+      "cumulative_xp": 95526
+    },
+    {
+      "level": 44,
+      "xp_to_next": 7460,
+      "cumulative_xp": 102630
+    },
+    {
+      "level": 45,
+      "xp_to_next": 7825,
+      "cumulative_xp": 110090
+    },
+    {
+      "level": 46,
+      "xp_to_next": 8200,
+      "cumulative_xp": 117915
+    },
+    {
+      "level": 47,
+      "xp_to_next": 8585,
+      "cumulative_xp": 126115
+    },
+    {
+      "level": 48,
+      "xp_to_next": 8980,
+      "cumulative_xp": 134700
+    },
+    {
+      "level": 49,
+      "xp_to_next": 9384,
+      "cumulative_xp": 143680
+    },
+    {
+      "level": 50,
+      "xp_to_next": 9798,
+      "cumulative_xp": 153064
+    },
+    {
+      "level": 51,
+      "xp_to_next": 10222,
+      "cumulative_xp": 162862
+    },
+    {
+      "level": 52,
+      "xp_to_next": 10656,
+      "cumulative_xp": 173084
+    },
+    {
+      "level": 53,
+      "xp_to_next": 11099,
+      "cumulative_xp": 183740
+    },
+    {
+      "level": 54,
+      "xp_to_next": 11553,
+      "cumulative_xp": 194839
+    },
+    {
+      "level": 55,
+      "xp_to_next": 12016,
+      "cumulative_xp": 206392
+    },
+    {
+      "level": 56,
+      "xp_to_next": 12490,
+      "cumulative_xp": 218408
+    },
+    {
+      "level": 57,
+      "xp_to_next": 12973,
+      "cumulative_xp": 230898
+    },
+    {
+      "level": 58,
+      "xp_to_next": 13467,
+      "cumulative_xp": 243871
+    },
+    {
+      "level": 59,
+      "xp_to_next": 13970,
+      "cumulative_xp": 257338
+    },
+    {
+      "level": 60,
+      "xp_to_next": 14484,
+      "cumulative_xp": 271308
+    }
+  ]
+}

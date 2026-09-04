@@ -153,7 +153,8 @@ def remove_background(img: np.ndarray, img_pil: Image.Image,
                       bg_thresh: float | None = None,
                       fg_thresh: float | None = None,
                       session=None,
-                      bg_color_override: np.ndarray | None = None) -> np.ndarray:
+                      bg_color_override: np.ndarray | None = None,
+                      args_alpha_floor: float = 0.01) -> np.ndarray:
     """Remove solid background, returning RGBA uint8 array.
 
     Regimes:
@@ -204,7 +205,7 @@ def remove_background(img: np.ndarray, img_pil: Image.Image,
         alpha = np.where(is_bg, alpha_color,
                          np.maximum(alpha_color, mask_soft))
 
-    alpha[alpha < 0.01] = 0.0
+    alpha[alpha < args_alpha_floor] = 0.0
 
     # 6. Foreground recovery
     fg = recover_foreground(img, alpha, bg_color)
@@ -267,6 +268,9 @@ def main():
                         help="Batch mode: process all PNGs in DIR")
     parser.add_argument("-m", "--mode", choices=["auto", "trust", "adapt", "color"],
                         default="auto", help="Regime: auto, trust, adapt, color")
+    parser.add_argument("--alpha-floor", type=float, default=0.06,
+                   help="Zero any alpha below this. Raise to kill background haze "
+                        "from a non-uniform generated background; lower to keep soft edges. Default: 0.06.")
     parser.add_argument("--bg-thresh", type=float, default=None,
                         help="Background threshold override")
     parser.add_argument("--fg-thresh", type=float, default=None,
@@ -303,7 +307,8 @@ def main():
     bg_color = sample_bg_color(img)
     out = remove_background(img, img_pil, regime=args.mode,
                             bg_thresh=args.bg_thresh, fg_thresh=args.fg_thresh,
-                            bg_color_override=bg_color)
+                            bg_color_override=bg_color,
+                            args_alpha_floor=args.alpha_floor)
 
     # Save
     Image.fromarray(out).save(output_path)

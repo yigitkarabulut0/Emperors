@@ -1,0 +1,12 @@
+{
+  "_comment": "The rarity ladder. Colours live in balance data, not in client code, so they can be retuned from the admin panel without a client update. Tier is NEVER signalled by colour alone: every card also shows the tier name and a 1-7 pip count, because a gray/green/blue/violet/gold/magenta/red ladder is not reliably separable under deuteranopia.",
+  "tiers": [
+    { "id": "common",    "rank": 1, "name": "Common",    "color": "#9BA1A6", "pips": 1, "stat_mult": 1.00 },
+    { "id": "uncommon",  "rank": 2, "name": "Uncommon",  "color": "#4ADE80", "pips": 2, "stat_mult": 1.55 },
+    { "id": "rare",      "rank": 3, "name": "Rare",      "color": "#38BDF8", "pips": 3, "stat_mult": 2.40 },
+    { "id": "epic",      "rank": 4, "name": "Epic",      "color": "#A855F7", "pips": 4, "stat_mult": 3.72 },
+    { "id": "legendary", "rank": 5, "name": "Legendary", "color": "#F5C518", "pips": 5, "stat_mult": 5.77 },
+    { "id": "mystic",    "rank": 6, "name": "Mystic",    "color": "#E040FB", "pips": 6, "stat_mult": 8.94 },
+    { "id": "special",   "rank": 7, "name": "Special",   "color": "#EF4444", "pips": 7, "stat_mult": 13.86 }
+  ]
+}

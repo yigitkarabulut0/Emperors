@@ -1,0 +1,166 @@
+{
+  "_comment": "Collect ladder. gold = round(energy * 2.00 * 1.22^max(0,n-2)); xp = max(2, round(energy * (1.40 + 0.02*unlock_level))). Gold-per-energy rises 13.3x across the ladder so the best affordable job is always correct, while leftover energy still earns something. Milestone bonuses REPLACE (max +30%), they do not stack.",
+  "milestones": [
+    {
+      "collects": 25,
+      "bonus_bp": 500
+    },
+    {
+      "collects": 50,
+      "bonus_bp": 1000
+    },
+    {
+      "collects": 100,
+      "bonus_bp": 1500
+    },
+    {
+      "collects": 250,
+      "bonus_bp": 2000
+    },
+    {
+      "collects": 500,
+      "bonus_bp": 2500
+    },
+    {
+      "collects": 1000,
+      "bonus_bp": 3000
+    }
+  ],
+  "jobs": [
+    {
+      "id": "grapes",
+      "order": 1,
+      "name": "Pick Grapes",
+      "unlock_level": 1,
+      "energy_cost": 1,
+      "base_gold": 2,
+      "base_xp": 2
+    },
+    {
+      "id": "strawberries",
+      "order": 2,
+      "name": "Gather Strawberries",
+      "unlock_level": 3,
+      "energy_cost": 2,
+      "base_gold": 4,
+      "base_xp": 3
+    },
+    {
+      "id": "wheat",
+      "order": 3,
+      "name": "Harvest Wheat",
+      "unlock_level": 5,
+      "energy_cost": 3,
+      "base_gold": 7,
+      "base_xp": 4
+    },
+    {
+      "id": "orchard",
+      "order": 4,
+      "name": "Tend the Orchard",
+      "unlock_level": 8,
+      "energy_cost": 4,
+      "base_gold": 12,
+      "base_xp": 6
+    },
+    {
+      "id": "timber",
+      "order": 5,
+      "name": "Chop Timber",
+      "unlock_level": 11,
+      "energy_cost": 6,
+      "base_gold": 22,
+      "base_xp": 10
+    },
+    {
+      "id": "fish",
+      "order": 6,
+      "name": "Fish the River",
+      "unlock_level": 14,
+      "energy_cost": 8,
+      "base_gold": 35,
+      "base_xp": 13
+    },
+    {
+      "id": "stone",
+      "order": 7,
+      "name": "Quarry Stone",
+      "unlock_level": 18,
+      "energy_cost": 10,
+      "base_gold": 54,
+      "base_xp": 18
+    },
+    {
+      "id": "iron",
+      "order": 8,
+      "name": "Mine Iron Ore",
+      "unlock_level": 22,
+      "energy_cost": 13,
+      "base_gold": 86,
+      "base_xp": 24
+    },
+    {
+      "id": "hunt",
+      "order": 9,
+      "name": "Hunt the King's Wood",
+      "unlock_level": 26,
+      "energy_cost": 16,
+      "base_gold": 129,
+      "base_xp": 31
+    },
+    {
+      "id": "caravan",
+      "order": 10,
+      "name": "Escort a Trade Caravan",
+      "unlock_level": 30,
+      "energy_cost": 20,
+      "base_gold": 196,
+      "base_xp": 40
+    },
+    {
+      "id": "silver",
+      "order": 11,
+      "name": "Smelt Silver",
+      "unlock_level": 35,
+      "energy_cost": 25,
+      "base_gold": 299,
+      "base_xp": 52
+    },
+    {
+      "id": "bandits",
+      "order": 12,
+      "name": "Clear the Bandit Camp",
+      "unlock_level": 40,
+      "energy_cost": 31,
+      "base_gold": 453,
+      "base_xp": 68
+    },
+    {
+      "id": "deep_mine",
+      "order": 13,
+      "name": "Delve the Deep Mine",
+      "unlock_level": 45,
+      "energy_cost": 38,
+      "base_gold": 677,
+      "base_xp": 87
+    },
+    {
+      "id": "tithe",
+      "order": 14,
+      "name": "Collect the Crown Tithe",
+      "unlock_level": 52,
+      "energy_cost": 46,
+      "base_gold": 1000,
+      "base_xp": 112
+    },
+    {
+      "id": "dragon_hoard",
+      "order": 15,
+      "name": "Plunder the Dragon's Hoard",
+      "unlock_level": 60,
+      "energy_cost": 55,
+      "base_gold": 1459,
+      "base_xp": 143
+    }
+  ]
+}

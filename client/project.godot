@@ -1,0 +1,47 @@
+; Emperors — Godot 4.7 project configuration.
+;
+; Portrait mobile first, desktop later. Settings chosen in the client design:
+;   720x1280 base            — designed-for size; everything essential must fit
+;                              inside 720x1140 so tall phones gain room rather
+;                              than losing it.
+;   canvas_items + expand    — expand gives taller phones MORE vertical canvas
+;                              instead of letterboxing them.
+;   mobile renderer          — Metal-backed on iOS; gl_compatibility only on web.
+;   etc2_astc                — required or the Android export later fails with a
+;                              blank configuration error.
+
+config_version=5
+
+[application]
+
+config/name="Emperors"
+config/description="A 2D idle/RPG kingdom game."
+run/main_scene="res://scenes/boot/boot.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Env="*res://scripts/autoload/env.gd"
+Api="*res://scripts/autoload/api.gd"
+Proof="*res://scripts/dev/proof.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=405
+window/size/window_height_override=720
+window/handheld/orientation=1
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.web="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+
+[gui]
+
+theme/default_font_multichannel_signed_distance_field=false

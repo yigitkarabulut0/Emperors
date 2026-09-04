@@ -1,0 +1,137 @@
+{
+  "_comment": "Soldiers. slot_cost(n) = 500 * 2.05^(n-1); recruit_cost = base * (1 + 0.11*level); stats = type_stat * tier_mult * (1 + 0.09*soldier_level). A common Gladiator is about as strong as a rare Peasant, which is what justifies the 40x price gap: the TYPE matters beyond the tier roll. Train raises a soldier's level toward the player's for 60 * 1.09^level * tier_mult, turning 'your veteran is obsolete' into 'invest in your veteran' \u2014 and, because 1.09^L grows without limit, an unbounded late-game gold sink.",
+  "max_slots": 10,
+  "slots": [
+    {
+      "index": 1,
+      "cost": 500,
+      "level_gate": 1
+    },
+    {
+      "index": 2,
+      "cost": 1025,
+      "level_gate": 5
+    },
+    {
+      "index": 3,
+      "cost": 2101,
+      "level_gate": 9
+    },
+    {
+      "index": 4,
+      "cost": 4308,
+      "level_gate": 13
+    },
+    {
+      "index": 5,
+      "cost": 8831,
+      "level_gate": 17
+    },
+    {
+      "index": 6,
+      "cost": 18103,
+      "level_gate": 21
+    },
+    {
+      "index": 7,
+      "cost": 37110,
+      "level_gate": 25
+    },
+    {
+      "index": 8,
+      "cost": 76076,
+      "level_gate": 29
+    },
+    {
+      "index": 9,
+      "cost": 155956,
+      "level_gate": 33
+    },
+    {
+      "index": 10,
+      "cost": 319709,
+      "level_gate": 37
+    }
+  ],
+  "recruit_cost_per_level_bp": 1100,
+  "level_mult_per_level_bp": 900,
+  "train": {
+    "base": 60,
+    "growth_bp": 10900
+  },
+  "onboarding": {
+    "free_slot_at_level": 5,
+    "free_first_recruit": true,
+    "first_recruit_tier_floor": "uncommon"
+  },
+  "types": [
+    {
+      "id": "peasant",
+      "name": "Peasant",
+      "base_cost": 150,
+      "attack": 8,
+      "defense": 8,
+      "hp": 40,
+      "weights": {
+        "common": 100.0,
+        "uncommon": 30.0,
+        "rare": 7.0,
+        "epic": 1.5,
+        "legendary": 0.25,
+        "mystic": 0.03,
+        "special": 0.002
+      },
+      "luck_coef": 0.01
+    },
+    {
+      "id": "mercenary",
+      "name": "Mercenary",
+      "base_cost": 900,
+      "attack": 14,
+      "defense": 12,
+      "hp": 55,
+      "weights": {
+        "common": 45.0,
+        "uncommon": 55.0,
+        "rare": 25.0,
+        "epic": 8.0,
+        "legendary": 1.8,
+        "mystic": 0.25,
+        "special": 0.02
+      },
+      "luck_coef": 0.012
+    },
+    {
+      "id": "gladiator",
+      "name": "Gladiator",
+      "base_cost": 6000,
+      "attack": 22,
+      "defense": 18,
+      "hp": 75,
+      "weights": {
+        "common": 10.0,
+        "uncommon": 30.0,
+        "rare": 40.0,
+        "epic": 22.0,
+        "legendary": 8.0,
+        "mystic": 1.6,
+        "special": 0.18
+      },
+      "luck_coef": 0.014
+    }
+  ],
+  "player": {
+    "base_stat": 10,
+    "per_level": 2,
+    "per_stat_point": 4,
+    "base_hp": 100,
+    "hp_per_level": 12
+  },
+  "combat": {
+    "hp_per_defense_bp": 30000,
+    "hp_level_bonus_bp": 200,
+    "dr_level_coef": 40,
+    "dr_base": 60,
+    "dr_cap_bp": 6000
+  }
+}

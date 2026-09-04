@@ -15,6 +15,9 @@ type Querier interface {
 	// action sequence. Energy is written back already settled by the caller.
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
+	BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) (AppPlayer, error)
+	ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitParams) (AppPlayer, error)
+	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
 	CountPlayerItems(ctx context.Context, playerID uuid.UUID) (int64, error)
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) (AppIdentity, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (AppPlayer, error)
@@ -28,34 +31,48 @@ type Querier interface {
 	GetPlayerItem(ctx context.Context, arg GetPlayerItemParams) (AppPlayerItem, error)
 	GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (AppSession, error)
 	GetShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
+	GetSoldier(ctx context.Context, arg GetSoldierParams) (AppSoldier, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
+	ListItemsForSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListJobProgress(ctx context.Context, playerID uuid.UUID) ([]AppPlayerJobProgress, error)
 	ListPlayerItems(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
+	ListSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppSoldier, error)
 	// Locks the row for the duration of the transaction. Every mutating action
 	// takes this first, so two concurrent collects cannot both read the same energy
 	// and both spend it.
 	LockPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, error)
 	LockPlayerItem(ctx context.Context, arg LockPlayerItemParams) (AppPlayerItem, error)
 	LockShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
+	LockSoldier(ctx context.Context, arg LockSoldierParams) (AppSoldier, error)
 	MarkIdentityUsed(ctx context.Context, id uuid.UUID) error
 	MarkSessionUsed(ctx context.Context, id uuid.UUID) error
 	MarkShopSlotPurchased(ctx context.Context, arg MarkShopSlotPurchasedParams) (AppShopState, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
+	// Dismissing a soldier must not destroy its gear; the items return to the bag.
+	ReleaseSoldierItems(ctx context.Context, arg ReleaseSoldierItemsParams) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	// Revokes an entire rotation chain. Presenting an already-rotated refresh token
 	// means the token was captured, so every descendant of that family is burned.
 	RevokeSessionFamily(ctx context.Context, arg RevokeSessionFamilyParams) error
 	SetHeroEquipped(ctx context.Context, arg SetHeroEquippedParams) error
+	SetSoldierEquipped(ctx context.Context, arg SetSoldierEquippedParams) error
+	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)
 	TouchPlayerSeen(ctx context.Context, id uuid.UUID) error
 	// Clears whatever the player is wearing in this slot, so equipping is a
 	// two-step swap that cannot transiently violate the one-item-per-slot index.
 	UnequipHeroSlot(ctx context.Context, arg UnequipHeroSlotParams) error
+	// Frees the soldier's slot before the new item goes in, so the unique index
+	// never sees two items in one slot even transiently.
+	UnequipSoldierSlot(ctx context.Context, arg UnequipSoldierSlotParams) error
 	// Creates the row on first use and resets it whenever the 5-minute window rolls
 	// over, in one statement so two concurrent requests cannot both "reset" it.
 	UpsertShopWindow(ctx context.Context, arg UpsertShopWindowParams) (AppShopState, error)
+	// Recruiting into an occupied slot replaces the occupant, so this is an upsert
+	// rather than an insert.
+	UpsertSoldier(ctx context.Context, arg UpsertSoldierParams) (AppSoldier, error)
 }
 
 var _ Querier = (*Queries)(nil)

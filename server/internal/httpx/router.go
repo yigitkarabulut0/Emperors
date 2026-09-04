@@ -78,6 +78,12 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/inventory/equip", a.equip)
 			r.Post("/inventory/unequip", a.unequip)
 			r.Post("/inventory/sell", a.sell)
+
+			r.Get("/army", a.army)
+			r.Post("/army/slot", a.buySlot)
+			r.Post("/army/recruit", a.recruit)
+			r.Post("/army/train", a.train)
+			r.Post("/army/equip", a.equipSoldier)
 		})
 
 		r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {

@@ -51,6 +51,9 @@ type AppPlayer struct {
 	ResetOffsetMinutes int32
 	CreatedAt          time.Time
 	LastSeenAt         time.Time
+	SoldierSlots       int32
+	FreeSlotClaimed    bool
+	FreeRecruitClaimed bool
 }
 
 type AppPlayerItem struct {
@@ -102,4 +105,16 @@ type AppShopState struct {
 	WindowID      int64
 	PurchasedMask int32
 	RerollIndex   int32
+}
+
+type AppSoldier struct {
+	ID                  uuid.UUID
+	PlayerID            uuid.UUID
+	SlotIndex           int32
+	TypeID              string
+	Tier                string
+	Level               int32
+	Name                string
+	RecruitedAt         time.Time
+	RolledConfigVersion int32
 }

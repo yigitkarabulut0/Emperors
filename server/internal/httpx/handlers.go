@@ -65,6 +65,14 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "shop_stale", "the market has restocked")
 	case errors.Is(err, service.ErrItemEquipped):
 		WriteProblem(w, r, http.StatusConflict, "item_equipped", "unequip it first")
+	case errors.Is(err, service.ErrNoSlot):
+		WriteProblem(w, r, http.StatusConflict, "no_slot", "buy that barracks slot first")
+	case errors.Is(err, service.ErrSlotsMaxed):
+		WriteProblem(w, r, http.StatusConflict, "slots_maxed", "every barracks slot is already yours")
+	case errors.Is(err, service.ErrLevelTooLow):
+		WriteProblem(w, r, http.StatusForbidden, "level_too_low", err.Error())
+	case errors.Is(err, service.ErrAlreadyMaxed):
+		WriteProblem(w, r, http.StatusConflict, "already_maxed", "already at your level")
 	case errors.Is(err, service.ErrStaleAction):
 		// 409, not 400: the request was well-formed, the client is just behind.
 		// It should re-read state rather than retry blindly.
@@ -290,13 +298,133 @@ func (a *api) sell(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, res)
 }
 
+// --- army ---
+
+func (a *api) army(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.svc.GetArmy(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type seqReq struct {
+	ActionSeq int64 `json:"action_seq"`
+}
+
+func (a *api) buySlot(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req seqReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.svc.BuySlot(r.Context(), pid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type recruitReq struct {
+	Slot      int    `json:"slot"`
+	TypeID    string `json:"type_id"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) recruit(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req recruitReq
+	if !decode(w, r, &req) {
+		return
+	}
+	res, err := a.svc.Recruit(r.Context(), pid, req.Slot, req.TypeID, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
+type soldierReq struct {
+	SoldierID string `json:"soldier_id"`
+	ItemID    string `json:"item_id,omitempty"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) train(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req soldierReq
+	if !decode(w, r, &req) {
+		return
+	}
+	sid, err := uuid.Parse(req.SoldierID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "soldier_id must be a uuid")
+		return
+	}
+	v, err := a.svc.Train(r.Context(), pid, sid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *api) equipSoldier(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req soldierReq
+	if !decode(w, r, &req) {
+		return
+	}
+	sid, err := uuid.Parse(req.SoldierID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "soldier_id must be a uuid")
+		return
+	}
+	iid, err := uuid.Parse(req.ItemID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
+		return
+	}
+	v, err := a.svc.EquipSoldier(r.Context(), pid, sid, iid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
 func isKnownServiceError(err error) bool {
 	for _, e := range []error{
 		service.ErrUsernameTaken, service.ErrBadCredentials, service.ErrPlayerBanned,
 		service.ErrSessionInvalid, service.ErrNotFound, service.ErrJobLocked,
 		service.ErrNotEnoughEnergy, service.ErrStaleAction, auth.ErrPasswordPolicy,
 		service.ErrAlreadyPurchased, service.ErrNotEnoughGold, service.ErrInventoryFull,
-		service.ErrShopStale, service.ErrItemEquipped,
+		service.ErrShopStale, service.ErrItemEquipped, service.ErrNoSlot,
+		service.ErrSlotsMaxed, service.ErrLevelTooLow, service.ErrAlreadyMaxed,
 	} {
 		if errors.Is(err, e) {
 			return true

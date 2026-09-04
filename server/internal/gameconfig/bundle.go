@@ -27,6 +27,7 @@ type Bundle struct {
 	Progression ProgressionConfig `json:"progression"`
 	Tiers       TiersConfig       `json:"tiers"`
 	Items       ItemsConfig       `json:"items"`
+	Soldiers    SoldiersConfig    `json:"soldiers"`
 
 	// Derived lookups, built once at load so hot paths never scan a slice.
 	jobByID         map[string]*Job
@@ -36,6 +37,7 @@ type Bundle struct {
 	itemsBySlotTier map[string][]*ItemDef
 	tierByID        map[string]*Tier
 	tierIDs         []string // ascending by rank
+	soldierTypeByID map[string]*SoldierType
 }
 
 type JobsConfig struct {
@@ -109,6 +111,7 @@ func LoadSeed() (*Bundle, error) {
 		{"seed/progression.json", &b.Progression},
 		{"seed/tiers.json", &b.Tiers},
 		{"seed/items.json", &b.Items},
+		{"seed/soldiers.json", &b.Soldiers},
 	} {
 		raw, err := seedFS.ReadFile(f.name)
 		if err != nil {
@@ -171,6 +174,12 @@ func (b *Bundle) build() error {
 		b.itemByID[d.ID] = d
 		key := d.Slot + "/" + d.Tier
 		b.itemsBySlotTier[key] = append(b.itemsBySlotTier[key], d)
+	}
+
+	b.soldierTypeByID = make(map[string]*SoldierType, len(b.Soldiers.Types))
+	for i := range b.Soldiers.Types {
+		t := &b.Soldiers.Types[i]
+		b.soldierTypeByID[t.ID] = t
 	}
 
 	// Milestones must be ascending so the "highest reached" scan is a simple walk.

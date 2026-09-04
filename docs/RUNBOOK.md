@@ -68,3 +68,19 @@ Notes:
 - **Art generation must pass `--model gemini`** — there is no xAI key. The
   vendored fork already defaults to it; `--gemini-model pro` selects Nano Banana
   Pro (13.4¢) over flash for hero references.
+
+## Known blockers (2026-09-04)
+
+- **Google AI Studio key has zero quota.** Every model — `gemini-3-pro-image`,
+  `gemini-3.1-flash-image`, `gemini-2.5-flash-image`, even `gemini-pro-latest` —
+  returns `429 RESOURCE_EXHAUSTED ... free_tier ... limit: 0`. The key is valid
+  (it can list models) but the project behind it cannot generate anything.
+  Fix: enable billing on that Google Cloud project at
+  <https://aistudio.google.com/app/apikey> → the key's project → Billing.
+  The art pipeline is otherwise built and verified and needs no other change.
+- **Neon project is still in `aws-eu-west-2` (London).** The plan calls for a new
+  project in `aws-eu-central-1` (Frankfurt) to sit next to the Hetzner VPS. Neon
+  regions are immutable after creation, so this must be a new project. The
+  database is still empty, so the only cost is regenerating `.env`.
+- **No VPS yet.** `infra/` is ready (Dockerfile, compose, Caddy); it needs a
+  Hetzner server and an `sslip.io` name pointed at its IP.

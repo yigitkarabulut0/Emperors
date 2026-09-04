@@ -1,0 +1,39 @@
+name: emperors
+
+services:
+  api:
+    image: ghcr.io/yigitkarabulut0/emperors-api:${EMPERORS_VERSION:-latest}
+    restart: unless-stopped
+    env_file: [./secrets.env]
+    environment:
+      EMPERORS_ENV: prod
+      EMPERORS_ADDR: ":8080"
+    # No ports: mapping. Only Caddy may reach the API, and it does so over the
+    # internal network by service name.
+    networks: [edge]
+    healthcheck:
+      # distroless has no shell and no curl, so the binary checks itself.
+      test: ["CMD", "/api", "-healthcheck"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 40s
+
+  caddy:
+    image: caddy:2.11-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data     # certificates — losing this re-issues and can hit rate limits
+      - caddy_config:/config
+    networks: [edge]
+    depends_on: [api]
+
+networks:
+  edge:
+
+volumes:
+  caddy_data:
+  caddy_config:

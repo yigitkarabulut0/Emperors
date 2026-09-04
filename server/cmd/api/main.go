@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -23,6 +24,14 @@ import (
 var version = "dev"
 
 func main() {
+	// distroless carries no shell and no curl, so the container healthcheck runs
+	// this binary against itself rather than shelling out.
+	healthcheck := flag.Bool("healthcheck", false, "probe the local /healthz endpoint and exit")
+	flag.Parse()
+	if *healthcheck {
+		os.Exit(probeSelf())
+	}
+
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "fatal: %v\n", err)
 		os.Exit(1)

@@ -1,0 +1,31 @@
+# Caddy terminates TLS and issues certificates automatically.
+#
+# EMPERORS_DOMAIN is an sslip.io name during development (e.g.
+# 203-0-113-7.sslip.io, which resolves to 203.0.113.7 with no DNS setup) and a
+# real domain before TestFlight. iOS App Transport Security rejects self-signed
+# certificates, so a real cert is not optional even in development.
+
+{
+	email {$CADDY_EMAIL}
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+{$EMPERORS_DOMAIN} {
+	encode zstd gzip
+
+	# Never cache game responses; every number is authoritative and time-sensitive.
+	header {
+		-Server
+		Cache-Control "no-store"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+
+	reverse_proxy api:8080 {
+		health_uri /readyz
+		health_interval 10s
+		health_timeout 3s
+	}
+}

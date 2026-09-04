@@ -93,3 +93,109 @@ for j in (jobs[0], jobs[2], jobs[9], jobs[14]):
     print(f"  {j['order']:>2}. {j['name']:<26} lv{j['unlock_level']:<3} {j['energy_cost']:>3}e "
           f"-> {j['base_gold']:>5}g {j['base_xp']:>4}xp  (gpe {j['base_gold']/j['energy_cost']:.2f})")
 print("progression.json:", LEVEL_CAP, "levels, total xp to cap =", f"{cum:,}")
+
+
+# --- items (economy.md 4.2, 4.3, 5.1-5.5) -------------------------------------
+TIER_IDS = ["common", "uncommon", "rare", "epic", "legendary", "mystic", "special"]
+TIER_MULT = [1.00, 1.35, 1.85, 2.55, 3.60, 5.20, 7.60]
+TIER_PRICE_MULT = [1.0, 1.4, 2.2, 3.6, 6.0, 10.0, 17.0]
+
+SLOT_BASE = {
+    #            atk def spd
+    "weapon": {"attack": 10, "defense": 2,  "speed": 0},
+    "armor":  {"attack": 2,  "defense": 10, "speed": 0},
+    "horse":  {"attack": 5,  "defense": 5,  "speed": 6},
+}
+
+# Three designs per (type, tier). Names are per-tier so a legendary reads as
+# legendary before the player looks at the numbers.
+NAMES = {
+    "weapon": [
+        ["Rusted Blade", "Farmhand's Cleaver", "Notched Shortsword"],
+        ["Guard's Arming Sword", "Tempered Falchion", "Oathkeeper's Edge"],
+        ["Riverbend Longsword", "Silvered Broadsword", "Warden's Claymore"],
+        ["Duskfang", "Bastion Greatsword", "Kingsguard Sabre"],
+        ["Ashfang, Blade of the Ninth Siege", "Dawnbreaker", "The Gilded Verdict"],
+        ["Starfall Edge", "Wyrmtongue", "The Sundering"],
+        ["Crown of Swords", "The Last Word", "Emperor's Mercy"],
+    ],
+    "armor": [
+        ["Padded Gambeson", "Patched Leathers", "Militia Jerkin"],
+        ["Studded Brigandine", "Guard's Hauberk", "Ironweave Coat"],
+        ["Chainmail of the Watch", "Riverbend Cuirass", "Warden's Plate"],
+        ["Duskplate Harness", "Bastion Armour", "Kingsguard Mail"],
+        ["Aegis of the Ninth Siege", "Dawnward Plate", "The Gilded Bulwark"],
+        ["Starfall Carapace", "Wyrmscale Harness", "The Unbroken"],
+        ["Crown of Iron", "The Last Wall", "Emperor's Aegis"],
+    ],
+    "horse": [
+        ["Plough Horse", "Swaybacked Mare", "Village Pony"],
+        ["Courser", "Guard's Rouncey", "Trail Palfrey"],
+        ["Riverbend Destrier", "Silvermane", "Warden's Charger"],
+        ["Duskmane Destrier", "Bastion Warhorse", "Kingsguard Steed"],
+        ["Ninth Siege Charger", "Dawnrunner", "The Gilded Stallion"],
+        ["Starfall Courser", "Wyrmborn Steed", "The Tempest"],
+        ["Crown Destrier", "The Last Ride", "Emperor's Own"],
+    ],
+}
+
+item_defs = []
+for slot, tiers in NAMES.items():
+    for ti, names in enumerate(tiers):
+        for n, name in enumerate(names, 1):
+            item_defs.append({
+                "id": f"{slot}_{TIER_IDS[ti]}_{n:02d}",
+                "slot": slot,
+                "tier": TIER_IDS[ti],
+                "name": name,
+                # Art is addressed by slot + design index; the tier is applied by
+                # recolouring the line work, so one PNG serves all seven tiers.
+                "art": f"{slot}_{n:02d}",
+            })
+
+emit("items.json", json.dumps({
+    "_comment": "Items. stat = round(base_slot_stat * tier_mult * (1 + 0.09*ilvl) * quality * masterwork). "
+                "One quality roll per item applies to every stat, so items stay sortable and comparable "
+                "on a phone; per-stat rolls would produce unsortable stat-soup. "
+                "shop_price = round(1.6 * item_power^1.35 * tier_price_mult), item_power = atk + def + 0.5*spd. "
+                "sell_price = floor(0.25 * UNDISCOUNTED shop price), so every buy-sell round trip loses at "
+                "least 75% and arbitrage is impossible even with a maxed shop discount.",
+    # Basis points, not floats: stat maths must be integer-only so the server,
+    # the admin simulator and the client all produce the identical number.
+    # Python's round() is banker's rounding and Go's is half-away-from-zero, so
+    # a float pipeline would disagree by one on exact .5 cases.
+    "tier_mult_bp": {TIER_IDS[i]: int(round(TIER_MULT[i] * 10000)) for i in range(7)},
+    "tier_price_mult_bp": {TIER_IDS[i]: int(round(TIER_PRICE_MULT[i] * 10000)) for i in range(7)},
+    "slot_base": SLOT_BASE,
+    "level_mult_per_ilvl_bp": 900,
+    "quality": {"min_pct": 85, "max_pct": 115},
+    "masterwork": {"chance_bp": 300, "mult_pct": 115},
+    "price": {"coef": 1.6, "exponent": 1.35, "sell_ratio_bp": 2500},
+    "speed_power_weight_bp": 5000,
+    "shop": {
+        "slots": 6,
+        "window_seconds": 300,
+        "base_weights": {"common": 100.0, "uncommon": 45.0, "rare": 16.0, "epic": 5.0,
+                         "legendary": 1.2, "mystic": 0.20, "special": 0.02},
+        "luck_coef": 0.014,
+    },
+    "definitions": item_defs,
+}, indent=2) + "\n")
+
+
+def stat(slot, tier_ix, ilvl, key):
+    """Mirrors the Go implementation exactly: integer maths, half-up rounding."""
+    base = SLOT_BASE[slot][key]
+    num = base * int(round(TIER_MULT[tier_ix] * 10000)) * (10000 + 900 * ilvl)
+    den = 10000 * 10000
+    return (num + den // 2) // den
+
+
+print(f"items.json     : {len(item_defs)} definitions ({len(NAMES)} slots x 7 tiers x 3 designs)")
+for slot in ("weapon", "horse"):
+    for ti in (0, 4, 6):
+        a, d, s = (stat(slot, ti, 30, k) for k in ("attack", "defense", "speed"))
+        power = a + d + 0.5 * s
+        price = round(1.6 * power ** 1.35 * TIER_PRICE_MULT[ti])
+        print(f"  {slot:<7} {TIER_IDS[ti]:<10} ilvl30  atk {a:>4} def {d:>4} spd {s:>4}"
+              f"   buy {price:>7,}  sell {int(0.25 * price):>6,}")

@@ -85,7 +85,10 @@ func run() error {
 		return err
 	}
 
-	svc := service.Deps{Pool: pool, Config: bundle, Signer: signer, Now: time.Now}
+	svc := service.Deps{
+		Pool: pool, Config: bundle, Signer: signer, Now: time.Now,
+		ShopSecret: cfg.ShopSecret,
+	}
 
 	ready := &readiness{}
 	ready.set(true)

@@ -26,11 +26,16 @@ type Bundle struct {
 	Jobs        JobsConfig        `json:"jobs"`
 	Progression ProgressionConfig `json:"progression"`
 	Tiers       TiersConfig       `json:"tiers"`
+	Items       ItemsConfig       `json:"items"`
 
 	// Derived lookups, built once at load so hot paths never scan a slice.
-	jobByID   map[string]*Job
-	jobsAsc   []*Job // by unlock level then order
-	levelByIx []Level
+	jobByID         map[string]*Job
+	jobsAsc         []*Job // by unlock level then order
+	levelByIx       []Level
+	itemByID        map[string]*ItemDef
+	itemsBySlotTier map[string][]*ItemDef
+	tierByID        map[string]*Tier
+	tierIDs         []string // ascending by rank
 }
 
 type JobsConfig struct {
@@ -103,6 +108,7 @@ func LoadSeed() (*Bundle, error) {
 		{"seed/jobs.json", &b.Jobs},
 		{"seed/progression.json", &b.Progression},
 		{"seed/tiers.json", &b.Tiers},
+		{"seed/items.json", &b.Items},
 	} {
 		raw, err := seedFS.ReadFile(f.name)
 		if err != nil {
@@ -144,6 +150,27 @@ func (b *Bundle) build() error {
 		if l.Level >= 1 && l.Level <= b.Progression.LevelCap {
 			b.levelByIx[l.Level] = l
 		}
+	}
+
+	b.tierByID = make(map[string]*Tier, len(b.Tiers.Tiers))
+	b.tierIDs = b.tierIDs[:0]
+	sort.Slice(b.Tiers.Tiers, func(i, k int) bool { return b.Tiers.Tiers[i].Rank < b.Tiers.Tiers[k].Rank })
+	for i := range b.Tiers.Tiers {
+		t := &b.Tiers.Tiers[i]
+		b.tierByID[t.ID] = t
+		b.tierIDs = append(b.tierIDs, t.ID)
+	}
+
+	b.itemByID = make(map[string]*ItemDef, len(b.Items.Definitions))
+	b.itemsBySlotTier = make(map[string][]*ItemDef)
+	for i := range b.Items.Definitions {
+		d := &b.Items.Definitions[i]
+		if _, dup := b.itemByID[d.ID]; dup {
+			return fmt.Errorf("duplicate item id %q", d.ID)
+		}
+		b.itemByID[d.ID] = d
+		key := d.Slot + "/" + d.Tier
+		b.itemsBySlotTier[key] = append(b.itemsBySlotTier[key], d)
 	}
 
 	// Milestones must be ascending so the "highest reached" scan is a simple walk.

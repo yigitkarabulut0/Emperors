@@ -1,0 +1,510 @@
+{
+  "_comment": "Items. stat = round(base_slot_stat * tier_mult * (1 + 0.09*ilvl) * quality * masterwork). One quality roll per item applies to every stat, so items stay sortable and comparable on a phone; per-stat rolls would produce unsortable stat-soup. shop_price = round(1.6 * item_power^1.35 * tier_price_mult), item_power = atk + def + 0.5*spd. sell_price = floor(0.25 * UNDISCOUNTED shop price), so every buy-sell round trip loses at least 75% and arbitrage is impossible even with a maxed shop discount.",
+  "tier_mult_bp": {
+    "common": 10000,
+    "uncommon": 13500,
+    "rare": 18500,
+    "epic": 25500,
+    "legendary": 36000,
+    "mystic": 52000,
+    "special": 76000
+  },
+  "tier_price_mult_bp": {
+    "common": 10000,
+    "uncommon": 14000,
+    "rare": 22000,
+    "epic": 36000,
+    "legendary": 60000,
+    "mystic": 100000,
+    "special": 170000
+  },
+  "slot_base": {
+    "weapon": {
+      "attack": 10,
+      "defense": 2,
+      "speed": 0
+    },
+    "armor": {
+      "attack": 2,
+      "defense": 10,
+      "speed": 0
+    },
+    "horse": {
+      "attack": 5,
+      "defense": 5,
+      "speed": 6
+    }
+  },
+  "level_mult_per_ilvl_bp": 900,
+  "quality": {
+    "min_pct": 85,
+    "max_pct": 115
+  },
+  "masterwork": {
+    "chance_bp": 300,
+    "mult_pct": 115
+  },
+  "price": {
+    "coef": 1.6,
+    "exponent": 1.35,
+    "sell_ratio_bp": 2500
+  },
+  "speed_power_weight_bp": 5000,
+  "shop": {
+    "slots": 6,
+    "window_seconds": 300,
+    "base_weights": {
+      "common": 100.0,
+      "uncommon": 45.0,
+      "rare": 16.0,
+      "epic": 5.0,
+      "legendary": 1.2,
+      "mystic": 0.2,
+      "special": 0.02
+    },
+    "luck_coef": 0.014
+  },
+  "definitions": [
+    {
+      "id": "weapon_common_01",
+      "slot": "weapon",
+      "tier": "common",
+      "name": "Rusted Blade",
+      "art": "weapon_01"
+    },
+    {
+      "id": "weapon_common_02",
+      "slot": "weapon",
+      "tier": "common",
+      "name": "Farmhand's Cleaver",
+      "art": "weapon_02"
+    },
+    {
+      "id": "weapon_common_03",
+      "slot": "weapon",
+      "tier": "common",
+      "name": "Notched Shortsword",
+      "art": "weapon_03"
+    },
+    {
+      "id": "weapon_uncommon_01",
+      "slot": "weapon",
+      "tier": "uncommon",
+      "name": "Guard's Arming Sword",
+      "art": "weapon_01"
+    },
+    {
+      "id": "weapon_uncommon_02",
+      "slot": "weapon",
+      "tier": "uncommon",
+      "name": "Tempered Falchion",
+      "art": "weapon_02"
+    },
+    {
+      "id": "weapon_uncommon_03",
+      "slot": "weapon",
+      "tier": "uncommon",
+      "name": "Oathkeeper's Edge",
+      "art": "weapon_03"
+    },
+    {
+      "id": "weapon_rare_01",
+      "slot": "weapon",
+      "tier": "rare",
+      "name": "Riverbend Longsword",
+      "art": "weapon_01"
+    },
+    {
+      "id": "weapon_rare_02",
+      "slot": "weapon",
+      "tier": "rare",
+      "name": "Silvered Broadsword",
+      "art": "weapon_02"
+    },
+    {
+      "id": "weapon_rare_03",
+      "slot": "weapon",
+      "tier": "rare",
+      "name": "Warden's Claymore",
+      "art": "weapon_03"
+    },
+    {
+      "id": "weapon_epic_01",
+      "slot": "weapon",
+      "tier": "epic",
+      "name": "Duskfang",
+      "art": "weapon_01"
+    },
+    {
+      "id": "weapon_epic_02",
+      "slot": "weapon",
+      "tier": "epic",
+      "name": "Bastion Greatsword",
+      "art": "weapon_02"
+    },
+    {
+      "id": "weapon_epic_03",
+      "slot": "weapon",
+      "tier": "epic",
+      "name": "Kingsguard Sabre",
+      "art": "weapon_03"
+    },
+    {
+      "id": "weapon_legendary_01",
+      "slot": "weapon",
+      "tier": "legendary",
+      "name": "Ashfang, Blade of the Ninth Siege",
+      "art": "weapon_01"
+    },
+    {
+      "id": "weapon_legendary_02",
+      "slot": "weapon",
+      "tier": "legendary",
+      "name": "Dawnbreaker",
+      "art": "weapon_02"
+    },
+    {
+      "id": "weapon_legendary_03",
+      "slot": "weapon",
+      "tier": "legendary",
+      "name": "The Gilded Verdict",
+      "art": "weapon_03"
+    },
+    {
+      "id": "weapon_mystic_01",
+      "slot": "weapon",
+      "tier": "mystic",
+      "name": "Starfall Edge",
+      "art": "weapon_01"
+    },
+    {
+      "id": "weapon_mystic_02",
+      "slot": "weapon",
+      "tier": "mystic",
+      "name": "Wyrmtongue",
+      "art": "weapon_02"
+    },
+    {
+      "id": "weapon_mystic_03",
+      "slot": "weapon",
+      "tier": "mystic",
+      "name": "The Sundering",
+      "art": "weapon_03"
+    },
+    {
+      "id": "weapon_special_01",
+      "slot": "weapon",
+      "tier": "special",
+      "name": "Crown of Swords",
+      "art": "weapon_01"
+    },
+    {
+      "id": "weapon_special_02",
+      "slot": "weapon",
+      "tier": "special",
+      "name": "The Last Word",
+      "art": "weapon_02"
+    },
+    {
+      "id": "weapon_special_03",
+      "slot": "weapon",
+      "tier": "special",
+      "name": "Emperor's Mercy",
+      "art": "weapon_03"
+    },
+    {
+      "id": "armor_common_01",
+      "slot": "armor",
+      "tier": "common",
+      "name": "Padded Gambeson",
+      "art": "armor_01"
+    },
+    {
+      "id": "armor_common_02",
+      "slot": "armor",
+      "tier": "common",
+      "name": "Patched Leathers",
+      "art": "armor_02"
+    },
+    {
+      "id": "armor_common_03",
+      "slot": "armor",
+      "tier": "common",
+      "name": "Militia Jerkin",
+      "art": "armor_03"
+    },
+    {
+      "id": "armor_uncommon_01",
+      "slot": "armor",
+      "tier": "uncommon",
+      "name": "Studded Brigandine",
+      "art": "armor_01"
+    },
+    {
+      "id": "armor_uncommon_02",
+      "slot": "armor",
+      "tier": "uncommon",
+      "name": "Guard's Hauberk",
+      "art": "armor_02"
+    },
+    {
+      "id": "armor_uncommon_03",
+      "slot": "armor",
+      "tier": "uncommon",
+      "name": "Ironweave Coat",
+      "art": "armor_03"
+    },
+    {
+      "id": "armor_rare_01",
+      "slot": "armor",
+      "tier": "rare",
+      "name": "Chainmail of the Watch",
+      "art": "armor_01"
+    },
+    {
+      "id": "armor_rare_02",
+      "slot": "armor",
+      "tier": "rare",
+      "name": "Riverbend Cuirass",
+      "art": "armor_02"
+    },
+    {
+      "id": "armor_rare_03",
+      "slot": "armor",
+      "tier": "rare",
+      "name": "Warden's Plate",
+      "art": "armor_03"
+    },
+    {
+      "id": "armor_epic_01",
+      "slot": "armor",
+      "tier": "epic",
+      "name": "Duskplate Harness",
+      "art": "armor_01"
+    },
+    {
+      "id": "armor_epic_02",
+      "slot": "armor",
+      "tier": "epic",
+      "name": "Bastion Armour",
+      "art": "armor_02"
+    },
+    {
+      "id": "armor_epic_03",
+      "slot": "armor",
+      "tier": "epic",
+      "name": "Kingsguard Mail",
+      "art": "armor_03"
+    },
+    {
+      "id": "armor_legendary_01",
+      "slot": "armor",
+      "tier": "legendary",
+      "name": "Aegis of the Ninth Siege",
+      "art": "armor_01"
+    },
+    {
+      "id": "armor_legendary_02",
+      "slot": "armor",
+      "tier": "legendary",
+      "name": "Dawnward Plate",
+      "art": "armor_02"
+    },
+    {
+      "id": "armor_legendary_03",
+      "slot": "armor",
+      "tier": "legendary",
+      "name": "The Gilded Bulwark",
+      "art": "armor_03"
+    },
+    {
+      "id": "armor_mystic_01",
+      "slot": "armor",
+      "tier": "mystic",
+      "name": "Starfall Carapace",
+      "art": "armor_01"
+    },
+    {
+      "id": "armor_mystic_02",
+      "slot": "armor",
+      "tier": "mystic",
+      "name": "Wyrmscale Harness",
+      "art": "armor_02"
+    },
+    {
+      "id": "armor_mystic_03",
+      "slot": "armor",
+      "tier": "mystic",
+      "name": "The Unbroken",
+      "art": "armor_03"
+    },
+    {
+      "id": "armor_special_01",
+      "slot": "armor",
+      "tier": "special",
+      "name": "Crown of Iron",
+      "art": "armor_01"
+    },
+    {
+      "id": "armor_special_02",
+      "slot": "armor",
+      "tier": "special",
+      "name": "The Last Wall",
+      "art": "armor_02"
+    },
+    {
+      "id": "armor_special_03",
+      "slot": "armor",
+      "tier": "special",
+      "name": "Emperor's Aegis",
+      "art": "armor_03"
+    },
+    {
+      "id": "horse_common_01",
+      "slot": "horse",
+      "tier": "common",
+      "name": "Plough Horse",
+      "art": "horse_01"
+    },
+    {
+      "id": "horse_common_02",
+      "slot": "horse",
+      "tier": "common",
+      "name": "Swaybacked Mare",
+      "art": "horse_02"
+    },
+    {
+      "id": "horse_common_03",
+      "slot": "horse",
+      "tier": "common",
+      "name": "Village Pony",
+      "art": "horse_03"
+    },
+    {
+      "id": "horse_uncommon_01",
+      "slot": "horse",
+      "tier": "uncommon",
+      "name": "Courser",
+      "art": "horse_01"
+    },
+    {
+      "id": "horse_uncommon_02",
+      "slot": "horse",
+      "tier": "uncommon",
+      "name": "Guard's Rouncey",
+      "art": "horse_02"
+    },
+    {
+      "id": "horse_uncommon_03",
+      "slot": "horse",
+      "tier": "uncommon",
+      "name": "Trail Palfrey",
+      "art": "horse_03"
+    },
+    {
+      "id": "horse_rare_01",
+      "slot": "horse",
+      "tier": "rare",
+      "name": "Riverbend Destrier",
+      "art": "horse_01"
+    },
+    {
+      "id": "horse_rare_02",
+      "slot": "horse",
+      "tier": "rare",
+      "name": "Silvermane",
+      "art": "horse_02"
+    },
+    {
+      "id": "horse_rare_03",
+      "slot": "horse",
+      "tier": "rare",
+      "name": "Warden's Charger",
+      "art": "horse_03"
+    },
+    {
+      "id": "horse_epic_01",
+      "slot": "horse",
+      "tier": "epic",
+      "name": "Duskmane Destrier",
+      "art": "horse_01"
+    },
+    {
+      "id": "horse_epic_02",
+      "slot": "horse",
+      "tier": "epic",
+      "name": "Bastion Warhorse",
+      "art": "horse_02"
+    },
+    {
+      "id": "horse_epic_03",
+      "slot": "horse",
+      "tier": "epic",
+      "name": "Kingsguard Steed",
+      "art": "horse_03"
+    },
+    {
+      "id": "horse_legendary_01",
+      "slot": "horse",
+      "tier": "legendary",
+      "name": "Ninth Siege Charger",
+      "art": "horse_01"
+    },
+    {
+      "id": "horse_legendary_02",
+      "slot": "horse",
+      "tier": "legendary",
+      "name": "Dawnrunner",
+      "art": "horse_02"
+    },
+    {
+      "id": "horse_legendary_03",
+      "slot": "horse",
+      "tier": "legendary",
+      "name": "The Gilded Stallion",
+      "art": "horse_03"
+    },
+    {
+      "id": "horse_mystic_01",
+      "slot": "horse",
+      "tier": "mystic",
+      "name": "Starfall Courser",
+      "art": "horse_01"
+    },
+    {
+      "id": "horse_mystic_02",
+      "slot": "horse",
+      "tier": "mystic",
+      "name": "Wyrmborn Steed",
+      "art": "horse_02"
+    },
+    {
+      "id": "horse_mystic_03",
+      "slot": "horse",
+      "tier": "mystic",
+      "name": "The Tempest",
+      "art": "horse_03"
+    },
+    {
+      "id": "horse_special_01",
+      "slot": "horse",
+      "tier": "special",
+      "name": "Crown Destrier",
+      "art": "horse_01"
+    },
+    {
+      "id": "horse_special_02",
+      "slot": "horse",
+      "tier": "special",
+      "name": "The Last Ride",
+      "art": "horse_02"
+    },
+    {
+      "id": "horse_special_03",
+      "slot": "horse",
+      "tier": "special",
+      "name": "Emperor's Own",
+      "art": "horse_03"
+    }
+  ]
+}

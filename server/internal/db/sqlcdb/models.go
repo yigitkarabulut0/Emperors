@@ -10,6 +10,16 @@ import (
 	"github.com/google/uuid"
 )
 
+type AppGoldLedger struct {
+	ID           int64
+	PlayerID     uuid.UUID
+	Delta        int64
+	BalanceAfter int64
+	Reason       string
+	RefID        *string
+	CreatedAt    time.Time
+}
+
 type AppIdentity struct {
 	ID         uuid.UUID
 	PlayerID   uuid.UUID
@@ -43,6 +53,25 @@ type AppPlayer struct {
 	LastSeenAt         time.Time
 }
 
+type AppPlayerItem struct {
+	ID                  uuid.UUID
+	PlayerID            uuid.UUID
+	DefID               string
+	Slot                string
+	Tier                string
+	Ilvl                int32
+	QualityPct          int32
+	Masterwork          bool
+	Attack              int64
+	Defense             int64
+	Speed               int64
+	EquippedOnHero      bool
+	EquippedSoldierID   *uuid.UUID
+	AcquiredAt          time.Time
+	AcquiredFrom        string
+	RolledConfigVersion int32
+}
+
 type AppPlayerJobProgress struct {
 	PlayerID uuid.UUID
 	JobID    string
@@ -66,4 +95,11 @@ type AppSession struct {
 	RevokedAt     *time.Time
 	RevokedReason *string
 	UserAgent     *string
+}
+
+type AppShopState struct {
+	PlayerID      uuid.UUID
+	WindowID      int64
+	PurchasedMask int32
+	RerollIndex   int32
 }

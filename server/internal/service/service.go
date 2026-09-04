@@ -36,4 +36,8 @@ type Deps struct {
 	Config *gameconfig.Bundle
 	Signer *auth.Signer
 	Now    Clock
+
+	// ShopSecret seeds the deterministic shop roll. Never leaves the server:
+	// anyone holding it could predict which window contains a legendary.
+	ShopSecret []byte
 }

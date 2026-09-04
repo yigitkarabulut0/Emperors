@@ -37,6 +37,12 @@ type Config struct {
 	// TokenSeed is the 32-byte Ed25519 seed for access tokens. It must be stable:
 	// changing it invalidates every access token and logs everyone out.
 	TokenSeed []byte
+
+	// ShopSecret seeds the deterministic shop roll. It must be stable and secret:
+	// stable because changing it reshuffles every player's current offers
+	// mid-window, and secret because anyone who knows it can predict which
+	// five-minute window will contain a legendary.
+	ShopSecret []byte
 }
 
 func Load() (*Config, error) {
@@ -104,6 +110,26 @@ func (c *Config) validate() error {
 		}
 	case len(c.TokenSeed) != 32:
 		problems = append(problems, fmt.Sprintf("EMPERORS_TOKEN_SEED must decode to 32 bytes, got %d", len(c.TokenSeed)))
+	}
+
+	if seed := os.Getenv("EMPERORS_SHOP_SECRET"); seed != "" {
+		raw, decErr := base64.StdEncoding.DecodeString(seed)
+		if decErr != nil {
+			problems = append(problems, "EMPERORS_SHOP_SECRET must be base64")
+		} else {
+			c.ShopSecret = raw
+		}
+	}
+	switch {
+	case len(c.ShopSecret) == 0 && c.Env == "prod":
+		problems = append(problems, "EMPERORS_SHOP_SECRET is required in prod (base64 of 32 random bytes)")
+	case len(c.ShopSecret) == 0:
+		c.ShopSecret = make([]byte, 32)
+		if _, err := rand.Read(c.ShopSecret); err != nil {
+			problems = append(problems, "could not generate a development shop secret")
+		}
+	case len(c.ShopSecret) < 16:
+		problems = append(problems, "EMPERORS_SHOP_SECRET must decode to at least 16 bytes")
 	}
 
 	if c.MinConns > c.MaxConns {

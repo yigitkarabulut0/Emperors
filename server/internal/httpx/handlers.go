@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/yigitkarabulut0/emperors/server/internal/auth"
 	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
@@ -53,6 +55,16 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusForbidden, "job_locked", "that job is not unlocked yet")
 	case errors.Is(err, service.ErrNotEnoughEnergy):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_energy", "not enough energy")
+	case errors.Is(err, service.ErrAlreadyPurchased):
+		WriteProblem(w, r, http.StatusConflict, "already_purchased", "someone already took that one")
+	case errors.Is(err, service.ErrNotEnoughGold):
+		WriteProblem(w, r, http.StatusConflict, "not_enough_gold", "not enough gold")
+	case errors.Is(err, service.ErrInventoryFull):
+		WriteProblem(w, r, http.StatusConflict, "inventory_full", "your armory is full — sell something first")
+	case errors.Is(err, service.ErrShopStale):
+		WriteProblem(w, r, http.StatusConflict, "shop_stale", "the market has restocked")
+	case errors.Is(err, service.ErrItemEquipped):
+		WriteProblem(w, r, http.StatusConflict, "item_equipped", "unequip it first")
 	case errors.Is(err, service.ErrStaleAction):
 		// 409, not 400: the request was well-formed, the client is just behind.
 		// It should re-read state rather than retry blindly.
@@ -166,11 +178,125 @@ func (a *api) collect(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, res)
 }
 
+// --- shop and inventory ---
+
+func (a *api) shop(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.svc.GetShop(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type buyReq struct {
+	Slot      int   `json:"slot"`
+	ActionSeq int64 `json:"action_seq"`
+}
+
+func (a *api) buy(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req buyReq
+	if !decode(w, r, &req) {
+		return
+	}
+	res, err := a.svc.Buy(r.Context(), pid, req.Slot, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
+func (a *api) inventory(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.svc.GetInventory(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type itemReq struct {
+	ItemID    string `json:"item_id"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) equip(w http.ResponseWriter, r *http.Request)   { a.equipSet(w, r, true) }
+func (a *api) unequip(w http.ResponseWriter, r *http.Request) { a.equipSet(w, r, false) }
+
+func (a *api) equipSet(w http.ResponseWriter, r *http.Request, on bool) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req itemReq
+	if !decode(w, r, &req) {
+		return
+	}
+	itemID, err := uuid.Parse(req.ItemID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
+		return
+	}
+	var v *service.InventoryView
+	if on {
+		v, err = a.svc.Equip(r.Context(), pid, itemID)
+	} else {
+		v, err = a.svc.Unequip(r.Context(), pid, itemID)
+	}
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *api) sell(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req itemReq
+	if !decode(w, r, &req) {
+		return
+	}
+	itemID, err := uuid.Parse(req.ItemID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
+		return
+	}
+	res, err := a.svc.Sell(r.Context(), pid, itemID, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
 func isKnownServiceError(err error) bool {
 	for _, e := range []error{
 		service.ErrUsernameTaken, service.ErrBadCredentials, service.ErrPlayerBanned,
 		service.ErrSessionInvalid, service.ErrNotFound, service.ErrJobLocked,
 		service.ErrNotEnoughEnergy, service.ErrStaleAction, auth.ErrPasswordPolicy,
+		service.ErrAlreadyPurchased, service.ErrNotEnoughGold, service.ErrInventoryFull,
+		service.ErrShopStale, service.ErrItemEquipped,
 	} {
 		if errors.Is(err, e) {
 			return true

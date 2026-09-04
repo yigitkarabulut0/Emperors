@@ -1,0 +1,78 @@
+package httpx
+
+import (
+	"log/slog"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+)
+
+// Deps is what the router needs from the rest of the application. Keeping it
+// an interface set (rather than concrete services) is what lets the router be
+// tested without a database.
+type Deps struct {
+	Log     *slog.Logger
+	Health  HealthChecker
+	Version string
+}
+
+// HealthChecker reports whether dependencies are reachable.
+type HealthChecker interface {
+	// Ping verifies the database answers. Used by /readyz.
+	Ping(r *http.Request) error
+	// Motto returns a value read from Postgres. This exists so M0 can prove the
+	// whole pipe — phone -> TLS -> Go -> Neon -> back — with one screen.
+	Motto(r *http.Request) (string, string, error)
+}
+
+// NewRouter wires the middleware stack and routes.
+//
+// Four middleware profiles, which is precisely why this is chi and not the
+// stdlib mux: /healthz gets nothing, /v1 gets the full game stack, /admin will
+// get its own, and only chi exposes RoutePattern() for low-cardinality logging.
+func NewRouter(d Deps) http.Handler {
+	r := chi.NewRouter()
+
+	r.Use(RequestID)
+	r.Use(Recover(d.Log))
+	r.Use(Logger(d.Log))
+
+	// Liveness: is the process up? Never touches the database — a DB blip must
+	// not get the container killed.
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "version": d.Version})
+	})
+
+	// Readiness: should this instance receive traffic? Does touch the database.
+	r.Get("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if err := d.Health.Ping(r); err != nil {
+			d.Log.Warn("readiness failed", "err", err)
+			WriteProblem(w, r, http.StatusServiceUnavailable, CodeUnavailable, "database unreachable")
+			return
+		}
+		WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
+	})
+
+	r.Route("/v1", func(r chi.Router) {
+		r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+			motto, now, err := d.Health.Motto(r)
+			if err != nil {
+				d.Log.Error("ping query", "err", err)
+				WriteProblem(w, r, http.StatusServiceUnavailable, CodeUnavailable, "database unreachable")
+				return
+			}
+			WriteJSON(w, http.StatusOK, map[string]any{
+				"pong":    true,
+				"motto":   motto,
+				"db_time": now,
+				"version": d.Version,
+			})
+		})
+	})
+
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		WriteProblem(w, r, http.StatusNotFound, CodeNotFound, "no such endpoint")
+	})
+
+	return r
+}

@@ -1,0 +1,45 @@
+# --- secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!infra/*.pub
+infra/secrets.env
+
+# --- Godot ---
+client/.godot/
+client/android/
+client/ios/
+client/build/
+client/export/
+*.translation
+
+# --- Go ---
+server/bin/
+server/tmp/
+*.test
+coverage.out
+
+# --- Node ---
+node_modules/
+admin/.next/
+admin/out/
+admin/.turbo/
+*.tsbuildinfo
+
+# --- Python (art pipeline) ---
+art/.venv/
+__pycache__/
+*.pyc
+
+# --- art workspace: generation intermediates are NOT shipped, but ARE versioned ---
+# (nothing ignored here on purpose: paid art must be committed.)
+# Only true scratch is ignored:
+art/**/_qa/
+art/**/*.tmp.png
+
+# --- macOS / editors ---
+.DS_Store
+.vscode/
+.idea/

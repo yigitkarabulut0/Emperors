@@ -1,0 +1,6 @@
+google-genai
+requests
+numpy
+pillow
+rembg
+onnxruntime

@@ -22,8 +22,13 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+; Order matters: each autoload's _ready() runs as it is added, so a singleton
+; may only reference ones listed above it. Session connects to Api at _ready,
+; and GameState uses both.
 Env="*res://scripts/autoload/env.gd"
 Api="*res://scripts/autoload/api.gd"
+Session="*res://scripts/autoload/session.gd"
+GameState="*res://scripts/autoload/game_state.gd"
 Proof="*res://scripts/dev/proof.gd"
 
 [display]

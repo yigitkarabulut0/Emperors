@@ -1,10 +1,6 @@
 extends Control
-## M0 proof screen.
-##
-## If this shows the motto, then the whole pipe works: Godot -> HTTP -> Go ->
-## Neon pooled endpoint -> migration chain -> back. That is milestone M0's
-## definition of done, and it is worth having a screen dedicated to it because
-## every later failure is easier to localise when this one still passes.
+## Decides where the player lands: straight into the game if a session survives,
+## otherwise the sign-in screen.
 
 @onready var _status: Label = %Status
 @onready var _motto: Label = %Motto
@@ -12,31 +8,105 @@ extends Control
 @onready var _retry: Button = %Retry
 
 func _ready() -> void:
-	_retry.pressed.connect(_check)
-	_check()
+	_retry.pressed.connect(_start)
+	_start()
 
-func _check() -> void:
-	_retry.disabled = true
+
+func _start() -> void:
+	_retry.visible = false
 	_status.text = "Reaching the realm…"
 	_status.modulate = Color(0.85, 0.80, 0.65)
 	_motto.text = ""
 	_detail.text = Env.api_base_url
 
-	var res: Api.Response = await Api.get_json("/v1/ping")
-
-	_retry.disabled = false
+	var res: Api.Response = await Api.get_json("/v1/ping", false)
 	if not res.ok:
 		print("[boot] FAILED: ", res.error)
 		_status.text = "No answer"
 		_status.modulate = Color(0.86, 0.35, 0.30)
 		_motto.text = res.error
+		_retry.visible = true
 		return
 
-	print("[boot] OK motto=", res.data.get("motto", ""), " db_time=", res.data.get("db_time", ""))
-	_status.text = "Connected"
-	_status.modulate = Color(0.45, 0.78, 0.45)
 	_motto.text = str(res.data.get("motto", ""))
-	_detail.text = "server %s · db %s" % [
-		res.data.get("version", "?"),
-		res.data.get("db_time", "?"),
-	]
+
+	if Session.is_signed_in():
+		_status.text = "Restoring your realm…"
+		if await Session.try_refresh():
+			_enter_game()
+			return
+
+	# Dev-only: sign in without touching the UI, so a proof capture (which
+	# disables input) can reach the game itself. Tries login first, then falls
+	# back to register, so re-running is idempotent.
+	var dev := _dev_login_args()
+	if not dev.is_empty():
+		_status.text = "Signing in…"
+		var err := await Session.login(dev[0], dev[1])
+		if err != "":
+			err = await Session.register(dev[0], dev[1])
+		if err == "":
+			_enter_game()
+			return
+		print("[boot] dev login failed: ", err)
+
+	_status.text = ""
+	_enter_auth()
+
+
+func _enter_auth() -> void:
+	var auth := preload("res://scenes/auth/auth.tscn").instantiate()
+	auth.authenticated.connect(_enter_game)
+	_swap(auth)
+
+
+func _enter_game() -> void:
+	print("[boot] entering game")
+	await GameState.refresh()
+	# Before _swap: that frees this node, and a coroutine cannot outlive it.
+	await _dev_collect()
+	_swap(preload("res://scenes/shell/shell.tscn").instantiate())
+
+
+## Dev-only: performs N collects so a proof capture can show a played state
+## rather than a fresh account. Goes through GameState, so it exercises the real
+## optimistic queue rather than a shortcut.
+func _dev_collect() -> void:
+	var n := 0
+	var args := OS.get_cmdline_user_args()
+	for i in args.size():
+		if args[i] == "--dev-collect" and i + 1 < args.size():
+			n = int(args[i + 1])
+	if n <= 0 or OS.has_feature("release"):
+		return
+
+	var jobs := GameState.jobs()
+	for i in n:
+		var best := {}
+		for j in jobs:
+			if bool(j.get("unlocked", false)) and GameState.display_energy() >= int(j.get("energy_cost", 0)):
+				best = j
+		if best.is_empty() or not GameState.collect(best):
+			break
+		await get_tree().create_timer(0.05).timeout
+		jobs = GameState.jobs()
+	print("[boot] dev-collect done: gold=", GameState.display_gold(),
+		" energy=", GameState.display_energy(), " pending=", GameState.pending_count())
+
+
+func _swap(node: Node) -> void:
+	get_tree().root.add_child(node)
+	get_tree().current_scene = node
+	queue_free()
+
+
+## Reads `--dev-login <username> <password>` from the command line.
+## Release builds simply never receive these arguments.
+func _dev_login_args() -> Array:
+	if OS.has_feature("release"):
+		return []
+	var args := OS.get_cmdline_user_args()
+	for i in args.size():
+		if args[i] == "--dev-login" and i + 2 < args.size():
+			return [args[i + 1], args[i + 2]]
+	return []

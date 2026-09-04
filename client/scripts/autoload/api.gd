@@ -1,71 +1,118 @@
 extends Node
-## Minimal HTTP client for milestone M0.
+## HTTP client.
 ##
-## Deliberately small: it proves the transport works. The pooled, cancellable,
-## token-refreshing transport described in docs/design/client.md lands in M1,
-## once there is an endpoint worth cancelling.
+## Godot's HTTPRequest is a Node and handles one request at a time, so this pools
+## a small number of them rather than creating one per call. It also does NOT
+## reuse connections, so every call pays a TLS handshake — acceptable at the
+## rate this game talks to the server, and the reason the client asks for one
+## snapshot rather than a dozen resources.
 ##
-## Note for later: Godot's HTTPRequest does NOT reuse connections, so every call
-## pays a fresh TLS handshake. That is acceptable for a boot ping and not
-## acceptable for a collect loop.
+## A 401 triggers a single refresh attempt and one replay, so a token expiring
+## mid-session is invisible to the player.
 
-signal request_failed(path: String, message: String)
+signal unauthorized  ## refresh failed; the player must sign in again
 
-const TIMEOUT_SECONDS := 10.0
+const TIMEOUT_SECONDS := 15.0
+const POOL_SIZE := 4
 
-## Result of one call. `ok` distinguishes a usable payload from any failure —
-## transport, HTTP status, or malformed JSON — so callers never inspect a
-## half-filled response.
+var _pool: Array[HTTPRequest] = []
+var _busy: Array[HTTPRequest] = []
+var _slot_freed := Signal()
+
 class Response:
 	var ok: bool = false
 	var status: int = 0
 	var data: Dictionary = {}
+	var code: String = ""      ## machine-readable error code from the server
 	var error: String = ""
 
-	func _init(p_ok: bool, p_status: int, p_data: Dictionary, p_error: String) -> void:
-		ok = p_ok
-		status = p_status
-		data = p_data
-		error = p_error
+	func _init(p_ok: bool, p_status: int, p_data: Dictionary, p_code: String, p_error: String) -> void:
+		ok = p_ok; status = p_status; data = p_data; code = p_code; error = p_error
 
 
-func get_json(path: String) -> Response:
-	var http := HTTPRequest.new()
-	http.timeout = TIMEOUT_SECONDS
-	add_child(http)
+func _ready() -> void:
+	for i in POOL_SIZE:
+		var h := HTTPRequest.new()
+		h.timeout = TIMEOUT_SECONDS
+		add_child(h)
+		_pool.append(h)
 
-	var url := Env.api_base_url + path
-	var err := http.request(url, PackedStringArray(["Accept: application/json"]), HTTPClient.METHOD_GET)
+
+func get_json(path: String, authed: bool = true) -> Response:
+	return await _send(HTTPClient.METHOD_GET, path, {}, authed, true)
+
+
+func post_json(path: String, body: Dictionary, authed: bool = true) -> Response:
+	return await _send(HTTPClient.METHOD_POST, path, body, authed, true)
+
+
+func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry: bool) -> Response:
+	var http := await _lease()
+	if http == null:
+		return _fail(path, "client is shutting down")
+
+	var headers := PackedStringArray([
+		"Accept: application/json",
+		"Content-Type: application/json",
+	])
+	if authed and Session.access_token != "":
+		headers.append("Authorization: Bearer " + Session.access_token)
+
+	var payload := JSON.stringify(body) if method == HTTPClient.METHOD_POST else ""
+	var err := http.request(Env.api_base_url + path, headers, method, payload)
 	if err != OK:
-		http.queue_free()
+		_release(http)
 		return _fail(path, "could not start request (error %d)" % err)
 
 	var result: Array = await http.request_completed
-	http.queue_free()
+	_release(http)
 
-	# result = [result_code, response_code, headers, body]
 	var result_code: int = result[0]
 	var status: int = result[1]
-	var body: PackedByteArray = result[3]
+	var raw: PackedByteArray = result[3]
 
 	if result_code != HTTPRequest.RESULT_SUCCESS:
 		return _fail(path, _describe_transport_error(result_code))
 
-	var parsed: Variant = JSON.parse_string(body.get_string_from_utf8())
-	if not (parsed is Dictionary):
-		return _fail(path, "malformed response body")
+	var parsed: Variant = JSON.parse_string(raw.get_string_from_utf8())
+	var data: Dictionary = parsed if parsed is Dictionary else {}
 
-	if status < 200 or status >= 300:
-		var problem := parsed as Dictionary
-		return _fail(path, "server said %d: %s" % [status, problem.get("message", "unknown")], status)
+	if status >= 200 and status < 300:
+		return Response.new(true, status, data, "", "")
 
-	return Response.new(true, status, parsed as Dictionary, "")
+	var code := str(data.get("code", ""))
+
+	# An expired access token is recoverable without bothering the player: refresh
+	# once and replay. Only one retry, or a server that always 401s would loop.
+	if status == 401 and authed and may_retry and code == "token_expired":
+		if await Session.try_refresh():
+			return await _send(method, path, body, authed, false)
+
+	if status == 401 and authed:
+		unauthorized.emit()
+
+	return Response.new(false, status, data, code, str(data.get("message", "request failed")))
 
 
-func _fail(path: String, message: String, status: int = 0) -> Response:
+## Waits for a free HTTPRequest node.
+func _lease() -> HTTPRequest:
+	while _pool.is_empty():
+		await get_tree().process_frame
+		if not is_inside_tree():
+			return null
+	var h: HTTPRequest = _pool.pop_back()
+	_busy.append(h)
+	return h
+
+
+func _release(h: HTTPRequest) -> void:
+	_busy.erase(h)
+	_pool.append(h)
+
+
+func _fail(path: String, message: String) -> Response:
 	push_warning("[api] %s -> %s" % [path, message])
-	request_failed.emit(path, message)
-	return Response.new(false, status, {}, message)
+	return Response.new(false, 0, {}, "transport", message)
 
 
 ## Turns an HTTPRequest result code into something a player can act on. The raw

@@ -84,3 +84,28 @@ Notes:
   database is still empty, so the only cost is regenerating `.env`.
 - **No VPS yet.** `infra/` is ready (Dockerfile, compose, Caddy); it needs a
   Hetzner server and an `sslip.io` name pointed at its IP.
+
+## Dev flags (client)
+
+Only read in non-release builds, so a shipped game never sees them.
+
+```bash
+# sign in without the UI — needed because capture runs disable input
+godot --path client -- --dev-login <user> <password>
+
+# play N collects through the real optimistic queue, then stop
+godot --path client -- --dev-login <user> <pw> --dev-collect 40
+
+# screenshot after N seconds
+godot --path client -- --capture "$PWD/proof/M1/shot.png" --capture-after 5
+```
+
+## Smoke test
+
+```bash
+python3 scripts/smoke-m1.py [http://localhost:8080]
+```
+
+27 end-to-end checks over auth, refresh rotation, state, collect, levelling,
+mastery and every refusal path. Run it against any environment before calling a
+deploy good.

@@ -263,6 +263,37 @@ emit("soldiers.json", json.dumps({
         "dr_level_coef": 40,             # DR = def / (def + 40*level + 60)
         "dr_base": 60,
         "dr_cap_bp": 6000,               # hard 60% ceiling, or tanks become unkillable
+        # Battle simulation (economy.md 8.2-8.6). A volley auto-battle over ~200
+        # damage rolls per side is inherently near-deterministic: per-hit noise
+        # averages out to a coefficient of variation under 0.04, so crit and dodge
+        # cannot move the win curve at all. The ONLY knob that can is a per-side,
+        # per-battle roll — Fortune of War. A per-unit roll fails too, because its
+        # effect shrinks as 1/sqrt(N) and the curve would drift as players buy slots.
+        "dmg_k_bp": 1600,
+        "rage_step_bp": 1500,            # per round, global to the battle
+        "max_rounds": 60,                # safety net, not a design element
+        "variance_min_bp": 8500,
+        "variance_max_bp": 11500,
+        "crit_mult_bp": 17500,
+        "crit_base_bp": 500,
+        "crit_speed_bp": 3000,
+        "crit_cap_bp": 4500,
+        "dodge_speed_bp": 2000,
+        "dodge_cap_bp": 1500,
+        "charge_bonus_bp": 1200,         # round 1, faster side only
+        "home_ground_bp": 800,           # defender DEF x1.08
+        # Target: a +20% Might advantage wins 75% of the time. Below ~70% the
+        # damage swing exceeds +-55% and gear investment stops reading as
+        # meaningful; above ~85% the replay becomes something you skip.
+        #
+        # The design derived 0.38 from a closed-form log-normal model. Measured
+        # against the actual simulator that value gives 80.4%, because front-line
+        # ordering, wasted excess damage and rage all sharpen the curve — which
+        # the design itself warned would happen and told us to measure. Swept at
+        # 6,000 battles per point, 0.50 reproduces the intended curve across its
+        # whole range (0.80 -> 20%, 1.10 -> 65%, 1.20 -> 75%, 1.50 -> 92%).
+        "fortune_sigma_bp": 5000,
+        "fortune_clamp_sigmas": 2,
     },
 }, indent=2) + "\n")
 

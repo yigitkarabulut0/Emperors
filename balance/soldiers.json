@@ -132,6 +132,21 @@
     "hp_level_bonus_bp": 200,
     "dr_level_coef": 40,
     "dr_base": 60,
-    "dr_cap_bp": 6000
+    "dr_cap_bp": 6000,
+    "dmg_k_bp": 1600,
+    "rage_step_bp": 1500,
+    "max_rounds": 60,
+    "variance_min_bp": 8500,
+    "variance_max_bp": 11500,
+    "crit_mult_bp": 17500,
+    "crit_base_bp": 500,
+    "crit_speed_bp": 3000,
+    "crit_cap_bp": 4500,
+    "dodge_speed_bp": 2000,
+    "dodge_cap_bp": 1500,
+    "charge_bonus_bp": 1200,
+    "home_ground_bp": 800,
+    "fortune_sigma_bp": 5000,
+    "fortune_clamp_sigmas": 2
   }
 }

@@ -134,7 +134,7 @@
     "dr_base": 60,
     "dr_cap_bp": 6000,
     "dmg_k_bp": 1600,
-    "rage_step_bp": 1500,
+    "rage_step_bp": 2500,
     "max_rounds": 60,
     "variance_min_bp": 8500,
     "variance_max_bp": 11500,
@@ -147,6 +147,6 @@
     "charge_bonus_bp": 1200,
     "home_ground_bp": 800,
     "fortune_sigma_bp": 5000,
-    "fortune_clamp_sigmas": 2
+    "fortune_clamp_sigmas_x10": 15
   }
 }

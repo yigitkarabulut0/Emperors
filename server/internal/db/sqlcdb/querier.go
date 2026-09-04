@@ -73,6 +73,9 @@ type Querier interface {
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)
+	// Spends level-up points. The WHERE clause carries the affordability check, so
+	// the balance cannot go negative even under a concurrent double-tap.
+	SpendStatPoints(ctx context.Context, arg SpendStatPointsParams) (AppPlayer, error)
 	TouchCooldown(ctx context.Context, arg TouchCooldownParams) error
 	TouchPlayerSeen(ctx context.Context, id uuid.UUID) error
 	// Clears whatever the player is wearing in this slot, so equipping is a

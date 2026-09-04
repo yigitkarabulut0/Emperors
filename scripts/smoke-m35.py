@@ -69,6 +69,24 @@ print(f"        lv{s['player']['level']} gold={s['player']['gold']} might={a['to
 st, cur = call("GET", "/v1/state", token=token)
 check("energy was deliberately reserved for raiding", cur["energy"]["current"] >= 12, cur["energy"])
 
+print("\n== stat points ==")
+_, cur2 = call("GET", "/v1/state", token=token)
+pts = cur2["player"]["stat_points_unspent"]
+check("levelling granted stat points", pts > 0, pts)
+st, bad = call("POST", "/v1/stats/spend", {"energy": 0, "attack": 0, "defense": 0, "action_seq": seq(token)}, token=token)
+check("spending nothing is refused", st == 400, (st, bad))
+st, greedy = call("POST", "/v1/stats/spend", {"energy": pts + 99, "attack": 0, "defense": 0, "action_seq": seq(token)}, token=token)
+check("cannot spend points you do not have", st == 409 and greedy.get("code") == "no_stat_points", (st, greedy))
+st, spent = call("POST", "/v1/stats/spend", {"energy": 0, "attack": pts, "defense": 0, "action_seq": seq(token)}, token=token)
+check("spending stat points returns 200", st == 200, (st, spent))
+if st == 200:
+    check("the points were deducted", spent["player"]["stat_points_unspent"] == 0, spent["player"])
+    check("attack went up", spent["player"]["stat_attack"] == cur2["player"]["stat_attack"] + pts, spent["player"])
+    st, a2 = call("GET", "/v1/army", token=token)
+    check("spending points raised army Might", a2["totals"]["might"] > a["totals"]["might"],
+          (a["totals"]["might"], a2["totals"]["might"]))
+    a = a2
+
 print("\n== targets ==")
 st, tv = call("GET", "/v1/attack/targets", token=token)
 check("targets returns 200", st == 200, st)
@@ -84,6 +102,11 @@ check("targets sit in a sane band around my Might",
 check("at least one target is actually worth raiding",
       any(t["estimated_steal"] >= 10 for t in tv["targets"]),
       [t["estimated_steal"] for t in tv["targets"]])
+# The list must not be all uphill fights: inside 0.85x-1.35x the win rate spans
+# ~25%-87%, which is what makes choosing a target a decision.
+in_band = [r for r in ratios if 0.85 <= r <= 1.35]
+check("the shortlist offers winnable fights, not only stronger foes",
+      len(in_band) > 0, [round(r, 2) for r in ratios])
 
 print("\n== the raid ==")
 # Pick the most valuable target, which is what a player would do.

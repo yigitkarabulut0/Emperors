@@ -59,17 +59,22 @@ type Event struct {
 
 // Replay is the whole battle: inputs, outcome, and the event log.
 type Replay struct {
-	Version       int     `json:"v"`
-	Seed          uint64  `json:"seed"`
-	ConfigVersion int     `json:"balance_version"`
-	FortuneABP    int64   `json:"fortune_a_bp"`
-	FortuneDBP    int64   `json:"fortune_d_bp"`
-	FirstSide     Side    `json:"order"`
-	Rounds        int     `json:"rounds"`
-	Winner        Side    `json:"winner"`
-	TimedOut      bool    `json:"timed_out"`
-	Attacker      Army    `json:"attacker"`
-	Defender      Army    `json:"defender"`
+	Version       int    `json:"v"`
+	Seed          uint64 `json:"seed"`
+	ConfigVersion int    `json:"balance_version"`
+	FortuneABP    int64  `json:"fortune_a_bp"`
+	FortuneDBP    int64  `json:"fortune_d_bp"`
+	FirstSide     Side   `json:"order"`
+	Rounds        int    `json:"rounds"`
+	Winner        Side   `json:"winner"`
+	TimedOut      bool   `json:"timed_out"`
+	Attacker      Army   `json:"attacker"`
+	Defender      Army   `json:"defender"`
+
+	// Carried in the replay so it stays self-contained: a replay re-watched a
+	// week later must show what the armies were worth at the time, not now.
+	AttackerMight int64   `json:"attacker_might"`
+	DefenderMight int64   `json:"defender_might"`
 	Events        []Event `json:"events"`
 }
 
@@ -333,7 +338,7 @@ func dodgeChanceBP(cfg *gameconfig.Bundle, target, attacker *unit) int64 {
 // integer, and an audit re-run reads the recorded value rather than re-drawing.
 func rollFortune(rng *rand.Rand, c gameconfig.CombatConfig) int64 {
 	sigma := float64(c.FortuneSigmaBP) / 10000.0
-	clamp := float64(c.FortuneClampSigmas) * sigma
+	clamp := float64(c.FortuneClampSigmasX10) / 10.0 * sigma
 
 	f := rng.NormFloat64() * sigma
 	if f > clamp {

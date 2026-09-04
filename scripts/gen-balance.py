@@ -270,7 +270,13 @@ emit("soldiers.json", json.dumps({
         # per-battle roll — Fortune of War. A per-unit roll fails too, because its
         # effect shrinks as 1/sqrt(N) and the curve would drift as players buy slots.
         "dmg_k_bp": 1600,
-        "rage_step_bp": 1500,            # per round, global to the battle
+        # 0.25, not the design's 0.15. Measured on symmetric level-60 10v10
+        # fights, 0.15 left 3.8% of battles hitting the round cap and resolving on
+        # health fraction instead of a kill — which makes MAX_ROUNDS a design
+        # element rather than the safety net it is meant to be. 0.25 drops that to
+        # 0.5% and shortens the average fight from 39 to 32 rounds, while moving
+        # the win rate at +20% Might by only 0.8 points.
+        "rage_step_bp": 2500,            # per round, global to the battle
         "max_rounds": 60,                # safety net, not a design element
         "variance_min_bp": 8500,
         "variance_max_bp": 11500,
@@ -293,7 +299,11 @@ emit("soldiers.json", json.dumps({
         # 6,000 battles per point, 0.50 reproduces the intended curve across its
         # whole range (0.80 -> 20%, 1.10 -> 65%, 1.20 -> 75%, 1.50 -> 92%).
         "fortune_sigma_bp": 5000,
-        "fortune_clamp_sigmas": 2,
+        # Clamped at 1.5 sigma rather than 2. At sigma 0.50 a two-sigma tail displays
+        # as "your levies fight at 272%, theirs at 37%", which reads as the game
+        # being broken rather than as a die roll. 1.5 keeps the extremes inside
+        # 2.1x/0.47x and barely touches the win curve, because the tails are rare.
+        "fortune_clamp_sigmas_x10": 15,
     },
 }, indent=2) + "\n")
 

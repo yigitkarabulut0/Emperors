@@ -172,6 +172,68 @@ func (q *Queries) LockPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, erro
 	return i, err
 }
 
+const spendStatPoints = `-- name: SpendStatPoints :one
+UPDATE app.players
+SET stat_energy  = stat_energy  + $2,
+    stat_attack  = stat_attack  + $3,
+    stat_defense = stat_defense + $4,
+    stat_points_unspent = stat_points_unspent - $5,
+    action_seq   = $6,
+    last_seen_at = now()
+WHERE id = $1 AND stat_points_unspent >= $5
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
+`
+
+type SpendStatPointsParams struct {
+	ID                uuid.UUID
+	StatEnergy        int32
+	StatAttack        int32
+	StatDefense       int32
+	StatPointsUnspent int32
+	ActionSeq         int64
+}
+
+// Spends level-up points. The WHERE clause carries the affordability check, so
+// the balance cannot go negative even under a concurrent double-tap.
+func (q *Queries) SpendStatPoints(ctx context.Context, arg SpendStatPointsParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, spendStatPoints,
+		arg.ID,
+		arg.StatEnergy,
+		arg.StatAttack,
+		arg.StatDefense,
+		arg.StatPointsUnspent,
+		arg.ActionSeq,
+	)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+	)
+	return i, err
+}
+
 const touchPlayerSeen = `-- name: TouchPlayerSeen :exec
 UPDATE app.players SET last_seen_at = now() WHERE id = $1
 `

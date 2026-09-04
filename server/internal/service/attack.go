@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -102,15 +103,25 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 		return nil, fmt.Errorf("find targets: %w", err)
 	}
 
-	// Two passes: targets actually worth raiding first, broke ones only as
-	// filler. A raid costs energy, so offering someone with nothing on hand
-	// invites the player to win and get paid zero — which reads as the game
-	// cheating them even though the arithmetic is correct.
-	var rich, broke []TargetView
+	// Score every candidate, then choose. Two earlier attempts were both wrong:
+	// taking the first three offered fights nobody wanted to win, and preferring
+	// the richest correlated wealth with strength, so every target came back
+	// "stronger" and the list stopped being a decision.
+	//
+	// The rule that works: prefer targets inside the 0.85x-1.35x Might band,
+	// where the win rate spans roughly 25%-87% and every choice is live, and
+	// within the band prefer the bigger prize.
+	type candidate struct {
+		view   TargetView
+		inBand bool
+	}
+	var cands []candidate
+	myMight := mine.Totals.Might
+	if myMight < 1 {
+		myMight = 1
+	}
+
 	for _, r := range rows {
-		if len(rich) >= 3 {
-			break
-		}
 		if cd, err := q.GetCooldown(ctx, sqlcdb.GetCooldownParams{
 			AttackerID: playerID, DefenderID: r.ID,
 		}); err == nil && cd.LastAt.Add(attackCooldown).After(now) {
@@ -126,19 +137,24 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 			Estimate: d.estimateSteal(int64(me.Level), r.Gold),
 			IsBot:    r.IsBot,
 		}
-		if tv.Estimate >= minStealFloor {
-			rich = append(rich, tv)
-		} else if len(broke) < 3 {
-			broke = append(broke, tv)
-		}
+		ratioBP := tv.Might * 10000 / myMight
+		cands = append(cands, candidate{
+			view:   tv,
+			inBand: ratioBP >= bandLowBP && ratioBP <= bandHighBP && tv.Estimate >= minStealFloor,
+		})
 	}
 
-	view.Targets = rich
-	for _, t := range broke {
+	sort.SliceStable(cands, func(i, j int) bool {
+		if cands[i].inBand != cands[j].inBand {
+			return cands[i].inBand
+		}
+		return cands[i].view.Estimate > cands[j].view.Estimate
+	})
+	for _, c := range cands {
 		if len(view.Targets) >= 3 {
 			break
 		}
-		view.Targets = append(view.Targets, t)
+		view.Targets = append(view.Targets, c.view)
 	}
 	return view, nil
 }
@@ -147,8 +163,16 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 // it structurally impossible for a low-level alt to drain a rich player and
 // bounds the worst single loss to a fraction of a day's income.
 // minStealFloor is the smallest take worth spending energy on. It doubles as the
-// bar for putting someone on the target list at all.
+// bar for calling a target worth offering.
 const minStealFloor = 10
+
+// The matchmaking band, in basis points of the attacker's own Might. Inside it
+// the win rate runs from roughly 25% to 87%, which is the range where choosing a
+// target is a real decision rather than reading a number.
+const (
+	bandLowBP  = 8500
+	bandHighBP = 13500
+)
 
 func (d Deps) estimateSteal(attackerLevel, defenderGold int64) int64 {
 	const rateBP = 300 // 3%
@@ -247,6 +271,8 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			uint64(mine.Totals.Might), uint64(theirs.Totals.Might))
 		seed := rng.Uint64()
 		replay := combat.Simulate(d.Config, rng, seed, attArmy, defArmy)
+		replay.AttackerMight = mine.Totals.Might
+		replay.DefenderMight = theirs.Totals.Might
 		won := replay.Winner == combat.SideAttacker
 
 		// Only ON-HAND gold is at risk. Treasury deposits are safe, which is the

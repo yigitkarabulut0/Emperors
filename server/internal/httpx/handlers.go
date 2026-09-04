@@ -79,6 +79,10 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "on_cooldown", "you raided them too recently")
 	case errors.Is(err, service.ErrSelfAttack):
 		WriteProblem(w, r, http.StatusBadRequest, "self_attack", "you cannot attack yourself")
+	case errors.Is(err, service.ErrNoStatPoints):
+		WriteProblem(w, r, http.StatusConflict, "no_stat_points", "not enough stat points")
+	case errors.Is(err, service.ErrNothingToSpend):
+		WriteProblem(w, r, http.StatusBadRequest, "nothing_to_spend", "allocate at least one point")
 	case errors.Is(err, service.ErrStaleAction):
 		// 409, not 400: the request was well-formed, the client is just behind.
 		// It should re-read state rather than retry blindly.
@@ -467,6 +471,31 @@ func (a *api) attack(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, res)
 }
 
+type spendStatsReq struct {
+	Energy    int32 `json:"energy"`
+	Attack    int32 `json:"attack"`
+	Defense   int32 `json:"defense"`
+	ActionSeq int64 `json:"action_seq"`
+}
+
+func (a *api) spendStats(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req spendStatsReq
+	if !decode(w, r, &req) {
+		return
+	}
+	snap, err := a.svc.SpendStats(r.Context(), pid, req.Energy, req.Attack, req.Defense, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, snap)
+}
+
 func isKnownServiceError(err error) bool {
 	for _, e := range []error{
 		service.ErrUsernameTaken, service.ErrBadCredentials, service.ErrPlayerBanned,
@@ -476,6 +505,7 @@ func isKnownServiceError(err error) bool {
 		service.ErrShopStale, service.ErrItemEquipped, service.ErrNoSlot,
 		service.ErrSlotsMaxed, service.ErrLevelTooLow, service.ErrAlreadyMaxed,
 		service.ErrShielded, service.ErrOnCooldown, service.ErrSelfAttack,
+		service.ErrNoStatPoints, service.ErrNothingToSpend,
 	} {
 		if errors.Is(err, e) {
 			return true

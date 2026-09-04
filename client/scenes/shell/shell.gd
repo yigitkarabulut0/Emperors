@@ -12,7 +12,7 @@ const SECTIONS := [
 	{"id": "inventory", "glyph": "A", "label": "Armory",   "milestone": ""},
 	{"id": "shop",      "glyph": "M", "label": "Market",   "milestone": ""},
 	{"id": "soldiers",  "glyph": "B", "label": "Barracks", "milestone": ""},
-	{"id": "attack",    "glyph": "W", "label": "War Gate", "milestone": "M4"},
+	{"id": "attack",    "glyph": "W", "label": "War Gate", "milestone": ""},
 	{"id": "territory", "glyph": "T", "label": "Map",      "milestone": "M5"},
 ]
 
@@ -23,6 +23,7 @@ var _rail_buttons: Dictionary = {}
 var _content: Control
 var _action_host: Control
 var _toast: Label
+var _dev_act := false
 
 # top bar
 var _level: Label
@@ -73,6 +74,14 @@ func _ready() -> void:
 	GameState.action_failed.connect(_on_action_failed)
 	GameState.level_up.connect(func(lv: int) -> void: _flash("Level %d!" % lv, Palette.GOLD))
 
+	# Dev-only: fire the section's primary action once the tab is open, so a
+	# capture run (which disables input) can reach a screen that only exists
+	# after an action — a battle replay, for instance.
+	for i in OS.get_cmdline_user_args().size():
+		var a2 := OS.get_cmdline_user_args()
+		if a2[i] == "--dev-act":
+			_dev_act = true
+
 	# Dev-only: open a specific section for a proof capture.
 	for i in OS.get_cmdline_user_args().size():
 		var a := OS.get_cmdline_user_args()
@@ -81,6 +90,11 @@ func _ready() -> void:
 
 	_open(_current)
 	_on_state_changed()
+
+	if _dev_act:
+		await get_tree().create_timer(1.2).timeout
+		for c in _action_host.get_children():
+			_press_first_button(c)
 
 	# A 4 Hz tick drives only the two numbers that move on their own (the energy
 	# bar and its countdown). Everything else redraws on `changed`, so no node
@@ -191,6 +205,7 @@ func _open(id: String) -> void:
 		"shop": "res://scenes/tabs/shop.gd",
 		"inventory": "res://scenes/tabs/inventory.gd",
 		"soldiers": "res://scenes/tabs/barracks.gd",
+		"attack": "res://scenes/tabs/attack.gd",
 	}
 	if TABS.has(id):
 		var tab: Node = load(TABS[id]).new()
@@ -257,3 +272,14 @@ func _flash(message: String, color: Color) -> void:
 	var tween := create_tween()
 	tween.tween_interval(2.2)
 	tween.tween_callback(func() -> void: _toast.text = "")
+
+
+## Dev-only helper: presses the first enabled button it finds in a subtree.
+func _press_first_button(node: Node) -> bool:
+	if node is Button and not (node as Button).disabled:
+		(node as Button).pressed.emit()
+		return true
+	for child in node.get_children():
+		if _press_first_button(child):
+			return true
+	return false

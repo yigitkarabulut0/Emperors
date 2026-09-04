@@ -70,6 +70,7 @@ func NewRouter(d Deps) http.Handler {
 			r.Use(RequireAuth(d.Verifier))
 			r.Get("/state", a.state)
 			r.Post("/collect", a.collect)
+			r.Post("/stats/spend", a.spendStats)
 
 			r.Get("/shop", a.shop)
 			r.Post("/shop/buy", a.buy)

@@ -63,21 +63,21 @@ type CombatConfig struct {
 	// Battle simulation. FortuneSigmaBP is the primary calibration knob: it is
 	// the only parameter that can move the win curve, because a volley battle
 	// averages ~200 damage rolls per side and per-hit noise vanishes.
-	DMGKBP             int64 `json:"dmg_k_bp"`
-	RageStepBP         int64 `json:"rage_step_bp"`
-	MaxRounds          int   `json:"max_rounds"`
-	VarianceMinBP      int64 `json:"variance_min_bp"`
-	VarianceMaxBP      int64 `json:"variance_max_bp"`
-	CritMultBP         int64 `json:"crit_mult_bp"`
-	CritBaseBP         int64 `json:"crit_base_bp"`
-	CritSpeedBP        int64 `json:"crit_speed_bp"`
-	CritCapBP          int64 `json:"crit_cap_bp"`
-	DodgeSpeedBP       int64 `json:"dodge_speed_bp"`
-	DodgeCapBP         int64 `json:"dodge_cap_bp"`
-	ChargeBonusBP      int64 `json:"charge_bonus_bp"`
-	HomeGroundBP       int64 `json:"home_ground_bp"`
-	FortuneSigmaBP     int64 `json:"fortune_sigma_bp"`
-	FortuneClampSigmas int64 `json:"fortune_clamp_sigmas"`
+	DMGKBP                int64 `json:"dmg_k_bp"`
+	RageStepBP            int64 `json:"rage_step_bp"`
+	MaxRounds             int   `json:"max_rounds"`
+	VarianceMinBP         int64 `json:"variance_min_bp"`
+	VarianceMaxBP         int64 `json:"variance_max_bp"`
+	CritMultBP            int64 `json:"crit_mult_bp"`
+	CritBaseBP            int64 `json:"crit_base_bp"`
+	CritSpeedBP           int64 `json:"crit_speed_bp"`
+	CritCapBP             int64 `json:"crit_cap_bp"`
+	DodgeSpeedBP          int64 `json:"dodge_speed_bp"`
+	DodgeCapBP            int64 `json:"dodge_cap_bp"`
+	ChargeBonusBP         int64 `json:"charge_bonus_bp"`
+	HomeGroundBP          int64 `json:"home_ground_bp"`
+	FortuneSigmaBP        int64 `json:"fortune_sigma_bp"`
+	FortuneClampSigmasX10 int64 `json:"fortune_clamp_sigmas_x10"`
 }
 
 // SoldierType returns the type with this id, or nil.

@@ -11,7 +11,7 @@ const SECTIONS := [
 	{"id": "collect",   "glyph": "F", "label": "Fields",   "milestone": ""},
 	{"id": "inventory", "glyph": "A", "label": "Armory",   "milestone": ""},
 	{"id": "shop",      "glyph": "M", "label": "Market",   "milestone": ""},
-	{"id": "soldiers",  "glyph": "B", "label": "Barracks", "milestone": "M3"},
+	{"id": "soldiers",  "glyph": "B", "label": "Barracks", "milestone": ""},
 	{"id": "attack",    "glyph": "W", "label": "War Gate", "milestone": "M4"},
 	{"id": "territory", "glyph": "T", "label": "Map",      "milestone": "M5"},
 ]
@@ -190,6 +190,7 @@ func _open(id: String) -> void:
 		"collect": "res://scenes/tabs/collect.gd",
 		"shop": "res://scenes/tabs/shop.gd",
 		"inventory": "res://scenes/tabs/inventory.gd",
+		"soldiers": "res://scenes/tabs/barracks.gd",
 	}
 	if TABS.has(id):
 		var tab: Node = load(TABS[id]).new()

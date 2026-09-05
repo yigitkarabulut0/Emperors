@@ -7,6 +7,9 @@ extends Control
 @onready var _detail: Label = %Detail
 @onready var _retry: Button = %Retry
 
+## The sign-in screen, while it is up. Boot outlives it deliberately.
+var _auth: Node = null
+
 func _ready() -> void:
 	_retry.pressed.connect(_start)
 	_start()
@@ -54,18 +57,36 @@ func _start() -> void:
 	_enter_auth()
 
 
+## Shows the sign-in screen. Boot stays ALIVE behind it, just hidden.
+##
+## It used to _swap() here, and _swap frees this node. Godot then dropped the
+## authenticated -> _enter_game connection, because a connection to a freed
+## object is not a connection -- so signing in did nothing at all. The server
+## returned 200, the client never asked for state, and pressing the button again
+## just signed in again. Every screenshot in development looked fine because
+## --dev-login calls _enter_game directly and never goes near this screen.
+##
+## Boot owns the whole handoff now and does not let go until the shell is up.
 func _enter_auth() -> void:
-	var auth := preload("res://scenes/auth/auth.tscn").instantiate()
-	auth.authenticated.connect(_enter_game)
-	_swap(auth)
+	_auth = preload("res://scenes/auth/auth.tscn").instantiate()
+	_auth.authenticated.connect(_enter_game)
+	get_tree().root.add_child(_auth)
+	get_tree().current_scene = _auth
+	visible = false
 
 
 func _enter_game() -> void:
 	print("[boot] entering game")
 	await GameState.refresh()
-	# Before _swap: that frees this node, and a coroutine cannot outlive it.
 	await _dev_collect()
-	_swap(preload("res://scenes/shell/shell.tscn").instantiate())
+
+	var shell := preload("res://scenes/shell/shell.tscn").instantiate()
+	get_tree().root.add_child(shell)
+	get_tree().current_scene = shell
+	if _auth != null and is_instance_valid(_auth):
+		_auth.queue_free()
+	# Last statement: nothing may touch self after this.
+	queue_free()
 
 
 ## Dev-only: performs N collects so a proof capture can show a played state
@@ -93,11 +114,6 @@ func _dev_collect() -> void:
 	print("[boot] dev-collect done: gold=", GameState.display_gold(),
 		" energy=", GameState.display_energy(), " pending=", GameState.pending_count())
 
-
-func _swap(node: Node) -> void:
-	get_tree().root.add_child(node)
-	get_tree().current_scene = node
-	queue_free()
 
 
 ## Reads `--dev-login <username> <password>` from the command line.

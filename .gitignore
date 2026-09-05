@@ -56,3 +56,6 @@ client/env.build.json
 # working copy and the style probes are reproducible from it.
 art/**/*_cut.png
 art/styletest/
+
+# The generated Xcode project and .pck are build outputs, not source.
+build/

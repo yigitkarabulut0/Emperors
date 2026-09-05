@@ -176,15 +176,16 @@ func _update_row(row: Control, job: Dictionary) -> void:
 		Palette.GOLD if unlocked else Palette.TEXT_FAINT)
 	(right.get_child(1) as Label).text = "%d energy" % int(job.get("energy_cost", 0))
 
-	var bg := Palette.PANEL
-	if selected:
-		bg = Palette.PANEL_HIGH
-	elif not unlocked:
-		bg = Palette.BG
-	var border := Palette.GOLD_DEEP if selected else Color.TRANSPARENT
-	row.add_theme_stylebox_override("normal", UI.panel_box(bg, border))
-	row.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, border))
-	row.add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, border))
+	# The same lit surfaces every other card in the game uses. These were still
+	# flat boxes, which is why the jobs list -- the screen the game is mostly
+	# played on -- looked plainer than everything around it. A locked job is
+	# sunken, the selected one is raised with a gold edge.
+	row.add_theme_stylebox_override("normal", UI.card_box(selected, not unlocked))
+	row.add_theme_stylebox_override("hover", UI.card_box(true, not unlocked))
+	row.add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
+	# A locked row is disabled, and with no box of its own it would fall back to
+	# the engine default and disappear.
+	row.add_theme_stylebox_override("disabled", UI.card_box(false, true))
 	row.disabled = not unlocked
 	row.modulate.a = 1.0 if affordable or not unlocked else 0.75
 

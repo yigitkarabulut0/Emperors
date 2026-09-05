@@ -123,9 +123,10 @@ func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 		tier = str(unit.get("tier", ""))
 	var accent := Palette.tier(tier) if tier != "" else Palette.GOLD_DEEP
 	var border := accent if selected else Color.TRANSPARENT
-	b.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL_HIGH if selected else Palette.PANEL, border))
-	b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, border))
-	b.add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, border))
+	b.add_theme_stylebox_override("normal", UI.card_box(selected))
+	b.add_theme_stylebox_override("hover", UI.card_box(true))
+	b.add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
+	b.add_theme_stylebox_override("disabled", UI.card_box(false, true))
 
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE

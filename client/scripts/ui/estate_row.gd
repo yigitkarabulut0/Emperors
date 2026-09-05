@@ -13,24 +13,29 @@ var _effect: Label
 var _cost: Label
 var _level: Label
 var _icon: TextureRect
+var _col: VBoxContainer
 
 var _icon_dir := ""
 
 const ICON_SIZE := UI.ICON_LG
 
-## Name, up to two lines of blurb, and the effect line. Fixed rather than sized to
-## content: the blurb autowraps, and a wrapping label's minimum height depends on
-## the width it is given, which depends on the row -- so letting the row follow the
-## text is circular. Two lines is enough for every blurb we ship, and the height
-## being predictable is what keeps a list of them from jittering as it loads.
-const ROW_H := 124
+## Name, up to two lines of blurb, and -- once you own one -- a line saying what
+## it currently earns.
+##
+## The height is MEASURED from the content rather than fixed. It used to be a
+## constant, and the constant did not allow for the effect line, so the moment you
+## bought an estate the sentence telling you what it pays was sliced in half by
+## the row below. It is not circular to measure: the blurb is capped at two lines
+## with an explicit minimum height, so the column's minimum is deterministic.
+const ROW_MIN_H := 118
+const PAD_V := 10
 const BLURB_LINES := 2
 
 
 func _init(p_id: String, p_icon_dir: String = "") -> void:
 	id = p_id
 	_icon_dir = p_icon_dir
-	custom_minimum_size = Vector2(0, ROW_H)
+	custom_minimum_size = Vector2(0, ROW_MIN_H)
 	focus_mode = Control.FOCUS_NONE
 
 
@@ -41,7 +46,7 @@ func _ready() -> void:
 	for side in ["left", "right"]:
 		margin.add_theme_constant_override("margin_" + side, 12)
 	for side in ["top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 10)
+		margin.add_theme_constant_override("margin_" + side, PAD_V)
 	add_child(margin)
 
 	var row := HBoxContainer.new()
@@ -64,7 +69,8 @@ func _ready() -> void:
 	_level.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(_level)
 
-	var col := VBoxContainer.new()
+	_col = VBoxContainer.new()
+	var col := _col
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 1)
@@ -100,6 +106,10 @@ func refresh(name: String, blurb: String, level: int, max_level: int,
 	_level.text = "%d/%d" % [level, max_level]
 	_effect.text = effect
 	_effect.visible = effect != ""
+	# Grow to fit whatever is actually shown. Without this the effect line, which
+	# only appears once the estate is owned, is cut off by the next row.
+	custom_minimum_size.y = maxf(ROW_MIN_H,
+		_col.get_combined_minimum_size().y + PAD_V * 2)
 
 	if _icon != null:
 		if locked:

@@ -185,9 +185,9 @@ func _build_store() -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.disabled = _busy or not useful or not affordable
 		var accent := Palette.DIAMOND if (useful and affordable) else Palette.LINE
-		b.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL, accent))
-		b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.DIAMOND))
-		b.add_theme_stylebox_override("disabled", UI.panel_box(Palette.BG, Palette.LINE))
+		b.add_theme_stylebox_override("normal", UI.card_box(useful and affordable))
+		b.add_theme_stylebox_override("hover", UI.card_box(true))
+		b.add_theme_stylebox_override("disabled", UI.card_box(false, true))
 		b.pressed.connect(_buy_good.bind(str(g.get("id", ""))))
 
 		var pad := MarginContainer.new()

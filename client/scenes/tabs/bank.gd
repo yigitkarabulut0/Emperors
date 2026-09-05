@@ -30,7 +30,7 @@ func mount_action_bar(host: Control) -> void:
 	col.add_theme_constant_override("separation", 2)
 	host.add_child(col)
 	_action = UI.button("BANK ALL", UI.F_H2)
-	_action.custom_minimum_size = Vector2(0, 52)
+	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_action.pressed.connect(func() -> void: _move("deposit", GameState.display_gold()))
 	col.add_child(_action)
 	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
@@ -57,12 +57,28 @@ func _rebuild() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	_body.add_child(row)
-	row.add_child(_move_button("Bank half", "deposit", carried / 2, carried >= 2))
-	row.add_child(_move_button("Take it all out", "withdraw", banked, banked > 0))
+	# Each takes half the row. Left to themselves they claim the width of their
+	# own caption, which is the same overflow in a smaller form.
+	var half := _move_button("Bank half", "deposit", carried / 2, carried >= 2)
+	var out := _move_button("Take it all out", "withdraw", banked, banked > 0)
+	for b in [half, out]:
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.clip_text = true
+		b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	row.add_child(half)
+	row.add_child(out)
 
-	_body.add_child(UI.label(
+	# Autowrapped, and it has to be: Godot takes a Label's unwrapped text width as
+	# a minimum size and propagates it up through every container, so this one
+	# sentence made the whole tab 686 units wide on a 720-unit screen -- and
+	# because the tabs share the shell's root column with the top bar, it dragged
+	# the chrome off the right edge too. Half the screen was simply gone.
+	var note := UI.label(
 		"Putting gold in costs %d%% of what you put in. Taking it out is free." % (FEE_BP / 100),
-		UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+		UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.custom_minimum_size = Vector2(0, 0)
+	_body.add_child(note)
 	_refresh_action()
 
 

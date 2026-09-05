@@ -34,7 +34,23 @@ var _sending := false
 ## When the energy in `snapshot` was true, by the local clock. Energy is the one
 ## value that moves on its own between polls, so it is projected forward from
 ## here rather than sitting frozen until the next request.
+##
+## Gold has its own anchor for the same reason: estate income is continuous, so
+## the purse keeps filling between requests too.
 var _energy_at_ms: int = 0
+var _gold_at_ms: int = 0
+
+
+## Takes a snapshot and restamps the projection anchors.
+##
+## Every replacement of `snapshot` has to go through here. Setting it directly
+## leaves the anchors pointing at the PREVIOUS snapshot's arrival time, so both
+## projections carry the elapsed time forward twice and the bar and the purse run
+## ahead of the server -- which then looks like the server taking things away.
+func adopt(snap: Dictionary) -> void:
+	snapshot = snap
+	_energy_at_ms = Time.get_ticks_msec()
+	_gold_at_ms = _energy_at_ms
 
 
 func _ready() -> void:
@@ -55,8 +71,7 @@ func refresh() -> void:
 	var res: Api.Response = await Api.get_json("/v1/state")
 	loading = false
 	if res.ok:
-		snapshot = res.data
-		_energy_at_ms = Time.get_ticks_msec()
+		adopt(res.data)
 		changed.emit()
 	else:
 		action_failed.emit(res.error)
@@ -68,7 +83,22 @@ func display_gold() -> int:
 	var g := int(str(snapshot.get("player", {}).get("gold", "0")))
 	for a in _pending:
 		g += int(a["gold"])
-	return g
+	return g + accrued_tax()
+
+
+## Estate income earned since the snapshot arrived.
+##
+## The server credits the purse on every request, so `player.gold` is always
+## right at the moment it was read -- but income is continuous now, and a counter
+## that only moves when the server is asked would sit still while the number it
+## shows is quietly out of date. Same idea as the energy bar: carry the rate, and
+## project between polls.
+func accrued_tax() -> int:
+	var rate := int(snapshot.get("player", {}).get("tax_milli_per_hour", 0))
+	if rate <= 0:
+		return 0
+	var elapsed_ms := Time.get_ticks_msec() - _gold_at_ms
+	return int(rate * elapsed_ms / 3600000 / 1000)
 
 
 ## Experience toward the next level, including collects that have not landed yet.
@@ -241,7 +271,7 @@ func _pump() -> void:
 			# a normal outcome, and only the applied ones leave the queue.
 			var applied: int = mini(int(res.data.get("applied", 0)), _pending.size())
 			var before := int(player().get("level", 1))
-			snapshot = res.data.get("snapshot", snapshot)
+			adopt(res.data.get("snapshot", snapshot))
 			for i in applied:
 				_pending.pop_front()
 			var after := int(player().get("level", 1))

@@ -253,7 +253,7 @@ func _buy_good(id: String) -> void:
 		{"good": id, "action_seq": int(GameState.player().get("action_seq", 0)) + 1})
 	_busy = false
 	if res.ok:
-		GameState.snapshot = res.data
+		GameState.adopt(res.data)
 		GameState.changed.emit()
 	else:
 		GameState.action_failed.emit(res.error)

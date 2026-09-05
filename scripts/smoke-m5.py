@@ -118,8 +118,7 @@ check("everything starts at level 0", all(u["level"] == 0 for u in e["upgrades"]
 check("only early holdings are unlocked",
       sum(1 for h in e["holdings"] if h["unlocked"]) < len(e["holdings"]),
       [h["id"] for h in e["holdings"] if h["unlocked"]])
-print(f"        tax {e['tax']['per_hour_milli']/1000:.1f} gold/hour, "
-      f"cap {e['tax']['cap_seconds']/3600:.0f}h, pending {e['tax']['pending']}")
+print(f"        tax {e['tax']['per_hour_milli']/1000:.1f} gold/hour, credited continuously")
 check("a player with no holdings still earns some idle income",
       e["tax"]["per_hour_milli"] > 0, e["tax"])
 # A magnitude check, not just "> 0". The first version of this passed while the
@@ -216,21 +215,19 @@ if locked:
     check("a locked holding cannot be bought", st in (403, 409), (st, lk))
 
 print("\n== tax accrual ==")
+# Income used to sit in a "pending" pot behind a Collect button, and this block
+# used to claim it. It is credited on every authenticated request now, so there
+# is no pot to inspect and nothing to claim -- what is asserted instead is that
+# the rate is published (the client needs it to tick the purse between requests)
+# and that the old endpoint says so plainly. The timing of the credit itself is
+# covered by scripts/smoke-tax.py, which has to wait long enough to see a whole
+# gold arrive.
 st, e2 = call("GET", "/v1/estates", token=token)
-p0 = e2["tax"]["pending"]
-time.sleep(3)
-st, e3 = call("GET", "/v1/estates", token=token)
-check("tax accrues over time without any write", e3["tax"]["pending"] >= p0, (p0, e3["tax"]["pending"]))
+check("the hourly rate is published", e2["tax"]["per_hour_milli"] > 0, e2.get("tax"))
+check("there is no pot waiting to be collected", "pending" not in e2["tax"], e2.get("tax"))
 
 st, claim = call("POST", "/v1/estates/tax/claim", {"action_seq": seq(token)}, token=token)
-if e3["tax"]["pending"] > 0:
-    check("claiming tax returns 200", st == 200, (st, claim))
-    if st == 200:
-        check("gold arrived", claim["collected"] > 0, claim)
-        st, e4 = call("GET", "/v1/estates", token=token)
-        check("pending reset after claiming", e4["tax"]["pending"] < e3["tax"]["pending"] + 5, e4["tax"])
-else:
-    check("claiming nothing is refused", st == 409 and claim.get("code") == "no_tax", (st, claim))
+check("the claim endpoint is gone", st == 410, (st, claim))
 
 print()
 if FAILURES:

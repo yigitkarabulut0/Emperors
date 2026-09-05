@@ -297,7 +297,7 @@ func _spend_point(stat: String) -> void:
 	var res: Api.Response = await Api.post_json("/v1/stats/spend", body)
 	_busy = false
 	if res.ok:
-		GameState.snapshot = res.data
+		GameState.adopt(res.data)
 		GameState.changed.emit()
 		await _reload()
 		_rebuild()

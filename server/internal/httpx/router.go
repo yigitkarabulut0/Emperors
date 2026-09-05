@@ -72,6 +72,9 @@ func NewRouter(d Deps) http.Handler {
 		// Everything else needs a valid access token.
 		r.Group(func(r chi.Router) {
 			r.Use(RequireAuth(d.Verifier))
+			// After auth, so it knows who to pay; before every handler, so no
+			// affordability check ever runs against a stale purse.
+			r.Use(CreditTax(d.Service, d.Log))
 			r.Get("/state", a.state)
 			r.Get("/avatars", a.avatars)
 			r.Post("/avatar", a.setAvatar)
@@ -105,7 +108,10 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/estates", a.estates)
 			r.Post("/estates/upgrade", a.buyUpgrade)
 			r.Post("/estates/holding", a.buyHolding)
-			r.Post("/estates/tax/claim", a.claimTax)
+			// Gone, deliberately not 404: an .ipa already on a phone still asks
+			// for this, and "this endpoint was removed" is a better answer than
+			// "no such route" while those builds age out.
+			r.Post("/estates/tax/claim", a.claimTaxGone)
 
 			r.Get("/kingdom", a.kingdom)
 			r.Get("/kingdom/search", a.kingdomSearch)

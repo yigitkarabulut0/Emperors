@@ -68,6 +68,21 @@ type Querier interface {
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (AppPlayer, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (AppSession, error)
 	CreditGold(ctx context.Context, arg CreditGoldParams) (AppPlayer, error)
+	// Credits whatever the estates have earned since the last settle.
+	//
+	// Whole gold moves into the purse; the sub-gold remainder stays in the
+	// accumulator so nothing is lost to rounding on a fast poll.
+	//
+	// Two details that decide whether this is correct:
+	//
+	//   * elapsed is measured in MILLISECONDS. Truncating it to whole seconds meant
+	//     that a client polling four times a second earned exactly nothing, because
+	//     every individual call saw zero seconds elapsed and moved the anchor
+	//     anyway. Polling faster must never earn less.
+	//   * the anchor only moves when something was actually earned. Integer division
+	//     always rounds down, so a call that earns nothing must leave the clock
+	//     alone or the remainder is thrown away on every single request.
+	CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer, error)
 	// Nightly decay. 2% a day is what stops a kingdom that quit in month one from
 	// squatting at rank 1 forever.
 	DecayReputation(ctx context.Context, dollar_1 interface{}) error
@@ -170,6 +185,9 @@ type Querier interface {
 	SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error)
 	SetSoldierEquipped(ctx context.Context, arg SetSoldierEquippedParams) error
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
+	// Rewrites the cached hourly rate. Must be called only after CreditTax, so the
+	// time already earned is paid at the OLD rate.
+	SetTaxRate(ctx context.Context, arg SetTaxRateParams) error
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
 	SettleTax(ctx context.Context, arg SettleTaxParams) error
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)

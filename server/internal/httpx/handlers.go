@@ -643,22 +643,14 @@ func (a *api) estateBuy(w http.ResponseWriter, r *http.Request, upgrade bool) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
-func (a *api) claimTax(w http.ResponseWriter, r *http.Request) {
-	pid, ok := PlayerID(r.Context())
-	if !ok {
-		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
-		return
-	}
-	var req seqReq
-	if !decode(w, r, &req) {
-		return
-	}
-	res, err := a.s().ClaimTax(r.Context(), pid, req.ActionSeq)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, res)
+// claimTaxGone answers builds that still think estate income needs collecting.
+//
+// It is continuous now: the purse is credited on every authenticated request, so
+// there is nothing to claim. 410 rather than 404 so an older .ipa reports
+// something true rather than "that route does not exist".
+func (a *api) claimTaxGone(w http.ResponseWriter, r *http.Request) {
+	WriteProblem(w, r, http.StatusGone, "gone",
+		"Estate income arrives on its own now — there is nothing to collect.")
 }
 
 // --- kingdom ---

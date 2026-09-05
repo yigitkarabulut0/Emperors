@@ -714,6 +714,15 @@ func _update_energy() -> void:
 func _tick() -> void:
 	GameState.tick_projection()
 	_update_energy()
+	# Estate income is continuous, so the purse moves without anyone touching it.
+	# Set directly rather than through _show_gold: that one tweens, and a tween
+	# restarted four times a second would stutter instead of counting. The tween
+	# stays for discrete gains -- a collect, a sale, a raid -- which are the ones
+	# worth celebrating.
+	var g := GameState.display_gold()
+	if g != _gold_shown:
+		_gold_shown = g
+		_gold.text = UI.number(g)
 
 
 func _on_action_failed(message: String) -> void:

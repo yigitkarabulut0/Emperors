@@ -12,7 +12,7 @@ var _header: Label
 var _income_card: PanelContainer
 var _income: Label
 var _waiting: Label
-var _collect: Button
+var _rate: Label
 var _action: Button
 var _action_sub: Label
 var _busy := false
@@ -48,11 +48,11 @@ func _ready() -> void:
 	_waiting = UI.label("", UI.F_MICRO, Palette.TEXT_DIM)
 	col.add_child(_waiting)
 
-	_collect = UI.button("COLLECT", UI.F_BODY)
-	_collect.custom_minimum_size = Vector2(110, 44)
-	_collect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_collect.pressed.connect(_claim_tax)
-	row.add_child(_collect)
+	# No COLLECT button. Estate income is credited continuously now, so the only
+	# thing a button could do is interrupt the player to tell them so.
+	_rate = UI.label("", UI.F_H2, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
+	_rate.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(_rate)
 
 	_header = UI.label("Surveying your lands…", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -100,13 +100,11 @@ func _rebuild() -> void:
 	var tax: Dictionary = _estates.get("tax", {})
 	# Per hour, never per second: a rate of 0.008 gold a second reads as nothing.
 	var per_hour := float(int(tax.get("per_hour_milli", 0))) / 1000.0
-	var pending := int(tax.get("pending", 0))
 	_income.text = "%.1f gold every hour" % per_hour
-	_waiting.text = "%s waiting to be collected" % UI.number(pending) if pending > 0 \
-		else "nothing waiting yet"
-	_collect.disabled = pending <= 0 or _busy
-	_header.text = "They keep earning while you are away, up to %d hours' worth." % [
-		int(tax.get("cap_seconds", 0)) / 3600]
+	_waiting.text = "arriving in your purse as it is earned" if per_hour > 0.0 \
+		else "buy an estate and it starts paying at once"
+	_rate.text = "+%.1f/h" % per_hour
+	_header.text = "Your estates pay you around the clock, whether you are here or not."
 
 	var holdings: Array = _estates.get("holdings", [])
 	var gold := GameState.display_gold()
@@ -199,18 +197,3 @@ func _buy() -> void:
 	_rebuild()
 
 
-func _claim_tax() -> void:
-	if _busy:
-		return
-	_busy = true
-	_rebuild()
-	var res: Api.Response = await Api.post_json("/v1/estates/tax/claim",
-		{"action_seq": int(GameState.player().get("action_seq", 0)) + 1})
-	_busy = false
-	if not res.ok:
-		GameState.action_failed.emit(res.error)
-	else:
-		GameState.action_failed.emit("Collected %s gold from your estates" %
-			UI.number(int(res.data.get("collected", 0))))
-	await GameState.refresh()
-	await _reload()

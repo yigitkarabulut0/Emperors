@@ -95,11 +95,14 @@ type HoldingView struct {
 // TaxView is what the Family tab shows about idle income.
 //
 // Presented per HOUR, never per second: 0.23 gold a second reads as nothing.
+// TaxView is the estates' income, which now arrives continuously.
+//
+// There is no Pending any more, and no cap: the middleware credits the purse on
+// every request, so what used to be "waiting to be collected" is at most the
+// sub-gold remainder. PerHourMilli is what the client needs to tick the number
+// up between requests.
 type TaxView struct {
-	PerHourMilli  int64 `json:"per_hour_milli"`
-	Pending       int64 `json:"pending"`
-	CapSeconds    int64 `json:"cap_seconds"`
-	SecondsToFull int64 `json:"seconds_to_cap"`
+	PerHourMilli int64 `json:"per_hour_milli"`
 }
 
 func (d Deps) GetEstates(ctx context.Context, playerID uuid.UUID) (*EstatesView, error) {
@@ -154,22 +157,7 @@ func (d Deps) GetEstates(ctx context.Context, playerID uuid.UUID) (*EstatesView,
 		})
 	}
 
-	now := d.Now()
-	settled := estates.SettleTax(
-		estates.TaxState{Milli: p.TaxMilliAccrued, UpdatedAt: p.TaxUpdatedAt},
-		eff.TaxMilliPerHour, eff.OfflineCapSeconds, now)
-
-	capMilli := eff.TaxMilliPerHour * eff.OfflineCapSeconds / 3600
-	var toFull int64
-	if eff.TaxMilliPerHour > 0 && settled.Milli < capMilli {
-		toFull = (capMilli - settled.Milli) * 3600 / eff.TaxMilliPerHour
-	}
-	view.Tax = TaxView{
-		PerHourMilli:  eff.TaxMilliPerHour,
-		Pending:       estates.Whole(settled),
-		CapSeconds:    eff.OfflineCapSeconds,
-		SecondsToFull: toFull,
-	}
+	view.Tax = TaxView{PerHourMilli: eff.TaxMilliPerHour}
 	return view, nil
 }
 

@@ -53,6 +53,11 @@ type PlayerView struct {
 	StatDefense       int    `json:"stat_defense"`
 	StatPointsUnspent int    `json:"stat_points_unspent"`
 	ActionSeq         int64  `json:"action_seq"`
+	// The estates' hourly rate, so the client can tick the purse up between
+	// requests the way it already animates the energy bar. Income is continuous
+	// now, so a gold counter that only moved when the server was asked would sit
+	// still while the number it displays is quietly wrong.
+	TaxMilliPerHour int64 `json:"tax_milli_per_hour"`
 }
 
 // EnergyView carries the rate as well as the value, so the client can animate a
@@ -101,6 +106,27 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 	eff, err := d.loadEffects(ctx, q, p)
 	if err != nil {
 		return nil, err
+	}
+
+	// Keep the cached estate rate honest.
+	//
+	// CreditTax pays at a rate stored on the player row, which is what lets it be
+	// one UPDATE with no reads on every request. The rate depends on holdings,
+	// upgrades, kingdom nodes and level, and here is the one place that has all
+	// of that loaded already -- and every mutating endpoint ends by calling
+	// GetState, so the rate can never stay stale for longer than one request.
+	//
+	// Ordering is what makes it correct: the middleware has already credited the
+	// elapsed time at the OLD rate before the handler ran, so a holding bought
+	// this request never retroactively pays for the hours before it existed.
+	if p.TaxMilliPerHour != eff.TaxMilliPerHour {
+		_ = q.SetTaxRate(ctx, sqlcdb.SetTaxRateParams{
+			ID: p.ID, TaxMilliPerHour: eff.TaxMilliPerHour,
+		})
+		// The row in hand was read before that write, and the snapshot below is
+		// built from it. Without this the client is told last request's rate and
+		// its ticking counter drifts for one round trip after every purchase.
+		p.TaxMilliPerHour = eff.TaxMilliPerHour
 	}
 
 	now := d.Now()
@@ -172,6 +198,7 @@ func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {
 		StatDefense:       int(p.StatDefense),
 		StatPointsUnspent: int(p.StatPointsUnspent),
 		ActionSeq:         p.ActionSeq,
+		TaxMilliPerHour:   p.TaxMilliPerHour,
 	}
 }
 

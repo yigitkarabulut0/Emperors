@@ -12,7 +12,7 @@ import (
 )
 
 const bumpActionSeq = `-- name: BumpActionSeq :one
-UPDATE app.players SET action_seq = $2, last_seen_at = now() WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+UPDATE app.players SET action_seq = $2, last_seen_at = now() WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
 `
 
 type BumpActionSeqParams struct {
@@ -59,6 +59,7 @@ func (q *Queries) BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (A
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }
@@ -66,7 +67,7 @@ func (q *Queries) BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (A
 const createPlayer = `-- name: CreatePlayer :one
 INSERT INTO app.players (username, display_name, energy_milli, reset_offset_minutes)
 VALUES ($1, $2, $3, $4)
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
 `
 
 type CreatePlayerParams struct {
@@ -120,6 +121,7 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (App
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }
@@ -181,7 +183,7 @@ func (q *Queries) FindInvitablePlayers(ctx context.Context, arg FindInvitablePla
 }
 
 const getPlayerByID = `-- name: GetPlayerByID :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar FROM app.players WHERE id = $1
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour FROM app.players WHERE id = $1
 `
 
 func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error) {
@@ -223,12 +225,13 @@ func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, e
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }
 
 const getPlayerByUsername = `-- name: GetPlayerByUsername :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar FROM app.players WHERE lower(username) = lower($1)
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour FROM app.players WHERE lower(username) = lower($1)
 `
 
 func (q *Queries) GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error) {
@@ -270,12 +273,13 @@ func (q *Queries) GetPlayerByUsername(ctx context.Context, lower string) (AppPla
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }
 
 const lockPlayer = `-- name: LockPlayer :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar FROM app.players WHERE id = $1 FOR UPDATE
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour FROM app.players WHERE id = $1 FOR UPDATE
 `
 
 // Locks the row for the duration of the transaction. Every mutating action
@@ -320,13 +324,14 @@ func (q *Queries) LockPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, erro
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }
 
 const setAvatar = `-- name: SetAvatar :one
 UPDATE app.players SET avatar = $2, action_seq = $3, last_seen_at = now()
-WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
 `
 
 type SetAvatarParams struct {
@@ -374,6 +379,7 @@ func (q *Queries) SetAvatar(ctx context.Context, arg SetAvatarParams) (AppPlayer
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }
@@ -387,7 +393,7 @@ SET stat_energy  = stat_energy  + $2,
     action_seq   = $6,
     last_seen_at = now()
 WHERE id = $1 AND stat_points_unspent >= $5
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
 `
 
 type SpendStatPointsParams struct {
@@ -447,6 +453,7 @@ func (q *Queries) SpendStatPoints(ctx context.Context, arg SpendStatPointsParams
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }

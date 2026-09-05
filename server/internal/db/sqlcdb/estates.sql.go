@@ -66,7 +66,7 @@ SET gold = gold + $2,
     action_seq = $4,
     last_seen_at = now()
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
 `
 
 type ClaimTaxParams struct {
@@ -120,6 +120,86 @@ func (q *Queries) ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, 
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
 		&i.Avatar,
+		&i.TaxMilliPerHour,
+	)
+	return i, err
+}
+
+const creditTax = `-- name: CreditTax :one
+UPDATE app.players
+SET gold = gold + (tax_milli_accrued + tax_milli_per_hour
+        * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
+        / 3600000) / 1000,
+    tax_milli_accrued = (tax_milli_accrued + tax_milli_per_hour
+        * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
+        / 3600000) % 1000,
+    tax_updated_at = $1::timestamptz
+WHERE id = $2
+  AND tax_milli_per_hour
+        * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
+        / 3600000 > 0
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+`
+
+type CreditTaxParams struct {
+	Now time.Time
+	ID  uuid.UUID
+}
+
+// Credits whatever the estates have earned since the last settle.
+//
+// Whole gold moves into the purse; the sub-gold remainder stays in the
+// accumulator so nothing is lost to rounding on a fast poll.
+//
+// Two details that decide whether this is correct:
+//
+//   - elapsed is measured in MILLISECONDS. Truncating it to whole seconds meant
+//     that a client polling four times a second earned exactly nothing, because
+//     every individual call saw zero seconds elapsed and moved the anchor
+//     anyway. Polling faster must never earn less.
+//   - the anchor only moves when something was actually earned. Integer division
+//     always rounds down, so a call that earns nothing must leave the clock
+//     alone or the remainder is thrown away on every single request.
+func (q *Queries) CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, creditTax, arg.Now, arg.ID)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
 	)
 	return i, err
 }
@@ -170,6 +250,22 @@ func (q *Queries) ListUpgrades(ctx context.Context, playerID uuid.UUID) ([]AppPl
 		return nil, err
 	}
 	return items, nil
+}
+
+const setTaxRate = `-- name: SetTaxRate :exec
+UPDATE app.players SET tax_milli_per_hour = $2 WHERE id = $1
+`
+
+type SetTaxRateParams struct {
+	ID              uuid.UUID
+	TaxMilliPerHour int64
+}
+
+// Rewrites the cached hourly rate. Must be called only after CreditTax, so the
+// time already earned is paid at the OLD rate.
+func (q *Queries) SetTaxRate(ctx context.Context, arg SetTaxRateParams) error {
+	_, err := q.db.Exec(ctx, setTaxRate, arg.ID, arg.TaxMilliPerHour)
+	return err
 }
 
 const settleTax = `-- name: SettleTax :exec

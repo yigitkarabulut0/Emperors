@@ -41,7 +41,9 @@ const AVATAR_SIZE := UI.TAP_MIN
 ## The safe-area inset is added on top of both at runtime, so the numbers here
 ## stay device-independent.
 const TOPBAR_MIN_H := 168
-const ACTION_H := 164
+## 116 for the button, a line of caption under it, and margins. Measured on an
+## iPhone SE, which is the tightest device: at 164 the caption grazed the edge.
+const ACTION_H := 176
 
 
 var _avatar_btn: Button
@@ -380,17 +382,15 @@ func _notification(what: int) -> void:
 ## One currency readout: its glyph, then its number. Returns the number's label
 ## so the caller can keep hold of it.
 func _purse_chip(host: Control, icon: String, tint: Color) -> Label:
+	# chip_box, not panel_box: panel_box carries 10 units of padding above and
+	# below for a card, and a MarginContainer inside it was adding 4 more. Two of
+	# these stacked came to 142 units, which is what pushed the shell's column 40
+	# units past the viewport on an iPhone SE and clipped the action caption.
 	var box := PanelContainer.new()
-	box.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, 14))
-	var pad := MarginContainer.new()
-	for side in ["left", "right"]:
-		pad.add_theme_constant_override("margin_" + side, 9)
-	for side in ["top", "bottom"]:
-		pad.add_theme_constant_override("margin_" + side, 4)
-	box.add_child(pad)
+	box.add_theme_stylebox_override("panel", UI.chip_box(Palette.PANEL, Color.TRANSPARENT, 14))
 	var line := HBoxContainer.new()
 	line.add_theme_constant_override("separation", 6)
-	pad.add_child(line)
+	box.add_child(line)
 	line.add_child(_glyph("currency/" + icon, UI.ICON_SM, tint))
 	var value := UI.label("0", UI.F_BODY, tint, HORIZONTAL_ALIGNMENT_RIGHT)
 	line.add_child(value)
@@ -419,9 +419,26 @@ func _build_rail() -> Control:
 	_rail_pad = MarginContainer.new()
 	panel.add_child(_rail_pad)
 
+	# Inside a scroll view, with no visible scrollbar. Nine sections at a real
+	# touch-target height plus a top bar carrying two currencies, experience and
+	# energy leaves eight units spare on an iPhone SE. That is enough today and
+	# nowhere near enough to rely on: without this, the next thing that grows by
+	# ten units silently clips the ninth section off the bottom of the rail, which
+	# would look like the House screen simply not existing.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.get_v_scroll_bar().modulate = Color.TRANSPARENT
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_rail_pad.add_child(scroll)
+
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
-	_rail_pad.add_child(col)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# No gap between rail buttons. Nine 2-unit gaps cost 16 units of a budget with
+	# six to spare on an iPad, and they buy nothing: the selected section already
+	# has its own background, which is what separates the buttons visually.
+	col.add_theme_constant_override("separation", 0)
+	scroll.add_child(col)
 
 	for s in SECTIONS:
 		var b := Button.new()
@@ -535,6 +552,11 @@ func _open(id: String) -> void:
 	# freed button and reintroduce the same crash from the other side.
 	var bar := VBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Centred rather than filled. A Button in a filled VBox absorbs all the spare
+	# height and shoves the caption under it hard against the bottom margin, which
+	# on an iPhone SE put it a couple of units from the screen edge.
+	bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_action_host.add_child(bar)
 	_action_bars[id] = bar
 

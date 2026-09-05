@@ -28,6 +28,7 @@ type Bundle struct {
 	Tiers       TiersConfig       `json:"tiers"`
 	Items       ItemsConfig       `json:"items"`
 	Soldiers    SoldiersConfig    `json:"soldiers"`
+	Estates     EstatesConfig     `json:"estates"`
 
 	// Derived lookups, built once at load so hot paths never scan a slice.
 	jobByID         map[string]*Job
@@ -38,6 +39,8 @@ type Bundle struct {
 	tierByID        map[string]*Tier
 	tierIDs         []string // ascending by rank
 	soldierTypeByID map[string]*SoldierType
+	upgradeByID     map[string]*Upgrade
+	holdingByID     map[string]*Holding
 }
 
 type JobsConfig struct {
@@ -112,6 +115,7 @@ func LoadSeed() (*Bundle, error) {
 		{"seed/tiers.json", &b.Tiers},
 		{"seed/items.json", &b.Items},
 		{"seed/soldiers.json", &b.Soldiers},
+		{"seed/estates.json", &b.Estates},
 	} {
 		raw, err := seedFS.ReadFile(f.name)
 		if err != nil {
@@ -180,6 +184,23 @@ func (b *Bundle) build() error {
 	for i := range b.Soldiers.Types {
 		t := &b.Soldiers.Types[i]
 		b.soldierTypeByID[t.ID] = t
+	}
+
+	b.upgradeByID = make(map[string]*Upgrade, len(b.Estates.Upgrades))
+	for i := range b.Estates.Upgrades {
+		u := &b.Estates.Upgrades[i]
+		if len(u.Costs) != u.MaxLevel {
+			return fmt.Errorf("upgrade %q has %d costs for %d levels", u.ID, len(u.Costs), u.MaxLevel)
+		}
+		b.upgradeByID[u.ID] = u
+	}
+	b.holdingByID = make(map[string]*Holding, len(b.Estates.Holdings))
+	for i := range b.Estates.Holdings {
+		h := &b.Estates.Holdings[i]
+		if len(h.Costs) != h.MaxLevel {
+			return fmt.Errorf("holding %q has %d costs for %d levels", h.ID, len(h.Costs), h.MaxLevel)
+		}
+		b.holdingByID[h.ID] = h
 	}
 
 	// Milestones must be ascending so the "highest reached" scan is a simple walk.

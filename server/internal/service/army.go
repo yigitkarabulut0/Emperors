@@ -12,6 +12,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/army"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
@@ -113,6 +114,11 @@ func (d Deps) GetArmy(ctx context.Context, playerID uuid.UUID) (*ArmyView, error
 	// Slots is initialised rather than left nil: a nil slice marshals to JSON
 	// null, and a client iterating `slots` would crash on a player who has not
 	// bought one yet. Every array in a response should be [] when empty.
+	eff, err := d.loadEffects(ctx, q, p)
+	if err != nil {
+		return nil, err
+	}
+
 	view := &ArmyView{
 		Slots:    []SlotView{},
 		Recruits: d.recruitOptions(int64(p.Level), d.freeRecruitAvailable(p)),
@@ -129,7 +135,7 @@ func (d Deps) GetArmy(ctx context.Context, playerID uuid.UUID) (*ArmyView, error
 		if gear == nil {
 			gear = map[string]*ItemView{"weapon": nil, "armor": nil, "horse": nil}
 		}
-		uv := d.soldierUnit(p, s, gear)
+		uv := d.soldierUnit(p, s, gear, eff)
 		bySlot[int(s.SlotIndex)] = &uv
 		units = append(units, toArmyUnit(uv))
 	}
@@ -173,7 +179,7 @@ func (d Deps) heroUnit(p sqlcdb.AppPlayer, gear map[string]*ItemView) UnitView {
 	}
 }
 
-func (d Deps) soldierUnit(p sqlcdb.AppPlayer, s sqlcdb.AppSoldier, gear map[string]*ItemView) UnitView {
+func (d Deps) soldierUnit(p sqlcdb.AppPlayer, s sqlcdb.AppSoldier, gear map[string]*ItemView, eff estates.Effects) UnitView {
 	atk, def, baseHP := army.SoldierBase(d.Config, s.TypeID, s.Tier, int64(s.Level))
 	var spd int64
 	for _, iv := range gear {
@@ -184,6 +190,12 @@ func (d Deps) soldierUnit(p sqlcdb.AppPlayer, s sqlcdb.AppSoldier, gear map[stri
 		def += iv.Defense
 		spd += iv.Speed
 	}
+
+	// Armoury, Bulwark and Stables lift the soldier AFTER gear, so the upgrade
+	// scales the whole unit rather than only its base.
+	atk = atk * (10000 + eff.SoldierAtkBP) / 10000
+	def = def * (10000 + eff.SoldierDefBP) / 10000
+	spd = spd * (10000 + eff.SoldierSpdBP) / 10000
 	hp := army.UnitHP(d.Config, baseHP, def, int64(p.Level))
 
 	uv := UnitView{
@@ -429,7 +441,11 @@ func (d Deps) Recruit(ctx context.Context, playerID uuid.UUID, slotIndex int, ty
 		}
 
 		res.Paid = cost
-		res.Soldier = d.soldierUnit(p, s, map[string]*ItemView{"weapon": nil, "armor": nil, "horse": nil})
+		eff, err := d.loadEffects(ctx, q, p)
+		if err != nil {
+			return err
+		}
+		res.Soldier = d.soldierUnit(p, s, map[string]*ItemView{"weapon": nil, "armor": nil, "horse": nil}, eff)
 		return nil
 	})
 	if err != nil {

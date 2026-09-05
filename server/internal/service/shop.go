@@ -67,10 +67,15 @@ func (d Deps) GetShop(ctx context.Context, playerID uuid.UUID) (*ShopView, error
 		return nil, fmt.Errorf("count items: %w", err)
 	}
 
+	eff, err := d.loadEffects(ctx, q, p)
+	if err != nil {
+		return nil, err
+	}
+
 	return &ShopView{
 		WindowID:      windowID,
 		SecondsLeft:   secondsLeft,
-		Offers:        d.rollOffers(playerID, st, int(p.Level)),
+		Offers:        d.rollOffers(playerID, st, int(p.Level), eff.ShopDiscount),
 		InventoryUsed: used,
 		InventoryCap:  inventoryCap,
 	}, nil
@@ -90,7 +95,7 @@ func (d Deps) shopWindow() (int64, int64) {
 // rollOffers recomputes the shelf. Nothing is stored: the same inputs always
 // produce the same items, so a retry cannot reroll and an auditor can replay
 // exactly what a player was shown.
-func (d Deps) rollOffers(playerID uuid.UUID, st sqlcdb.AppShopState, level int) []ShopOffer {
+func (d Deps) rollOffers(playerID uuid.UUID, st sqlcdb.AppShopState, level int, discountBP int64) []ShopOffer {
 	cfg := d.Config
 	shop := cfg.Items.Shop
 	slots := shop.Slots
@@ -112,7 +117,7 @@ func (d Deps) rollOffers(playerID uuid.UUID, st sqlcdb.AppShopState, level int) 
 		out = append(out, ShopOffer{
 			Slot:      i,
 			Purchased: st.PurchasedMask&(1<<i) != 0,
-			Price:     items.BuyPrice(cfg, item, 0),
+			Price:     items.BuyPrice(cfg, item, discountBP),
 			Item:      item,
 		})
 	}
@@ -166,7 +171,11 @@ func (d Deps) Buy(ctx context.Context, playerID uuid.UUID, slot int, wantSeq int
 			return ErrShopStale
 		}
 
-		offers := d.rollOffers(playerID, st, int(p.Level))
+		eff, err := d.loadEffects(ctx, q, p)
+		if err != nil {
+			return err
+		}
+		offers := d.rollOffers(playerID, st, int(p.Level), eff.ShopDiscount)
 		if slot < 0 || slot >= len(offers) {
 			return ErrNotFound
 		}

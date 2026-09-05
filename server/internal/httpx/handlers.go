@@ -83,6 +83,10 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "no_stat_points", "not enough stat points")
 	case errors.Is(err, service.ErrNothingToSpend):
 		WriteProblem(w, r, http.StatusBadRequest, "nothing_to_spend", "allocate at least one point")
+	case errors.Is(err, service.ErrUpgradeMaxed):
+		WriteProblem(w, r, http.StatusConflict, "maxed", "already at maximum level")
+	case errors.Is(err, service.ErrNoTax):
+		WriteProblem(w, r, http.StatusConflict, "no_tax", "nothing to collect yet")
 	case errors.Is(err, service.ErrStaleAction):
 		// 409, not 400: the request was well-formed, the client is just behind.
 		// It should re-read state rather than retry blindly.
@@ -496,6 +500,72 @@ func (a *api) spendStats(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, snap)
 }
 
+// --- estates ---
+
+func (a *api) estates(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.svc.GetEstates(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type estateBuyReq struct {
+	ID        string `json:"id"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) buyUpgrade(w http.ResponseWriter, r *http.Request) { a.estateBuy(w, r, true) }
+func (a *api) buyHolding(w http.ResponseWriter, r *http.Request) { a.estateBuy(w, r, false) }
+
+func (a *api) estateBuy(w http.ResponseWriter, r *http.Request, upgrade bool) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req estateBuyReq
+	if !decode(w, r, &req) {
+		return
+	}
+	var v *service.EstatesView
+	var err error
+	if upgrade {
+		v, err = a.svc.BuyUpgrade(r.Context(), pid, req.ID, req.ActionSeq)
+	} else {
+		v, err = a.svc.BuyHolding(r.Context(), pid, req.ID, req.ActionSeq)
+	}
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *api) claimTax(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req seqReq
+	if !decode(w, r, &req) {
+		return
+	}
+	res, err := a.svc.ClaimTax(r.Context(), pid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
 func isKnownServiceError(err error) bool {
 	for _, e := range []error{
 		service.ErrUsernameTaken, service.ErrBadCredentials, service.ErrPlayerBanned,
@@ -506,6 +576,7 @@ func isKnownServiceError(err error) bool {
 		service.ErrSlotsMaxed, service.ErrLevelTooLow, service.ErrAlreadyMaxed,
 		service.ErrShielded, service.ErrOnCooldown, service.ErrSelfAttack,
 		service.ErrNoStatPoints, service.ErrNothingToSpend,
+		service.ErrUpgradeMaxed, service.ErrNoTax,
 	} {
 		if errors.Is(err, e) {
 			return true

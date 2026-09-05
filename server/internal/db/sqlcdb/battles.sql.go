@@ -19,7 +19,7 @@ SET gold = gold + $2, xp = $3, level = $4,
     energy_milli = $6, energy_updated_at = $7,
     action_seq = $8, last_seen_at = now()
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at
 `
 
 type ApplyBattleAttackerParams struct {
@@ -70,6 +70,8 @@ func (q *Queries) ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttack
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
 		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
 	)
 	return i, err
 }
@@ -78,7 +80,7 @@ const applyBattleDefender = `-- name: ApplyBattleDefender :one
 UPDATE app.players
 SET gold = gold + $2, shield_until = $3
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at
 `
 
 type ApplyBattleDefenderParams struct {
@@ -115,6 +117,8 @@ func (q *Queries) ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefend
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
 		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
 	)
 	return i, err
 }
@@ -134,7 +138,7 @@ const createBot = `-- name: CreateBot :one
 INSERT INTO app.players (username, display_name, level, gold, is_bot, soldier_slots,
                          stat_attack, stat_defense, energy_milli)
 VALUES ($1,$2,$3,$4,true,$5,$6,$7,0)
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at
 `
 
 type CreateBotParams struct {
@@ -183,6 +187,8 @@ func (q *Queries) CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
 		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
 	)
 	return i, err
 }
@@ -410,7 +416,7 @@ func (q *Queries) ListBattles(ctx context.Context, arg ListBattlesParams) ([]App
 }
 
 const lockTwoPlayers = `-- name: LockTwoPlayers :many
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
 `
 
 func (q *Queries) LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]AppPlayer, error) {
@@ -447,6 +453,8 @@ func (q *Queries) LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]A
 			&i.FreeSlotClaimed,
 			&i.FreeRecruitClaimed,
 			&i.IsBot,
+			&i.TaxMilliAccrued,
+			&i.TaxUpdatedAt,
 		); err != nil {
 			return nil, err
 		}

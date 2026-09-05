@@ -320,3 +320,101 @@ for t in SOLDIER_TYPES:
     print(f"  {t['name']:<10} recruit lv1 {r1:>6,}   "
           f"common@30 {sold_stat(t['attack'],0,30):>3}/{sold_stat(t['defense'],0,30):>3}/{sold_stat(t['hp'],0,30):>4}   "
           f"legendary@30 {sold_stat(t['attack'],4,30):>3}/{sold_stat(t['defense'],4,30):>3}/{sold_stat(t['hp'],4,30):>4}")
+
+
+# --- family upgrades (economy.md 11.2) ----------------------------------------
+UPGRADES = [
+    # id, name, bucket, max_lv, per_level, base cost, growth, blurb
+    ("granary",    "Granary",             "collect_income_bp", 20,  300, 400,   1.36, "Every collect pays more."),
+    ("tithe_barn", "Tithe Barn",          "tax_income_bp",     20,  500, 500,   1.36, "Your estates earn more, and hold it longer while you are away."),
+    ("scriptorium","Scriptorium",         "xp_bp",             15,  200, 900,   1.42, "Learn faster from everything you do."),
+    ("beacons",    "Watchtower Beacons",  "energy_regen_bp",   10,  400, 4000,  1.55, "Energy returns faster."),
+    ("larder",     "Larder",              "max_energy_flat",   25,    4, 300,   1.28, "Hold more energy, so a long absence wastes less."),
+    ("armoury",    "Armoury",             "soldier_atk_bp",    20,  300, 500,   1.36, "Your soldiers strike harder."),
+    ("bulwark",    "Bulwark",             "soldier_def_bp",    20,  300, 500,   1.36, "Your soldiers endure more."),
+    ("stables",    "Stables",             "soldier_spd_bp",    12,  400, 2500,  1.48, "Your riders move first."),
+    ("merchant",   "Merchant Ties",       "shop_discount_bp",  10,  200, 4000,  1.60, "The market asks less of you."),
+    ("war_chest",  "War Chest",           "steal_cap_bp",       8,  800, 8000,  1.75, "Carry more away from a raid."),
+    ("coffers",    "Ransom Coffers",      "ransom_bp",          8,  500, 6000,  1.72, "Losing a defence still pays."),
+]
+
+upgrades = []
+for uid, name, bucket, maxlv, per, base, growth, blurb in UPGRADES:
+    costs = [half_up(base * round(growth ** (lv - 1) * 10000), 10000) for lv in range(1, maxlv + 1)]
+    upgrades.append({
+        "id": uid, "name": name, "bucket": bucket, "max_level": maxlv,
+        "per_level": per, "blurb": blurb, "costs": costs,
+    })
+
+# --- territory holdings -------------------------------------------------------
+# The design put passive income on soldier slots; the owner chose Territory as
+# its home, so holdings are the income engine and the Family tree multiplies it.
+# A base rate from level remains, so a player with no holdings still has some
+# idle income and the hybrid model is always on.
+HOLDINGS = [
+    ("wheat_farm",  "Wheat Farm",    1,  1),
+    ("watermill",   "Watermill",     8,  2),
+    ("quarry",      "Stone Quarry",  14, 3),
+    ("vineyard",    "Vineyard",      20, 4),
+    ("iron_mine",   "Iron Mine",     28, 5),
+    ("market",      "Market Square", 36, 6),
+    ("river_port",  "River Port",    45, 7),
+    ("mint",        "Ducal Mint",    55, 8),
+]
+HOLDING_MAX_LEVEL = 10
+
+holdings = []
+for i, (hid, name, unlock, _tier) in enumerate(HOLDINGS):
+    # Yield per level grows 1.5x per holding, so later estates matter without
+    # making the first ones worthless.
+    per_hour = round(1.0 * 1.5 ** i, 2)
+    # Priced from PAYBACK, not from the Family tree. Yields are pinned by the
+    # target that passive income stays around 20-50% of active collecting, so the
+    # only lever is cost. At roughly 300 gold per gold-per-hour, a holding pays
+    # for itself in about twelve days of real time — a real investment in an idle
+    # game, where the first pass (a thousand-hour payback) made Territory
+    # something no rational player would ever build.
+    #
+    # The Family tree remains the bottomless sink at 6.8M; Territory is the income
+    # engine and is deliberately cheap by comparison.
+    base_cost = half_up(round(85 * 1.72 ** i), 1)
+    costs = [half_up(base_cost * round(1.25 ** (lv - 1) * 10000), 10000)
+             for lv in range(1, HOLDING_MAX_LEVEL + 1)]
+    holdings.append({
+        "id": hid, "name": name, "unlock_level": unlock,
+        "max_level": HOLDING_MAX_LEVEL,
+        # milli-gold per hour per level, so the whole pipeline stays integer
+        "tax_milli_per_hour_per_level": int(round(per_hour * 1000)),
+        "costs": costs,
+    })
+
+emit("estates.json", json.dumps({
+    "_comment": "Family upgrades and Territory holdings. Every percentage is ADDITIVE within its "
+                "bucket and the bucket applies once, so there is no compounding between upgrades and "
+                "every bucket stays hard-capped. The Family tree costs far more in total than a "
+                "level-60 player will ever earn — that is deliberate, so there is never an 'I finished "
+                "the upgrades' cliff and every node stays a live choice. "
+                "Tax = base(level) + sum(holding yields), multiplied by tax_income_bp. Deliberately NOT "
+                "a function of Might or gear, so PvP power cannot buy income which buys PvP power.",
+    "upgrades": upgrades,
+    "holdings": holdings,
+    "tax": {
+        "base_per_hour_milli": 24000,
+        "growth_bp": 10450,              # 1.045^level
+        "offline_cap_seconds": 28800,    # 8h, +720s per Tithe Barn level
+        "offline_cap_per_tithe_level": 720,
+    },
+}, indent=2) + "\n")
+
+print(f"estates.json   : {len(upgrades)} family upgrades, {len(holdings)} holdings")
+print(f"  family tree total cost : {sum(sum(u['costs']) for u in upgrades):>12,} gold")
+print(f"  holdings total cost    : {sum(sum(h['costs']) for h in holdings):>12,} gold")
+tax60 = 24 * 1.045 ** 60
+hold60 = sum(h["tax_milli_per_hour_per_level"] / 1000 * HOLDING_MAX_LEVEL for h in holdings)
+print(f"  tax/hr at lv60         : base {tax60:>8.0f} + holdings {hold60:>7.0f} = {tax60 + hold60:>8.0f}")
+print(f"  8h offline vs 8h active: {(tax60 + hold60) * 8 / 12725 * 100:>5.1f}%  (design target ~51% at max)")
+print("  holding                 unlock   max yield/hr      total cost   payback")
+for h in holdings:
+    y = h["tax_milli_per_hour_per_level"] / 1000 * HOLDING_MAX_LEVEL
+    c = sum(h["costs"])
+    print(f"  {h['name']:<22} lv{h['unlock_level']:<4} {y:>10.1f} {c:>15,}   {c/max(y,0.01):>6.0f}h")

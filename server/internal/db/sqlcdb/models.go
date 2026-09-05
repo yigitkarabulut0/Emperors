@@ -80,6 +80,14 @@ type AppPlayer struct {
 	FreeSlotClaimed    bool
 	FreeRecruitClaimed bool
 	IsBot              bool
+	TaxMilliAccrued    int64
+	TaxUpdatedAt       time.Time
+}
+
+type AppPlayerHolding struct {
+	PlayerID  uuid.UUID
+	HoldingID string
+	Level     int32
 }
 
 type AppPlayerItem struct {
@@ -105,6 +113,12 @@ type AppPlayerJobProgress struct {
 	PlayerID uuid.UUID
 	JobID    string
 	Collects int64
+}
+
+type AppPlayerUpgrade struct {
+	PlayerID  uuid.UUID
+	UpgradeID string
+	Level     int32
 }
 
 type AppServerInfo struct {

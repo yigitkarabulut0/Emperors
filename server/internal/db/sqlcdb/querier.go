@@ -17,9 +17,14 @@ type Querier interface {
 	// action sequence. Energy is written back already settled by the caller.
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
+	BuyHoldingLevel(ctx context.Context, arg BuyHoldingLevelParams) (AppPlayerHolding, error)
 	BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) (AppPlayer, error)
+	// Buys one level. The current level is in the WHERE clause, so two concurrent
+	// taps cannot both see the same level and both succeed.
+	BuyUpgradeLevel(ctx context.Context, arg BuyUpgradeLevelParams) (AppPlayerUpgrade, error)
 	ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitParams) (AppPlayer, error)
 	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
+	ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, error)
 	CountBots(ctx context.Context) (int64, error)
 	CountPlayerItems(ctx context.Context, playerID uuid.UUID) (int64, error)
 	CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer, error)
@@ -46,10 +51,12 @@ type Querier interface {
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
+	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
 	ListItemsForSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListJobProgress(ctx context.Context, playerID uuid.UUID) ([]AppPlayerJobProgress, error)
 	ListPlayerItems(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppSoldier, error)
+	ListUpgrades(ctx context.Context, playerID uuid.UUID) ([]AppPlayerUpgrade, error)
 	// Locks the row for the duration of the transaction. Every mutating action
 	// takes this first, so two concurrent collects cannot both read the same energy
 	// and both spend it.
@@ -72,6 +79,7 @@ type Querier interface {
 	SetSoldierEquipped(ctx context.Context, arg SetSoldierEquippedParams) error
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
+	SettleTax(ctx context.Context, arg SettleTaxParams) error
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)
 	// Spends level-up points. The WHERE clause carries the affordability check, so
 	// the balance cannot go negative even under a concurrent double-tap.

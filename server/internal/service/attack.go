@@ -73,10 +73,13 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 		return nil, err
 	}
 
+	eff, err := d.loadEffects(ctx, q, me)
+	if err != nil {
+		return nil, err
+	}
+
 	now := d.Now()
-	settled, maxE, period := settleEnergy(d.Config, me, now)
-	_ = maxE
-	_ = period
+	settled, _, _ := settleEnergy(d.Config, me, eff, now)
 
 	view := &AttackView{
 		Might:      mine.Totals.Might,
@@ -134,7 +137,7 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 		tv := TargetView{
 			PlayerID: r.ID.String(), Name: r.DisplayName, Level: int64(r.Level),
 			Might: theirs.Totals.Might, Gold: itoa(r.Gold),
-			Estimate: d.estimateSteal(int64(me.Level), r.Gold),
+			Estimate: d.estimateStealWithCap(int64(me.Level), r.Gold, eff.StealCapBP),
 			IsBot:    r.IsBot,
 		}
 		ratioBP := tv.Might * 10000 / myMight
@@ -175,10 +178,18 @@ const (
 )
 
 func (d Deps) estimateSteal(attackerLevel, defenderGold int64) int64 {
+	return d.estimateStealWithCap(attackerLevel, defenderGold, 0)
+}
+
+// estimateStealWithCap applies the War Chest bonus to the ceiling.
+func (d Deps) estimateStealWithCap(attackerLevel, defenderGold, capBonusBP int64) int64 {
 	const rateBP = 300 // 3%
 	const minSteal = minStealFloor
 	stolen := defenderGold * rateBP / 10000
 	cap := 250 * (10000 + 3500*attackerLevel) / 10000
+	if capBonusBP > 0 {
+		cap = cap * (10000 + capBonusBP) / 10000
+	}
 	if stolen > cap {
 		stolen = cap
 	}
@@ -256,8 +267,13 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			return ErrOnCooldown
 		}
 
+		eff, err := d.loadEffects(ctx, q, me)
+		if err != nil {
+			return err
+		}
+
 		cost := d.attackEnergyCost(int64(me.Level))
-		settled, _, _ := settleEnergy(d.Config, me, now)
+		settled, _, _ := settleEnergy(d.Config, me, eff, now)
 		spent, ok := economy.Spend(settled, cost)
 		if !ok {
 			return ErrNotEnoughEnergy
@@ -292,12 +308,11 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		if !won {
 			xp = xp * 35 / 100
 		}
-		bonuses := playerBonuses(me)
-		up := economy.AwardXP(d.Config, int(me.Level), me.Xp, xp, bonuses)
+		up := economy.AwardXP(d.Config, int(me.Level), me.Xp, xp, eff.Bonuses)
 
 		final := spent
 		if up.Refilled {
-			final = economy.Refill(economy.MaxEnergy(d.Config, int64(me.StatEnergy), 0), now)
+			final = economy.Refill(economy.MaxEnergy(d.Config, int64(me.StatEnergy), eff.MaxEnergyFlat), now)
 		}
 
 		afterAtt, err := q.ApplyBattleAttacker(ctx, sqlcdb.ApplyBattleAttackerParams{

@@ -11,6 +11,7 @@ import (
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
 
@@ -86,8 +87,13 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 		return nil, fmt.Errorf("load player: %w", err)
 	}
 
+	eff, err := d.loadEffects(ctx, q, p)
+	if err != nil {
+		return nil, err
+	}
+
 	now := d.Now()
-	settled, maxEnergy, period := settleEnergy(d.Config, p, now)
+	settled, maxEnergy, period := settleEnergy(d.Config, p, eff, now)
 
 	// Persist the settled value opportunistically. If this fails the request
 	// still succeeds: energy is derived from (value, anchor), so the next write
@@ -111,29 +117,21 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 	return &Snapshot{
 		Player:   playerView(d.Config, p),
 		Energy:   energyView(settled, maxEnergy, period),
-		Jobs:     jobViews(d.Config, p, collects),
+		Jobs:     jobViews(d.Config, p, collects, eff.Bonuses),
 		ServerAt: now.UTC(),
 		Config:   ConfigVersion{Version: d.Config.Version},
 	}, nil
 }
 
 // settleEnergy materialises energy up to now and returns the derived limits.
-func settleEnergy(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, now time.Time) (economy.EnergyState, int64, int64) {
-	bonuses := playerBonuses(p)
-	maxEnergy := economy.MaxEnergy(cfg, int64(p.StatEnergy), 0)
-	period := economy.RegenPeriodMillis(cfg, bonuses)
+func settleEnergy(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, eff estates.Effects, now time.Time) (economy.EnergyState, int64, int64) {
+	maxEnergy := economy.MaxEnergy(cfg, int64(p.StatEnergy), eff.MaxEnergyFlat)
+	period := economy.RegenPeriodMillis(cfg, eff.Bonuses)
 	state := economy.Settle(
 		economy.EnergyState{Milli: p.EnergyMilli, UpdatedAt: p.EnergyUpdatedAt},
 		maxEnergy, period, now,
 	)
 	return state, maxEnergy, period
-}
-
-// playerBonuses collects every percentage bonus that applies to this player.
-// Upgrades, kingdom and territory bonuses land here in later milestones; today
-// a fresh player has none.
-func playerBonuses(_ sqlcdb.AppPlayer) economy.Bonuses {
-	return economy.Bonuses{}
 }
 
 func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {
@@ -163,8 +161,7 @@ func energyView(s economy.EnergyState, maxEnergy, period int64) EnergyView {
 	}
 }
 
-func jobViews(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, collects map[string]int64) []JobView {
-	bonuses := playerBonuses(p)
+func jobViews(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, collects map[string]int64, bonuses economy.Bonuses) []JobView {
 	out := make([]JobView, 0, len(cfg.Jobs.Jobs))
 	for i := range cfg.Jobs.Jobs {
 		j := &cfg.Jobs.Jobs[i]

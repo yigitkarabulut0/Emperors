@@ -68,8 +68,13 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 			return ErrJobLocked
 		}
 
+		eff, err := d.loadEffects(ctx, q, p)
+		if err != nil {
+			return err
+		}
+
 		now := d.Now()
-		settled, maxEnergy, period := settleEnergy(d.Config, p, now)
+		settled, maxEnergy, period := settleEnergy(d.Config, p, eff, now)
 
 		spent, ok := economy.Spend(settled, job.EnergyCost)
 		if !ok {
@@ -84,16 +89,14 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 		}
 		collectsBefore := progress.Collects - 1
 
-		bonuses := playerBonuses(p)
-		reward := economy.Collect(d.Config, job, collectsBefore, bonuses)
-		up := economy.AwardXP(d.Config, int(p.Level), p.Xp, reward.XP, bonuses)
+		reward := economy.Collect(d.Config, job, collectsBefore, eff.Bonuses)
+		up := economy.AwardXP(d.Config, int(p.Level), p.Xp, reward.XP, eff.Bonuses)
 
 		// Levelling refills energy, which must happen AFTER the spend or the
 		// level-up would silently refund the cost of the collect that caused it.
 		final := spent
 		if up.Refilled {
-			newMax := economy.MaxEnergy(d.Config, int64(p.StatEnergy), 0)
-			final = economy.Refill(newMax, now)
+			final = economy.Refill(economy.MaxEnergy(d.Config, int64(p.StatEnergy), eff.MaxEnergyFlat), now)
 		}
 
 		if _, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{

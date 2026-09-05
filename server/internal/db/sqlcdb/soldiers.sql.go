@@ -18,7 +18,7 @@ SET soldier_slots = soldier_slots + 1,
     action_seq = $3,
     last_seen_at = now()
 WHERE id = $1 AND gold >= $2 AND soldier_slots = $4
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at
 `
 
 type BuySoldierSlotParams struct {
@@ -61,6 +61,8 @@ func (q *Queries) BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) 
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
 		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
 	)
 	return i, err
 }
@@ -69,7 +71,7 @@ const claimFreeRecruit = `-- name: ClaimFreeRecruit :one
 UPDATE app.players
 SET free_recruit_claimed = true, action_seq = $2, last_seen_at = now()
 WHERE id = $1 AND free_recruit_claimed = false
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at
 `
 
 type ClaimFreeRecruitParams struct {
@@ -105,6 +107,8 @@ func (q *Queries) ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitPara
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
 		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
 	)
 	return i, err
 }
@@ -116,7 +120,7 @@ SET soldier_slots = soldier_slots + 1,
     action_seq = $2,
     last_seen_at = now()
 WHERE id = $1 AND free_slot_claimed = false AND soldier_slots = 0
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at
 `
 
 type ClaimFreeSlotParams struct {
@@ -152,6 +156,8 @@ func (q *Queries) ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (A
 		&i.FreeSlotClaimed,
 		&i.FreeRecruitClaimed,
 		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
 	)
 	return i, err
 }

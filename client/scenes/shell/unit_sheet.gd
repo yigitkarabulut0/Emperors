@@ -29,8 +29,11 @@ func _init(p_unit: Dictionary, p_is_hero: bool) -> void:
 func _ready() -> void:
 	layer = 18
 
+	# Nearly opaque. At 0.72 the whole screen stayed legible behind the card, so
+	# the sheet read as a small box sitting on the barracks rather than as the
+	# thing you are now looking at.
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Color(Palette.BG.r * 0.4, Palette.BG.g * 0.4, Palette.BG.b * 0.4, 0.93)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and not _busy:
@@ -43,19 +46,17 @@ func _ready() -> void:
 	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	SafeArea.wrap(self, Vector4(16, 16, 16, 16)).add_child(centre)
 
+	# 620 of the 720 the screen guarantees. At 330 this was a desktop dialog
+	# dropped onto a phone: a narrow box in the middle of a large empty screen,
+	# with everything inside it cramped to match.
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(330, 0)
-	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))
+	card.custom_minimum_size = Vector2(620, 0)
+	card.add_theme_stylebox_override("panel", UI.skin("panel_gold", Palette.PANEL, 22, 20))
 	centre.add_child(card)
 
-	var pad := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
-		pad.add_theme_constant_override("margin_" + side, 16)
-	card.add_child(pad)
-
 	_body = VBoxContainer.new()
-	_body.add_theme_constant_override("separation", 10)
-	pad.add_child(_body)
+	_body.add_theme_constant_override("separation", UI.GAP_M)
+	card.add_child(_body)
 
 	_render()
 
@@ -72,42 +73,89 @@ func _render() -> void:
 
 	var tier := str(_unit.get("tier", ""))
 	var title := str(_unit.get("name", "Unit"))
-	_body.add_child(UI.label(title, UI.F_H2, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
 
-	var sub := "level %d" % int(_unit.get("level", 1))
+	# --- who ----------------------------------------------------------------
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", UI.GAP_M)
+	_body.add_child(head)
+
+	var face := TextureRect.new()
+	face.custom_minimum_size = Vector2(UI.ICON_XL, UI.ICON_XL)
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	face.texture = ArtRegistry.portrait(str(GameState.player().get("avatar", "knight"))) \
+		if _is_hero else ArtRegistry.ui_icon("barracks")
+	if not _is_hero and tier != "":
+		face.modulate = Palette.tier(tier)
+	head.add_child(face)
+
+	var who := VBoxContainer.new()
+	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	who.alignment = BoxContainer.ALIGNMENT_CENTER
+	who.add_theme_constant_override("separation", UI.GAP_XS)
+	head.add_child(who)
+	who.add_child(UI.label(title, UI.F_H1, Palette.TEXT))
+	var sub := "Level %d" % int(_unit.get("level", 1))
 	if tier != "":
 		sub = "%s   ·   %s" % [tier.capitalize(), sub]
-	var sub_label := UI.label(sub, UI.F_MICRO, Palette.tier(tier) if tier != "" else Palette.TEXT_FAINT,
-		HORIZONTAL_ALIGNMENT_CENTER)
-	_body.add_child(sub_label)
+	who.add_child(UI.label(sub, UI.F_CAPTION,
+		Palette.tier(tier) if tier != "" else Palette.TEXT_DIM))
 
-	_body.add_child(UI.label("ATK %d   DEF %d   SPD %d   HP %d" % [
-		int(_unit.get("attack", 0)), int(_unit.get("defense", 0)),
-		int(_unit.get("speed", 0)), int(_unit.get("hp", 0))],
-		UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+	# --- what it is worth ----------------------------------------------------
+	#
+	# Four chips rather than one run-on line. A row reading
+	# "ATK 22 DEF 22 SPD 0 HP 266" is four facts the eye has to separate for
+	# itself; four labelled boxes are four facts already separated.
+	var stats := HBoxContainer.new()
+	stats.add_theme_constant_override("separation", UI.GAP_S)
+	_body.add_child(stats)
+	for pair in [["ATK", int(_unit.get("attack", 0)), Palette.DANGER],
+			["DEF", int(_unit.get("defense", 0)), Palette.DIAMOND],
+			["SPD", int(_unit.get("speed", 0)), Palette.SUCCESS],
+			["HP", int(_unit.get("hp", 0)), Palette.GOLD]]:
+		stats.add_child(_stat_chip(str(pair[0]), int(pair[1]), pair[2]))
 
 	var equipped: Dictionary = _unit.get("equipped", {})
 	for slot in SLOTS:
 		_body.add_child(_slot_row(slot, equipped.get(slot)))
 
 	if not _is_hero:
-		var danger := Button.new()
-		danger.text = "DISMISS"
-		danger.focus_mode = Control.FOCUS_NONE
-		danger.add_theme_stylebox_override("normal", UI.panel_box(Palette.BG, Palette.DANGER))
-		danger.add_theme_stylebox_override("hover", UI.panel_box(Palette.DANGER, Palette.DANGER))
-		danger.add_theme_color_override("font_color", Palette.DANGER)
-		danger.pressed.connect(_dismiss)
-		_body.add_child(danger)
-		_body.add_child(UI.label(
-			"Frees the slot and refunds a quarter of the recruit price. Gear goes back to your armory.",
-			UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+		var note := UI.label(
+			"Dismissing frees the slot and refunds a quarter of the recruit price. Gear goes back to your armory.",
+			UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_body.add_child(note)
 
-	var close := Button.new()
-	close.text = "Close"
-	close.focus_mode = Control.FOCUS_NONE
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", UI.GAP_M)
+	_body.add_child(actions)
+
+	var close := UI.ghost_button("Close", UI.F_BODY)
+	close.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
+	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close.pressed.connect(func() -> void: queue_free())
-	_body.add_child(close)
+	actions.add_child(close)
+
+	if not _is_hero:
+		var danger := UI.danger_button("Dismiss", UI.F_BODY)
+		danger.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
+		danger.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		danger.pressed.connect(_dismiss)
+		actions.add_child(danger)
+
+
+## One labelled stat, boxed, so four numbers read as four numbers.
+func _stat_chip(name: String, value: int, tint: Color) -> Control:
+	var box := PanelContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_stylebox_override("panel", UI.skin("panel_sunk", Palette.BG, 8, 8))
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 0)
+	box.add_child(col)
+	col.add_child(UI.label(name, UI.F_MICRO, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.label(UI.number(value), UI.F_H2, tint, HORIZONTAL_ALIGNMENT_CENTER))
+	return box
 
 
 ## One equipment slot: what is in it, or the silhouette of what could be.
@@ -115,8 +163,9 @@ func _slot_row(slot: String, item: Variant) -> Control:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(0, UI.TAP_ROW_TIGHT)
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT))
-	b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.GOLD_DEEP))
+	b.add_theme_stylebox_override("normal", UI.card_box())
+	b.add_theme_stylebox_override("hover", UI.card_box(true))
+	b.add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
 	b.pressed.connect(_choose_for.bind(slot))
 
 	var pad := MarginContainer.new()
@@ -133,7 +182,7 @@ func _slot_row(slot: String, item: Variant) -> Control:
 	var icon := TextureRect.new()
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(44, 44)
+	icon.custom_minimum_size = Vector2(UI.ICON_LG, UI.ICON_LG)
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(icon)
 
@@ -145,17 +194,21 @@ func _slot_row(slot: String, item: Variant) -> Control:
 
 	if item is Dictionary:
 		icon.texture = ArtRegistry.item_icon(str(item.get("art", "")), str(item.get("tier", "common")))
-		col.add_child(UI.label(str(item.get("name", "")), UI.F_CAPTION, Palette.TEXT))
+		col.add_child(UI.label(str(item.get("name", "")), UI.F_BODY, Palette.TEXT))
 		col.add_child(UI.label("ATK %d   DEF %d   SPD %d" % [
 			int(item.get("attack", 0)), int(item.get("defense", 0)), int(item.get("speed", 0))],
-			UI.F_MICRO, Palette.tier(str(item.get("tier", "common")))))
+			UI.F_CAPTION, Palette.tier(str(item.get("tier", "common")))))
 	else:
 		icon.texture = ArtRegistry.ui_icon("slots/" + slot)
-		icon.modulate = Palette.EMPTY_SLOT
-		col.add_child(UI.label(str(SLOT_NAMES.get(slot, slot)), UI.F_CAPTION, Palette.TEXT_FAINT))
-		col.add_child(UI.label("empty — tap to equip", UI.F_MICRO, Palette.TEXT_FAINT))
+		# EMPTY_SLOT on a raised panel was almost invisible: an empty slot has to
+		# read as a silhouette waiting to be filled, not as nothing at all.
+		icon.modulate = Palette.TEXT_DIM
+		col.add_child(UI.label(str(SLOT_NAMES.get(slot, slot)), UI.F_BODY, Palette.TEXT_DIM))
+		col.add_child(UI.label("empty — tap to equip", UI.F_CAPTION, Palette.TEXT_FAINT))
 
-	row.add_child(UI.label(">", UI.F_CAPTION, Palette.TEXT_FAINT))
+	var chev := UI.label("›", UI.F_H1, Palette.GOLD_DEEP)
+	chev.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(chev)
 	return b
 
 

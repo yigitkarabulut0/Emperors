@@ -13,6 +13,7 @@ var _owner_id := ""
 var _is_hero := false
 var _busy := false
 var _list: VBoxContainer
+var _scroll: ScrollContainer
 var _equipped_power := 0
 var _worn := ""
 
@@ -27,7 +28,7 @@ func _ready() -> void:
 	layer = 22
 
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.78)
+	dim.color = Color(Palette.BG.r * 0.4, Palette.BG.g * 0.4, Palette.BG.b * 0.4, 0.93)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and not _busy:
@@ -38,24 +39,44 @@ func _ready() -> void:
 	# with a Dynamic Island the card ran about 50 units underneath it. A
 	# CanvasLayer is not a Control and cannot inherit the shell's insets, so it
 	# asks for them directly.
-	var margin := SafeArea.wrap(self, Vector4(16, 24, 16, 24))
+	var margin := SafeArea.wrap(self, Vector4(UI.GAP_L, UI.GAP_L, UI.GAP_L, UI.GAP_L))
+
+	# Sized to what is in it, not to the screen. It used to stretch to every edge,
+	# so choosing from an empty armory was a full-screen black box with two lines
+	# of small text stranded at the top of it.
+	var centre := CenterContainer.new()
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(centre)
 
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))
-	margin.add_child(card)
-
-	var pad := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
-		pad.add_theme_constant_override("margin_" + side, 14)
-	card.add_child(pad)
+	card.custom_minimum_size = Vector2(620, 0)
+	card.add_theme_stylebox_override("panel", UI.skin("panel_gold", Palette.PANEL, 22, 20))
+	centre.add_child(card)
 
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 10)
-	pad.add_child(col)
-	col.add_child(UI.label("Choose a " + _slot, UI.F_H2, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_theme_constant_override("separation", UI.GAP_M)
+	card.add_child(col)
 
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", UI.GAP_S)
+	col.add_child(head)
+	var glyph := TextureRect.new()
+	glyph.texture = ArtRegistry.ui_icon("slots/" + _slot)
+	glyph.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	glyph.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	glyph.custom_minimum_size = Vector2(UI.ICON_MD, UI.ICON_MD)
+	glyph.modulate = Palette.GOLD
+	glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(glyph)
+	var title := UI.label("Choose a " + _slot, UI.F_H1, Palette.TEXT)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+
+	# A ceiling rather than a fill: the card grows with the list up to about half
+	# the screen and scrolls past that, instead of always being full height.
 	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(0, 0)
+	scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 
 	# Lists follow your finger. Godot's own touch scrolling is gated behind
@@ -70,9 +91,10 @@ func _ready() -> void:
 	_list.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list)
 
-	var close := Button.new()
-	close.text = "Cancel"
-	close.focus_mode = Control.FOCUS_NONE
+	_scroll = scroll
+
+	var close := UI.ghost_button("Cancel", UI.F_BODY)
+	close.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	close.pressed.connect(func() -> void: queue_free())
 	col.add_child(close)
 
@@ -109,11 +131,46 @@ func _load() -> void:
 	if _equipped_power > 0:
 		_list.add_child(_unequip_row())
 	if mine.is_empty():
-		_list.add_child(UI.label("Nothing in your armory fits this slot.\nVisit the Market.",
+		# An empty state that says what to do about it, rather than reporting a
+		# fact and leaving the player in a black box.
+		var empty := VBoxContainer.new()
+		empty.add_theme_constant_override("separation", UI.GAP_S)
+		empty.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var mark := TextureRect.new()
+		mark.texture = ArtRegistry.ui_icon("slots/" + _slot)
+		mark.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		mark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		mark.custom_minimum_size = Vector2(0, UI.ICON_XL)
+		mark.modulate = Palette.EMPTY_SLOT
+		empty.add_child(mark)
+		empty.add_child(UI.label("Nothing in your armory fits this slot.",
+			UI.F_BODY, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		empty.add_child(UI.label("The Market restocks every few minutes.",
 			UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+		_list.add_child(empty)
+		_fit_scroll()
 		return
 	for it in mine:
 		_list.add_child(_row(it))
+	_fit_scroll()
+
+
+## Grows the scroll view to its content, up to a ceiling.
+##
+## A ScrollContainer has no intrinsic minimum height -- that is the whole point
+## of one -- so with nothing else driving it the list collapsed to nothing and
+## the card showed a title and a Cancel button with a void between them. This
+## gives it the height it wants and caps it, so a short list makes a short card
+## and a long one scrolls.
+const MAX_LIST_H := 620.0
+
+func _fit_scroll() -> void:
+	if _scroll == null or not is_instance_valid(_scroll):
+		return
+	await get_tree().process_frame
+	if not is_instance_valid(_scroll) or not is_instance_valid(_list):
+		return
+	_scroll.custom_minimum_size.y = minf(_list.get_combined_minimum_size().y, MAX_LIST_H)
 
 
 func _row(item: Dictionary) -> Control:

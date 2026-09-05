@@ -145,6 +145,13 @@ func _sell_selected() -> void:
 	var it := _selected_item()
 	if it.is_empty():
 		return
+	if not await Confirm.ask(self, {
+			"title": "Sell this?",
+			"body": "%s (%s) is gone for good." % [
+				str(it.get("name", "")), str(it.get("tier", "")).to_upper()],
+			"cost": {"amount": int(it.get("sell_price", 0)), "currency": "gold"},
+			"confirm_text": "Sell", "danger": true}):
+		return
 	var seq := int(GameState.player().get("action_seq", 0)) + 1
 	var res: Api.Response = await Api.post_json("/v1/inventory/sell",
 		{"item_id": _selected, "action_seq": seq})

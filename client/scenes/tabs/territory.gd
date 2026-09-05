@@ -179,6 +179,13 @@ func _buy() -> void:
 	var h := _selected_holding()
 	if h.is_empty() or _busy:
 		return
+	if not await Confirm.ask(self, {
+			"title": "Buy %s?" % str(h.get("name", "this estate")),
+			"body": "Level %d to %d. %s" % [int(h.get("level", 0)),
+				int(h.get("level", 0)) + 1, str(h.get("blurb", ""))],
+			"cost": {"amount": int(h.get("next_cost", 0)), "currency": "gold"},
+			"confirm_text": "Buy"}):
+		return
 	_busy = true
 	_refresh_action()
 	var res: Api.Response = await Api.post_json("/v1/estates/holding",

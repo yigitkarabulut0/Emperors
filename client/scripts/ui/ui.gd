@@ -101,6 +101,19 @@ static func button(text: String, size: int = F_H2) -> Button:
 	return b
 
 
+## A commit button for something irreversible. Same shape as button(), in the
+## danger colour, so "sell this" and "buy this" never look like the same tap.
+static func danger_button(text: String, size: int = F_H2) -> Button:
+	var b := button(text, size)
+	b.add_theme_stylebox_override("normal", panel_box(Palette.DANGER))
+	b.add_theme_stylebox_override("hover", panel_box(Color("#E4726A")))
+	b.add_theme_stylebox_override("pressed", panel_box(Color("#B2483E")))
+	b.add_theme_color_override("font_color", Palette.TEXT)
+	b.add_theme_color_override("font_hover_color", Palette.TEXT)
+	b.add_theme_color_override("font_pressed_color", Palette.TEXT)
+	return b
+
+
 static func ghost_button(text: String, size: int = F_BODY) -> Button:
 	var b := Button.new()
 	b.text = text

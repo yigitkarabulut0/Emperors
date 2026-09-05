@@ -189,6 +189,11 @@ func _reload_unit() -> void:
 func _dismiss() -> void:
 	if _busy:
 		return
+	if not await Confirm.ask(self, {
+			"title": "Dismiss %s?" % str(_unit.get("name", "this soldier")),
+			"body": "Their levels and their gear go with them. The slot stays yours.",
+			"confirm_text": "Dismiss", "danger": true}):
+		return
 	_busy = true
 	var res: Api.Response = await Api.post_json("/v1/army/dismiss", {
 		"soldier_id": str(_unit.get("id", "")),

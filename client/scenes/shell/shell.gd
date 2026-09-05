@@ -158,6 +158,14 @@ func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--dev-avatars"):
 		_open_avatar_picker()
 
+	# Dev-only: put a sample confirmation up, for the same reason.
+	if OS.get_cmdline_user_args().has("--dev-confirm"):
+		Confirm.ask(self, {
+			"title": "Sell this?",
+			"body": "Guard's Breastplate (UNCOMMON) is gone for good.",
+			"cost": {"amount": 103, "currency": "gold"},
+			"confirm_text": "Sell", "danger": true})
+
 	if _dev_act:
 		await get_tree().create_timer(1.2).timeout
 		for c in _action_host.get_children():

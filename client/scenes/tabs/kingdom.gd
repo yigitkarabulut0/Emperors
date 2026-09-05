@@ -298,6 +298,11 @@ func _set_role(player_id: String, role: String) -> void:
 
 
 func _leave() -> void:
+	if not await Confirm.ask(self, {
+			"title": "Leave the kingdom?",
+			"body": "You keep nothing you donated, and rejoining needs a new invitation.",
+			"confirm_text": "Leave", "danger": true}):
+		return
 	await _post("/v1/kingdom/leave", {})
 
 
@@ -368,11 +373,26 @@ func _donate(amount: int) -> void:
 	var give := mini(amount, GameState.display_gold())
 	if give <= 0:
 		return
+	if not await Confirm.ask(self, {
+			"title": "Give to the treasury?",
+			"body": "Donated gold belongs to the kingdom. You cannot take it back.",
+			"cost": {"amount": give, "currency": "gold"},
+			"confirm_text": "Give", "danger": true}):
+		return
 	await _post("/v1/kingdom/donate",
 		{"amount": give, "action_seq": int(GameState.player().get("action_seq", 0)) + 1})
 
 
 func _buy_upgrade(id: String) -> void:
+	var name := id
+	for u in _kv.get("upgrades", []):
+		if str(u.get("id", "")) == id:
+			name = str(u.get("name", id))
+	if not await Confirm.ask(self, {
+			"title": "Commission %s?" % name,
+			"body": "Paid from the kingdom's treasury, on everyone's behalf.",
+			"confirm_text": "Commission"}):
+		return
 	await _post("/v1/kingdom/upgrade", {"id": id})
 
 
@@ -380,6 +400,12 @@ func _found() -> void:
 	# A generated name keeps founding to one tap. Renaming can come later; a text
 	# field here would put a keyboard between the player and the moment.
 	var n := str(GameState.player().get("username", "Realm"))
+	if not await Confirm.ask(self, {
+			"title": "Found House %s?" % n,
+			"body": "You become its king, and the cost is paid now.",
+			"cost": {"amount": int(_kv.get("found_cost", 0)), "currency": "gold"},
+			"confirm_text": "Found it"}):
+		return
 	await _post("/v1/kingdom/found", {
 		"name": "House " + n, "tag": n.substr(0, 3).to_upper(),
 		"action_seq": int(GameState.player().get("action_seq", 0)) + 1})

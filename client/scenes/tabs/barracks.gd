@@ -329,6 +329,8 @@ func _cheapest_recruit() -> Dictionary:
 func _do_action() -> void:
 	if _busy:
 		return
+	if not await _confirm_action():
+		return
 	_busy = true
 	_refresh_action()
 
@@ -347,6 +349,41 @@ func _do_action() -> void:
 	_busy = false
 	await GameState.refresh()
 	await _reload()
+
+
+## One button drives three different purchases, so the question has to be built
+## from whatever is selected. A free slot or a free first recruit costs nothing
+## and is not worth interrupting.
+func _confirm_action() -> bool:
+	if _is_next_slot_selected():
+		var next: Dictionary = _army.get("next_slot", {})
+		if bool(next.get("free", false)):
+			return true
+		return await Confirm.ask(self, {
+			"title": "Buy another slot?",
+			"body": "One more soldier can stand in your warband.",
+			"cost": {"amount": int(next.get("cost", 0)), "currency": "gold"},
+			"confirm_text": "Buy slot"})
+
+	if _selected < 1:
+		return true
+
+	var sold := _selected_soldier()
+	if sold.is_empty():
+		var pick := _cheapest_recruit()
+		if pick.is_empty() or bool(pick.get("free", false)):
+			return true
+		return await Confirm.ask(self, {
+			"title": "Recruit a %s?" % str(pick.get("name", "soldier")),
+			"body": "They join at level 1 and start with no gear.",
+			"cost": {"amount": int(pick.get("cost", 0)), "currency": "gold"},
+			"confirm_text": "Recruit"})
+
+	return await Confirm.ask(self, {
+		"title": "Train %s?" % str(sold.get("name", "this soldier")),
+		"body": "Level %d to %d." % [int(sold.get("level", 1)), int(sold.get("level", 1)) + 1],
+		"cost": {"amount": int(sold.get("train_cost", 0)), "currency": "gold"},
+		"confirm_text": "Train"})
 
 
 func _auto_equip() -> void:

@@ -137,6 +137,22 @@ func _rebuild() -> void:
 	_update_affordability()
 
 
+## The diamond good behind a row, for the confirmation that quotes its price.
+func _good_for(id: String) -> Dictionary:
+	for g in _store.get("goods", []):
+		if str(g.get("id", "")) == id:
+			return g
+	return {}
+
+
+## The offer sitting in a shelf slot, for the confirmation that quotes its price.
+func _offer_for(slot: int) -> Dictionary:
+	for offer in _shop.get("offers", []):
+		if int(offer.get("slot", 0)) == slot:
+			return offer
+	return {}
+
+
 func _style_tabs() -> void:
 	for i in _tab_buttons.size():
 		var b: Button = _tab_buttons[i]
@@ -224,6 +240,13 @@ func _build_store() -> void:
 func _buy_good(id: String) -> void:
 	if _busy:
 		return
+	var good := _good_for(id)
+	if not await Confirm.ask(self, {
+			"title": "Buy %s?" % str(good.get("name", "this")),
+			"body": str(good.get("blurb", "")),
+			"cost": {"amount": int(good.get("diamonds", 0)), "currency": "gem"},
+			"confirm_text": "Buy"}):
+		return
 	_busy = true
 	_rebuild()
 	var res: Api.Response = await Api.post_json("/v1/store/buy",
@@ -273,6 +296,12 @@ func _update_reroll() -> void:
 func _do_reroll() -> void:
 	if _busy:
 		return
+	if not await Confirm.ask(self, {
+			"title": "Reroll the shelf?",
+			"body": "A fresh set of offers in the same window. The price rises each time.",
+			"cost": {"amount": int(_shop.get("reroll_cost", 0)), "currency": "gem"},
+			"confirm_text": "Reroll"}):
+		return
 	_busy = true
 	_update_reroll()
 	var res: Api.Response = await Api.post_json("/v1/shop/reroll",
@@ -319,6 +348,15 @@ func _tick() -> void:
 
 func _buy(slot: int) -> void:
 	if _busy:
+		return
+	var offer := _offer_for(slot)
+	var item: Dictionary = offer.get("item", {})
+	if not await Confirm.ask(self, {
+			"title": "Buy %s?" % str(item.get("name", "this")),
+			"body": "%s   ATK %d   DEF %d" % [str(item.get("tier", "")).to_upper(),
+				int(item.get("attack", 0)), int(item.get("defense", 0))],
+			"cost": {"amount": int(offer.get("price", 0)), "currency": "gold"},
+			"confirm_text": "Buy"}):
 		return
 	_busy = true
 	_update_affordability()

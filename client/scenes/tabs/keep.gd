@@ -283,6 +283,13 @@ func _auto_equip(scope: String) -> void:
 func _spend_point(stat: String) -> void:
 	if _busy:
 		return
+	# There is no respec. A mis-tap here is permanent, which is exactly the case
+	# the design called out for a confirmation.
+	if not await Confirm.ask(self, {
+			"title": "Spend a point on %s?" % stat.capitalize(),
+			"body": "Stat points cannot be moved once they are spent.",
+			"confirm_text": "Spend"}):
+		return
 	_busy = true
 	var body := {"energy": 0, "attack": 0, "defense": 0,
 		"action_seq": int(GameState.player().get("action_seq", 0)) + 1}
@@ -343,6 +350,13 @@ func _refresh_action() -> void:
 func _buy() -> void:
 	var u := _selected_upgrade()
 	if u.is_empty() or _busy:
+		return
+	if not await Confirm.ask(self, {
+			"title": "Upgrade %s?" % str(u.get("name", "this")),
+			"body": "Level %d to %d. %s" % [int(u.get("level", 0)),
+				int(u.get("level", 0)) + 1, str(u.get("blurb", ""))],
+			"cost": {"amount": int(u.get("next_cost", 0)), "currency": "gold"},
+			"confirm_text": "Upgrade"}):
 		return
 	_busy = true
 	_refresh_action()

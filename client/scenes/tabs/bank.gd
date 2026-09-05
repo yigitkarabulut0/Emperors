@@ -127,6 +127,18 @@ func _refresh_action() -> void:
 func _move(direction: String, amount: int) -> void:
 	if _busy or amount <= 0:
 		return
+	# Only depositing asks. It charges a fee and cannot be undone for free;
+	# taking your own gold back out is free and reversible, and a dialog on it
+	# would be friction for nothing.
+	if direction == "deposit":
+		var fee := amount * FEE_BP / 10000
+		if not await Confirm.ask(self, {
+				"title": "Bank %s gold?" % UI.number(amount),
+				"body": "The fee is %s. Banked gold cannot be stolen in a raid."
+					% UI.number(fee),
+				"cost": {"amount": amount, "currency": "gold"},
+				"confirm_text": "Bank it"}):
+			return
 	_busy = true
 	_rebuild()
 	var res: Api.Response = await Api.post_json("/v1/treasury/" + direction,

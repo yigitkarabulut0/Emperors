@@ -54,6 +54,56 @@ const GAP_XL := 32
 const GUTTER := 24
 
 
+## Nine-slice margin. The source art is 96 square with a 20-unit corner radius,
+## so 28 keeps the whole rounded corner inside the fixed part of the slice.
+const SKIN_SLICE := 28
+
+static var _skins: Dictionary = {}
+
+
+## One of the generated surfaces from scripts/gen-ui-skin.py.
+##
+## StyleBoxFlat can only draw a flat colour, which is why every panel and button
+## in this game used to read as a wireframe rather than a made object. These carry
+## a vertical gradient, a lit top edge and a shaded foot, so the same StyleBox
+## machinery draws surfaces that catch light.
+##
+## Falls back to a flat box when the art is missing, so a build without the skin
+## still renders rather than crashing.
+static func skin(name: String, fallback: Color, pad_h: int = 16, pad_v: int = 12) -> StyleBox:
+	var key := "%s|%d|%d" % [name, pad_h, pad_v]
+	if _skins.has(key):
+		return _skins[key]
+
+	# Fetched through the tree rather than by name: UI is a static helper, and a
+	# static function cannot resolve an autoload at compile time.
+	var tex: Texture2D = null
+	var loop := Engine.get_main_loop()
+	if loop is SceneTree:
+		var registry: Node = (loop as SceneTree).root.get_node_or_null("/root/ArtRegistry")
+		if registry != null:
+			tex = registry.call("ui_icon", "skin/" + name)
+	if tex == null:
+		var flat := panel_box(fallback)
+		flat.content_margin_left = pad_h
+		flat.content_margin_right = pad_h
+		flat.content_margin_top = pad_v
+		flat.content_margin_bottom = pad_v
+		_skins[key] = flat
+		return flat
+
+	var s := StyleBoxTexture.new()
+	s.texture = tex
+	for side in ["left", "top", "right", "bottom"]:
+		s.set("texture_margin_" + side, SKIN_SLICE)
+	s.content_margin_left = pad_h
+	s.content_margin_right = pad_h
+	s.content_margin_top = pad_v
+	s.content_margin_bottom = pad_v
+	_skins[key] = s
+	return s
+
+
 static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 10) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = bg
@@ -70,6 +120,17 @@ static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int 
 
 ## A panel box with tight padding, for the small stamped things -- a level badge,
 ## a currency chip -- where panel_box's 14/10 content margin is most of the width.
+## The surface for a row or card that can be selected.
+##
+## Selected reads as a lit panel with a gold edge rather than a different colour,
+## and locked as a sunk one -- both of which say "this is the same kind of thing,
+## in a different state", which a flat colour swap does not.
+static func card_box(selected: bool = false, locked: bool = false) -> StyleBox:
+	if locked:
+		return skin("panel_sunk", Palette.BG, 14, 10)
+	return skin("panel_gold" if selected else "panel", Palette.PANEL, 14, 10)
+
+
 static func chip_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 12) -> StyleBoxFlat:
 	var s := panel_box(bg, border, radius)
 	s.content_margin_left = 10
@@ -100,10 +161,10 @@ static func button(text: String, size: int = F_H2) -> Button:
 	b.add_theme_color_override("font_hover_color", Palette.BG)
 	b.add_theme_color_override("font_pressed_color", Palette.BG)
 	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
-	b.add_theme_stylebox_override("normal", panel_box(Palette.GOLD))
-	b.add_theme_stylebox_override("hover", panel_box(Color("#F0D793")))
-	b.add_theme_stylebox_override("pressed", panel_box(Palette.GOLD_DEEP))
-	b.add_theme_stylebox_override("disabled", panel_box(Palette.PANEL_HIGH))
+	b.add_theme_stylebox_override("normal", skin("gold", Palette.GOLD))
+	b.add_theme_stylebox_override("hover", skin("gold_hover", Color("#F0D793")))
+	b.add_theme_stylebox_override("pressed", skin("gold_press", Palette.GOLD_DEEP))
+	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.PANEL_HIGH))
 	b.focus_mode = Control.FOCUS_NONE
 	return b
 
@@ -112,9 +173,9 @@ static func button(text: String, size: int = F_H2) -> Button:
 ## danger colour, so "sell this" and "buy this" never look like the same tap.
 static func danger_button(text: String, size: int = F_H2) -> Button:
 	var b := button(text, size)
-	b.add_theme_stylebox_override("normal", panel_box(Palette.DANGER))
-	b.add_theme_stylebox_override("hover", panel_box(Color("#E4726A")))
-	b.add_theme_stylebox_override("pressed", panel_box(Color("#B2483E")))
+	b.add_theme_stylebox_override("normal", skin("danger", Palette.DANGER))
+	b.add_theme_stylebox_override("hover", skin("danger", Color("#E4726A")))
+	b.add_theme_stylebox_override("pressed", skin("danger_press", Color("#B2483E")))
 	b.add_theme_color_override("font_color", Palette.TEXT)
 	b.add_theme_color_override("font_hover_color", Palette.TEXT)
 	b.add_theme_color_override("font_pressed_color", Palette.TEXT)
@@ -130,10 +191,10 @@ static func ghost_button(text: String, size: int = F_BODY) -> Button:
 	b.add_theme_color_override("font_hover_color", Palette.TEXT)
 	# A visible edge, because a fully transparent "button" sitting on a card reads
 	# as a caption and nobody taps it.
-	b.add_theme_stylebox_override("normal", panel_box(Palette.PANEL_HIGH, Palette.LINE))
-	b.add_theme_stylebox_override("hover", panel_box(Palette.PANEL_HIGH, Palette.GOLD_DEEP))
-	b.add_theme_stylebox_override("pressed", panel_box(Palette.PANEL, Palette.GOLD))
-	b.add_theme_stylebox_override("disabled", panel_box(Palette.BG, Palette.LINE))
+	b.add_theme_stylebox_override("normal", skin("ghost", Palette.PANEL_HIGH))
+	b.add_theme_stylebox_override("hover", skin("panel_gold", Palette.PANEL_HIGH))
+	b.add_theme_stylebox_override("pressed", skin("ghost_press", Palette.PANEL))
+	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.BG))
 	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
 	b.focus_mode = Control.FOCUS_NONE
 	return b

@@ -15,6 +15,7 @@ extends Button
 var item: Dictionary
 
 var _icon: TextureRect
+var _stripe: ColorRect
 var _name: Label
 var _tier: Label
 var _stats: Label
@@ -28,11 +29,25 @@ func _init(p_item: Dictionary) -> void:
 
 
 func _ready() -> void:
+	# The tier as a stripe down the leading edge instead of an outline round the
+	# whole card. An outline in seven different colours makes a list look like a
+	# box of highlighters; a stripe reads at a glance, leaves the card itself a
+	# consistent surface, and still is not the ONLY signal -- the tier name is
+	# spelled out two lines below it.
+	_stripe = ColorRect.new()
+	_stripe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_stripe.anchor_bottom = 1.0
+	_stripe.offset_left = 6
+	_stripe.offset_top = 10
+	_stripe.offset_right = 12
+	_stripe.offset_bottom = -10
+	add_child(_stripe)
+
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 10)
+	margin.add_theme_constant_override("margin_left", 22)
+	margin.add_theme_constant_override("margin_right", 10)
 	add_child(margin)
 
 	var row := HBoxContainer.new()
@@ -87,13 +102,15 @@ func refresh(p_item: Dictionary) -> void:
 		parts.append("SPD %d" % int(item.get("speed", 0)))
 	_stats.text = "   ".join(parts)
 
-	var border := colour
-	var bg := Palette.PANEL
-	if bool(item.get("equipped", false)):
-		bg = Palette.PANEL_HIGH
-	add_theme_stylebox_override("normal", UI.panel_box(bg, border))
-	add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, border))
-	add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, border))
+	_stripe.color = colour
+	var equipped := bool(item.get("equipped", false))
+	add_theme_stylebox_override("normal", UI.card_box(equipped))
+	add_theme_stylebox_override("hover", UI.card_box(true))
+	add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
+	# Without this a card you cannot afford falls back to the engine's default
+	# disabled box, which on this theme is very nearly invisible -- so the
+	# expensive half of the shop looked like it had no cards at all.
+	add_theme_stylebox_override("disabled", UI.card_box(false, true))
 
 
 ## Sets the right-hand text — a price in the shop, a sell value in the armory.

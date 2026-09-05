@@ -57,6 +57,12 @@ func _ready() -> void:
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+
+	# Lists follow your finger. Godot's own touch scrolling is gated behind
+
+	# is_touchscreen_available() and is eaten by the buttons the list is made of.
+
+	DragScroll.install(scroll)
 	col.add_child(scroll)
 
 	_list = VBoxContainer.new()

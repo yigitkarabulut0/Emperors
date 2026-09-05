@@ -120,13 +120,10 @@ func refresh(name: String, blurb: String, level: int, max_level: int,
 		_cost.text = UI.number(cost)
 		_cost.add_theme_color_override("font_color", Palette.GOLD if affordable else Palette.DANGER)
 
-	var border := Palette.GOLD_DEEP if selected else Color.TRANSPARENT
-	var bg := Palette.PANEL
-	if locked:
-		bg = Palette.BG
-	elif selected:
-		bg = Palette.PANEL_HIGH
-	add_theme_stylebox_override("normal", UI.panel_box(bg, border))
-	add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, border))
-	add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, border))
+	add_theme_stylebox_override("normal", UI.card_box(selected, locked))
+	add_theme_stylebox_override("hover", UI.card_box(true, locked))
+	add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
+	# A locked or maxed row is disabled, and without its own box it would fall
+	# back to the engine default and vanish.
+	add_theme_stylebox_override("disabled", UI.card_box(false, true))
 	disabled = locked or maxed

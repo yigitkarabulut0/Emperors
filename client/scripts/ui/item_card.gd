@@ -40,7 +40,7 @@ func _ready() -> void:
 	margin.add_child(row)
 
 	_icon = TextureRect.new()
-	_icon.custom_minimum_size = Vector2(64, 64)
+	_icon.custom_minimum_size = Vector2(UI.ICON_XL, UI.ICON_XL)
 	_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER

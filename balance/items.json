@@ -69,148 +69,148 @@
       "id": "weapon_common_01",
       "slot": "weapon",
       "tier": "common",
-      "name": "Rusted Blade",
+      "name": "Rusted Arming Sword",
       "art": "weapon_01"
     },
     {
       "id": "weapon_common_02",
       "slot": "weapon",
       "tier": "common",
-      "name": "Farmhand's Cleaver",
+      "name": "Farmhand's Falchion",
       "art": "weapon_02"
     },
     {
       "id": "weapon_common_03",
       "slot": "weapon",
       "tier": "common",
-      "name": "Notched Shortsword",
+      "name": "Notched Broadsword",
       "art": "weapon_03"
     },
     {
       "id": "weapon_uncommon_01",
       "slot": "weapon",
       "tier": "uncommon",
-      "name": "Guard's Arming Sword",
-      "art": "weapon_01"
+      "name": "Guard's Greatsword",
+      "art": "weapon_04"
     },
     {
       "id": "weapon_uncommon_02",
       "slot": "weapon",
       "tier": "uncommon",
-      "name": "Tempered Falchion",
-      "art": "weapon_02"
+      "name": "Tempered Flamberge",
+      "art": "weapon_05"
     },
     {
       "id": "weapon_uncommon_03",
       "slot": "weapon",
       "tier": "uncommon",
-      "name": "Oathkeeper's Edge",
-      "art": "weapon_03"
+      "name": "Oathkeeper's Rapier",
+      "art": "weapon_06"
     },
     {
       "id": "weapon_rare_01",
       "slot": "weapon",
       "tier": "rare",
-      "name": "Riverbend Longsword",
-      "art": "weapon_01"
+      "name": "Riverbend Leafblade",
+      "art": "weapon_07"
     },
     {
       "id": "weapon_rare_02",
       "slot": "weapon",
       "tier": "rare",
-      "name": "Silvered Broadsword",
-      "art": "weapon_02"
+      "name": "Silvered Arming Sword",
+      "art": "weapon_01"
     },
     {
       "id": "weapon_rare_03",
       "slot": "weapon",
       "tier": "rare",
-      "name": "Warden's Claymore",
-      "art": "weapon_03"
+      "name": "Warden's Falchion",
+      "art": "weapon_02"
     },
     {
       "id": "weapon_epic_01",
       "slot": "weapon",
       "tier": "epic",
-      "name": "Duskfang",
-      "art": "weapon_01"
+      "name": "Duskfang Broadsword",
+      "art": "weapon_03"
     },
     {
       "id": "weapon_epic_02",
       "slot": "weapon",
       "tier": "epic",
       "name": "Bastion Greatsword",
-      "art": "weapon_02"
+      "art": "weapon_04"
     },
     {
       "id": "weapon_epic_03",
       "slot": "weapon",
       "tier": "epic",
-      "name": "Kingsguard Sabre",
-      "art": "weapon_03"
+      "name": "Kingsguard Flamberge",
+      "art": "weapon_05"
     },
     {
       "id": "weapon_legendary_01",
       "slot": "weapon",
       "tier": "legendary",
-      "name": "Ashfang, Blade of the Ninth Siege",
-      "art": "weapon_01"
+      "name": "Dawnbreaker Rapier",
+      "art": "weapon_06"
     },
     {
       "id": "weapon_legendary_02",
       "slot": "weapon",
       "tier": "legendary",
-      "name": "Dawnbreaker",
-      "art": "weapon_02"
+      "name": "Ashfang Leafblade",
+      "art": "weapon_07"
     },
     {
       "id": "weapon_legendary_03",
       "slot": "weapon",
       "tier": "legendary",
       "name": "The Gilded Verdict",
-      "art": "weapon_03"
+      "art": "weapon_01"
     },
     {
       "id": "weapon_mystic_01",
       "slot": "weapon",
       "tier": "mystic",
-      "name": "Starfall Edge",
-      "art": "weapon_01"
+      "name": "Starfall Falchion",
+      "art": "weapon_02"
     },
     {
       "id": "weapon_mystic_02",
       "slot": "weapon",
       "tier": "mystic",
-      "name": "Wyrmtongue",
-      "art": "weapon_02"
+      "name": "Wyrmtongue Broadsword",
+      "art": "weapon_03"
     },
     {
       "id": "weapon_mystic_03",
       "slot": "weapon",
       "tier": "mystic",
       "name": "The Sundering",
-      "art": "weapon_03"
+      "art": "weapon_04"
     },
     {
       "id": "weapon_special_01",
       "slot": "weapon",
       "tier": "special",
-      "name": "Crown of Swords",
-      "art": "weapon_01"
+      "name": "Crown of Flame",
+      "art": "weapon_05"
     },
     {
       "id": "weapon_special_02",
       "slot": "weapon",
       "tier": "special",
-      "name": "The Last Word",
-      "art": "weapon_02"
+      "name": "Emperor's Mercy",
+      "art": "weapon_06"
     },
     {
       "id": "weapon_special_03",
       "slot": "weapon",
       "tier": "special",
-      "name": "Emperor's Mercy",
-      "art": "weapon_03"
+      "name": "The Last Word",
+      "art": "weapon_07"
     },
     {
       "id": "armor_common_01",

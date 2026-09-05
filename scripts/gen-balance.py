@@ -110,14 +110,17 @@ SLOT_BASE = {
 # Three designs per (type, tier). Names are per-tier so a legendary reads as
 # legendary before the player looks at the numbers.
 NAMES = {
+    # A name that says "Falchion" must be drawn as a falchion. The design pool
+    # walks through the whole table (see ART_DESIGNS), so these are ordered to
+    # match the shape each slot actually receives; SHAPE_WORDS enforces it below.
     "weapon": [
-        ["Rusted Blade", "Farmhand's Cleaver", "Notched Shortsword"],
-        ["Guard's Arming Sword", "Tempered Falchion", "Oathkeeper's Edge"],
-        ["Riverbend Longsword", "Silvered Broadsword", "Warden's Claymore"],
-        ["Duskfang", "Bastion Greatsword", "Kingsguard Sabre"],
-        ["Ashfang, Blade of the Ninth Siege", "Dawnbreaker", "The Gilded Verdict"],
-        ["Starfall Edge", "Wyrmtongue", "The Sundering"],
-        ["Crown of Swords", "The Last Word", "Emperor's Mercy"],
+        ["Rusted Arming Sword", "Farmhand's Falchion", "Notched Broadsword"],
+        ["Guard's Greatsword", "Tempered Flamberge", "Oathkeeper's Rapier"],
+        ["Riverbend Leafblade", "Silvered Arming Sword", "Warden's Falchion"],
+        ["Duskfang Broadsword", "Bastion Greatsword", "Kingsguard Flamberge"],
+        ["Dawnbreaker Rapier", "Ashfang Leafblade", "The Gilded Verdict"],
+        ["Starfall Falchion", "Wyrmtongue Broadsword", "The Sundering"],
+        ["Crown of Flame", "Emperor's Mercy", "The Last Word"],
     ],
     "armor": [
         ["Padded Gambeson", "Patched Leathers", "Militia Jerkin"],
@@ -139,19 +142,47 @@ NAMES = {
     ],
 }
 
+# How many distinct silhouettes exist per slot. Tier is applied by recolouring
+# the line work, so one PNG serves all seven tiers of a design -- but with only
+# three designs a slot, a legendary sword was the SAME SHAPE as the rusted blade
+# you started with, in a different colour. Climbing has to look like something.
+ART_DESIGNS = {"weapon": 7, "armor": 3, "horse": 3}
+
 item_defs = []
 for slot, tiers in NAMES.items():
+    designs = ART_DESIGNS[slot]
     for ti, names in enumerate(tiers):
         for n, name in enumerate(names, 1):
+            # Walk the design pool straight through the whole 21-item table rather
+            # than restarting it each tier. Three items of one tier are therefore
+            # always three different shapes, and the shapes keep turning over as
+            # the player climbs, instead of the same three repeating seven times.
+            art_index = (ti * len(names) + n - 1) % designs + 1
             item_defs.append({
                 "id": f"{slot}_{TIER_IDS[ti]}_{n:02d}",
                 "slot": slot,
                 "tier": TIER_IDS[ti],
                 "name": name,
-                # Art is addressed by slot + design index; the tier is applied by
-                # recolouring the line work, so one PNG serves all seven tiers.
-                "art": f"{slot}_{n:02d}",
+                "art": f"{slot}_{art_index:02d}",
             })
+
+# What each weapon design actually depicts. A name that promises a shape must be
+# drawn as that shape: rotating the design pool through the table silently broke
+# this once, and a "Tempered Falchion" rendered as a wavy flamberge.
+SHAPE_WORDS = {
+    "arming sword": 1, "falchion": 2, "broadsword": 3,
+    "greatsword": 4, "flamberge": 5, "rapier": 6, "leafblade": 7,
+}
+for d in item_defs:
+    if d["slot"] != "weapon":
+        continue
+    lowered = d["name"].lower()
+    for word, design in SHAPE_WORDS.items():
+        if word in lowered:
+            got = int(d["art"].split("_")[1])
+            assert got == design, (
+                f"{d['id']} is named {d['name']!r} but is drawn as {d['art']} "
+                f"(design {design} is the {word})")
 
 emit("items.json", json.dumps({
     "_comment": "Items. stat = round(base_slot_stat * tier_mult * (1 + 0.09*ilvl) * quality * masterwork). "

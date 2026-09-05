@@ -136,7 +136,21 @@ for family, wanted_ids in families:
     else:
         ok(f"all {len(wanted_ids)} {family} have an icon")
 
-# 6. An unimported asset does not exist as far as an exported build is concerned.
+# 6. Every (design, tier) pair the item table can hand a client must ship.
+#    ArtRegistry falls back to design 01 of the same slot when one is missing, so
+#    the game keeps working and a whole tier of swords quietly shows the wrong
+#    blade. Nothing surfaces that but this check.
+items_doc = json.loads((ROOT / "balance/items.json").read_text())
+tiers = [t["id"] for t in json.loads((ROOT / "balance/tiers.json").read_text())["tiers"]]
+pairs = {(d["art"], t) for d in items_doc["definitions"] for t in tiers}
+gone = sorted(f"{a}_{t}" for a, t in pairs
+              if not (CLIENT / f"assets/items/{a}_{t}.png").exists())
+if gone:
+    fail(f"{len(gone)} item art files missing: {gone[:4]}")
+else:
+    ok(f"all {len(pairs)} item design/tier pairs ship")
+
+# 7. An unimported asset does not exist as far as an exported build is concerned.
 unimported = [p.relative_to(ROOT) for p in (CLIENT / "assets").rglob("*.png")
               if not p.with_suffix(".png.import").exists()]
 if unimported:

@@ -680,8 +680,13 @@ func _update_energy() -> void:
 	var mx := GameState.max_energy()
 	_energy_bar.max_value = maxf(float(mx), 1.0)
 	_energy_bar.value = float(cur)
-	var secs := GameState.display_seconds_to_full()
-	_energy.text = "%d/%d  %s" % [cur, mx, UI.duration(secs)]
+	if cur >= mx:
+		_energy.text = "%d/%d  full" % [cur, mx]
+		return
+	# The next point, not the full pool. "1h 04m" is the answer to a question
+	# nobody asked; "+1 in 0:23" is the one that decides whether you wait.
+	_energy.text = "%d/%d  +1 in %s" % [
+		cur, mx, UI.short_duration(GameState.display_seconds_to_next())]
 
 
 func _tick() -> void:

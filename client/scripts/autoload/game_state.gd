@@ -124,6 +124,19 @@ func display_energy() -> int:
 	return maxi(v, 0)
 
 
+## Seconds until the next whole point lands, rolling over each time one does.
+##
+## This is the number that answers "can I do one more thing yet". Time-to-full is
+## the wrong question for a pool that is nearly always partly drained: it reads
+## "1h 04m" when the answer the player wants is "23 seconds".
+func display_seconds_to_next() -> int:
+	var e: Dictionary = snapshot.get("energy", {})
+	var period := int(e.get("regen_period_ms", 0))
+	if period <= 0 or display_energy() >= max_energy():
+		return 0
+	return int(ceil(float(period - _energy_progress_ms() % period) / 1000.0))
+
+
 ## Seconds until the pool is full, counting down between polls.
 ## Recomputes the projected energy and emits only when the whole number moves.
 ##

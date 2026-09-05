@@ -177,6 +177,16 @@ static func grouped(v: int) -> String:
 	return ("-" if v < 0 else "") + out
 
 
+## A countdown that has to fit beside a number and be read at a glance: "0:23",
+## "4:07", "1:02:30". duration() is for spans you plan around, this is for spans
+## you wait out.
+static func short_duration(seconds: int) -> String:
+	var s := maxi(seconds, 0)
+	if s >= 3600:
+		return "%d:%02d:%02d" % [s / 3600, (s % 3600) / 60, s % 60]
+	return "%d:%02d" % [s / 60, s % 60]
+
+
 static func duration(seconds: int) -> String:
 	if seconds <= 0:
 		return "full"

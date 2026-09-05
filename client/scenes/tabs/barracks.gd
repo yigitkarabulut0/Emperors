@@ -236,6 +236,12 @@ func _next_slot_row(next: Dictionary) -> Control:
 		col.add_child(UI.label("FREE — your first barracks slot", 13, Palette.SUCCESS))
 	elif unlocked:
 		col.add_child(UI.label("%s gold" % UI.number(int(next.get("cost", 0))), 13, Palette.GOLD))
+		# On the row, not just in the action bar: this is where the eye lands, and
+		# nobody should grind 500 gold for the slot they are about to be given.
+		var free_at := int(next.get("free_at_level", 0))
+		if free_at > 0:
+			col.add_child(UI.label("free at level %d — you can wait" % free_at,
+				12, Palette.SUCCESS))
 	else:
 		col.add_child(UI.label("unlocks at level %d" % int(next.get("level_gate", 0)), 13, Palette.TEXT_FAINT))
 	return b
@@ -268,8 +274,14 @@ func _refresh_action() -> void:
 		var free := bool(next.get("free", false))
 		_action.disabled = not bool(next.get("unlocked", false))
 		_action.text = "CLAIM FREE SLOT" if free else "BUY SLOT — %s" % UI.number(int(next.get("cost", 0)))
-		_action_sub.text = "" if bool(next.get("unlocked", false)) \
-			else "reach level %d first" % int(next.get("level_gate", 0))
+		var free_at := int(next.get("free_at_level", 0))
+		if not bool(next.get("unlocked", false)):
+			_action_sub.text = "reach level %d first" % int(next.get("level_gate", 0))
+		elif free_at > 0:
+			# Never let someone grind for a thing they are about to be given.
+			_action_sub.text = "or wait — your first slot is free at level %d" % free_at
+		else:
+			_action_sub.text = ""
 		return
 
 	if _selected >= 1:

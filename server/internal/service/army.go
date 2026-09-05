@@ -63,6 +63,11 @@ type NextSlot struct {
 	LevelGate int   `json:"level_gate"`
 	Unlocked  bool  `json:"unlocked"`
 	Free      bool  `json:"free"`
+
+	// The level at which this slot becomes free, when that has not happened yet.
+	// Without it the client can only quote the price, and a new player will grind
+	// 500 gold for the thing they were about to be given.
+	FreeAtLevel int `json:"free_at_level,omitempty"`
 }
 
 type RecruitOpt struct {
@@ -152,6 +157,13 @@ func (d Deps) GetArmy(ctx context.Context, playerID uuid.UUID) (*ArmyView, error
 		view.NextSlot = &NextSlot{
 			Index: int(p.SoldierSlots) + 1, Cost: cost, LevelGate: gate,
 			Unlocked: int(p.Level) >= gate || free, Free: free,
+		}
+		// Say when it becomes free, if it is going to. Only for the very first
+		// slot, which is the only one the onboarding grant covers.
+		o := d.Config.Soldiers.Onboarding
+		if !free && !p.FreeSlotClaimed && p.SoldierSlots == 0 &&
+			o.FreeSlotAtLevel > int(p.Level) {
+			view.NextSlot.FreeAtLevel = o.FreeSlotAtLevel
 		}
 	}
 

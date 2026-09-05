@@ -172,6 +172,18 @@ if sold and sold["level"] >= a4["hero"]["level"]:
 else:
     check("train is offered when the soldier is behind", sold.get("can_train") is True, sold)
 
+# A level-1 player is quoted a price for the slot the onboarding grant is about
+# to give them for nothing. The view has to say so, or they grind for it.
+print("\n== the first slot announces itself ==")
+st, fresh_reg = call("POST", "/v1/auth/register",
+                     {"username": "slot" + "".join(random.choices(string.ascii_lowercase, k=6)),
+                      "password": "battery horse staple", "tz_offset_minutes": 0})
+fresh = fresh_reg["access_token"]
+st, fa = call("GET", "/v1/army", token=fresh)
+ns = fa.get("next_slot") or {}
+check("a level-1 player is quoted a price", ns.get("cost", 0) > 0 and not ns.get("free"), ns)
+check("and told when it becomes free instead", ns.get("free_at_level", 0) > 1, ns)
+
 # --- gear moves between units --------------------------------------------------
 #
 # Two holder columns mean "worn" is not one flag. Equipping a soldier's item onto

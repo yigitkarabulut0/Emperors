@@ -4,10 +4,11 @@
 The property that matters: publishing a new balance version changes what the
 GAME serves, with no redeploy and no restart.
 """
-import json, sys, urllib.request, urllib.error, random, string
+import json, sys, pathlib, urllib.request, urllib.error, random, string
 
 GAME = "http://localhost:8080"
 ADMIN = "http://localhost:8081"
+PANEL = "http://localhost:3000"
 FAILURES = []
 ADMIN_USER, ADMIN_PASS = "yigit", "emperors admin 2026"
 
@@ -170,6 +171,69 @@ check("history was appended, not rewritten",
 check("the rolled-back version is live again",
       any(v["live"] and v["id"] == live_version for v in vs2["versions"]),
       [(v["id"], v["live"]) for v in vs2["versions"][:3]])
+
+# --- the Next.js panel -------------------------------------------------------
+#
+# The panel is a separate process, so these checks are skipped rather than failed
+# when it is not running. What they prove is the only thing the panel can get
+# wrong on its own: that a signed-in request server-renders REAL rows from the Go
+# API, and that an unsigned one never does.
+print("\n== the panel renders what the API returns ==")
+
+
+def page(path, cookie=None):
+    req = urllib.request.Request(PANEL + path)
+    if cookie:
+        req.add_header("Cookie", "emperors_admin_session=" + cookie)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, r.read().decode(errors="replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode(errors="replace")
+    except urllib.error.URLError:
+        return 0, ""
+
+
+st, _ = page("/login")
+if st == 0:
+    print("  SKIP  the panel is not running on :3000")
+else:
+    check("the panel serves its login page", st == 200, st)
+
+    # An anonymous visitor must never see player data.
+    st, anon = page("/players")
+    check("an anonymous visitor is not shown players",
+          "bot_0" not in anon and "Grant" not in anon, st)
+
+    # The realistic failure mode is a session that expired between page loads.
+    # It must land on the sign-in page, not on a stack trace.
+    st, stale = page("/players", cookie="expired-or-forged")
+    check("a stale session is sent to sign in, not an error page",
+          "Sign in" in stale and "bot_0" not in stale and "__next_error__" not in stale, st)
+
+    st, body = page("/players", cookie=token)
+    check("a signed-in visitor gets players server-rendered", st == 200 and "bot_0" in body, st)
+    check("the default view is the recent-players list",
+          "most recently active" in body, body[:0])
+    check("rows carry the numbers the API returned",
+          "Grant" in body and "Ban" in body, st)
+
+    st, filtered = page("/players?q=bot_03", cookie=token)
+    check("searching narrows the list",
+          filtered.count("· bot") < body.count("· bot") and "bot_039" in filtered,
+          (body.count("· bot"), filtered.count("· bot")))
+
+    st, none = page("/players?q=zzzznomatch", cookie=token)
+    check("a search with no hits says so", "Nobody matched" in none, st)
+
+    for path, needle in [("/", "Sinks absorb"), ("/balance", "Live document"), ("/audit", "Audit trail")]:
+        st, b = page(path, cookie=token)
+        check(f"{path} renders", st == 200 and needle in b and "__next_error__" not in b, st)
+
+    # The panel talks to the Go API; it must not hold a database URL of its own.
+    env = pathlib.Path("admin").rglob("*.ts")
+    leaked = [str(f) for f in env if "postgres" in f.read_text()]
+    check("the panel holds no database credentials", not leaked, leaked)
 
 print()
 if FAILURES:

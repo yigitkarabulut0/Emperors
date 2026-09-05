@@ -1,0 +1,77 @@
+:root {
+  --bg: #14110f;
+  --panel: #1e1a17;
+  --panel-high: #272220;
+  --line: #3a322b;
+  --text: #ede6da;
+  --dim: #9c9284;
+  --faint: #6b6258;
+  --gold: #e5c97b;
+  --danger: #d95a4e;
+  --success: #6fbf73;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+a { color: var(--gold); text-decoration: none; }
+h1, h2, h3 { margin: 0 0 12px; font-weight: 600; letter-spacing: 0.01em; }
+h1 { font-size: 22px; color: var(--gold); }
+h2 { font-size: 16px; }
+
+.shell { display: flex; min-height: 100vh; }
+.rail {
+  width: 176px; flex: none; background: #100e0c; border-right: 1px solid var(--line);
+  padding: 18px 0; display: flex; flex-direction: column; gap: 2px;
+}
+.rail .brand { padding: 0 18px 18px; color: var(--gold); font-weight: 700; letter-spacing: .12em; font-size: 13px; }
+.rail a { display: block; padding: 10px 18px; color: var(--dim); font-size: 14px; }
+.rail a:hover { background: var(--panel); color: var(--text); }
+.rail a.on { background: var(--panel-high); color: var(--gold); border-left: 3px solid var(--gold); }
+.rail form { margin-top: auto; padding: 12px 18px 0; }
+
+.main { flex: 1; padding: 26px 30px; max-width: 1180px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.grid { display: grid; gap: 12px; }
+.grid.k4 { grid-template-columns: repeat(4, 1fr); }
+.grid.k2 { grid-template-columns: repeat(2, 1fr); }
+.stat .n { font-size: 26px; color: var(--gold); font-weight: 600; }
+.stat .l { font-size: 12px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: var(--faint); font-weight: 500; font-size: 11px;
+     text-transform: uppercase; letter-spacing: .08em; padding: 6px 10px; }
+td { padding: 8px 10px; border-top: 1px solid var(--line); }
+tr:hover td { background: var(--panel-high); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+input, textarea, select {
+  background: var(--panel-high); color: var(--text);
+  border: 1px solid var(--line); border-radius: 7px; padding: 9px 11px; font: inherit;
+}
+input:focus, textarea:focus { outline: none; border-color: var(--gold); }
+textarea { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+/* .button lets a link sit in a button row without lying about being a form control. */
+button, .button {
+  display: inline-block; background: var(--gold); color: #14110f; border: 0; border-radius: 7px;
+  padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
+}
+button:hover, .button:hover { filter: brightness(1.08); }
+button:disabled { background: var(--panel-high); color: var(--faint); cursor: not-allowed; }
+button.ghost, .button.ghost { background: transparent; color: var(--dim); border: 1px solid var(--line); }
+button.ghost:hover, .button.ghost:hover { color: var(--text); border-color: var(--gold); }
+button.danger { background: var(--danger); color: #fff; }
+
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.muted { color: var(--faint); }
+.err { color: var(--danger); }
+.ok { color: var(--success); }
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.pill.live { border-color: var(--success); color: var(--success); }
+.bar { height: 8px; background: var(--panel-high); border-radius: 4px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--gold); }

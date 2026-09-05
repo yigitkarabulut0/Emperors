@@ -12,6 +12,7 @@ var _sub: Label
 var _action: Button
 var _action_sub: Label
 var _busy := false
+var _dev_sheet_done := false
 
 
 func _ready() -> void:
@@ -83,13 +84,22 @@ func _rebuild() -> void:
 		_list.add_child(_next_slot_row(next))
 
 	_refresh_action()
+	if not _dev_sheet_done:
+		_dev_sheet_done = true
+		_dev_open_sheet()
 
 
 func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(0, 84)
 	b.focus_mode = Control.FOCUS_NONE
+	# First tap selects, so the action bar targets it. Tapping the one already
+	# selected opens its sheet -- gear and dismissal live there. Two gestures on
+	# one row beats a second row of buttons on a phone.
 	b.pressed.connect(func() -> void:
+		if _selected == slot_index and unit is Dictionary:
+			_open_sheet(unit, is_hero)
+			return
 		_selected = slot_index
 		_rebuild())
 
@@ -168,6 +178,30 @@ func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 		gear.add_child(cell)
 
 	return b
+
+
+## Opens the unit sheet: its three equipment slots, and dismissal.
+func _dev_open_sheet() -> void:
+	# Dev-only: a capture run disables input, so it cannot tap a row itself.
+	var args := OS.get_cmdline_user_args()
+	for i in args.size():
+		if args[i] == "--dev-sheet" and i + 1 < args.size():
+			if args[i + 1] == "hero":
+				_open_sheet(_army.get("hero", {}), true)
+			else:
+				for sl in _army.get("slots", []):
+					var u: Variant = sl.get("soldier")
+					if u is Dictionary:
+						_open_sheet(u, false)
+						return
+
+
+func _open_sheet(unit: Dictionary, is_hero: bool) -> void:
+	var sheet: CanvasLayer = load("res://scenes/shell/unit_sheet.gd").new(unit, is_hero)
+	sheet.changed.connect(func() -> void:
+		await _reload()
+		_rebuild())
+	add_child(sheet)
 
 
 func _next_slot_row(next: Dictionary) -> Control:
@@ -251,11 +285,12 @@ func _refresh_action() -> void:
 		if bool(sold.get("can_train", false)):
 			_action.text = "TRAIN — %s" % UI.number(int(sold.get("train_cost", 0)))
 			_action.disabled = GameState.display_gold() < int(sold.get("train_cost", 0))
-			_action_sub.text = "level %d to %d" % [int(sold.get("level", 1)), int(sold.get("level", 1)) + 1]
+			_action_sub.text = "level %d to %d   ·   tap again to gear or dismiss" % [
+				int(sold.get("level", 1)), int(sold.get("level", 1)) + 1]
 			return
 		_action.text = "AT YOUR LEVEL"
 		_action.disabled = true
-		_action_sub.text = "train again after you level up"
+		_action_sub.text = "tap again to gear or dismiss"
 		return
 
 	_action.text = "SELECT A SLOT"

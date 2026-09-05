@@ -121,6 +121,12 @@ type Querier interface {
 	PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomParams) (AppPlayer, error)
 	PlayerCounts(ctx context.Context) (PlayerCountsRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
+	// Takes an item off whoever is wearing it: the hero, a soldier, or nobody.
+	//
+	// There are two holder columns, so "worn" is not one flag. Clearing only the
+	// hero's left a soldier's claim in place, and equipping a soldier's item onto
+	// the hero hit the one-item-per-slot index and surfaced as a 500.
+	ReleaseItem(ctx context.Context, arg ReleaseItemParams) error
 	// Dismissing a soldier must not destroy its gear; the items return to the bag.
 	ReleaseSoldierItems(ctx context.Context, arg ReleaseSoldierItemsParams) error
 	RevokeAdminSession(ctx context.Context, tokenHash []byte) error

@@ -32,6 +32,11 @@ type ItemView struct {
 	Power      int64  `json:"power"`
 	SellPrice  int64  `json:"sell_price"`
 	Equipped   bool   `json:"equipped"`
+	// Who is wearing it: "hero", a soldier's uuid, or empty. `Equipped` alone
+	// only ever meant "on the hero", so a client could not tell a free item from
+	// one already on a soldier -- and offering the latter would silently strip
+	// whoever had it.
+	EquippedOn string `json:"equipped_on"`
 }
 
 // InventoryView is the Armory tab.
@@ -100,8 +105,20 @@ func (d Deps) itemView(r sqlcdb.AppPlayerItem) ItemView {
 		Ilvl: int64(r.Ilvl), QualityPct: int64(r.QualityPct), Masterwork: r.Masterwork,
 		Attack: r.Attack, Defense: r.Defense, Speed: r.Speed,
 		Power:     inst.Power(d.Config),
-		SellPrice: items.SellPrice(d.Config, inst),
-		Equipped:  r.EquippedOnHero,
+		SellPrice:  items.SellPrice(d.Config, inst),
+		Equipped:   r.EquippedOnHero,
+		EquippedOn: equippedOn(r),
+	}
+}
+
+func equippedOn(r sqlcdb.AppPlayerItem) string {
+	switch {
+	case r.EquippedOnHero:
+		return "hero"
+	case r.EquippedSoldierID != nil:
+		return r.EquippedSoldierID.String()
+	default:
+		return ""
 	}
 }
 
@@ -143,8 +160,18 @@ func (d Deps) Equip(ctx context.Context, playerID, itemID uuid.UUID) (*Inventory
 			return nil // already worn; equipping again is a no-op, not an error
 		}
 
-		// Clear the slot first. Doing it in one transaction means the partial
-		// unique index never sees two items in the same slot, even transiently.
+		// Take it off whoever has it. An item worn by a soldier used to keep that
+		// claim, so moving gear up to the hero collided with the one-item-per-slot
+		// index and came back as a 500.
+		if err := q.ReleaseItem(ctx, sqlcdb.ReleaseItemParams{
+			ID: itemID, PlayerID: playerID,
+		}); err != nil {
+			return fmt.Errorf("release item: %w", err)
+		}
+
+		// Clear the destination slot too. Doing both in one transaction means the
+		// partial unique index never sees two items in the same slot, even
+		// transiently.
 		if err := q.UnequipHeroSlot(ctx, sqlcdb.UnequipHeroSlotParams{
 			PlayerID: playerID, Slot: it.Slot,
 		}); err != nil {
@@ -169,8 +196,10 @@ func (d Deps) Unequip(ctx context.Context, playerID, itemID uuid.UUID) (*Invento
 		}
 		return nil, fmt.Errorf("load item: %w", err)
 	}
-	if err := q.SetHeroEquipped(ctx, sqlcdb.SetHeroEquippedParams{
-		ID: itemID, PlayerID: playerID, EquippedOnHero: false,
+	// Universal: takes it off the hero or off a soldier. One endpoint, because
+	// from the player's side there is only ever one gesture -- take this off.
+	if err := q.ReleaseItem(ctx, sqlcdb.ReleaseItemParams{
+		ID: itemID, PlayerID: playerID,
 	}); err != nil {
 		return nil, fmt.Errorf("unequip: %w", err)
 	}

@@ -34,3 +34,13 @@ WHERE id = $1 AND player_id = $2;
 
 -- name: ListHeroEquipped :many
 SELECT * FROM app.player_items WHERE player_id = $1 AND equipped_on_hero;
+
+-- Takes an item off whoever is wearing it: the hero, a soldier, or nobody.
+--
+-- There are two holder columns, so "worn" is not one flag. Clearing only the
+-- hero's left a soldier's claim in place, and equipping a soldier's item onto
+-- the hero hit the one-item-per-slot index and surfaced as a 500.
+-- name: ReleaseItem :exec
+UPDATE app.player_items
+SET equipped_on_hero = false, equipped_soldier_id = NULL
+WHERE id = $1 AND player_id = $2;

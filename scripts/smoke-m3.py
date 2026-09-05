@@ -172,6 +172,49 @@ if sold and sold["level"] >= a4["hero"]["level"]:
 else:
     check("train is offered when the soldier is behind", sold.get("can_train") is True, sold)
 
+# --- gear moves between units --------------------------------------------------
+#
+# Two holder columns mean "worn" is not one flag. Equipping a soldier's item onto
+# the hero used to leave the soldier's claim in place, hit the one-item-per-slot
+# index, and surface as a 500.
+print("\n== gear moves between units ==")
+st, aG = call("GET", "/v1/army", token=token)
+sid = next((x["soldier"]["id"] for x in aG["slots"] if x.get("soldier")), None)
+st, invG = call("GET", "/v1/inventory", token=token)
+spare = next((i for i in invG["items"] if not i.get("equipped_on")), None)
+if spare is None:
+    spare = next(iter(invG["items"]), None)
+
+
+def worn_by(item_id):
+    _, inv = call("GET", "/v1/inventory", token=token)
+    row = next((i for i in inv["items"] if i["id"] == item_id), None)
+    return None if row is None else row.get("equipped_on")
+
+
+if sid and spare:
+    st, _ = call("POST", "/v1/army/equip",
+                 {"soldier_id": sid, "item_id": spare["id"], "action_seq": seq(token)}, token=token)
+    check("a soldier can be given an item", st == 200 and worn_by(spare["id"]) == sid, st)
+
+    st, _ = call("POST", "/v1/inventory/equip",
+                 {"item_id": spare["id"], "action_seq": seq(token)}, token=token)
+    check("the same item moves to the hero without a 500",
+          st == 200 and worn_by(spare["id"]) == "hero", (st, worn_by(spare["id"])))
+
+    st, _ = call("POST", "/v1/inventory/unequip",
+                 {"item_id": spare["id"], "action_seq": seq(token)}, token=token)
+    check("unequip works on the hero", st == 200 and worn_by(spare["id"]) == "", st)
+
+    call("POST", "/v1/army/equip",
+         {"soldier_id": sid, "item_id": spare["id"], "action_seq": seq(token)}, token=token)
+    st, _ = call("POST", "/v1/inventory/unequip",
+                 {"item_id": spare["id"], "action_seq": seq(token)}, token=token)
+    check("the same unequip works on a soldier", st == 200 and worn_by(spare["id"]) == "",
+          (st, worn_by(spare["id"])))
+else:
+    print("        (no soldier or nothing in the bag — skipped)")
+
 # --- dismiss ------------------------------------------------------------------
 #
 # The reroll loop. A player hunting a legendary recruits, dismisses, recruits

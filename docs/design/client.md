@@ -1686,7 +1686,9 @@ The brief specifies `epic=purple` and `mystic=purple`. That is not shippable as 
 | **mystic** | `#6D28D9` deep royal purple | dark obsidian, carved runes | `#E879F9` magenta rim + a slow moving sheen — **the only tier in the game that animates** |
 | special | `#E5484D` red | crimson lacquer | — |
 
-And a hard rule that makes the whole ladder robust: **tier is never communicated by colour alone.** Every `ItemCard` and `SoldierCard` shows (a) the tier-specific frame art, (b) a row of 1–7 pips, and (c) the localised tier name. Colour is reinforcement, not signal.
+And a hard rule that makes the whole ladder robust: **tier is never communicated by colour alone.** Every `ItemCard` and `SoldierCard` shows (a) the tier-specific frame art and (b) the localised tier name. Colour is reinforcement, not signal.
+
+> **Amended.** This originally called for a third channel, a row of 1–7 pips, and the client shipped them. They were removed: the pip count only ever restated what the tier name already spelled out, and on a card that also carried `ilvl` and `q%` the line read as line noise rather than information. The accessibility rule is unaffected — the tier *name* is text, so the ladder is still legible without hue. `ilvl` and quality went with them; quality already moves the ATK and DEF printed on the same card, so showing the multiplier as well was showing the working rather than the answer. The server still sends all three fields.
 
 ### 9.5 `UiTheme` (abridged, real)
 

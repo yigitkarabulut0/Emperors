@@ -2,11 +2,15 @@ class_name ItemCard
 extends Button
 ## One item, drawn the same way everywhere it appears.
 ##
-## Tier is signalled three ways at once — frame colour, the tier name, and a pip
-## count — because roughly 8% of a male-skewed audience cannot reliably separate
-## the gray/green/blue/violet/gold/magenta/red ladder by hue.
-
-const PIPS := {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5, "mystic": 6, "special": 7}
+## Tier is signalled by the frame colour AND by the tier name in words, because
+## roughly 8% of a male-skewed audience cannot reliably separate the
+## gray/green/blue/violet/gold/magenta/red ladder by hue. The design's rule is
+## "never colour alone"; the pips used to be a third channel, but they only ever
+## repeated what the word already said, and the line read as line noise.
+##
+## ilvl and quality are gone from the card too. Quality already moves ATK and DEF,
+## which are right there -- printing the multiplier as well was showing the
+## working rather than the answer.
 
 var item: Dictionary
 
@@ -70,10 +74,8 @@ func refresh(p_item: Dictionary) -> void:
 	_icon.texture = ArtRegistry.item_icon(str(item.get("art", "")), tier)
 	_name.text = str(item.get("name", ""))
 
-	var pips := "*".repeat(PIPS.get(tier, 1))
-	var extra := "  MASTERWORK" if bool(item.get("masterwork", false)) else ""
-	_tier.text = "%s %s   ilvl %d   q%d%%%s" % [
-		tier.to_upper(), pips, int(item.get("ilvl", 0)), int(item.get("quality_pct", 100)), extra]
+	var extra := "   MASTERWORK" if bool(item.get("masterwork", false)) else ""
+	_tier.text = tier.to_upper() + extra
 	_tier.add_theme_color_override("font_color", colour)
 
 	var parts: Array[String] = []

@@ -2,7 +2,6 @@ extends VBoxContainer
 ## The Barracks: your army, its Might, and the three ways to grow it —
 ## buy a slot, recruit into it, train the veteran you already have.
 
-const TIER_PIPS := {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5, "mystic": 6, "special": 7}
 
 var _army: Dictionary = {}
 var _selected := -1          # slot index, or -1 for the hero
@@ -151,7 +150,7 @@ func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 
 	var meta := "level %d" % int(unit.get("level", 1))
 	if tier != "":
-		meta = "%s %s   level %d" % [tier.to_upper(), "*".repeat(TIER_PIPS.get(tier, 1)), int(unit.get("level", 1))]
+		meta = "%s   level %d" % [tier.to_upper(), int(unit.get("level", 1))]
 	var meta_label := UI.label(meta, 12, accent)
 	col.add_child(meta_label)
 

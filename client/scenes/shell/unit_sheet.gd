@@ -14,8 +14,6 @@ signal changed
 
 const SLOTS := ["weapon", "armor", "horse"]
 const SLOT_NAMES := {"weapon": "Weapon", "armor": "Armor", "horse": "Mount"}
-const TIER_PIPS := {"common": 1, "uncommon": 2, "rare": 3, "epic": 4,
-	"legendary": 5, "mystic": 6, "special": 7}
 
 var _unit: Dictionary = {}
 var _is_hero := false
@@ -78,7 +76,7 @@ func _render() -> void:
 
 	var sub := "level %d" % int(_unit.get("level", 1))
 	if tier != "":
-		sub = "%s %s   ·   %s" % [tier.capitalize(), "•".repeat(int(TIER_PIPS.get(tier, 1))), sub]
+		sub = "%s   ·   %s" % [tier.capitalize(), sub]
 	var sub_label := UI.label(sub, UI.F_MICRO, Palette.tier(tier) if tier != "" else Palette.TEXT_FAINT,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	_body.add_child(sub_label)

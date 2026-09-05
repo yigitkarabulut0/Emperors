@@ -24,8 +24,7 @@ func _ready() -> void:
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 40)
+	SafeArea.apply(margin, Vector4(UI.GUTTER, UI.GAP_M, UI.GUTTER, UI.GAP_M))
 	add_child(margin)
 
 	var col := VBoxContainer.new()

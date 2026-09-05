@@ -59,6 +59,31 @@ func display_gold() -> int:
 	return g
 
 
+## Experience toward the next level, including collects that have not landed yet.
+##
+## Deliberately clamped one point short of the level boundary. Level, xp_to_next,
+## the stat point a level grants and the new energy maximum are all confirmed-only
+## -- the server decides them -- so an optimistic value that crossed the boundary
+## would show a full bar next to a stale level number, and then appear to lose the
+## overflow when the real answer arrived. Pinning it just below the top reads as
+## "any moment now", which is true, and never has to be walked back.
+func display_xp() -> int:
+	var p: Dictionary = snapshot.get("player", {})
+	var xp := int(p.get("xp", 0))
+	for a in _pending:
+		xp += int(a.get("xp", 0))
+	var need := xp_to_next()
+	if need <= 0:
+		return xp
+	return mini(xp, maxi(0, need - 1))
+
+
+## Experience the current level needs in total. 0 at the level cap, where the bar
+## should read full rather than divide by nothing.
+func xp_to_next() -> int:
+	return int(snapshot.get("player", {}).get("xp_to_next", 0))
+
+
 ## Energy accrued since the snapshot, in milliseconds of progress toward the next
 ## whole point.
 ##

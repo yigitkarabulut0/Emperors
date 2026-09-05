@@ -70,12 +70,14 @@ func _ready() -> void:
 	dim.anchor_bottom = 1.0
 	_root.add_child(dim)
 
+	# SKIP at the top and CONTINUE at the bottom were both inside the home
+	# indicator's gesture zone, which is the classic "that button does not work"
+	# report on iOS.
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.anchor_right = 1.0
 	margin.anchor_bottom = 1.0
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 16)
+	SafeArea.apply(margin, Vector4(16, 16, 16, 16))
 	_root.add_child(margin)
 
 	var col := VBoxContainer.new()

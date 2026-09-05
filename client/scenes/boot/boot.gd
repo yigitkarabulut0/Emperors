@@ -14,6 +14,9 @@ const RECONNECT_DELAY := 3.0
 var _auth: Node = null
 
 func _ready() -> void:
+	SafeArea.apply(%Margin, Vector4(48, 48, 48, 48))
+	get_tree().root.size_changed.connect(
+		func() -> void: SafeArea.apply(%Margin, Vector4(48, 48, 48, 48)))
 	_retry.pressed.connect(_start)
 	_start()
 

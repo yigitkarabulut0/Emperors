@@ -32,9 +32,8 @@ func _ready() -> void:
 	add_child(dim)
 
 	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
 	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centre)
+	SafeArea.wrap(self, Vector4(16, 16, 16, 16)).add_child(centre)
 
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))

@@ -39,10 +39,11 @@ func _ready() -> void:
 			queue_free())
 	add_child(dim)
 
+	# Inside a safe-area container, so a tall card cannot reach the notch or the
+	# home indicator on the way to being centred.
 	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
 	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centre)
+	SafeArea.wrap(self, Vector4(16, 16, 16, 16)).add_child(centre)
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(330, 0)

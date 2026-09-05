@@ -21,6 +21,7 @@ grow_vertical = 2
 color = Color(0.105882, 0.0901961, 0.0705882, 1)
 
 [node name="Margin" type="MarginContainer" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

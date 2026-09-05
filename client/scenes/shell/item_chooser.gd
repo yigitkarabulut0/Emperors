@@ -34,13 +34,11 @@ func _ready() -> void:
 			queue_free())
 	add_child(dim)
 
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 16)
-	for side in ["top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 48)
-	add_child(margin)
+	# 48 units of top margin used to be the whole notch strategy, and on a phone
+	# with a Dynamic Island the card ran about 50 units underneath it. A
+	# CanvasLayer is not a Control and cannot inherit the shell's insets, so it
+	# asks for them directly.
+	var margin := SafeArea.wrap(self, Vector4(16, 24, 16, 24))
 
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))

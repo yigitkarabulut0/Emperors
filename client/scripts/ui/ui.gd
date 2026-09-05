@@ -6,6 +6,47 @@ extends RefCounted
 ## data-driven list: the rows come from the server, so there is no fixed
 ## hierarchy for the editor to hold.
 
+## The type scale, in stretch units. docs/design/client.md sec 9.3 specified it and
+## the client was built at roughly 55% of it -- the most-used label in the game
+## was 12 units, which is 7.3 pt on the owner's phone against iOS body text of 17.
+##
+## Why fixed units and not a per-device multiplier: with canvas_items + expand the
+## viewport is never narrower than 720, so a unit is worth between 0.52 pt (an SE)
+## and 0.92 pt (an iPad) -- a spread of 17% across the phones, which is small
+## enough that sizing for the smallest device and letting larger ones scale up is
+## both correct and keeps 720 a real design grid. A runtime scalar would reflow
+## the layout differently on every device and there would be no single truth to
+## test against.
+const F_DISPLAY := 72
+const F_H1 := 48
+const F_H2 := 36
+const F_NUMBER := 34
+const F_BODY := 30
+const F_CAPTION := 24
+const F_MICRO := 22
+
+## Touch targets. 88 units clears Apple's 44 pt minimum on every device we ship
+## to -- 45.8 pt on an iPhone SE, which is the binding case, and more everywhere
+## else. Nothing interactive may be shorter than TAP_MIN.
+const TAP_MIN := 88
+const TAP_ROW := 132
+const TAP_ROW_TIGHT := 112
+const TAP_PRIMARY := 116
+
+const ICON_SM := 28
+const ICON_MD := 48
+const ICON_LG := 64
+const ICON_XL := 96
+
+## Spacing on a 4-unit grid.
+const GAP_XS := 4
+const GAP_S := 8
+const GAP_M := 16
+const GAP_L := 24
+const GAP_XL := 32
+const GUTTER := 24
+
+
 static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 10) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = bg
@@ -17,6 +58,17 @@ static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int 
 	if border.a > 0.0:
 		s.set_border_width_all(2)
 		s.border_color = border
+	return s
+
+
+## A panel box with tight padding, for the small stamped things -- a level badge,
+## a currency chip -- where panel_box's 14/10 content margin is most of the width.
+static func chip_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 12) -> StyleBoxFlat:
+	var s := panel_box(bg, border, radius)
+	s.content_margin_left = 10
+	s.content_margin_right = 10
+	s.content_margin_top = 2
+	s.content_margin_bottom = 2
 	return s
 
 

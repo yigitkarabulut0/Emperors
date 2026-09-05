@@ -28,13 +28,20 @@ const SECTIONS := [
 	{"id": "house", "icon": "house", "glyph": "K", "label": "House"},
 ]
 
-const RAIL_WIDTH := 88
-const ICON_SIZE := 34
+const RAIL_WIDTH := 104
+const ICON_SIZE := UI.ICON_MD
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
 const GOLD_ROLL_SECONDS := 0.30
-const AVATAR_SIZE := 46
+const AVATAR_SIZE := UI.TAP_MIN
+
+## Floors, not fixed heights. The top bar sizes to its own content and the action
+## host to the tallest bar any section mounts; these only stop them collapsing.
+## The safe-area inset is added on top of both at runtime, so the numbers here
+## stay device-independent.
+const TOPBAR_MIN_H := 168
+const ACTION_H := 164
 
 
 var _avatar_btn: Button
@@ -64,6 +71,13 @@ var _level: Label
 var _gold: Label
 var _energy: Label
 var _energy_bar: ProgressBar
+var _xp: Label
+var _xp_bar: ProgressBar
+
+# Chrome that has to be re-inset whenever the safe area changes.
+var _topbar_panel: PanelContainer
+var _topbar_pad: MarginContainer
+var _rail_pad: MarginContainer
 
 
 func _ready() -> void:
@@ -93,16 +107,21 @@ func _ready() -> void:
 		(_content as MarginContainer).add_theme_constant_override("margin_" + side, 10)
 	middle.add_child(_content)
 
-	_toast = UI.label("", 15, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
-	_toast.custom_minimum_size = Vector2(0, 22)
+	_toast = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
+	_toast.custom_minimum_size = Vector2(0, 30)
 	root.add_child(_toast)
 
 	_action_host = MarginContainer.new()
-	_action_host.custom_minimum_size = Vector2(0, 78)
+	_action_host.custom_minimum_size = Vector2(0, ACTION_H)
 	for side in ["left", "right"]:
 		(_action_host as MarginContainer).add_theme_constant_override("margin_" + side, 12)
 	(_action_host as MarginContainer).add_theme_constant_override("margin_bottom", 12)
 	root.add_child(_action_host)
+
+	_apply_safe_insets()
+	get_tree().root.size_changed.connect(_apply_safe_insets)
+	if Env.fake_safe_area_on:
+		get_tree().root.add_child.call_deferred(SafeArea.debug_overlay())
 
 	GameState.changed.connect(_on_state_changed)
 	GameState.action_failed.connect(_on_action_failed)
@@ -177,82 +196,177 @@ func _thrash(rounds: int) -> void:
 
 
 func _build_top_bar() -> Control:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UI.panel_box(Palette.RAIL, Color.TRANSPARENT, 0))
-	panel.custom_minimum_size = Vector2(0, 96)
+	_topbar_panel = PanelContainer.new()
+	# The panel bleeds all the way to y=0 on purpose. Insetting the chrome itself
+	# would leave a strip of background under the Dynamic Island, which is the
+	# most obvious "this is a port" tell there is; only the PADDING moves.
+	_topbar_panel.add_theme_stylebox_override(
+		"panel", UI.panel_box(Palette.RAIL, Color.TRANSPARENT, 0))
+	_topbar_panel.custom_minimum_size = Vector2(0, TOPBAR_MIN_H)
 
-	var pad := MarginContainer.new()
-	for side in ["left", "right"]:
-		pad.add_theme_constant_override("margin_" + side, 14)
-	pad.add_theme_constant_override("margin_top", 9)
-	pad.add_theme_constant_override("margin_bottom", 9)
-	panel.add_child(pad)
+	_topbar_pad = MarginContainer.new()
+	_topbar_panel.add_child(_topbar_pad)
 
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 8)
-	pad.add_child(col)
+	col.add_theme_constant_override("separation", 10)
+	_topbar_pad.add_child(col)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", UI.GAP_M)
 	col.add_child(row)
 
 	# Your face, top left, and it opens the picker. In asynchronous PvP you never
 	# meet an opponent -- they are a row on a list -- so the portrait is most of
 	# the identity either side has.
+	var face := Control.new()
+	face.custom_minimum_size = Vector2(AVATAR_SIZE, AVATAR_SIZE)
+	face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(face)
+
 	_avatar_btn = Button.new()
-	_avatar_btn.custom_minimum_size = Vector2(AVATAR_SIZE, AVATAR_SIZE)
+	_avatar_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_avatar_btn.focus_mode = Control.FOCUS_NONE
 	_avatar_btn.tooltip_text = "Change your portrait"
-	_avatar_btn.add_theme_stylebox_override("normal", UI.panel_box(Color.TRANSPARENT, Color.TRANSPARENT, 0))
-	_avatar_btn.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, AVATAR_SIZE / 2))
-	_avatar_btn.add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, AVATAR_SIZE / 2))
+	_avatar_btn.add_theme_stylebox_override(
+		"normal", UI.panel_box(Color.TRANSPARENT, Color.TRANSPARENT, 0))
+	_avatar_btn.add_theme_stylebox_override(
+		"hover", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, AVATAR_SIZE / 2))
+	_avatar_btn.add_theme_stylebox_override(
+		"pressed", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, AVATAR_SIZE / 2))
 	_avatar_btn.pressed.connect(_open_avatar_picker)
+	face.add_child(_avatar_btn)
+
+	# The art is inset inside the button rather than drawn at the button's size:
+	# the whole 88 units stay tappable while the portrait keeps its old weight.
 	_avatar_img = TextureRect.new()
 	_avatar_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_avatar_img.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_avatar_img.offset_left = 8
+	_avatar_img.offset_top = 8
+	_avatar_img.offset_right = -8
+	_avatar_img.offset_bottom = -8
 	_avatar_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_avatar_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_avatar_btn.add_child(_avatar_img)
-	row.add_child(_avatar_btn)
+
+	# The level rides on the portrait as a badge. That is one row of the top bar
+	# reclaimed for the experience bar, and it puts the number where a player
+	# already looks for it in this genre.
+	var badge := PanelContainer.new()
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.add_theme_stylebox_override(
+		"panel", UI.chip_box(Palette.GOLD_DEEP, Palette.BG, 16))
+	badge.anchor_left = 1.0
+	badge.anchor_top = 1.0
+	badge.anchor_right = 1.0
+	badge.anchor_bottom = 1.0
+	badge.offset_left = -34
+	badge.offset_top = -30
+	badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	badge.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	face.add_child(badge)
+	_level = UI.label("1", UI.F_CAPTION, Palette.BG, HORIZONTAL_ALIGNMENT_CENTER)
+	badge.add_child(_level)
 
 	var who := VBoxContainer.new()
 	who.alignment = BoxContainer.ALIGNMENT_CENTER
-	who.add_theme_constant_override("separation", 0)
+	who.add_theme_constant_override("separation", UI.GAP_XS)
 	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_name = UI.label("", 16, Palette.TEXT)
+	_name = UI.label("", UI.F_H2, Palette.TEXT)
+	# A long username used to push the purse off the right edge.
+	_name.clip_text = true
+	_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	who.add_child(_name)
-	_level = UI.label("Lv 1", 12, Palette.TEXT_FAINT)
-	who.add_child(_level)
+
+	# Experience, always on screen. It used to live only inside the Hero screen,
+	# so the one number that says "you are getting somewhere" was two taps away.
+	var xrow := HBoxContainer.new()
+	xrow.add_theme_constant_override("separation", UI.GAP_S)
+	who.add_child(xrow)
+
+	_xp_bar = ProgressBar.new()
+	_xp_bar.show_percentage = false
+	_xp_bar.custom_minimum_size = Vector2(0, 14)
+	_xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_xp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# PANEL on RAIL is a 1.2:1 difference -- an empty bar was invisible, which is
+	# exactly the state a new player is in. PANEL_HIGH with an edge reads as an
+	# empty groove waiting to be filled.
+	_xp_bar.add_theme_stylebox_override(
+		"background", UI.panel_box(Palette.PANEL_HIGH, Palette.LINE, 7))
+	_xp_bar.add_theme_stylebox_override(
+		"fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 7))
+	xrow.add_child(_xp_bar)
+
+	_xp = UI.label("0 / 0", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	_xp.custom_minimum_size = Vector2(150, 0)
+	xrow.add_child(_xp)
 	row.add_child(who)
 
 	# Currency reads as a pair of stamped coins rather than a bare number in the
-	# corner, which is what it was.
-	var purse := HBoxContainer.new()
-	purse.add_theme_constant_override("separation", 8)
-	purse.alignment = BoxContainer.ALIGNMENT_END
+	# corner. Stacked rather than side by side: side by side they ate 260 of the
+	# 672 usable units and left the experience bar too narrow to read, and gold
+	# on top is the right priority anyway.
+	var purse := VBoxContainer.new()
+	purse.add_theme_constant_override("separation", UI.GAP_S)
+	purse.alignment = BoxContainer.ALIGNMENT_CENTER
 	_gold = _purse_chip(purse, "coin", Palette.GOLD)
 	_diamonds = _purse_chip(purse, "gem", Palette.DIAMOND)
 	row.add_child(purse)
 
 	var erow := HBoxContainer.new()
-	erow.add_theme_constant_override("separation", 8)
+	erow.add_theme_constant_override("separation", 12)
 	col.add_child(erow)
-	erow.add_child(_glyph("currency/bolt", 16, Palette.ENERGY))
+	erow.add_child(_glyph("currency/bolt", UI.ICON_SM, Palette.ENERGY))
 
 	_energy_bar = ProgressBar.new()
 	_energy_bar.show_percentage = false
-	_energy_bar.custom_minimum_size = Vector2(0, 10)
+	_energy_bar.custom_minimum_size = Vector2(0, 18)
 	_energy_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_energy_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_energy_bar.add_theme_stylebox_override("background", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, 5))
-	_energy_bar.add_theme_stylebox_override("fill", UI.panel_box(Palette.ENERGY, Color.TRANSPARENT, 5))
+	_energy_bar.add_theme_stylebox_override(
+		"background", UI.panel_box(Palette.PANEL_HIGH, Palette.LINE, 9))
+	_energy_bar.add_theme_stylebox_override(
+		"fill", UI.panel_box(Palette.ENERGY, Color.TRANSPARENT, 9))
 	erow.add_child(_energy_bar)
 
-	_energy = UI.label("0/0", 14, Palette.ENERGY, HORIZONTAL_ALIGNMENT_RIGHT)
-	_energy.custom_minimum_size = Vector2(128, 0)
+	_energy = UI.label("0/0", UI.F_BODY, Palette.ENERGY, HORIZONTAL_ALIGNMENT_RIGHT)
+	_energy.custom_minimum_size = Vector2(220, 0)
 	erow.add_child(_energy)
 
-	return panel
+	return _topbar_panel
+
+
+## Pushes the current safe-area insets into the four pieces of chrome that touch
+## a screen edge.
+##
+## Panels keep bleeding to the edge; only their padding moves, so the dark bar
+## still runs under the Dynamic Island and the rail still runs to x=0. The action
+## host is the one that actually mattered: a 12-unit bottom margin put the
+## primary button of every screen inside the home-indicator gesture zone.
+func _apply_safe_insets() -> void:
+	var i := SafeArea.insets()
+
+	_topbar_pad.add_theme_constant_override("margin_left", UI.GUTTER + int(i.x))
+	_topbar_pad.add_theme_constant_override("margin_right", UI.GUTTER + int(i.z))
+	_topbar_pad.add_theme_constant_override("margin_top", 12 + int(i.y))
+	_topbar_pad.add_theme_constant_override("margin_bottom", 12)
+	_topbar_panel.custom_minimum_size.y = TOPBAR_MIN_H + int(i.y)
+
+	_rail_pad.add_theme_constant_override("margin_left", int(i.x))
+
+	(_content as MarginContainer).add_theme_constant_override("margin_right", 10 + int(i.z))
+
+	(_action_host as MarginContainer).add_theme_constant_override(
+		"margin_bottom", 12 + int(i.w))
+	_action_host.custom_minimum_size.y = ACTION_H + int(i.w)
+
+
+func _notification(what: int) -> void:
+	# The safe area can change while backgrounded: rotating the phone on the home
+	# screen is the everyday case.
+	if what == NOTIFICATION_APPLICATION_RESUMED and _topbar_pad != null:
+		_apply_safe_insets.call_deferred()
 
 
 ## One currency readout: its glyph, then its number. Returns the number's label
@@ -269,8 +383,8 @@ func _purse_chip(host: Control, icon: String, tint: Color) -> Label:
 	var line := HBoxContainer.new()
 	line.add_theme_constant_override("separation", 6)
 	pad.add_child(line)
-	line.add_child(_glyph("currency/" + icon, 17, tint))
-	var value := UI.label("0", 17, tint, HORIZONTAL_ALIGNMENT_RIGHT)
+	line.add_child(_glyph("currency/" + icon, UI.ICON_SM, tint))
+	var value := UI.label("0", UI.F_BODY, tint, HORIZONTAL_ALIGNMENT_RIGHT)
 	line.add_child(value)
 	host.add_child(box)
 	return value
@@ -292,13 +406,18 @@ func _build_rail() -> Control:
 	panel.add_theme_stylebox_override("panel", UI.panel_box(Palette.RAIL, Color.TRANSPARENT, 0))
 	panel.custom_minimum_size = Vector2(RAIL_WIDTH, 0)
 
+	# The rail panel bleeds to x=0; only its buttons move in from a left inset,
+	# which is zero in portrait but not on an Android cutout or in landscape.
+	_rail_pad = MarginContainer.new()
+	panel.add_child(_rail_pad)
+
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
-	panel.add_child(col)
+	_rail_pad.add_child(col)
 
 	for s in SECTIONS:
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, 74)
+		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 		b.focus_mode = Control.FOCUS_NONE
 		b.tooltip_text = str(s["label"])
 		b.pressed.connect(_open.bind(str(s["id"])))
@@ -323,17 +442,33 @@ func _build_rail() -> Control:
 		else:
 			# An unshipped icon must not leave an unlabelled button. Both branches
 			# tint through the same call below, so _style_rail needs no branch.
-			var glyph := UI.label(str(s["glyph"]), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+			var glyph := UI.label(str(s["glyph"]), UI.F_H1, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 			glyph.modulate = Palette.TEXT_DIM
 			glyph.custom_minimum_size = Vector2(0, ICON_SIZE)
 			inner.add_child(glyph)
-		inner.add_child(UI.label(str(s["label"]), 11, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+		inner.add_child(UI.label(str(s["label"]), UI.F_MICRO, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 		b.add_child(inner)
 
 		col.add_child(b)
 		_rail_buttons[str(s["id"])] = b
-		_rail_locks[str(s["id"])] = UI.label("", 10, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
-		inner.add_child(_rail_locks[str(s["id"])])
+
+		# The unlock level rides in the corner rather than as a third line. Icon
+		# plus name plus level came to 98 units inside an 88-unit button, so the
+		# rail overflowed and "House" sat on top of "lv 20". Seeing what is coming
+		# is worth keeping -- it just cannot cost vertical space.
+		var lock := PanelContainer.new()
+		lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lock.add_theme_stylebox_override(
+			"panel", UI.chip_box(Palette.BG, Palette.LINE, 10))
+		lock.anchor_left = 1.0
+		lock.anchor_right = 1.0
+		lock.offset_left = -46
+		lock.offset_top = 4
+		lock.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		b.add_child(lock)
+		var lock_text := UI.label("", UI.F_MICRO, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+		lock.add_child(lock_text)
+		_rail_locks[str(s["id"])] = lock
 
 	return panel
 
@@ -413,8 +548,8 @@ func _placeholder(title: String, milestone: String) -> Control:
 	var col := VBoxContainer.new()
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 10)
-	col.add_child(UI.label(title.to_upper(), 28, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
-	col.add_child(UI.label("arrives in " + milestone, 15, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.label(title.to_upper(), UI.F_H1, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.label("arrives in " + milestone, UI.F_BODY, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 	return col
 
 
@@ -443,8 +578,8 @@ func _style_rail() -> void:
 		var open := _unlocked(str(id))
 		b.disabled = not open
 		if _rail_locks.has(id):
-			var lock: Label = _rail_locks[id]
-			lock.text = "" if open else "lv %d" % _unlock_level(str(id))
+			var lock: PanelContainer = _rail_locks[id]
+			(lock.get_child(0) as Label).text = "" if open else str(_unlock_level(str(id)))
 			lock.visible = not open
 		var active: bool = id == _current
 		var bg := Palette.PANEL if active else Color.TRANSPARENT
@@ -464,7 +599,8 @@ func _on_state_changed() -> void:
 		return
 	var p := GameState.player()
 	_name.text = str(p.get("username", ""))
-	_level.text = "Lv %d" % int(p.get("level", 1))
+	_level.text = str(int(p.get("level", 1)))
+	_update_xp()
 	_diamonds.text = UI.number(int(p.get("diamonds", 0)))
 	_avatar_img.texture = ArtRegistry.portrait(str(p.get("avatar", "knight")))
 	_show_gold(GameState.display_gold())
@@ -509,6 +645,22 @@ func _show_gold(target: int) -> void:
 	if target > from:
 		_gold_tween.parallel().tween_property(_gold, "modulate", Color(1.35, 1.3, 1.1), 0.08)
 		_gold_tween.chain().tween_property(_gold, "modulate", Color.WHITE, 0.22)
+
+
+## The experience bar. Driven from `changed` rather than the 4 Hz tick: unlike
+## energy, experience only moves when the player does something.
+func _update_xp() -> void:
+	var need := GameState.xp_to_next()
+	var have := GameState.display_xp()
+	if need <= 0:
+		# The level cap. A full bar and a word, rather than a division by nothing.
+		_xp_bar.max_value = 1.0
+		_xp_bar.value = 1.0
+		_xp.text = "MAX"
+		return
+	_xp_bar.max_value = float(need)
+	_xp_bar.value = float(have)
+	_xp.text = "%s / %s" % [UI.number(have), UI.number(need)]
 
 
 func _update_energy() -> void:

@@ -14,7 +14,10 @@ const LINE        := Color("#3A322B")  ## dividers and borders
 
 const TEXT        := Color("#EDE6DA")
 const TEXT_DIM    := Color("#9C9284")
-const TEXT_FAINT  := Color("#6B6258")
+## Raised from #6B6258, which measured 2.75:1 on PANEL -- below WCAG AA at any
+## size, and it is the colour of every caption and every rail label in the game.
+## This is 4.66:1 on PANEL, 5.05:1 on BG, 5.28:1 on RAIL.
+const TEXT_FAINT  := Color("#918779")
 const EMPTY_SLOT  := Color("#4A443C")  ## an unfilled equipment slot
 
 const GOLD        := Color("#E5C97B")  ## primary accent, currency

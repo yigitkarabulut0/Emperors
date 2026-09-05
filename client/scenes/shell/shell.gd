@@ -120,6 +120,10 @@ func _ready() -> void:
 	(_action_host as MarginContainer).add_theme_constant_override("margin_bottom", 12)
 	root.add_child(_action_host)
 
+	# Holds the player in place through an outage instead of letting them fall
+	# back to the sign-in screen, which is where a lost connection used to end.
+	add_child(load("res://scenes/shell/reconnect.gd").new())
+
 	_apply_safe_insets()
 	get_tree().root.size_changed.connect(_apply_safe_insets)
 	if Env.fake_safe_area_on:

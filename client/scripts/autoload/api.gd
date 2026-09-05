@@ -18,10 +18,29 @@ extends Node
 
 signal unauthorized  ## refresh failed; the player must sign in again
 
+## The transport failed, or started working again.
+##
+## Emitted on the edge only, so a screen can hold the player in place through an
+## outage without every single request repainting something. What listens to
+## these must never sign anyone out: a lost connection is not a lost session.
+signal offline
+signal online
+
+var _reachable := true
+
 ## How long one request may take before it is abandoned. Generous, because
 ## abandoning a request the server is about to answer is worse than waiting: the
 ## action still happened, and the client would show the player otherwise.
 const TIMEOUT_SECONDS := 20.0
+
+## The reachability check on the loading screen gets a much shorter fuse.
+##
+## Different question, different answer: an action already in flight is worth
+## waiting 20 seconds for, because abandoning it tells the player something
+## untrue about what happened. "Can I reach the realm at all" is worth about
+## eight, because the honest answer arrives long before then and the player is
+## sitting looking at a bar.
+const REACHABILITY_TIMEOUT := 8.0
 
 ## Two is the right number: one request in flight per lane, and the client is
 ## deliberately built to ask for one snapshot rather than a dozen resources. More
@@ -63,15 +82,16 @@ func _ready() -> void:
 		_lanes.append(Lane.new())
 
 
-func get_json(path: String, authed: bool = true) -> Response:
-	return await _send(HTTPClient.METHOD_GET, path, {}, authed, true)
+func get_json(path: String, authed: bool = true, timeout: float = TIMEOUT_SECONDS) -> Response:
+	return await _send(HTTPClient.METHOD_GET, path, {}, authed, true, timeout)
 
 
 func post_json(path: String, body: Dictionary, authed: bool = true) -> Response:
-	return await _send(HTTPClient.METHOD_POST, path, body, authed, true)
+	return await _send(HTTPClient.METHOD_POST, path, body, authed, true, TIMEOUT_SECONDS)
 
 
-func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry: bool) -> Response:
+func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry: bool,
+		timeout: float) -> Response:
 	var lane := await _lease()
 	if lane == null:
 		return _fail(path, "client is shutting down")
@@ -80,10 +100,10 @@ func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry:
 	# server closed while idle is the normal cost of keeping it open, and the
 	# player must never see it -- but a request that reached the server and then
 	# failed must NOT be replayed, or a collect could be spent twice.
-	var res := await _once(lane, method, path, body, authed)
+	var res := await _once(lane, method, path, body, authed, timeout)
 	if res.status == 0 and res.code == "transport_predelivery":
 		lane.live = false
-		res = await _once(lane, method, path, body, authed)
+		res = await _once(lane, method, path, body, authed, timeout)
 
 	lane.busy = false
 
@@ -94,7 +114,7 @@ func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry:
 		# and refusing to refresh on that signed the player out over something one
 		# retry fixes. If the refresh token really is dead, try_refresh signs out.
 		if await Session.try_refresh():
-			return await _send(method, path, body, authed, false)
+			return await _send(method, path, body, authed, false, timeout)
 
 	if res.status == 401 and authed:
 		unauthorized.emit()
@@ -103,8 +123,9 @@ func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry:
 
 
 ## One attempt down one lane.
-func _once(lane: Lane, method: int, path: String, body: Dictionary, authed: bool) -> Response:
-	var deadline := Time.get_ticks_msec() + int(TIMEOUT_SECONDS * 1000.0)
+func _once(lane: Lane, method: int, path: String, body: Dictionary, authed: bool,
+		timeout: float) -> Response:
+	var deadline := Time.get_ticks_msec() + int(timeout * 1000.0)
 
 	if not await _ensure_connected(lane, deadline):
 		return _fail(path, "Cannot reach the server")
@@ -163,6 +184,10 @@ func _once(lane: Lane, method: int, path: String, body: Dictionary, authed: bool
 
 	var parsed: Variant = JSON.parse_string(raw.get_string_from_utf8())
 	var data: Dictionary = parsed if parsed is Dictionary else {}
+
+	if not _reachable:
+		_reachable = true
+		online.emit()
 
 	if status >= 200 and status < 300:
 		return Response.new(true, status, data, "", "")
@@ -232,4 +257,7 @@ func _lease() -> Lane:
 
 func _fail(path: String, message: String) -> Response:
 	push_warning("[api] %s -> %s" % [path, message])
+	if _reachable:
+		_reachable = false
+	offline.emit()
 	return Response.new(false, 0, {}, "transport", message)

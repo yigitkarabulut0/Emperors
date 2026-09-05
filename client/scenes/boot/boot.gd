@@ -1,49 +1,163 @@
 extends Control
-## Decides where the player lands: straight into the game if a session survives,
-## otherwise the sign-in screen.
+## The loading screen, and the decision about where the player lands.
+##
+## Built in code rather than as a scene tree so it can share the palette, the
+## type scale and the safe-area helper with everything else -- it used to be a
+## .tscn with its own hardcoded colours and font sizes, drifting from the rest of
+## the client every time the rest of the client changed.
+##
+## What it deliberately does NOT show any more is the server address. That was on
+## screen under the title, which tells a player nothing and tells everyone else
+## where to point a load generator. The build version replaces it: a player can
+## quote a version in a bug report, and it is the thing worth knowing. The host
+## comes back in debug builds only, where it is genuinely useful.
 
-@onready var _status: Label = %Status
-@onready var _motto: Label = %Motto
-@onready var _detail: Label = %Detail
-@onready var _retry: Button = %Retry
+## How long to wait before trying again after a network failure, per attempt.
+## Backs off so a phone that has genuinely lost signal is not hammered, but
+## recovers within seconds when it was one dropped packet.
+const RETRY_DELAYS := [2.0, 4.0, 8.0, 15.0]
 
-## How long to wait before trying the server again after a network failure.
-const RECONNECT_DELAY := 3.0
+const STAGES := {
+	"reach": [0.25, "Reaching the realm…"],
+	"restore": [0.5, "Restoring your realm…"],
+	"gather": [0.75, "Gathering your holdings…"],
+	"banners": [1.0, "Raising the banners…"],
+}
 
 ## The sign-in screen, while it is up. Boot outlives it deliberately.
 var _auth: Node = null
 
+var _mark: TextureRect
+var _motto: Label
+var _stage: Label
+var _detail: Label
+var _bar: ProgressBar
+var _retry: Button
+var _bar_tween: Tween
+var _attempt := 0
+
+
 func _ready() -> void:
-	SafeArea.apply(%Margin, Vector4(48, 48, 48, 48))
+	var bg := ColorRect.new()
+	bg.color = Palette.BG
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(bg)
+
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	SafeArea.apply(margin, Vector4(UI.GUTTER, UI.GAP_XL, UI.GUTTER, UI.GAP_XL))
 	get_tree().root.size_changed.connect(
-		func() -> void: SafeArea.apply(%Margin, Vector4(48, 48, 48, 48)))
-	_retry.pressed.connect(_start)
+		func() -> void: SafeArea.apply(margin, Vector4(UI.GUTTER, UI.GAP_XL, UI.GUTTER, UI.GAP_XL)))
+	add_child(margin)
+
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 0)
+	margin.add_child(col)
+
+	# --- the middle: who made it, and what it is --------------------------
+	var centre := VBoxContainer.new()
+	centre.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	centre.alignment = BoxContainer.ALIGNMENT_CENTER
+	centre.add_theme_constant_override("separation", UI.GAP_L)
+	col.add_child(centre)
+
+	_mark = TextureRect.new()
+	_mark.texture = ArtRegistry.branding("miav_splash")
+	_mark.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_mark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_mark.custom_minimum_size = Vector2(0, 200)
+	centre.add_child(_mark)
+
+	centre.add_child(UI.spacer(UI.GAP_XL))
+	centre.add_child(UI.label("EMPERORS", UI.F_DISPLAY, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
+
+	# The motto comes from the server, so its presence is itself the proof that
+	# the realm answered. Worth keeping: it is the first flavour anyone reads.
+	_motto = UI.label("", UI.F_BODY, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_motto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_motto.custom_minimum_size = Vector2(0, 80)
+	centre.add_child(_motto)
+
+	# --- the bottom: what is happening, and how far along -----------------
+	var foot := VBoxContainer.new()
+	foot.add_theme_constant_override("separation", UI.GAP_S)
+	col.add_child(foot)
+
+	_stage = UI.label("", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	foot.add_child(_stage)
+
+	var bar_row := HBoxContainer.new()
+	bar_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	foot.add_child(bar_row)
+	_bar = ProgressBar.new()
+	_bar.show_percentage = false
+	_bar.max_value = 1.0
+	_bar.value = 0.0
+	_bar.custom_minimum_size = Vector2(360, 10)
+	_bar.add_theme_stylebox_override("background",
+		UI.panel_box(Palette.PANEL_HIGH, Palette.LINE, 5))
+	_bar.add_theme_stylebox_override("fill",
+		UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 5))
+	bar_row.add_child(_bar)
+
+	_retry = UI.ghost_button("Try again", UI.F_BODY)
+	_retry.custom_minimum_size = Vector2(0, UI.TAP_MIN)
+	_retry.visible = false
+	_retry.pressed.connect(func() -> void:
+		_attempt = 0
+		_start())
+	foot.add_child(_retry)
+
+	_detail = UI.label(_footer_text(), UI.F_MICRO, Palette.TEXT_FAINT,
+		HORIZONTAL_ALIGNMENT_CENTER)
+	foot.add_child(_detail)
+
 	_start()
+
+
+## What goes where the server address used to be.
+##
+## A version string is what makes a bug report actionable; a hostname is what
+## makes an attack convenient. In a debug build the host comes back, because
+## during development knowing which server you are pointed at is the whole
+## question.
+func _footer_text() -> String:
+	if OS.has_feature("debug"):
+		return "%s  ·  %s" % [Env.build_version, Env.api_base_url]
+	return Env.build_version
+
+
+func _stage_to(key: String) -> void:
+	var s: Array = STAGES[key]
+	_stage.text = str(s[1])
+	_stage.add_theme_color_override("font_color", Palette.TEXT_DIM)
+	if _bar_tween != null and _bar_tween.is_valid():
+		_bar_tween.kill()
+	# Tweened rather than snapped so the bar always reads as movement. A bar that
+	# jumps between two long pauses looks stuck; one that creeps looks alive.
+	_bar_tween = create_tween()
+	_bar_tween.tween_property(_bar, "value", float(s[0]), 0.25) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _start() -> void:
 	_retry.visible = false
-	_status.text = "Reaching the realm…"
-	_status.modulate = Color(0.85, 0.80, 0.65)
+	_stage_to("reach")
 	_motto.text = ""
-	_detail.text = Env.api_base_url
 
-	var res: Api.Response = await Api.get_json("/v1/ping", false)
+	var res: Api.Response = await Api.get_json("/v1/ping", false, Api.REACHABILITY_TIMEOUT)
 	if not res.ok:
-		print("[boot] FAILED: ", res.error)
-		_status.text = "No answer"
-		_status.modulate = Color(0.86, 0.35, 0.30)
-		_motto.text = res.error
-		_retry.visible = true
+		_failed(res)
 		return
 
+	_attempt = 0
 	_motto.text = str(res.data.get("motto", ""))
 
 	# Checked BEFORE the saved session: a proof capture must land on the account
 	# it names, not on whoever signed in last on this machine.
 	var dev := _dev_login_args()
 	if not dev.is_empty():
-		_status.text = "Signing in…"
+		_stage_to("restore")
 		Session.sign_out()
 		var err := await Session.login(dev[0], dev[1])
 		if err != "":
@@ -54,7 +168,7 @@ func _start() -> void:
 		print("[boot] dev login failed: ", err)
 
 	if Session.is_signed_in():
-		_status.text = "Restoring your realm…"
+		_stage_to("restore")
 		if await Session.try_refresh():
 			_enter_game()
 			return
@@ -63,22 +177,51 @@ func _start() -> void:
 		# still on disk -- and asking someone to type their password because a
 		# packet went missing is how an app teaches people not to trust it.
 		if Session.refresh_failed_offline:
-			_offline_retry()
+			_failed(res)
 			return
 
-	_status.text = ""
 	_enter_auth()
 
 
-## Waits out a network outage on the loading screen, retrying quietly.
-func _offline_retry() -> void:
-	_status.text = "Reconnecting…"
-	_status.modulate = Color(0.85, 0.80, 0.65)
-	_motto.text = "Waiting for a connection"
-	_retry.visible = true
-	await get_tree().create_timer(RECONNECT_DELAY).timeout
-	if is_instance_valid(self):
-		_start()
+## Shows a failure the way a player can act on, and keeps trying.
+##
+## Dead-ending behind a manual button after one failure is the worst outcome on a
+## flaky mobile link, where the next attempt usually works. The screen keeps its
+## shape -- one that rearranges itself on failure reads as a crash -- and the raw
+## transport string never becomes the headline, because "The connection dropped
+## (5)" is not something a player can do anything with.
+func _failed(res: Api.Response) -> void:
+	print("[boot] failed: ", res.error)
+	_stage.text = "Cannot reach the realm"
+	_stage.add_theme_color_override("font_color", Palette.DANGER)
+	_motto.text = _explain(res)
+
+	if _attempt >= RETRY_DELAYS.size():
+		_retry.visible = true
+		_detail.text = _footer_text()
+		return
+
+	var wait: float = RETRY_DELAYS[_attempt]
+	_attempt += 1
+	_retry.visible = _attempt > 1
+	var left := int(wait)
+	while left > 0:
+		_detail.text = "Retrying in %ds…" % left
+		await get_tree().create_timer(1.0).timeout
+		if not is_instance_valid(self):
+			return
+		left -= 1
+	_detail.text = _footer_text()
+	_start()
+
+
+## Turns a transport failure into a sentence about the player's situation.
+func _explain(res: Api.Response) -> String:
+	if res.status >= 500:
+		return "The realm is resting. It will be back shortly."
+	if res.error.contains("too long"):
+		return "The realm is slow to answer."
+	return "Check your connection — we will keep trying."
 
 
 ## Shows the sign-in screen. Boot stays ALIVE behind it, just hidden.
@@ -100,9 +243,11 @@ func _enter_auth() -> void:
 
 
 func _enter_game() -> void:
-	print("[boot] entering game")
+	visible = true
+	_stage_to("gather")
 	await GameState.refresh()
 	await _dev_collect()
+	_stage_to("banners")
 
 	var shell := preload("res://scenes/shell/shell.tscn").instantiate()
 	get_tree().root.add_child(shell)
@@ -137,7 +282,6 @@ func _dev_collect() -> void:
 		jobs = GameState.jobs()
 	print("[boot] dev-collect done: gold=", GameState.display_gold(),
 		" energy=", GameState.display_energy(), " pending=", GameState.pending_count())
-
 
 
 ## Reads `--dev-login <username> <password>` from the command line.

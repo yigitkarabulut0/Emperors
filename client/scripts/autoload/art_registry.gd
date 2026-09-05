@@ -13,6 +13,7 @@ extends Node
 const ITEM_DIR := "res://assets/items/"
 const UI_DIR := "res://assets/ui/"
 const PORTRAIT_DIR := "res://assets/portraits/"
+const BRANDING_DIR := "res://assets/branding/"
 
 var _cache: Dictionary = {}
 var _missing: Dictionary = {}
@@ -41,6 +42,19 @@ func ui_icon(name: String) -> Texture2D:
 ## A stored portrait can outlive the balance version that offered it -- the set
 ## is versioned config and a rollback must not orphan anyone -- so an unknown
 ## name resolves to a face rather than to nothing.
+## The studio mark, for the loading screen. Nullable on purpose: a build with no
+## branding art should still boot, just without a logo.
+func branding(name: String) -> Texture2D:
+	var path := BRANDING_DIR + name + ".png"
+	if _cache.has(path):
+		return _cache[path]
+	if not ResourceLoader.exists(path):
+		return null
+	var tex: Texture2D = load(path)
+	_cache[path] = tex
+	return tex
+
+
 func portrait(name: String) -> Texture2D:
 	var key := "pp:" + name
 	if _cache.has(key):

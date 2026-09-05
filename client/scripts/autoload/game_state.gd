@@ -25,6 +25,10 @@ var loading := false
 ## Queued collects that have not been confirmed yet. Each is
 ## {job_id, gold, xp, energy_cost}.
 var _pending: Array[Dictionary] = []
+
+## The most collects one request may carry. Matches the server's cap; more than a
+## human can tap between two round trips.
+const BATCH_MAX := 32
 var _sending := false
 
 ## When the energy in `snapshot` was true, by the local clock. Energy is the one
@@ -202,32 +206,54 @@ func collect(job: Dictionary) -> bool:
 	return true
 
 
-## Sends queued actions strictly one at a time.
+## Sends the whole queue in one request.
 ##
-## action_seq is a per-player monotonic counter, so requests cannot overlap:
-## two in flight would race for the same number and one would be rejected.
+## action_seq is a per-player monotonic counter, so two collects can never be in
+## flight at once -- this used to send them strictly one at a time, and ten taps
+## meant ten round trips. Even at 42 ms a piece that is visible, and it is what
+## the "N queued" counter existed to apologise for.
+##
+## Now one request carries the run and the server applies it in one transaction.
+## Whatever the player taps while a batch is in the air simply goes in the next
+## one, so the send rate settles at one request per round trip no matter how fast
+## they tap.
 func _pump() -> void:
 	if _sending or _pending.is_empty() or snapshot.is_empty():
 		return
 	_sending = true
 
 	while not _pending.is_empty():
-		var action: Dictionary = _pending[0]
-		var seq := int(player().get("action_seq", 0)) + 1
+		var batch: Array[String] = []
+		for a in _pending:
+			if batch.size() >= BATCH_MAX:
+				break
+			batch.append(str(a["job_id"]))
 
-		var res: Api.Response = await Api.post_json("/v1/collect", {
-			"job_id": action["job_id"],
+		var seq := int(player().get("action_seq", 0)) + 1
+		var res: Api.Response = await Api.post_json("/v1/collect/batch", {
+			"job_ids": batch,
 			"action_seq": seq,
 		})
 
 		if res.ok:
-			_pending.pop_front()
+			# The server says how many landed. A batch that stops early -- the
+			# energy ran out because regeneration was slower than predicted -- is
+			# a normal outcome, and only the applied ones leave the queue.
+			var applied: int = mini(int(res.data.get("applied", 0)), _pending.size())
 			var before := int(player().get("level", 1))
 			snapshot = res.data.get("snapshot", snapshot)
+			for i in applied:
+				_pending.pop_front()
 			var after := int(player().get("level", 1))
 			if after > before:
 				level_up.emit(after)
 			changed.emit()
+			if applied == 0:
+				# Nothing applied and no error: the prediction was ahead of the
+				# server. Drop the rest rather than spin.
+				_pending.clear()
+				changed.emit()
+				break
 			continue
 
 		# Any failure drops the whole queue and resyncs. Keeping the rest would

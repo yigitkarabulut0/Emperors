@@ -239,6 +239,38 @@ func (a *api) collect(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, res)
 }
 
+type collectBatchReq struct {
+	JobIDs    []string `json:"job_ids"`
+	ActionSeq int64    `json:"action_seq"` // the sequence of the FIRST action
+}
+
+// collectBatch applies a run of taps in one request and one transaction.
+//
+// action_seq is per-player and monotonic, so collects can never overlap and the
+// client had to send them one at a time -- ten taps meant ten round trips, which
+// on a phone is most of a second of visible lag.
+func (a *api) collectBatch(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req collectBatchReq
+	if !decode(w, r, &req) {
+		return
+	}
+	if len(req.JobIDs) == 0 {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "no actions")
+		return
+	}
+	res, err := a.s().CollectBatch(r.Context(), pid, req.JobIDs, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
 // --- shop and inventory ---
 
 func (a *api) shop(w http.ResponseWriter, r *http.Request) {

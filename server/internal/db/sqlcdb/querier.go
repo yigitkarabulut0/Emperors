@@ -30,6 +30,14 @@ type Querier interface {
 	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
 	BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (AppPlayer, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
+	// Advances a job's lifetime count by several collects at once.
+	//
+	// A burst of taps on one job is the single most common thing that happens in
+	// this game, and doing it a row at a time meant one database round trip per tap
+	// inside the transaction. The mastery bonus still has to be computed per collect
+	// -- it depends on the count BEFORE each one -- but that is arithmetic the
+	// caller can do in a loop from the returned total.
+	BumpJobProgressBy(ctx context.Context, arg BumpJobProgressByParams) (AppPlayerJobProgress, error)
 	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
 	BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error)
 	// Spends diamonds and refills the energy pool in one statement. The WHERE is the

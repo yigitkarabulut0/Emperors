@@ -114,6 +114,34 @@ func (q *Queries) BumpJobProgress(ctx context.Context, arg BumpJobProgressParams
 	return i, err
 }
 
+const bumpJobProgressBy = `-- name: BumpJobProgressBy :one
+INSERT INTO app.player_job_progress (player_id, job_id, collects)
+VALUES ($1, $2, $3::bigint)
+ON CONFLICT (player_id, job_id)
+DO UPDATE SET collects = app.player_job_progress.collects + $3::bigint
+RETURNING player_id, job_id, collects
+`
+
+type BumpJobProgressByParams struct {
+	PlayerID uuid.UUID
+	JobID    string
+	N        int64
+}
+
+// Advances a job's lifetime count by several collects at once.
+//
+// A burst of taps on one job is the single most common thing that happens in
+// this game, and doing it a row at a time meant one database round trip per tap
+// inside the transaction. The mastery bonus still has to be computed per collect
+// -- it depends on the count BEFORE each one -- but that is arithmetic the
+// caller can do in a loop from the returned total.
+func (q *Queries) BumpJobProgressBy(ctx context.Context, arg BumpJobProgressByParams) (AppPlayerJobProgress, error) {
+	row := q.db.QueryRow(ctx, bumpJobProgressBy, arg.PlayerID, arg.JobID, arg.N)
+	var i AppPlayerJobProgress
+	err := row.Scan(&i.PlayerID, &i.JobID, &i.Collects)
+	return i, err
+}
+
 const getJobProgress = `-- name: GetJobProgress :one
 SELECT player_id, job_id, collects FROM app.player_job_progress WHERE player_id = $1 AND job_id = $2
 `

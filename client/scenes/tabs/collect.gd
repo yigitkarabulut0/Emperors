@@ -229,10 +229,11 @@ func _refresh_action() -> void:
 	_action.text = "%s  —  %d ⚡" % [str(job.get("name", "")).to_upper(), cost]
 	_action.disabled = not can
 
-	var queued := GameState.pending_count()
-	if queued > 0:
-		_action_sub.text = "%d queued" % queued
-	elif not can:
+	# No "N queued" any more. The gold and the experience have ALREADY moved on
+	# screen by the time this runs -- the queue is an implementation detail of
+	# getting the server to agree, and announcing it was the single thing making
+	# a tap that already happened feel like it had not.
+	if not can:
 		_action_sub.text = "Not enough energy"
 	else:
 		_action_sub.text = "+%s gold   +%d xp" % [

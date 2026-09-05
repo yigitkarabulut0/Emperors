@@ -11,6 +11,20 @@ ON CONFLICT (player_id, job_id)
 DO UPDATE SET collects = app.player_job_progress.collects + 1
 RETURNING *;
 
+-- Advances a job's lifetime count by several collects at once.
+--
+-- A burst of taps on one job is the single most common thing that happens in
+-- this game, and doing it a row at a time meant one database round trip per tap
+-- inside the transaction. The mastery bonus still has to be computed per collect
+-- -- it depends on the count BEFORE each one -- but that is arithmetic the
+-- caller can do in a loop from the returned total.
+-- name: BumpJobProgressBy :one
+INSERT INTO app.player_job_progress (player_id, job_id, collects)
+VALUES ($1, $2, sqlc.arg(n)::bigint)
+ON CONFLICT (player_id, job_id)
+DO UPDATE SET collects = app.player_job_progress.collects + sqlc.arg(n)::bigint
+RETURNING *;
+
 -- Applies one collect: spends energy, credits gold and XP, and advances the
 -- action sequence. Energy is written back already settled by the caller.
 -- name: ApplyCollect :one

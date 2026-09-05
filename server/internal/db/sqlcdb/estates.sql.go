@@ -66,7 +66,7 @@ SET gold = gold + $2,
     action_seq = $4,
     last_seen_at = now()
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type ClaimTaxParams struct {
@@ -121,29 +121,46 @@ func (q *Queries) ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, 
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
 
+const clearTaxUnlogged = `-- name: ClearTaxUnlogged :exec
+UPDATE app.players SET tax_unlogged = 0 WHERE id = $1
+`
+
+// Clears the unlogged counter once its total has been written to the ledger.
+func (q *Queries) ClearTaxUnlogged(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, clearTaxUnlogged, id)
+	return err
+}
+
 const creditTax = `-- name: CreditTax :one
-UPDATE app.players
-SET gold = gold + (tax_milli_accrued + tax_milli_per_hour
-        * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
-        / 3600000) / 1000,
-    tax_milli_accrued = (tax_milli_accrued + tax_milli_per_hour
-        * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
-        / 3600000) % 1000,
-    tax_updated_at = $1::timestamptz
-WHERE id = $2
-  AND tax_milli_per_hour
-        * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
-        / 3600000 > 0
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+WITH calc AS (
+    SELECT app.players.id AS pid,
+           tax_milli_accrued + tax_milli_per_hour
+               * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
+               / 3600000 AS total
+    FROM app.players
+    WHERE app.players.id = $2
+)
+UPDATE app.players p
+SET gold              = p.gold + calc.total / 1000,
+    tax_milli_accrued = calc.total % 1000,
+    -- Banked for the ledger. Flushed as one row when it is worth a row, rather
+    -- than a row per request for a few milli each.
+    tax_unlogged      = p.tax_unlogged + calc.total / 1000,
+    tax_updated_at    = $1::timestamptz
+FROM calc
+WHERE p.id = calc.pid
+  AND calc.total > p.tax_milli_accrued
+RETURNING p.id, p.username, p.display_name, p.level, p.xp, p.gold, p.treasury_gold, p.diamonds, p.energy_milli, p.energy_updated_at, p.stat_energy, p.stat_attack, p.stat_defense, p.stat_points_unspent, p.shield_until, p.action_seq, p.state, p.reset_offset_minutes, p.created_at, p.last_seen_at, p.soldier_slots, p.free_slot_claimed, p.free_recruit_claimed, p.is_bot, p.tax_milli_accrued, p.tax_updated_at, p.kingdom_id, p.kingdom_role, p.kingdom_joined_at, p.kingdom_donated_total, p.kingdom_favour, p.kingdom_rep_today, p.kingdom_donated_today, p.kingdom_day, p.avatar, p.tax_milli_per_hour, p.tax_unlogged
 `
 
 type CreditTaxParams struct {
-	Now time.Time
-	ID  uuid.UUID
+	Now      time.Time
+	PlayerID uuid.UUID
 }
 
 // Credits whatever the estates have earned since the last settle.
@@ -161,7 +178,7 @@ type CreditTaxParams struct {
 //     always rounds down, so a call that earns nothing must leave the clock
 //     alone or the remainder is thrown away on every single request.
 func (q *Queries) CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer, error) {
-	row := q.db.QueryRow(ctx, creditTax, arg.Now, arg.ID)
+	row := q.db.QueryRow(ctx, creditTax, arg.Now, arg.PlayerID)
 	var i AppPlayer
 	err := row.Scan(
 		&i.ID,
@@ -200,6 +217,7 @@ func (q *Queries) CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -22,16 +23,41 @@ import (
 // which is what the Collect button used to stand in the way of.
 func (d Deps) CreditTax(ctx context.Context, playerID uuid.UUID) error {
 	q := sqlcdb.New(d.Pool)
-	if _, err := q.CreditTax(ctx, sqlcdb.CreditTaxParams{
-		ID: playerID, Now: d.Now(),
-	}); err != nil {
-		if err == pgx.ErrNoRows {
+	p, err := q.CreditTax(ctx, sqlcdb.CreditTaxParams{
+		PlayerID: playerID, Now: d.Now(),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
 		return fmt.Errorf("credit tax: %w", err)
 	}
-	return nil
+
+	// Estate income has to reach the gold ledger, or the economy dashboard --
+	// whose entire job is to say whether the currency is inflating -- is not
+	// measuring the currency. Removing the Collect button removed the only place
+	// that recorded it, so the largest passive faucet in the game went invisible.
+	//
+	// Not one row per credit: income settles on every authenticated request,
+	// which would be thousands of rows a day per player for a few gold each. The
+	// credited amount accumulates on the row and is flushed once it is worth a
+	// row. Totals stay exact; only their granularity is coarse.
+	if p.TaxUnlogged < TaxLedgerFlush {
+		return nil
+	}
+	if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+		PlayerID: playerID, Delta: p.TaxUnlogged, BalanceAfter: p.Gold,
+		Reason: "tax", RefID: nil,
+	}); err != nil {
+		return fmt.Errorf("record tax: %w", err)
+	}
+	return q.ClearTaxUnlogged(ctx, playerID)
 }
+
+// TaxLedgerFlush is how much estate income banks up before it is written to the
+// ledger as a single row. At the level-1 rate that is roughly one row every two
+// hours per active player.
+const TaxLedgerFlush = 50
 
 // refreshTaxRate recomputes and stores the player's hourly estate income.
 //

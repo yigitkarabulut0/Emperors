@@ -53,6 +53,8 @@ type Querier interface {
 	ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitParams) (AppPlayer, error)
 	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
 	ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, error)
+	// Clears the unlogged counter once its total has been written to the ledger.
+	ClearTaxUnlogged(ctx context.Context, id uuid.UUID) error
 	CountAdmins(ctx context.Context) (int64, error)
 	CountBalanceVersions(ctx context.Context) (int64, error)
 	CountBots(ctx context.Context) (int64, error)

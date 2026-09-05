@@ -17,7 +17,7 @@ UPDATE app.players
 SET diamonds = diamonds - $2, energy_milli = $3, energy_updated_at = $4,
     action_seq = $5, last_seen_at = now()
 WHERE id = $1 AND diamonds >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type BuyEnergyRefillParams struct {
@@ -76,6 +76,7 @@ func (q *Queries) BuyEnergyRefill(ctx context.Context, arg BuyEnergyRefillParams
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
@@ -84,7 +85,7 @@ const buyShield = `-- name: BuyShield :one
 UPDATE app.players
 SET diamonds = diamonds - $2, shield_until = $3, action_seq = $4, last_seen_at = now()
 WHERE id = $1 AND diamonds >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type BuyShieldParams struct {
@@ -139,6 +140,7 @@ func (q *Queries) BuyShield(ctx context.Context, arg BuyShieldParams) (AppPlayer
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
@@ -147,7 +149,7 @@ const creditGold = `-- name: CreditGold :one
 UPDATE app.players
 SET gold = gold + $2, action_seq = $3, last_seen_at = now()
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type CreditGoldParams struct {
@@ -196,6 +198,7 @@ func (q *Queries) CreditGold(ctx context.Context, arg CreditGoldParams) (AppPlay
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
@@ -205,7 +208,7 @@ UPDATE app.players
 SET gold = gold + $2, treasury_gold = treasury_gold - $2,
     action_seq = $3, last_seen_at = now()
 WHERE id = $1 AND treasury_gold >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type MoveFromTreasuryParams struct {
@@ -254,6 +257,7 @@ func (q *Queries) MoveFromTreasury(ctx context.Context, arg MoveFromTreasuryPara
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
@@ -263,7 +267,7 @@ UPDATE app.players
 SET gold = gold - $2, treasury_gold = treasury_gold + $3,
     action_seq = $4, last_seen_at = now()
 WHERE id = $1 AND gold >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type MoveToTreasuryParams struct {
@@ -321,6 +325,7 @@ func (q *Queries) MoveToTreasury(ctx context.Context, arg MoveToTreasuryParams) 
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
@@ -353,7 +358,7 @@ const spendGold = `-- name: SpendGold :one
 UPDATE app.players
 SET gold = gold - $2, action_seq = $3, last_seen_at = now()
 WHERE id = $1 AND gold >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type SpendGoldParams struct {
@@ -402,6 +407,7 @@ func (q *Queries) SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }

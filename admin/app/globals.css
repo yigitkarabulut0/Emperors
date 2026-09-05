@@ -65,7 +65,24 @@ button:hover, .button:hover { filter: brightness(1.08); }
 button:disabled { background: var(--panel-high); color: var(--faint); cursor: not-allowed; }
 button.ghost, .button.ghost { background: transparent; color: var(--dim); border: 1px solid var(--line); }
 button.ghost:hover, .button.ghost:hover { color: var(--text); border-color: var(--gold); }
-button.danger { background: var(--danger); color: #fff; }
+/* Outlined until you reach for it.
+ *
+ * Ban was a solid red block on every row, so a list of fifty players was fifty
+ * red blocks -- the loudest thing on the page was the action you almost never
+ * want, and the eye had nowhere restful to land. It reads as available and
+ * dangerous without shouting, and commits to solid red on hover, at the moment
+ * it is actually about to be clicked. */
+button.danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);
+}
+button.danger:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+  filter: none;
+}
 
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .muted { color: var(--faint); }

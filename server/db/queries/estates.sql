@@ -52,19 +52,29 @@ RETURNING *;
 --     always rounds down, so a call that earns nothing must leave the clock
 --     alone or the remainder is thrown away on every single request.
 -- name: CreditTax :one
-UPDATE app.players
-SET gold = gold + (tax_milli_accrued + tax_milli_per_hour
-        * GREATEST(0, (EXTRACT(EPOCH FROM (sqlc.arg(now)::timestamptz - tax_updated_at)) * 1000)::bigint)
-        / 3600000) / 1000,
-    tax_milli_accrued = (tax_milli_accrued + tax_milli_per_hour
-        * GREATEST(0, (EXTRACT(EPOCH FROM (sqlc.arg(now)::timestamptz - tax_updated_at)) * 1000)::bigint)
-        / 3600000) % 1000,
-    tax_updated_at = sqlc.arg(now)::timestamptz
-WHERE id = sqlc.arg(id)
-  AND tax_milli_per_hour
-        * GREATEST(0, (EXTRACT(EPOCH FROM (sqlc.arg(now)::timestamptz - tax_updated_at)) * 1000)::bigint)
-        / 3600000 > 0
-RETURNING *;
+WITH calc AS (
+    SELECT app.players.id AS pid,
+           tax_milli_accrued + tax_milli_per_hour
+               * GREATEST(0, (EXTRACT(EPOCH FROM (sqlc.arg(now)::timestamptz - tax_updated_at)) * 1000)::bigint)
+               / 3600000 AS total
+    FROM app.players
+    WHERE app.players.id = sqlc.arg(player_id)
+)
+UPDATE app.players p
+SET gold              = p.gold + calc.total / 1000,
+    tax_milli_accrued = calc.total % 1000,
+    -- Banked for the ledger. Flushed as one row when it is worth a row, rather
+    -- than a row per request for a few milli each.
+    tax_unlogged      = p.tax_unlogged + calc.total / 1000,
+    tax_updated_at    = sqlc.arg(now)::timestamptz
+FROM calc
+WHERE p.id = calc.pid
+  AND calc.total > p.tax_milli_accrued
+RETURNING p.*;
+
+-- Clears the unlogged counter once its total has been written to the ledger.
+-- name: ClearTaxUnlogged :exec
+UPDATE app.players SET tax_unlogged = 0 WHERE id = $1;
 
 -- Rewrites the cached hourly rate. Must be called only after CreditTax, so the
 -- time already earned is paid at the OLD rate.

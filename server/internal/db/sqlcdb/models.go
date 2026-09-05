@@ -167,6 +167,7 @@ type AppPlayer struct {
 	KingdomDay          pgtype.Date
 	Avatar              string
 	TaxMilliPerHour     int64
+	TaxUnlogged         int64
 }
 
 type AppPlayerHolding struct {

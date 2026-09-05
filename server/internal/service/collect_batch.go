@@ -168,7 +168,7 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 			}
 		}
 
-		if _, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{
+		after, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{
 			ID:                playerID,
 			EnergyMilli:       energy.Milli,
 			EnergyUpdatedAt:   energy.UpdatedAt,
@@ -178,8 +178,21 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 			StatPointsUnspent: int32(statPoints),
 			Diamonds:          diamonds,
 			ActionSeq:         res.AppliedThrough,
-		}); err != nil {
+		})
+		if err != nil {
 			return fmt.Errorf("apply collect batch: %w", err)
+		}
+
+		// One row for the whole run rather than one per tap: the batch is the
+		// action the player took, and the ledger should read the way the game
+		// was played.
+		if goldGained > 0 {
+			if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+				PlayerID: playerID, Delta: goldGained, BalanceAfter: after.Gold,
+				Reason: "collect", RefID: nil,
+			}); err != nil {
+				return fmt.Errorf("record collect batch: %w", err)
+			}
 		}
 
 		res.GoldGained = goldGained

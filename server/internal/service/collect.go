@@ -100,7 +100,7 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 			final = economy.Refill(economy.MaxEnergy(d.Config, int64(p.Level), int64(p.StatEnergy), eff.MaxEnergyFlat), now)
 		}
 
-		if _, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{
+		after, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{
 			ID:                playerID,
 			EnergyMilli:       final.Milli,
 			EnergyUpdatedAt:   final.UpdatedAt,
@@ -110,8 +110,22 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 			StatPointsUnspent: int32(up.StatPoints),
 			Diamonds:          up.Diamonds,
 			ActionSeq:         wantSeq,
-		}); err != nil {
+		})
+		if err != nil {
 			return fmt.Errorf("apply collect: %w", err)
+		}
+
+		// The biggest faucet in the game, and it was never in the ledger -- so
+		// the admin dashboard's "sinks absorb N% of what faucets create", the one
+		// number that says whether the currency is inflating, was computed
+		// without the source of most of the currency.
+		if reward.Gold > 0 {
+			if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+				PlayerID: playerID, Delta: reward.Gold, BalanceAfter: after.Gold,
+				Reason: "collect", RefID: nil,
+			}); err != nil {
+				return fmt.Errorf("record collect: %w", err)
+			}
 		}
 
 		res = CollectResult{

@@ -18,7 +18,7 @@ SET soldier_slots = soldier_slots + 1,
     action_seq = $3,
     last_seen_at = now()
 WHERE id = $1 AND gold >= $2 AND soldier_slots = $4
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type BuySoldierSlotParams struct {
@@ -73,6 +73,7 @@ func (q *Queries) BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) 
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
@@ -81,7 +82,7 @@ const claimFreeRecruit = `-- name: ClaimFreeRecruit :one
 UPDATE app.players
 SET free_recruit_claimed = true, action_seq = $2, last_seen_at = now()
 WHERE id = $1 AND free_recruit_claimed = false
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type ClaimFreeRecruitParams struct {
@@ -129,6 +130,7 @@ func (q *Queries) ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitPara
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }
@@ -140,7 +142,7 @@ SET soldier_slots = soldier_slots + 1,
     action_seq = $2,
     last_seen_at = now()
 WHERE id = $1 AND free_slot_claimed = false AND soldier_slots = 0
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
 `
 
 type ClaimFreeSlotParams struct {
@@ -188,6 +190,7 @@ func (q *Queries) ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (A
 		&i.KingdomDay,
 		&i.Avatar,
 		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
 	)
 	return i, err
 }

@@ -7,13 +7,13 @@ extends Control
 ## the thumb reaches comfortably, and this game is mostly one repeated tap.
 
 const SECTIONS := [
-	{"id": "family",    "glyph": "K", "label": "Keep",     "milestone": "M5"},
+	{"id": "family",    "glyph": "K", "label": "Keep",     "milestone": ""},
 	{"id": "collect",   "glyph": "F", "label": "Fields",   "milestone": ""},
 	{"id": "inventory", "glyph": "A", "label": "Armory",   "milestone": ""},
 	{"id": "shop",      "glyph": "M", "label": "Market",   "milestone": ""},
 	{"id": "soldiers",  "glyph": "B", "label": "Barracks", "milestone": ""},
 	{"id": "attack",    "glyph": "W", "label": "War Gate", "milestone": ""},
-	{"id": "territory", "glyph": "T", "label": "Map",      "milestone": "M5"},
+	{"id": "territory", "glyph": "T", "label": "Map",      "milestone": ""},
 ]
 
 const RAIL_WIDTH := 88
@@ -206,6 +206,8 @@ func _open(id: String) -> void:
 		"inventory": "res://scenes/tabs/inventory.gd",
 		"soldiers": "res://scenes/tabs/barracks.gd",
 		"attack": "res://scenes/tabs/attack.gd",
+		"family": "res://scenes/tabs/keep.gd",
+		"territory": "res://scenes/tabs/territory.gd",
 	}
 	if TABS.has(id):
 		var tab: Node = load(TABS[id]).new()

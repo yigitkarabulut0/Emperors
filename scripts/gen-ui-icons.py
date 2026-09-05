@@ -636,6 +636,36 @@ def slot_horse() -> str:
 SLOTS = {"weapon": slot_weapon, "armor": slot_armor, "horse": slot_horse}
 
 
+
+# --- currencies and energy ---------------------------------------------------
+
+def cur_coin() -> str:
+    return " ".join([
+        circle(16, 16, 13),                              # blank
+        circle(16, 16, 10.8),                            # rim gap (hole)
+        circle(16, 16, 9.3),                             # face
+        poly((11, 20), (11, 12), (13.5, 15.5), (16, 10.5),
+             (18.5, 15.5), (21, 12), (21, 20)),          # struck crown (hole)
+    ])
+
+
+def cur_gem() -> str:
+    return " ".join([
+        poly((10, 4.5), (22, 4.5), (28.5, 13), (16, 29), (3.5, 13)),
+        rect(3.5, 12.2, 25, 1.8),                        # girdle (hole)
+        poly((10, 4.5), (11.6, 12.2), (9.2, 12.2)),      # crown facets (holes)
+        poly((22, 4.5), (22.8, 12.2), (20.4, 12.2)),
+    ])
+
+
+def cur_bolt() -> str:
+    return poly((19.5, 1.5), (6.5, 17.5), (13.5, 17.5), (11.5, 30.5),
+                (25.5, 13.5), (18, 13.5))
+
+
+CURRENCY = {"coin": cur_coin, "gem": cur_gem, "bolt": cur_bolt}
+
+
 ICONS = {
     "keep": keep, "fields": fields, "armory": armory, "market": market,
     "barracks": barracks, "war_gate": war_gate, "territory": territory,
@@ -657,7 +687,7 @@ def main() -> int:
 
     families = [("", ICONS, args.px), ("jobs/", JOBS, args.px),
                 ("upgrades/", UPGRADES, args.px), ("holdings/", HOLDINGS, args.px),
-                ("slots/", SLOTS, args.px)]
+                ("slots/", SLOTS, args.px), ("currency/", CURRENCY, args.px)]
     total = 0
     for prefix, table, px in families:
         (out / prefix).mkdir(parents=True, exist_ok=True)

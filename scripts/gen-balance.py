@@ -69,6 +69,12 @@ for L in range(1, LEVEL_CAP + 1):
     levels.append({"level": L, "xp_to_next": need, "cumulative_xp": cum})
     cum += need
 
+# Pickable player portraits. Asynchronous PvP means an opponent is a row on a
+# list, never a person you meet, so the chosen face carries most of the identity.
+# Kept in balance rather than in code so the set can grow without a deploy.
+AVATARS = ["knight", "king", "queen", "archer", "monk", "berserk",
+           "knave", "herald", "templar", "witch", "captain", "princess"]
+
 emit("progression.json", json.dumps({
     "_comment": "xp_to_next(L) = floor(1.7*L^2.2 + 10L + 5). Energy regen is FLAT: "
                 "Max Energy is a 'how long can I be away' stat, regen speed is a "
@@ -85,6 +91,7 @@ emit("progression.json", json.dumps({
         "regen_bonus_cap_bp": 6000,
     },
     "stat_points_per_level": 1,
+    "avatars": AVATARS,
     "levels": levels,
 }, indent=2) + "\n")
 

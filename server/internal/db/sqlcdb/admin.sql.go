@@ -13,7 +13,7 @@ import (
 )
 
 const adminAdjustCurrency = `-- name: AdminAdjustCurrency :one
-UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 type AdminAdjustCurrencyParams struct {
@@ -60,12 +60,13 @@ func (q *Queries) AdminAdjustCurrency(ctx context.Context, arg AdminAdjustCurren
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }
 
 const adminSetPlayerState = `-- name: AdminSetPlayerState :one
-UPDATE app.players SET state = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+UPDATE app.players SET state = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 type AdminSetPlayerStateParams struct {
@@ -111,6 +112,7 @@ func (q *Queries) AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerSta
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }

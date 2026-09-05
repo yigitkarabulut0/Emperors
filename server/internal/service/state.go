@@ -31,6 +31,7 @@ type Snapshot struct {
 type PlayerView struct {
 	ID                string `json:"id"`
 	Username          string `json:"username"`
+	Avatar            string `json:"avatar"`
 	Level             int    `json:"level"`
 	XP                int64  `json:"xp"`
 	XPToNext          int64  `json:"xp_to_next"`
@@ -138,6 +139,7 @@ func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {
 	return PlayerView{
 		ID:                p.ID.String(),
 		Username:          p.DisplayName,
+		Avatar:            p.Avatar,
 		Level:             int(p.Level),
 		XP:                p.Xp,
 		XPToNext:          cfg.XPToNext(int(p.Level)),

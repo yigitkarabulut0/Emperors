@@ -35,6 +35,7 @@ const attackCooldown = 30 * time.Minute
 type TargetView struct {
 	PlayerID string `json:"player_id"`
 	Name     string `json:"name"`
+	Avatar   string `json:"avatar"`
 	Level    int64  `json:"level"`
 	Might    int64  `json:"might"`
 	Gold     string `json:"gold_on_hand"`
@@ -142,7 +143,7 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 			continue
 		}
 		tv := TargetView{
-			PlayerID: r.ID.String(), Name: r.DisplayName, Level: int64(r.Level),
+			PlayerID: r.ID.String(), Name: r.DisplayName, Avatar: r.Avatar, Level: int64(r.Level),
 			Might: theirs.Totals.Might, Gold: itoa(r.Gold),
 			Estimate: d.estimateStealWithCap(int64(me.Level), r.Gold, eff.StealCapBP),
 			IsBot:    r.IsBot,
@@ -416,7 +417,7 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 }
 
 func toCombatArmy(p sqlcdb.AppPlayer, v *ArmyView) combat.Army {
-	a := combat.Army{PlayerID: p.ID.String(), Name: p.DisplayName, Level: int64(p.Level)}
+	a := combat.Army{PlayerID: p.ID.String(), Name: p.DisplayName, Avatar: p.Avatar, Level: int64(p.Level)}
 	add := func(u UnitView) {
 		a.Units = append(a.Units, combat.Combatant{
 			ID: u.ID, Name: u.Name, Tier: u.Tier, Type: u.Type, IsHero: u.IsHero,

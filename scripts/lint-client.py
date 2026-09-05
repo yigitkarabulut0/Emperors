@@ -8,6 +8,8 @@ are worth catching in text.
 import json
 import pathlib
 import re
+import shutil
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -157,6 +159,25 @@ if unimported:
     fail(f"{len(unimported)} assets have no .import: {unimported[:3]}")
 else:
     ok("every shipped asset is imported")
+
+# 8. Everything above reads the scripts as text. Only Godot actually parses
+#    GDScript, and a parse error takes the whole autoload down at runtime while
+#    looking perfectly fine to every rule above -- so let the engine have the
+#    last word.
+godot = shutil.which("godot")
+if not godot:
+    print("  SKIP  godot is not on PATH, so scripts were not parsed")
+else:
+    proc = subprocess.run([godot, "--headless", "--path", str(CLIENT), "--quit-after", "2"],
+                          capture_output=True, text=True, timeout=180)
+    noise = proc.stdout + proc.stderr
+    bad = [ln.strip() for ln in noise.splitlines()
+           if "Parse Error" in ln or "SCRIPT ERROR" in ln or "Failed to load script" in ln]
+    if bad:
+        for b in bad[:6]:
+            fail(b[:150])
+    else:
+        ok("every script parses and the autoloads come up")
 
 print()
 if FAILURES:

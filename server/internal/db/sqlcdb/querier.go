@@ -130,6 +130,7 @@ type Querier interface {
 	RevokeSessionFamily(ctx context.Context, arg RevokeSessionFamilyParams) error
 	SearchKingdoms(ctx context.Context, lower string) ([]SearchKingdomsRow, error)
 	SearchPlayers(ctx context.Context, lower string) ([]SearchPlayersRow, error)
+	SetAvatar(ctx context.Context, arg SetAvatarParams) (AppPlayer, error)
 	SetHeroEquipped(ctx context.Context, arg SetHeroEquippedParams) error
 	SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) (AppPlayer, error)
 	SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error)

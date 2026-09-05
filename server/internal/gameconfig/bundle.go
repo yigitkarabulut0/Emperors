@@ -72,7 +72,31 @@ type ProgressionConfig struct {
 	LevelCap           int          `json:"level_cap"`
 	Energy             EnergyConfig `json:"energy"`
 	StatPointsPerLevel int          `json:"stat_points_per_level"`
+	Avatars            []string     `json:"avatars"`
 	Levels             []Level      `json:"levels"`
+}
+
+// HasAvatar reports whether a portrait id is one a player may choose.
+//
+// A player who picked a portrait that a LATER balance version drops keeps it:
+// this gates the choice, not the display. Rewriting stored rows on a config
+// change would make a rollback lossy.
+func (b *Bundle) HasAvatar(id string) bool {
+	for _, a := range b.Progression.Avatars {
+		if a == id {
+			return true
+		}
+	}
+	return false
+}
+
+// DefaultAvatar is what a new player starts with and what the client falls back
+// to when it cannot resolve a stored one.
+func (b *Bundle) DefaultAvatar() string {
+	if len(b.Progression.Avatars) == 0 {
+		return "knight"
+	}
+	return b.Progression.Avatars[0]
 }
 
 type EnergyConfig struct {

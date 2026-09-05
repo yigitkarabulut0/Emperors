@@ -752,3 +752,42 @@ func isKnownServiceError(err error) bool {
 	}
 	return false
 }
+
+
+// avatars lists the pickable portraits and which one is worn.
+func (a *api) avatars(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	list, err := a.s().Avatars(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"avatars": list})
+}
+
+type avatarReq struct {
+	Avatar    string `json:"avatar"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) setAvatar(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req avatarReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().SetAvatar(r.Context(), pid, req.Avatar, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}

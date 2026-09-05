@@ -165,6 +165,7 @@ type AppPlayer struct {
 	KingdomRepToday     int32
 	KingdomDonatedToday int64
 	KingdomDay          pgtype.Date
+	Avatar              string
 }
 
 type AppPlayerHolding struct {

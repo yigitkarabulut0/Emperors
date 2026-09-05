@@ -10,6 +10,20 @@
     "regen_bonus_cap_bp": 6000
   },
   "stat_points_per_level": 1,
+  "avatars": [
+    "knight",
+    "king",
+    "queen",
+    "archer",
+    "monk",
+    "berserk",
+    "knave",
+    "herald",
+    "templar",
+    "witch",
+    "captain",
+    "princess"
+  ],
   "levels": [
     {
       "level": 1,

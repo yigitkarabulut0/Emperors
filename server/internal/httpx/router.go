@@ -73,6 +73,8 @@ func NewRouter(d Deps) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(RequireAuth(d.Verifier))
 			r.Get("/state", a.state)
+			r.Get("/avatars", a.avatars)
+			r.Post("/avatar", a.setAvatar)
 			r.Post("/collect", a.collect)
 			r.Post("/stats/spend", a.spendStats)
 

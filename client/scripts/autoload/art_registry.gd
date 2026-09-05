@@ -12,6 +12,7 @@ extends Node
 
 const ITEM_DIR := "res://assets/items/"
 const UI_DIR := "res://assets/ui/"
+const PORTRAIT_DIR := "res://assets/portraits/"
 
 var _cache: Dictionary = {}
 var _missing: Dictionary = {}
@@ -33,6 +34,28 @@ func ui_icon(name: String) -> Texture2D:
 	var tex: Texture2D = load(path)
 	_cache[key] = tex
 	return tex
+
+
+## Returns a player portrait, falling back to the first one that ships.
+##
+## A stored portrait can outlive the balance version that offered it -- the set
+## is versioned config and a rollback must not orphan anyone -- so an unknown
+## name resolves to a face rather than to nothing.
+func portrait(name: String) -> Texture2D:
+	var key := "pp:" + name
+	if _cache.has(key):
+		return _cache[key]
+	var candidates: Array[String] = [name, "knight"]
+	for candidate in candidates:
+		var path := PORTRAIT_DIR + candidate + ".png"
+		if ResourceLoader.exists(path):
+			if candidate != name and not _missing.has(key):
+				_missing[key] = true
+				print("[art] no portrait ", name, " — using ", candidate)
+			var tex: Texture2D = load(path)
+			_cache[key] = tex
+			return tex
+	return null
 
 
 ## Returns the icon for an item design at a tier, or a placeholder.

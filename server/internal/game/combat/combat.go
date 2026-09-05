@@ -41,6 +41,7 @@ type Combatant struct {
 type Army struct {
 	PlayerID string      `json:"player_id"`
 	Name     string      `json:"name"`
+	Avatar   string      `json:"avatar"`
 	Level    int64       `json:"level"`
 	Units    []Combatant `json:"units"`
 }

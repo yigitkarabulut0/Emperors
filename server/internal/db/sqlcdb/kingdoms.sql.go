@@ -69,7 +69,7 @@ UPDATE app.players
 SET kingdom_rep_today = CASE WHEN kingdom_day = $3 THEN kingdom_rep_today + $2 ELSE $2 END,
     kingdom_day = $3
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 type BumpMemberReputationParams struct {
@@ -116,6 +116,7 @@ func (q *Queries) BumpMemberReputation(ctx context.Context, arg BumpMemberReputa
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -241,7 +242,7 @@ SET gold = gold - $2,
     action_seq = $5,
     last_seen_at = now()
 WHERE id = $1 AND gold >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 type DonateGoldParams struct {
@@ -298,6 +299,7 @@ func (q *Queries) DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlay
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -348,7 +350,7 @@ const leaveKingdom = `-- name: LeaveKingdom :one
 UPDATE app.players
 SET kingdom_id = NULL, kingdom_role = 'none', kingdom_joined_at = NULL
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 func (q *Queries) LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, error) {
@@ -389,6 +391,7 @@ func (q *Queries) LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, er
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -535,7 +538,7 @@ UPDATE app.players
 SET gold = gold - $2, kingdom_id = $3, kingdom_role = $4,
     kingdom_joined_at = now(), action_seq = $5, last_seen_at = now()
 WHERE id = $1 AND gold >= $2 AND kingdom_id IS NULL
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 type PayAndJoinKingdomParams struct {
@@ -592,6 +595,7 @@ func (q *Queries) PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomPa
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -649,7 +653,7 @@ func (q *Queries) SearchKingdoms(ctx context.Context, lower string) ([]SearchKin
 }
 
 const setKingdomRole = `-- name: SetKingdomRole :one
-UPDATE app.players SET kingdom_role = $2 WHERE id = $1 AND kingdom_id = $3 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+UPDATE app.players SET kingdom_role = $2 WHERE id = $1 AND kingdom_id = $3 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 type SetKingdomRoleParams struct {
@@ -696,6 +700,7 @@ func (q *Queries) SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) 
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }
@@ -704,7 +709,7 @@ const setPlayerKingdom = `-- name: SetPlayerKingdom :one
 UPDATE app.players
 SET kingdom_id = $2, kingdom_role = $3, kingdom_joined_at = $4
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
 type SetPlayerKingdomParams struct {
@@ -757,6 +762,7 @@ func (q *Queries) SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomPara
 		&i.KingdomRepToday,
 		&i.KingdomDonatedToday,
 		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }

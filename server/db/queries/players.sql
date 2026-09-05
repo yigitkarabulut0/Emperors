@@ -30,3 +30,7 @@ SET stat_energy  = stat_energy  + $2,
     last_seen_at = now()
 WHERE id = $1 AND stat_points_unspent >= $5
 RETURNING *;
+
+-- name: SetAvatar :one
+UPDATE app.players SET avatar = $2, action_seq = $3, last_seen_at = now()
+WHERE id = $1 RETURNING *;

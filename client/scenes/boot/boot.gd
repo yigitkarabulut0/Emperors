@@ -7,6 +7,9 @@ extends Control
 @onready var _detail: Label = %Detail
 @onready var _retry: Button = %Retry
 
+## How long to wait before trying the server again after a network failure.
+const RECONNECT_DELAY := 3.0
+
 ## The sign-in screen, while it is up. Boot outlives it deliberately.
 var _auth: Node = null
 
@@ -52,9 +55,27 @@ func _start() -> void:
 		if await Session.try_refresh():
 			_enter_game()
 			return
+		# A refresh that failed because the network is down must NOT drop the
+		# player at the sign-in screen. They are still signed in -- the token is
+		# still on disk -- and asking someone to type their password because a
+		# packet went missing is how an app teaches people not to trust it.
+		if Session.refresh_failed_offline:
+			_offline_retry()
+			return
 
 	_status.text = ""
 	_enter_auth()
+
+
+## Waits out a network outage on the loading screen, retrying quietly.
+func _offline_retry() -> void:
+	_status.text = "Reconnecting…"
+	_status.modulate = Color(0.85, 0.80, 0.65)
+	_motto.text = "Waiting for a connection"
+	_retry.visible = true
+	await get_tree().create_timer(RECONNECT_DELAY).timeout
+	if is_instance_valid(self):
+		_start()
 
 
 ## Shows the sign-in screen. Boot stays ALIVE behind it, just hidden.

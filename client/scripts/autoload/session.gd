@@ -20,6 +20,11 @@ var player_id := ""
 
 var _refreshing := false
 
+## True when the last try_refresh() failed because the network was unreachable
+## rather than because the server rejected the token. Boot uses it to keep
+## retrying instead of showing the sign-in screen.
+var refresh_failed_offline := false
+
 
 func _ready() -> void:
 	_load()
@@ -61,6 +66,9 @@ func _consume(res: Api.Response) -> String:
 ## Exchanges the refresh token. Guarded so several concurrent 401s do not all
 ## refresh at once — the second would present an already-rotated token, which the
 ## server correctly treats as theft and would log the player out.
+##
+## Returns false for a network failure as well as a rejection, but only a
+## rejection signs you out. The caller must not treat false as "log in again".
 func try_refresh() -> bool:
 	if refresh_token == "":
 		return false
@@ -76,9 +84,19 @@ func try_refresh() -> bool:
 	_refreshing = false
 
 	if not res.ok:
-		sign_out()
+		# A dropped packet is not a dead token.
+		#
+		# This used to sign out on ANY failure, and Api._fail() returns status 0
+		# for every transport error -- so one lost packet during a refresh deleted
+		# session.dat and the player had to type their password again. On a phone
+		# that happens constantly. Only the server may end a session: it answers
+		# 401 when the refresh token is genuinely revoked, reused or expired.
+		refresh_failed_offline = res.status == 0
+		if res.status == 401 or res.status == 403:
+			sign_out()
 		return false
 
+	refresh_failed_offline = false
 	access_token = str(res.data.get("access_token", ""))
 	refresh_token = str(res.data.get("refresh_token", ""))
 	player_id = str(res.data.get("player_id", ""))

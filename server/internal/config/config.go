@@ -14,8 +14,9 @@ import (
 )
 
 type Config struct {
-	Env  string // dev | staging | prod
-	Addr string // listen address, e.g. ":8080"
+	Env       string // dev | staging | prod
+	Addr      string // game API listen address
+	AdminAddr string // admin API listen address; separate so it can be firewalled off
 
 	// DatabaseURL is Neon's POOLED endpoint (PgBouncer, transaction mode) and
 	// serves all request traffic. DatabaseURLDirect is the unpooled endpoint and
@@ -49,6 +50,7 @@ func Load() (*Config, error) {
 	c := &Config{
 		Env:               env("EMPERORS_ENV", "dev"),
 		Addr:              env("EMPERORS_ADDR", ":8080"),
+		AdminAddr:         env("EMPERORS_ADMIN_ADDR", ":8081"),
 		DatabaseURL:       os.Getenv("DATABASE_URL"),
 		DatabaseURLDirect: os.Getenv("DATABASE_URL_DIRECT"),
 		LogLevel:          env("EMPERORS_LOG_LEVEL", "info"),

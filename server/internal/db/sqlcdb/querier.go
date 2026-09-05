@@ -11,14 +11,23 @@ import (
 )
 
 type Querier interface {
+	ActivateBalanceVersion(ctx context.Context, arg ActivateBalanceVersionParams) (AdminBalanceActivation, error)
+	// The newest activation is the live configuration. Joining rather than storing
+	// an "active" flag means a rollback is another append, and the history of what
+	// was live when survives — the only way to explain an old battle after a
+	// rebalance.
+	ActiveBalance(ctx context.Context) (ActiveBalanceRow, error)
 	// Reputation from a raid, honouring the per-member daily cap.
 	AddKingdomReputation(ctx context.Context, arg AddKingdomReputationParams) error
 	AddKingdomTreasury(ctx context.Context, arg AddKingdomTreasuryParams) (AppKingdom, error)
+	AdminAdjustCurrency(ctx context.Context, arg AdminAdjustCurrencyParams) (AppPlayer, error)
+	AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerStateParams) (AppPlayer, error)
 	ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttackerParams) (AppPlayer, error)
 	ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefenderParams) (AppPlayer, error)
 	// Applies one collect: spends energy, credits gold and XP, and advances the
 	// action sequence. Energy is written back already settled by the caller.
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
+	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
 	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
 	BuyHoldingLevel(ctx context.Context, arg BuyHoldingLevelParams) (AppPlayerHolding, error)
@@ -30,9 +39,14 @@ type Querier interface {
 	ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitParams) (AppPlayer, error)
 	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
 	ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, error)
+	CountAdmins(ctx context.Context) (int64, error)
+	CountBalanceVersions(ctx context.Context) (int64, error)
 	CountBots(ctx context.Context) (int64, error)
 	CountKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) (int64, error)
 	CountPlayerItems(ctx context.Context, playerID uuid.UUID) (int64, error)
+	CreateAdminSession(ctx context.Context, arg CreateAdminSessionParams) (AdminSession, error)
+	CreateAdminUser(ctx context.Context, arg CreateAdminUserParams) (AdminUser, error)
+	CreateBalanceVersion(ctx context.Context, arg CreateBalanceVersionParams) (AdminBalanceVersion, error)
 	CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer, error)
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) (AppIdentity, error)
 	CreateInvite(ctx context.Context, arg CreateInviteParams) error
@@ -53,6 +67,10 @@ type Querier interface {
 	// flag, the shielded, and anyone banned. Ordered by a stable pseudo-random key
 	// so the list changes between refreshes without a table scan.
 	FindTargets(ctx context.Context, arg FindTargetsParams) ([]FindTargetsRow, error)
+	GetAdminByID(ctx context.Context, id uuid.UUID) (AdminUser, error)
+	GetAdminByUsername(ctx context.Context, lower string) (AdminUser, error)
+	GetAdminSession(ctx context.Context, tokenHash []byte) (GetAdminSessionRow, error)
+	GetBalanceVersion(ctx context.Context, id int64) (AdminBalanceVersion, error)
 	GetBattle(ctx context.Context, id uuid.UUID) (AppBattle, error)
 	GetCooldown(ctx context.Context, arg GetCooldownParams) (AppAttackCooldown, error)
 	GetIdentityBySubject(ctx context.Context, arg GetIdentityBySubjectParams) (AppIdentity, error)
@@ -65,9 +83,13 @@ type Querier interface {
 	GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (AppSession, error)
 	GetShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
 	GetSoldier(ctx context.Context, arg GetSoldierParams) (AppSoldier, error)
+	// Economy health: what created gold and what destroyed it, by reason.
+	GoldFlows(ctx context.Context, dollar_1 int32) ([]GoldFlowsRow, error)
 	InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
 	LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, error)
+	ListAudit(ctx context.Context, limit int32) ([]AdminAuditLog, error)
+	ListBalanceVersions(ctx context.Context, limit int32) ([]ListBalanceVersionsRow, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
@@ -96,14 +118,17 @@ type Querier interface {
 	// Founding: pay, and join in the same statement so a crash cannot leave a
 	// kingdom with no king.
 	PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomParams) (AppPlayer, error)
+	PlayerCounts(ctx context.Context) (PlayerCountsRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
 	// Dismissing a soldier must not destroy its gear; the items return to the bag.
 	ReleaseSoldierItems(ctx context.Context, arg ReleaseSoldierItemsParams) error
+	RevokeAdminSession(ctx context.Context, tokenHash []byte) error
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	// Revokes an entire rotation chain. Presenting an already-rotated refresh token
 	// means the token was captured, so every descendant of that family is burned.
 	RevokeSessionFamily(ctx context.Context, arg RevokeSessionFamilyParams) error
 	SearchKingdoms(ctx context.Context, lower string) ([]SearchKingdomsRow, error)
+	SearchPlayers(ctx context.Context, lower string) ([]SearchPlayersRow, error)
 	SetHeroEquipped(ctx context.Context, arg SetHeroEquippedParams) error
 	SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) (AppPlayer, error)
 	SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error)
@@ -117,6 +142,7 @@ type Querier interface {
 	// the balance cannot go negative even under a concurrent double-tap.
 	SpendStatPoints(ctx context.Context, arg SpendStatPointsParams) (AppPlayer, error)
 	TopKingdoms(ctx context.Context, limit int32) ([]TopKingdomsRow, error)
+	TouchAdminLogin(ctx context.Context, id uuid.UUID) error
 	TouchCooldown(ctx context.Context, arg TouchCooldownParams) error
 	TouchPlayerSeen(ctx context.Context, id uuid.UUID) error
 	// Clears whatever the player is wearing in this slot, so equipping is a
@@ -131,6 +157,7 @@ type Querier interface {
 	// Recruiting into an occupied slot replaces the occupant, so this is an upsert
 	// rather than an insert.
 	UpsertSoldier(ctx context.Context, arg UpsertSoldierParams) (AppSoldier, error)
+	WriteAudit(ctx context.Context, arg WriteAuditParams) error
 }
 
 var _ Querier = (*Queries)(nil)

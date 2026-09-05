@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/yigitkarabulut0/emperors/server/internal/admin"
 	"github.com/yigitkarabulut0/emperors/server/internal/auth"
 	"github.com/yigitkarabulut0/emperors/server/internal/config"
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
@@ -74,11 +75,24 @@ func run() error {
 
 	// Fail fast on a bad balance bundle: a config that would let a player earn
 	// infinite gold must stop the boot, not reach players.
-	bundle, err := gameconfig.LoadSeed()
+	seed, err := gameconfig.LoadSeed()
 	if err != nil {
 		return fmt.Errorf("game config: %w", err)
 	}
+
+	// The seed keeps the server serving even with an empty database; a published
+	// version supersedes it the moment there is one.
+	store := gameconfig.NewStore(seed, admin.BalanceLoader{Pool: pool}, log)
+	if err := store.Refresh(startCtx); err != nil {
+		log.Warn("could not load a published balance version, running on the seed", "err", err)
+	}
+	bundle := store.Get()
 	log.Info("game config loaded", "version", bundle.Version, "jobs", len(bundle.Jobs.Jobs))
+
+	// Polling rather than LISTEN/NOTIFY: a poll survives a dropped connection
+	// with no reconnect logic, and balance data taking up to a minute to reach
+	// players is entirely acceptable.
+	go store.Watch(ctx, 30*time.Second)
 
 	signer, err := auth.NewSigner(cfg.TokenSeed, time.Now)
 	if err != nil {
@@ -95,6 +109,7 @@ func run() error {
 	srv := &http.Server{
 		Addr: cfg.Addr,
 		Handler: httpx.NewRouter(httpx.Deps{
+			Store:    store,
 			Log:      log,
 			Health:   &gatedHealth{Checker: health.New(pool), ready: ready},
 			Version:  version,
@@ -107,7 +122,25 @@ func run() error {
 		IdleTimeout:       90 * time.Second,
 	}
 
+	// The admin surface listens separately. In production it binds to an
+	// interface players cannot reach; nothing that can grant currency shares a
+	// listener with the game API.
+	adminSvc := &admin.Service{Pool: pool, Config: store}
+	adminSrv := &http.Server{
+		Addr:              cfg.AdminAddr,
+		Handler:           httpx.AdminRouter(adminSvc, log.With("surface", "admin")),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+	}
+
 	errCh := make(chan error, 1)
+	go func() {
+		log.Info("admin listening", "addr", cfg.AdminAddr)
+		if err := adminSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+		}
+	}()
 	go func() {
 		log.Info("listening", "addr", cfg.Addr, "version", version)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -130,6 +163,7 @@ func run() error {
 
 	shutCtx, shutCancel := context.WithTimeout(context.Background(), cfg.ShutdownGrace)
 	defer shutCancel()
+	_ = adminSrv.Shutdown(shutCtx)
 	if err := srv.Shutdown(shutCtx); err != nil {
 		return fmt.Errorf("graceful shutdown: %w", err)
 	}

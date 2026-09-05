@@ -1,0 +1,78 @@
+-- name: CreateAdminUser :one
+INSERT INTO admin.users (username, password_hash, role) VALUES ($1,$2,$3) RETURNING *;
+
+-- name: GetAdminByUsername :one
+SELECT * FROM admin.users WHERE lower(username) = lower($1);
+
+-- name: GetAdminByID :one
+SELECT * FROM admin.users WHERE id = $1;
+
+-- name: TouchAdminLogin :exec
+UPDATE admin.users SET last_login_at = now() WHERE id = $1;
+
+-- name: CountAdmins :one
+SELECT count(*) FROM admin.users;
+
+-- name: CreateAdminSession :one
+INSERT INTO admin.sessions (admin_id, token_hash, expires_at) VALUES ($1,$2,$3) RETURNING *;
+
+-- name: GetAdminSession :one
+SELECT s.*, u.username, u.role, u.disabled
+FROM admin.sessions s JOIN admin.users u ON u.id = s.admin_id
+WHERE s.token_hash = $1;
+
+-- name: RevokeAdminSession :exec
+UPDATE admin.sessions SET revoked_at = now() WHERE token_hash = $1;
+
+-- name: WriteAudit :exec
+INSERT INTO admin.audit_log (admin_id, admin_name, action, subject, before, after, note)
+VALUES ($1,$2,$3,$4,$5,$6,$7);
+
+-- name: ListAudit :many
+SELECT * FROM admin.audit_log ORDER BY created_at DESC LIMIT $1;
+
+-- name: SearchPlayers :many
+SELECT id, username, display_name, level, gold, diamonds, state, is_bot,
+       kingdom_id, created_at, last_seen_at
+FROM app.players
+WHERE lower(username) LIKE lower($1) OR lower(display_name) LIKE lower($1)
+ORDER BY last_seen_at DESC
+LIMIT 50;
+
+-- name: AdminSetPlayerState :one
+UPDATE app.players SET state = $2 WHERE id = $1 RETURNING *;
+
+-- name: AdminAdjustCurrency :one
+UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING *;
+
+-- Economy health: what created gold and what destroyed it, by reason.
+-- name: GoldFlows :many
+SELECT reason,
+       sum(CASE WHEN delta > 0 THEN delta ELSE 0 END)::bigint AS created,
+       sum(CASE WHEN delta < 0 THEN -delta ELSE 0 END)::bigint AS destroyed,
+       count(*)::bigint AS entries
+FROM app.gold_ledger
+WHERE created_at > now() - ($1::int * interval '1 day')
+GROUP BY reason
+ORDER BY greatest(sum(CASE WHEN delta > 0 THEN delta ELSE 0 END),
+                  sum(CASE WHEN delta < 0 THEN -delta ELSE 0 END)) DESC;
+
+-- name: PlayerCounts :one
+SELECT
+  count(*) FILTER (WHERE NOT is_bot)::bigint AS players,
+  count(*) FILTER (WHERE is_bot)::bigint AS bots,
+  count(*) FILTER (WHERE NOT is_bot AND last_seen_at > now() - interval '1 day')::bigint AS active_1d,
+  count(*) FILTER (WHERE NOT is_bot AND last_seen_at > now() - interval '7 days')::bigint AS active_7d,
+  count(*) FILTER (WHERE NOT is_bot AND created_at > now() - interval '1 day')::bigint AS new_1d,
+  coalesce(sum(gold) FILTER (WHERE NOT is_bot), 0)::bigint AS gold_held,
+  coalesce(avg(level) FILTER (WHERE NOT is_bot), 0)::float AS avg_level
+FROM app.players;
+
+-- name: BattleStats :one
+SELECT
+  count(*)::bigint AS battles,
+  count(*) FILTER (WHERE attacker_won)::bigint AS attacker_wins,
+  coalesce(sum(gold_stolen), 0)::bigint AS gold_moved,
+  coalesce(avg(rounds), 0)::float AS avg_rounds
+FROM app.battles
+WHERE created_at > now() - ($1::int * interval '1 day');

@@ -11,6 +11,55 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AdminAuditLog struct {
+	ID        int64
+	AdminID   *uuid.UUID
+	AdminName string
+	Action    string
+	Subject   *string
+	Before    []byte
+	After     []byte
+	Note      string
+	CreatedAt time.Time
+}
+
+type AdminBalanceActivation struct {
+	ID          int64
+	VersionID   int64
+	ActivatedBy string
+	Reason      string
+	ActivatedAt time.Time
+}
+
+type AdminBalanceVersion struct {
+	ID        int64
+	Doc       string
+	DocJson   []byte
+	Sha256    []byte
+	Note      string
+	CreatedBy string
+	CreatedAt time.Time
+}
+
+type AdminSession struct {
+	ID        uuid.UUID
+	AdminID   uuid.UUID
+	TokenHash []byte
+	ExpiresAt time.Time
+	RevokedAt *time.Time
+	CreatedAt time.Time
+}
+
+type AdminUser struct {
+	ID           uuid.UUID
+	Username     string
+	PasswordHash string
+	Role         string
+	Disabled     bool
+	CreatedAt    time.Time
+	LastLoginAt  *time.Time
+}
+
 type AppAttackCooldown struct {
 	AttackerID uuid.UUID
 	DefenderID uuid.UUID

@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/auth"
+	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
@@ -18,8 +19,22 @@ import (
 const maxBodyBytes = 8 << 10
 
 type api struct {
-	svc service.Deps
-	log *slog.Logger
+	svc   service.Deps
+	store *gameconfig.Store
+	log   *slog.Logger
+}
+
+// s returns the service bound to the balance version live RIGHT NOW.
+//
+// Taken once per request and used throughout, so a publish mid-request cannot
+// change the rules underneath a transaction that has already started pricing
+// something. Deps is a small value struct, so this copy is free.
+func (a *api) s() service.Deps {
+	d := a.svc
+	if a.store != nil {
+		d.Config = a.store.Get()
+	}
+	return d
 }
 
 func decode(w http.ResponseWriter, r *http.Request, into any) bool {
@@ -130,7 +145,7 @@ func (a *api) register(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	tok, err := a.svc.Register(r.Context(), req.Username, req.Password, r.UserAgent(), req.TZOffsetMinutes)
+	tok, err := a.s().Register(r.Context(), req.Username, req.Password, r.UserAgent(), req.TZOffsetMinutes)
 	if err != nil {
 		// A username that fails validation is a 400 with the reason, so the
 		// signup form can say what is wrong instead of "invalid".
@@ -154,7 +169,7 @@ func (a *api) login(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	tok, err := a.svc.Login(r.Context(), req.Username, req.Password, r.UserAgent())
+	tok, err := a.s().Login(r.Context(), req.Username, req.Password, r.UserAgent())
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -171,7 +186,7 @@ func (a *api) refresh(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	tok, err := a.svc.Refresh(r.Context(), req.RefreshToken, r.UserAgent())
+	tok, err := a.s().Refresh(r.Context(), req.RefreshToken, r.UserAgent())
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -187,7 +202,7 @@ func (a *api) state(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	snap, err := a.svc.GetState(r.Context(), pid)
+	snap, err := a.s().GetState(r.Context(), pid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -210,7 +225,7 @@ func (a *api) collect(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	res, err := a.svc.Collect(r.Context(), pid, req.JobID, req.ActionSeq)
+	res, err := a.s().Collect(r.Context(), pid, req.JobID, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -226,7 +241,7 @@ func (a *api) shop(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	v, err := a.svc.GetShop(r.Context(), pid)
+	v, err := a.s().GetShop(r.Context(), pid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -249,7 +264,7 @@ func (a *api) buy(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	res, err := a.svc.Buy(r.Context(), pid, req.Slot, req.ActionSeq)
+	res, err := a.s().Buy(r.Context(), pid, req.Slot, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -263,7 +278,7 @@ func (a *api) inventory(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	v, err := a.svc.GetInventory(r.Context(), pid)
+	v, err := a.s().GetInventory(r.Context(), pid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -296,9 +311,9 @@ func (a *api) equipSet(w http.ResponseWriter, r *http.Request, on bool) {
 	}
 	var v *service.InventoryView
 	if on {
-		v, err = a.svc.Equip(r.Context(), pid, itemID)
+		v, err = a.s().Equip(r.Context(), pid, itemID)
 	} else {
-		v, err = a.svc.Unequip(r.Context(), pid, itemID)
+		v, err = a.s().Unequip(r.Context(), pid, itemID)
 	}
 	if err != nil {
 		a.fail(w, r, err)
@@ -322,7 +337,7 @@ func (a *api) sell(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
 		return
 	}
-	res, err := a.svc.Sell(r.Context(), pid, itemID, req.ActionSeq)
+	res, err := a.s().Sell(r.Context(), pid, itemID, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -338,7 +353,7 @@ func (a *api) army(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	v, err := a.svc.GetArmy(r.Context(), pid)
+	v, err := a.s().GetArmy(r.Context(), pid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -360,7 +375,7 @@ func (a *api) buySlot(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	v, err := a.svc.BuySlot(r.Context(), pid, req.ActionSeq)
+	v, err := a.s().BuySlot(r.Context(), pid, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -384,7 +399,7 @@ func (a *api) recruit(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	res, err := a.svc.Recruit(r.Context(), pid, req.Slot, req.TypeID, req.ActionSeq)
+	res, err := a.s().Recruit(r.Context(), pid, req.Slot, req.TypeID, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -413,7 +428,7 @@ func (a *api) train(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "soldier_id must be a uuid")
 		return
 	}
-	v, err := a.svc.Train(r.Context(), pid, sid, req.ActionSeq)
+	v, err := a.s().Train(r.Context(), pid, sid, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -441,7 +456,7 @@ func (a *api) equipSoldier(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
 		return
 	}
-	v, err := a.svc.EquipSoldier(r.Context(), pid, sid, iid)
+	v, err := a.s().EquipSoldier(r.Context(), pid, sid, iid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -457,7 +472,7 @@ func (a *api) targets(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	v, err := a.svc.GetTargets(r.Context(), pid)
+	v, err := a.s().GetTargets(r.Context(), pid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -485,7 +500,7 @@ func (a *api) attack(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "target_id must be a uuid")
 		return
 	}
-	res, err := a.svc.Attack(r.Context(), pid, tid, req.ActionSeq)
+	res, err := a.s().Attack(r.Context(), pid, tid, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -510,7 +525,7 @@ func (a *api) spendStats(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	snap, err := a.svc.SpendStats(r.Context(), pid, req.Energy, req.Attack, req.Defense, req.ActionSeq)
+	snap, err := a.s().SpendStats(r.Context(), pid, req.Energy, req.Attack, req.Defense, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -526,7 +541,7 @@ func (a *api) estates(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	v, err := a.svc.GetEstates(r.Context(), pid)
+	v, err := a.s().GetEstates(r.Context(), pid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -555,9 +570,9 @@ func (a *api) estateBuy(w http.ResponseWriter, r *http.Request, upgrade bool) {
 	var v *service.EstatesView
 	var err error
 	if upgrade {
-		v, err = a.svc.BuyUpgrade(r.Context(), pid, req.ID, req.ActionSeq)
+		v, err = a.s().BuyUpgrade(r.Context(), pid, req.ID, req.ActionSeq)
 	} else {
-		v, err = a.svc.BuyHolding(r.Context(), pid, req.ID, req.ActionSeq)
+		v, err = a.s().BuyHolding(r.Context(), pid, req.ID, req.ActionSeq)
 	}
 	if err != nil {
 		a.fail(w, r, err)
@@ -576,7 +591,7 @@ func (a *api) claimTax(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	res, err := a.svc.ClaimTax(r.Context(), pid, req.ActionSeq)
+	res, err := a.s().ClaimTax(r.Context(), pid, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -592,7 +607,7 @@ func (a *api) kingdom(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	v, err := a.svc.GetKingdom(r.Context(), pid)
+	v, err := a.s().GetKingdom(r.Context(), pid)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -616,7 +631,7 @@ func (a *api) found(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	v, err := a.svc.Found(r.Context(), pid, req.Name, req.Tag, req.ActionSeq)
+	v, err := a.s().Found(r.Context(), pid, req.Name, req.Tag, req.ActionSeq)
 	if err != nil {
 		if !isKnownServiceError(err) {
 			WriteProblem(w, r, http.StatusBadRequest, "invalid_name", err.Error())
@@ -665,25 +680,25 @@ func (a *api) kingdomAction(w http.ResponseWriter, r *http.Request, name string)
 		if !ok {
 			return
 		}
-		v, err = a.svc.Invite(r.Context(), pid, tid)
+		v, err = a.s().Invite(r.Context(), pid, tid)
 	case "accept":
 		kid, ok := parse(req.KingdomID)
 		if !ok {
 			return
 		}
-		v, err = a.svc.AcceptInvite(r.Context(), pid, kid)
+		v, err = a.s().AcceptInvite(r.Context(), pid, kid)
 	case "leave":
-		v, err = a.svc.Leave(r.Context(), pid)
+		v, err = a.s().Leave(r.Context(), pid)
 	case "role":
 		tid, ok := parse(req.PlayerID)
 		if !ok {
 			return
 		}
-		v, err = a.svc.SetRole(r.Context(), pid, tid, req.Role)
+		v, err = a.s().SetRole(r.Context(), pid, tid, req.Role)
 	case "donate":
-		v, err = a.svc.Donate(r.Context(), pid, req.Amount, req.ActionSeq)
+		v, err = a.s().Donate(r.Context(), pid, req.Amount, req.ActionSeq)
 	case "upgrade":
-		v, err = a.svc.BuyKingdomUpgrade(r.Context(), pid, req.ID)
+		v, err = a.s().BuyKingdomUpgrade(r.Context(), pid, req.ID)
 	}
 	if err != nil {
 		a.fail(w, r, err)

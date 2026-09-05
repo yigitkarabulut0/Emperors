@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
@@ -18,6 +19,9 @@ type Deps struct {
 	Version  string
 	Service  service.Deps
 	Verifier TokenVerifier
+	// Store, when set, makes every request read the live balance version rather
+	// than the one that happened to be loaded at boot.
+	Store *gameconfig.Store
 }
 
 // HealthChecker reports whether dependencies are reachable.
@@ -57,7 +61,7 @@ func NewRouter(d Deps) http.Handler {
 		WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
 
-	a := &api{svc: d.Service, log: d.Log}
+	a := &api{svc: d.Service, store: d.Store, log: d.Log}
 
 	r.Route("/v1", func(r chi.Router) {
 		// Unauthenticated: sign-up, sign-in and token rotation.

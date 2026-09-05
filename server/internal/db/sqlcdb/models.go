@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type AppAttackCooldown struct {
@@ -55,33 +56,66 @@ type AppIdentity struct {
 	LastUsedAt *time.Time
 }
 
+type AppKingdom struct {
+	ID         uuid.UUID
+	Name       string
+	Tag        string
+	LeaderID   *uuid.UUID
+	Level      int32
+	Xp         int64
+	Treasury   int64
+	Reputation int64
+	CreatedAt  time.Time
+}
+
+type AppKingdomInvite struct {
+	KingdomID uuid.UUID
+	PlayerID  uuid.UUID
+	InvitedBy *uuid.UUID
+	CreatedAt time.Time
+}
+
+type AppKingdomUpgrade struct {
+	KingdomID uuid.UUID
+	UpgradeID string
+	Level     int32
+}
+
 type AppPlayer struct {
-	ID                 uuid.UUID
-	Username           string
-	DisplayName        string
-	Level              int32
-	Xp                 int64
-	Gold               int64
-	TreasuryGold       int64
-	Diamonds           int64
-	EnergyMilli        int64
-	EnergyUpdatedAt    time.Time
-	StatEnergy         int32
-	StatAttack         int32
-	StatDefense        int32
-	StatPointsUnspent  int32
-	ShieldUntil        *time.Time
-	ActionSeq          int64
-	State              string
-	ResetOffsetMinutes int32
-	CreatedAt          time.Time
-	LastSeenAt         time.Time
-	SoldierSlots       int32
-	FreeSlotClaimed    bool
-	FreeRecruitClaimed bool
-	IsBot              bool
-	TaxMilliAccrued    int64
-	TaxUpdatedAt       time.Time
+	ID                  uuid.UUID
+	Username            string
+	DisplayName         string
+	Level               int32
+	Xp                  int64
+	Gold                int64
+	TreasuryGold        int64
+	Diamonds            int64
+	EnergyMilli         int64
+	EnergyUpdatedAt     time.Time
+	StatEnergy          int32
+	StatAttack          int32
+	StatDefense         int32
+	StatPointsUnspent   int32
+	ShieldUntil         *time.Time
+	ActionSeq           int64
+	State               string
+	ResetOffsetMinutes  int32
+	CreatedAt           time.Time
+	LastSeenAt          time.Time
+	SoldierSlots        int32
+	FreeSlotClaimed     bool
+	FreeRecruitClaimed  bool
+	IsBot               bool
+	TaxMilliAccrued     int64
+	TaxUpdatedAt        time.Time
+	KingdomID           *uuid.UUID
+	KingdomRole         string
+	KingdomJoinedAt     *time.Time
+	KingdomDonatedTotal int64
+	KingdomFavour       int64
+	KingdomRepToday     int32
+	KingdomDonatedToday int64
+	KingdomDay          pgtype.Date
 }
 
 type AppPlayerHolding struct {

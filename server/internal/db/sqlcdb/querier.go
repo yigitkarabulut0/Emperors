@@ -11,13 +11,18 @@ import (
 )
 
 type Querier interface {
+	// Reputation from a raid, honouring the per-member daily cap.
+	AddKingdomReputation(ctx context.Context, arg AddKingdomReputationParams) error
+	AddKingdomTreasury(ctx context.Context, arg AddKingdomTreasuryParams) (AppKingdom, error)
 	ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttackerParams) (AppPlayer, error)
 	ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefenderParams) (AppPlayer, error)
 	// Applies one collect: spends energy, credits gold and XP, and advances the
 	// action sequence. Energy is written back already settled by the caller.
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
+	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
 	BuyHoldingLevel(ctx context.Context, arg BuyHoldingLevelParams) (AppPlayerHolding, error)
+	BuyKingdomUpgradeLevel(ctx context.Context, arg BuyKingdomUpgradeLevelParams) (AppKingdomUpgrade, error)
 	BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) (AppPlayer, error)
 	// Buys one level. The current level is in the WHERE clause, so two concurrent
 	// taps cannot both see the same level and both succeed.
@@ -26,13 +31,24 @@ type Querier interface {
 	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
 	ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, error)
 	CountBots(ctx context.Context) (int64, error)
+	CountKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) (int64, error)
 	CountPlayerItems(ctx context.Context, playerID uuid.UUID) (int64, error)
 	CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer, error)
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) (AppIdentity, error)
+	CreateInvite(ctx context.Context, arg CreateInviteParams) error
+	CreateKingdom(ctx context.Context, arg CreateKingdomParams) (AppKingdom, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (AppPlayer, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (AppSession, error)
 	CreditGold(ctx context.Context, arg CreditGoldParams) (AppPlayer, error)
+	// Nightly decay. 2% a day is what stops a kingdom that quit in month one from
+	// squatting at rank 1 forever.
+	DecayReputation(ctx context.Context, dollar_1 interface{}) error
+	DeleteInvite(ctx context.Context, arg DeleteInviteParams) error
+	DeleteInvitesForPlayer(ctx context.Context, playerID uuid.UUID) error
 	DeletePlayerItem(ctx context.Context, arg DeletePlayerItemParams) error
+	// Donating: take the gold, credit the treasury, and record the daily total in
+	// one place so the cap cannot be bypassed by racing two requests.
+	DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlayer, error)
 	// Candidate opponents inside a level band, excluding the player, bots-or-not by
 	// flag, the shielded, and anyone banned. Ordered by a stable pseudo-random key
 	// so the list changes between refreshes without a table scan.
@@ -40,7 +56,9 @@ type Querier interface {
 	GetBattle(ctx context.Context, id uuid.UUID) (AppBattle, error)
 	GetCooldown(ctx context.Context, arg GetCooldownParams) (AppAttackCooldown, error)
 	GetIdentityBySubject(ctx context.Context, arg GetIdentityBySubjectParams) (AppIdentity, error)
+	GetInvite(ctx context.Context, arg GetInviteParams) (AppKingdomInvite, error)
 	GetJobProgress(ctx context.Context, arg GetJobProgressParams) (AppPlayerJobProgress, error)
+	GetKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error)
 	GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error)
 	GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error)
 	GetPlayerItem(ctx context.Context, arg GetPlayerItemParams) (AppPlayerItem, error)
@@ -49,14 +67,21 @@ type Querier interface {
 	GetSoldier(ctx context.Context, arg GetSoldierParams) (AppSoldier, error)
 	InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
+	LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
+	ListInvitesForPlayer(ctx context.Context, playerID uuid.UUID) ([]ListInvitesForPlayerRow, error)
 	ListItemsForSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListJobProgress(ctx context.Context, playerID uuid.UUID) ([]AppPlayerJobProgress, error)
+	// Ordered by rank then contribution, which is the order the roster should read:
+	// who leads, then who has actually carried the kingdom.
+	ListKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) ([]ListKingdomMembersRow, error)
+	ListKingdomUpgrades(ctx context.Context, kingdomID uuid.UUID) ([]AppKingdomUpgrade, error)
 	ListPlayerItems(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppSoldier, error)
 	ListUpgrades(ctx context.Context, playerID uuid.UUID) ([]AppPlayerUpgrade, error)
+	LockKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error)
 	// Locks the row for the duration of the transaction. Every mutating action
 	// takes this first, so two concurrent collects cannot both read the same energy
 	// and both spend it.
@@ -68,6 +93,9 @@ type Querier interface {
 	MarkIdentityUsed(ctx context.Context, id uuid.UUID) error
 	MarkSessionUsed(ctx context.Context, id uuid.UUID) error
 	MarkShopSlotPurchased(ctx context.Context, arg MarkShopSlotPurchasedParams) (AppShopState, error)
+	// Founding: pay, and join in the same statement so a crash cannot leave a
+	// kingdom with no king.
+	PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomParams) (AppPlayer, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
 	// Dismissing a soldier must not destroy its gear; the items return to the bag.
 	ReleaseSoldierItems(ctx context.Context, arg ReleaseSoldierItemsParams) error
@@ -75,15 +103,20 @@ type Querier interface {
 	// Revokes an entire rotation chain. Presenting an already-rotated refresh token
 	// means the token was captured, so every descendant of that family is burned.
 	RevokeSessionFamily(ctx context.Context, arg RevokeSessionFamilyParams) error
+	SearchKingdoms(ctx context.Context, lower string) ([]SearchKingdomsRow, error)
 	SetHeroEquipped(ctx context.Context, arg SetHeroEquippedParams) error
+	SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) (AppPlayer, error)
+	SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error)
 	SetSoldierEquipped(ctx context.Context, arg SetSoldierEquippedParams) error
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
 	SettleTax(ctx context.Context, arg SettleTaxParams) error
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)
+	SpendKingdomTreasury(ctx context.Context, arg SpendKingdomTreasuryParams) (AppKingdom, error)
 	// Spends level-up points. The WHERE clause carries the affordability check, so
 	// the balance cannot go negative even under a concurrent double-tap.
 	SpendStatPoints(ctx context.Context, arg SpendStatPointsParams) (AppPlayer, error)
+	TopKingdoms(ctx context.Context, limit int32) ([]TopKingdomsRow, error)
 	TouchCooldown(ctx context.Context, arg TouchCooldownParams) error
 	TouchPlayerSeen(ctx context.Context, id uuid.UUID) error
 	// Clears whatever the player is wearing in this slot, so equipping is a

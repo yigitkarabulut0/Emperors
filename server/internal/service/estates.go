@@ -42,7 +42,22 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 	for _, h := range holds {
 		holdLevels[h.HoldingID] = int(h.Level)
 	}
-	return estates.Derive(d.Config, int64(p.Level), upLevels, holdLevels), nil
+	eff := estates.Derive(d.Config, int64(p.Level), upLevels, holdLevels)
+
+	// A kingdom's upgrades apply to every member, so they belong in the same
+	// effects the rest of the game reads.
+	if p.KingdomID != nil {
+		kups, err := q.ListKingdomUpgrades(ctx, *p.KingdomID)
+		if err != nil {
+			return estates.Effects{}, fmt.Errorf("kingdom upgrades: %w", err)
+		}
+		kLevels := make(map[string]int, len(kups))
+		for _, k := range kups {
+			kLevels[k.UpgradeID] = int(k.Level)
+		}
+		estates.ApplyKingdom(d.Config, &eff, int64(p.Level), kLevels, holdLevels)
+	}
+	return eff, nil
 }
 
 // EstatesView is the Keep tab (upgrades) and the Map tab (holdings).

@@ -1,0 +1,204 @@
+{
+  "_comment": "Kingdoms. Upgrades use the SAME additive buckets as Family upgrades, so a maxed Granary (+60%) plus maxed Royal Granaries (+20%) plus a fully mastered job (+30%) comes to +110%, inside the +150% bucket cap. Maxing the whole tree costs about 35M kingdom gold \u2014 a 30-member kingdom donating a tenth of its income needs roughly 230 days, so it is a long-horizon collective goal rather than a checklist. Reputation decays 2% a day, which is what stops a kingdom that quit in month one from squatting at rank 1 forever.",
+  "found_cost": 250000,
+  "found_level": 20,
+  "max_level": 8,
+  "levels": [
+    {
+      "level": 1,
+      "xp_required": 0,
+      "member_cap": 10
+    },
+    {
+      "level": 2,
+      "xp_required": 559820,
+      "member_cap": 15
+    },
+    {
+      "level": 3,
+      "xp_required": 1209544,
+      "member_cap": 20
+    },
+    {
+      "level": 4,
+      "xp_required": 2089321,
+      "member_cap": 25
+    },
+    {
+      "level": 5,
+      "xp_required": 3192525,
+      "member_cap": 30
+    },
+    {
+      "level": 6,
+      "xp_required": 4514178,
+      "member_cap": 35
+    },
+    {
+      "level": 7,
+      "xp_required": 6050309,
+      "member_cap": 40
+    },
+    {
+      "level": 8,
+      "xp_required": 7797623,
+      "member_cap": 45
+    }
+  ],
+  "upgrades": [
+    {
+      "id": "royal_granaries",
+      "name": "Royal Granaries",
+      "bucket": "collect_income_bp",
+      "max_level": 10,
+      "per_level": 200,
+      "blurb": "Every member collects more.",
+      "costs": [
+        50000,
+        77500,
+        120125,
+        186195,
+        288600,
+        447330,
+        693360,
+        1074710,
+        1665805,
+        2581995
+      ]
+    },
+    {
+      "id": "royal_archives",
+      "name": "Royal Archives",
+      "bucket": "xp_bp",
+      "max_level": 10,
+      "per_level": 150,
+      "blurb": "Every member learns faster.",
+      "costs": [
+        60000,
+        93000,
+        144150,
+        223434,
+        346320,
+        536796,
+        832032,
+        1289652,
+        1998966,
+        3098394
+      ]
+    },
+    {
+      "id": "royal_treasury",
+      "name": "Royal Treasury",
+      "bucket": "tax_income_bp",
+      "max_level": 10,
+      "per_level": 400,
+      "blurb": "Every member's estates earn more.",
+      "costs": [
+        50000,
+        76000,
+        115520,
+        175590,
+        266895,
+        405685,
+        616640,
+        937290,
+        1424685,
+        2165520
+      ]
+    },
+    {
+      "id": "royal_armoury",
+      "name": "Royal Armoury",
+      "bucket": "soldier_atk_bp",
+      "max_level": 8,
+      "per_level": 200,
+      "blurb": "Every member's soldiers strike harder.",
+      "costs": [
+        80000,
+        128000,
+        204800,
+        327680,
+        524288,
+        838864,
+        1342176,
+        2147480
+      ]
+    },
+    {
+      "id": "royal_bulwark",
+      "name": "Royal Bulwark",
+      "bucket": "soldier_def_bp",
+      "max_level": 8,
+      "per_level": 200,
+      "blurb": "Every member's soldiers endure more.",
+      "costs": [
+        80000,
+        128000,
+        204800,
+        327680,
+        524288,
+        838864,
+        1342176,
+        2147480
+      ]
+    },
+    {
+      "id": "royal_couriers",
+      "name": "Royal Couriers",
+      "bucket": "energy_regen_bp",
+      "max_level": 6,
+      "per_level": 200,
+      "blurb": "Every member's energy returns faster.",
+      "costs": [
+        150000,
+        255000,
+        433500,
+        736950,
+        1252815,
+        2129790
+      ]
+    },
+    {
+      "id": "royal_banners",
+      "name": "Royal Banners",
+      "bucket": "reputation_bp",
+      "max_level": 6,
+      "per_level": 500,
+      "blurb": "Raids earn the kingdom more renown.",
+      "costs": [
+        120000,
+        198000,
+        326700,
+        539052,
+        889440,
+        1467576
+      ]
+    },
+    {
+      "id": "royal_court",
+      "name": "Royal Court",
+      "bucket": "member_cap_flat",
+      "max_level": 5,
+      "per_level": 2,
+      "blurb": "Room for more lords.",
+      "costs": [
+        200000,
+        360000,
+        648000,
+        1166400,
+        2099520
+      ]
+    }
+  ],
+  "donation": {
+    "daily_cap_base": 20000,
+    "daily_cap_per_level": 800,
+    "xp_per_gold": 1,
+    "xp_per_reputation": 100,
+    "favour_per_gold": 100
+  },
+  "reputation": {
+    "daily_cap_per_member": 150,
+    "decay_bp_per_day": 200
+  }
+}

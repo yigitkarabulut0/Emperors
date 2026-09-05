@@ -28,6 +28,8 @@ type Effects struct {
 	// level 5 the base is 29,904 milli/hour, which floors to 8 milli/second
 	// either way. Accrual multiplies by elapsed seconds and divides by 3600 at
 	// the end, so the precision survives.
+	ReputationBP int64
+
 	TaxMilliPerHour   int64
 	OfflineCapSeconds int64
 }
@@ -143,3 +145,50 @@ func SettleTax(s TaxState, ratePerHour, capSeconds int64, now time.Time) TaxStat
 
 // Whole returns claimable gold.
 func Whole(s TaxState) int64 { return s.Milli / 1000 }
+
+// ApplyKingdom folds a kingdom's upgrades into a member's effects.
+//
+// Kingdom nodes feed the SAME buckets as Family nodes, which is the whole point:
+// a maxed Granary (+60%), maxed Royal Granaries (+20%) and a fully mastered job
+// (+30%) come to +110%, applied once, inside the +150% bucket cap. If kingdom
+// bonuses had their own multiplier they would compound with the family tree and
+// the cap would stop meaning anything.
+func ApplyKingdom(cfg *gameconfig.Bundle, e *Effects, level int64, kingdomLevels, holdingLevels map[string]int) {
+	var taxIncomeBP int64
+
+	for _, u := range cfg.Kingdoms.Upgrades {
+		lv := int64(kingdomLevels[u.ID])
+		if lv <= 0 {
+			continue
+		}
+		if lv > int64(u.MaxLevel) {
+			lv = int64(u.MaxLevel)
+		}
+		amount := u.PerLevel * lv
+
+		switch u.Bucket {
+		case gameconfig.BucketCollectIncome:
+			e.Bonuses.Add(economy.BucketCollectIncome, amount)
+		case gameconfig.BucketXP:
+			e.Bonuses.Add(economy.BucketXPGain, amount)
+		case gameconfig.BucketEnergyRegen:
+			e.Bonuses.Add(economy.BucketEnergyRegen, amount)
+		case gameconfig.BucketSoldierAtk:
+			e.SoldierAtkBP += amount
+		case gameconfig.BucketSoldierDef:
+			e.SoldierDefBP += amount
+		case gameconfig.BucketSoldierSpd:
+			e.SoldierSpdBP += amount
+		case gameconfig.BucketReputation:
+			e.ReputationBP += amount
+		case gameconfig.BucketTaxIncome:
+			taxIncomeBP += amount
+		}
+	}
+
+	// The tax rate is not a bucket, so a kingdom's Royal Treasury has to be
+	// folded back into the rate rather than added to a total afterwards.
+	if taxIncomeBP > 0 {
+		e.TaxMilliPerHour = e.TaxMilliPerHour * (10000 + taxIncomeBP) / 10000
+	}
+}

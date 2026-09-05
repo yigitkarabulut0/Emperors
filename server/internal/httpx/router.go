@@ -91,6 +91,15 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/estates/holding", a.buyHolding)
 			r.Post("/estates/tax/claim", a.claimTax)
 
+			r.Get("/kingdom", a.kingdom)
+			r.Post("/kingdom/found", a.found)
+			for _, act := range []string{"invite", "accept", "leave", "role", "donate", "upgrade"} {
+				name := act
+				r.Post("/kingdom/"+name, func(w http.ResponseWriter, req *http.Request) {
+					a.kingdomAction(w, req, name)
+				})
+			}
+
 			r.Get("/attack/targets", a.targets)
 			r.Post("/attack", a.attack)
 		})

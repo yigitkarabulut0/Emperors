@@ -87,6 +87,24 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "maxed", "already at maximum level")
 	case errors.Is(err, service.ErrNoTax):
 		WriteProblem(w, r, http.StatusConflict, "no_tax", "nothing to collect yet")
+	case errors.Is(err, service.ErrAlreadyInKingdom):
+		WriteProblem(w, r, http.StatusConflict, "already_in_kingdom", "you already belong to a kingdom")
+	case errors.Is(err, service.ErrNotInKingdom):
+		WriteProblem(w, r, http.StatusConflict, "not_in_kingdom", "you are not in a kingdom")
+	case errors.Is(err, service.ErrKingdomFull):
+		WriteProblem(w, r, http.StatusConflict, "kingdom_full", "the kingdom is full")
+	case errors.Is(err, service.ErrNotInvited):
+		WriteProblem(w, r, http.StatusForbidden, "not_invited", "you have not been invited")
+	case errors.Is(err, service.ErrNotPermitted):
+		WriteProblem(w, r, http.StatusForbidden, "not_permitted", "your rank does not allow that")
+	case errors.Is(err, service.ErrKingdomNameTaken):
+		WriteProblem(w, r, http.StatusConflict, "name_taken", "that name or tag is taken")
+	case errors.Is(err, service.ErrDonationCap):
+		WriteProblem(w, r, http.StatusConflict, "donation_cap", "you have donated all you can today")
+	case errors.Is(err, service.ErrLastKing):
+		WriteProblem(w, r, http.StatusConflict, "last_king", "promote another lord before you leave")
+	case errors.Is(err, service.ErrSameKingdom):
+		WriteProblem(w, r, http.StatusForbidden, "same_kingdom", "you cannot raid your own kingdom")
 	case errors.Is(err, service.ErrStaleAction):
 		// 409, not 400: the request was well-formed, the client is just behind.
 		// It should re-read state rather than retry blindly.
@@ -566,6 +584,114 @@ func (a *api) claimTax(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, res)
 }
 
+// --- kingdom ---
+
+func (a *api) kingdom(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.svc.GetKingdom(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type foundReq struct {
+	Name      string `json:"name"`
+	Tag       string `json:"tag"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) found(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req foundReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.svc.Found(r.Context(), pid, req.Name, req.Tag, req.ActionSeq)
+	if err != nil {
+		if !isKnownServiceError(err) {
+			WriteProblem(w, r, http.StatusBadRequest, "invalid_name", err.Error())
+			return
+		}
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type kingdomTargetReq struct {
+	PlayerID  string `json:"player_id,omitempty"`
+	KingdomID string `json:"kingdom_id,omitempty"`
+	Role      string `json:"role,omitempty"`
+	Amount    int64  `json:"amount,omitempty"`
+	ID        string `json:"id,omitempty"`
+	ActionSeq int64  `json:"action_seq,omitempty"`
+}
+
+func (a *api) kingdomAction(w http.ResponseWriter, r *http.Request, name string) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req kingdomTargetReq
+	if !decode(w, r, &req) {
+		return
+	}
+
+	parse := func(s string) (uuid.UUID, bool) {
+		id, err := uuid.Parse(s)
+		if err != nil {
+			WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "expected a uuid")
+			return uuid.Nil, false
+		}
+		return id, true
+	}
+
+	var v *service.KingdomView
+	var err error
+	switch name {
+	case "invite":
+		tid, ok := parse(req.PlayerID)
+		if !ok {
+			return
+		}
+		v, err = a.svc.Invite(r.Context(), pid, tid)
+	case "accept":
+		kid, ok := parse(req.KingdomID)
+		if !ok {
+			return
+		}
+		v, err = a.svc.AcceptInvite(r.Context(), pid, kid)
+	case "leave":
+		v, err = a.svc.Leave(r.Context(), pid)
+	case "role":
+		tid, ok := parse(req.PlayerID)
+		if !ok {
+			return
+		}
+		v, err = a.svc.SetRole(r.Context(), pid, tid, req.Role)
+	case "donate":
+		v, err = a.svc.Donate(r.Context(), pid, req.Amount, req.ActionSeq)
+	case "upgrade":
+		v, err = a.svc.BuyKingdomUpgrade(r.Context(), pid, req.ID)
+	}
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
 func isKnownServiceError(err error) bool {
 	for _, e := range []error{
 		service.ErrUsernameTaken, service.ErrBadCredentials, service.ErrPlayerBanned,
@@ -577,6 +703,9 @@ func isKnownServiceError(err error) bool {
 		service.ErrShielded, service.ErrOnCooldown, service.ErrSelfAttack,
 		service.ErrNoStatPoints, service.ErrNothingToSpend,
 		service.ErrUpgradeMaxed, service.ErrNoTax,
+		service.ErrAlreadyInKingdom, service.ErrNotInKingdom, service.ErrKingdomFull,
+		service.ErrNotInvited, service.ErrNotPermitted, service.ErrKingdomNameTaken,
+		service.ErrDonationCap, service.ErrLastKing, service.ErrSameKingdom,
 	} {
 		if errors.Is(err, e) {
 			return true

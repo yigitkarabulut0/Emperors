@@ -418,3 +418,64 @@ for h in holdings:
     y = h["tax_milli_per_hour_per_level"] / 1000 * HOLDING_MAX_LEVEL
     c = sum(h["costs"])
     print(f"  {h['name']:<22} lv{h['unlock_level']:<4} {y:>10.1f} {c:>15,}   {c/max(y,0.01):>6.0f}h")
+
+
+# --- kingdoms (economy.md 12) -------------------------------------------------
+KINGDOM_UPGRADES = [
+    ("royal_granaries", "Royal Granaries", "collect_income_bp", 10, 200,  50000,  1.55, "Every member collects more."),
+    ("royal_archives",  "Royal Archives",  "xp_bp",             10, 150,  60000,  1.55, "Every member learns faster."),
+    ("royal_treasury",  "Royal Treasury",  "tax_income_bp",     10, 400,  50000,  1.52, "Every member's estates earn more."),
+    ("royal_armoury",   "Royal Armoury",   "soldier_atk_bp",     8, 200,  80000,  1.60, "Every member's soldiers strike harder."),
+    ("royal_bulwark",   "Royal Bulwark",   "soldier_def_bp",     8, 200,  80000,  1.60, "Every member's soldiers endure more."),
+    ("royal_couriers",  "Royal Couriers",  "energy_regen_bp",    6, 200, 150000,  1.70, "Every member's energy returns faster."),
+    ("royal_banners",   "Royal Banners",   "reputation_bp",      6, 500, 120000,  1.65, "Raids earn the kingdom more renown."),
+    ("royal_court",     "Royal Court",     "member_cap_flat",    5,   2, 200000,  1.80, "Room for more lords."),
+]
+
+k_upgrades = []
+for uid, name, bucket, maxlv, per, base, growth, blurb in KINGDOM_UPGRADES:
+    k_upgrades.append({
+        "id": uid, "name": name, "bucket": bucket, "max_level": maxlv,
+        "per_level": per, "blurb": blurb,
+        "costs": [half_up(base * round(growth ** (lv - 1) * 10000), 10000) for lv in range(1, maxlv + 1)],
+    })
+
+KINGDOM_MAX_LEVEL = 8
+k_levels = [{
+    "level": L,
+    # kingdom_xp(L) = 150000 * L^1.9 — the XP needed to REACH level L.
+    "xp_required": 0 if L == 1 else half_up(round(150000 * L ** 1.9), 1),
+    "member_cap": 5 + 5 * L,
+} for L in range(1, KINGDOM_MAX_LEVEL + 1)]
+
+emit("kingdoms.json", json.dumps({
+    "_comment": "Kingdoms. Upgrades use the SAME additive buckets as Family upgrades, so a maxed "
+                "Granary (+60%) plus maxed Royal Granaries (+20%) plus a fully mastered job (+30%) "
+                "comes to +110%, inside the +150% bucket cap. Maxing the whole tree costs about 35M "
+                "kingdom gold — a 30-member kingdom donating a tenth of its income needs roughly 230 "
+                "days, so it is a long-horizon collective goal rather than a checklist. Reputation "
+                "decays 2% a day, which is what stops a kingdom that quit in month one from squatting "
+                "at rank 1 forever.",
+    "found_cost": 250000,
+    "found_level": 20,
+    "max_level": KINGDOM_MAX_LEVEL,
+    "levels": k_levels,
+    "upgrades": k_upgrades,
+    "donation": {
+        "daily_cap_base": 20000,
+        "daily_cap_per_level": 800,
+        "xp_per_gold": 1,
+        "xp_per_reputation": 100,
+        "favour_per_gold": 100,
+    },
+    "reputation": {
+        "daily_cap_per_member": 150,
+        "decay_bp_per_day": 200,
+    },
+}, indent=2) + "\n")
+
+print(f"kingdoms.json  : {len(k_upgrades)} upgrades, {KINGDOM_MAX_LEVEL} levels")
+print(f"  found        : {250000:,} gold at level 20")
+print(f"  tree total   : {sum(sum(u['costs']) for u in k_upgrades):>12,} kingdom gold")
+print(f"  member cap   : {k_levels[0]['member_cap']} at Lv1 -> {k_levels[-1]['member_cap']} at Lv{KINGDOM_MAX_LEVEL}")
+print(f"  xp to Lv8    : {k_levels[-1]['xp_required']:>12,}")

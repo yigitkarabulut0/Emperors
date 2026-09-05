@@ -2,7 +2,7 @@
 -- flag, the shielded, and anyone banned. Ordered by a stable pseudo-random key
 -- so the list changes between refreshes without a table scan.
 -- name: FindTargets :many
-SELECT id, username, display_name, level, gold, is_bot, shield_until
+SELECT id, username, display_name, level, gold, is_bot, shield_until, kingdom_id
 FROM app.players
 WHERE state = 'active'
   AND id <> $1

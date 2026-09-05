@@ -8,6 +8,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
@@ -125,6 +127,11 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 	}
 
 	for _, r := range rows {
+		// Members of your own kingdom are never offered. Raiding an ally would
+		// make the kingdom a liability rather than a reason to join one.
+		if me.KingdomID != nil && r.KingdomID != nil && *r.KingdomID == *me.KingdomID {
+			continue
+		}
 		if cd, err := q.GetCooldown(ctx, sqlcdb.GetCooldownParams{
 			AttackerID: playerID, DefenderID: r.ID,
 		}); err == nil && cd.LastAt.Add(attackCooldown).After(now) {
@@ -258,6 +265,9 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		}
 
 		now := d.Now()
+		if me.KingdomID != nil && target.KingdomID != nil && *me.KingdomID == *target.KingdomID {
+			return ErrSameKingdom
+		}
 		if target.ShieldUntil != nil && target.ShieldUntil.After(now) {
 			return ErrShielded
 		}
@@ -387,6 +397,11 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			return fmt.Errorf("cooldown: %w", err)
 		}
 
+		if err := d.awardReputation(ctx, q, me, eff.ReputationBP, won,
+			mine.Totals.Might, theirs.Totals.Might, now); err != nil {
+			return err
+		}
+
 		res = AttackResult{
 			BattleID: battleID.String(), Won: won,
 			GoldStolen: stolen, RansomPaid: ransom, XPGained: xp, Replay: replay,
@@ -415,4 +430,74 @@ func toCombatArmy(p sqlcdb.AppPlayer, v *ArmyView) combat.Army {
 		}
 	}
 	return a
+}
+
+// awardReputation credits the attacker's kingdom for a raid.
+//
+// Scaled by the Might gap, so punching up is worth more than farming down — the
+// alternative rewards a kingdom for finding the weakest opponents, which is the
+// opposite of what a leaderboard should encourage. Capped per member per day so
+// one obsessive player cannot carry a kingdom alone.
+func (d Deps) awardReputation(ctx context.Context, q *sqlcdb.Queries, me sqlcdb.AppPlayer,
+	repBonusBP int64, won bool, myMight, theirMight int64, now time.Time) error {
+
+	if me.KingdomID == nil {
+		return nil
+	}
+	cfg := d.Config.Kingdoms.Reputation
+
+	var rep int64 = 2 // a loss still shows you turned up
+	if won {
+		if myMight < 1 {
+			myMight = 1
+		}
+		ratioBP := theirMight * 10000 / myMight
+		rep = 8 * ratioBP / 10000
+		if rep < 3 {
+			rep = 3
+		}
+		if rep > 40 {
+			rep = 40
+		}
+	}
+	if repBonusBP > 0 {
+		rep = rep * (10000 + repBonusBP) / 10000
+	}
+
+	today := int64(0)
+	if me.KingdomDay.Valid && sameDay(me.KingdomDay.Time, now) {
+		today = int64(me.KingdomRepToday)
+	}
+	remaining := cfg.DailyCapPerMember - today
+	if remaining <= 0 {
+		return nil
+	}
+	if rep > remaining {
+		rep = remaining
+	}
+
+	if _, err := q.BumpMemberReputation(ctx, sqlcdb.BumpMemberReputationParams{
+		ID: me.ID, KingdomRepToday: int32(rep), KingdomDay: pgtype.Date{Time: now, Valid: true},
+	}); err != nil {
+		return fmt.Errorf("member reputation: %w", err)
+	}
+	// Stored scaled so the nightly 2% decay does not round a small kingdom away.
+	if err := q.AddKingdomReputation(ctx, sqlcdb.AddKingdomReputationParams{
+		ID: *me.KingdomID, Reputation: rep * reputationScale,
+	}); err != nil {
+		return fmt.Errorf("kingdom reputation: %w", err)
+	}
+
+	// Reputation also levels the kingdom, so a warlike kingdom grows without
+	// anyone donating a coin.
+	k, err := q.LockKingdom(ctx, *me.KingdomID)
+	if err != nil {
+		return err
+	}
+	xp := rep * d.Config.Kingdoms.Donation.XPPerReputation
+	newLevel, _ := d.Config.KingdomLevelFor(k.Xp + xp)
+	_, err = q.AddKingdomTreasury(ctx, sqlcdb.AddKingdomTreasuryParams{
+		ID: k.ID, Treasury: 0, Xp: xp, Level: int32(newLevel),
+	})
+	return err
 }

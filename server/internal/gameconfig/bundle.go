@@ -29,18 +29,20 @@ type Bundle struct {
 	Items       ItemsConfig       `json:"items"`
 	Soldiers    SoldiersConfig    `json:"soldiers"`
 	Estates     EstatesConfig     `json:"estates"`
+	Kingdoms    KingdomsConfig    `json:"kingdoms"`
 
 	// Derived lookups, built once at load so hot paths never scan a slice.
-	jobByID         map[string]*Job
-	jobsAsc         []*Job // by unlock level then order
-	levelByIx       []Level
-	itemByID        map[string]*ItemDef
-	itemsBySlotTier map[string][]*ItemDef
-	tierByID        map[string]*Tier
-	tierIDs         []string // ascending by rank
-	soldierTypeByID map[string]*SoldierType
-	upgradeByID     map[string]*Upgrade
-	holdingByID     map[string]*Holding
+	jobByID            map[string]*Job
+	jobsAsc            []*Job // by unlock level then order
+	levelByIx          []Level
+	itemByID           map[string]*ItemDef
+	itemsBySlotTier    map[string][]*ItemDef
+	tierByID           map[string]*Tier
+	tierIDs            []string // ascending by rank
+	soldierTypeByID    map[string]*SoldierType
+	upgradeByID        map[string]*Upgrade
+	holdingByID        map[string]*Holding
+	kingdomUpgradeByID map[string]*Upgrade
 }
 
 type JobsConfig struct {
@@ -116,6 +118,7 @@ func LoadSeed() (*Bundle, error) {
 		{"seed/items.json", &b.Items},
 		{"seed/soldiers.json", &b.Soldiers},
 		{"seed/estates.json", &b.Estates},
+		{"seed/kingdoms.json", &b.Kingdoms},
 	} {
 		raw, err := seedFS.ReadFile(f.name)
 		if err != nil {
@@ -201,6 +204,15 @@ func (b *Bundle) build() error {
 			return fmt.Errorf("holding %q has %d costs for %d levels", h.ID, len(h.Costs), h.MaxLevel)
 		}
 		b.holdingByID[h.ID] = h
+	}
+
+	b.kingdomUpgradeByID = make(map[string]*Upgrade, len(b.Kingdoms.Upgrades))
+	for i := range b.Kingdoms.Upgrades {
+		u := &b.Kingdoms.Upgrades[i]
+		if len(u.Costs) != u.MaxLevel {
+			return fmt.Errorf("kingdom upgrade %q has %d costs for %d levels", u.ID, len(u.Costs), u.MaxLevel)
+		}
+		b.kingdomUpgradeByID[u.ID] = u
 	}
 
 	// Milestones must be ascending so the "highest reached" scan is a simple walk.

@@ -124,8 +124,15 @@ if st == 200:
     check("the replay has events to animate", len(rep["events"]) > 0, len(rep.get("events", [])))
     check("both armies are frozen into the replay",
           len(rep["attacker"]["units"]) > 0 and len(rep["defender"]["units"]) > 0)
-    check("energy was spent", res["snapshot"]["energy"]["current"] == before["energy"]["current"] - tv["energy_cost"],
-          (before["energy"]["current"], res["snapshot"]["energy"]["current"], tv["energy_cost"]))
+    # A raid that levels you up refills the pool, so the arithmetic only holds
+    # when no level was gained. Levels arrive far sooner since the curve was
+    # rebalanced, so this hit constantly and looked like a bug in the raid.
+    levelled = res["snapshot"]["player"]["level"] > before["player"]["level"]
+    check("energy was spent",
+          levelled or res["snapshot"]["energy"]["current"]
+              == before["energy"]["current"] - tv["energy_cost"],
+          (before["energy"]["current"], res["snapshot"]["energy"]["current"],
+           tv["energy_cost"], "levelled" if levelled else "no level"))
     check("xp was awarded", res["xp_gained"] > 0, res.get("xp_gained"))
     if res["won"]:
         check("winning moved gold when the target had any",

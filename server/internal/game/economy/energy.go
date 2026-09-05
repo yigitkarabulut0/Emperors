@@ -24,9 +24,19 @@ type EnergyState struct {
 // Note what this does NOT affect: the regeneration rate. Max Energy is a "how
 // long can I be away" stat; regen speed is a "how much do I earn per day" stat.
 // Keeping them separate is what stops a player from buying unbounded income.
-func MaxEnergy(cfg *gameconfig.Bundle, statEnergy int64, flatBonus int64) int64 {
+//
+// The level term exists because a pool that never grows makes the regen rate
+// irrelevant to anybody who is not checking in more often than it takes to fill.
+// With a 60-point pool at one a minute, a player with three sessions a day
+// captured 180 energy a day, and halving the regen period changed that number by
+// exactly zero -- the pool filled in half an hour and then stopped. Growing the
+// ceiling with level is what makes regen speed mean anything again.
+func MaxEnergy(cfg *gameconfig.Bundle, level int64, statEnergy int64, flatBonus int64) int64 {
 	e := cfg.Progression.Energy
-	m := e.BaseMax + e.PerStatPoint*statEnergy + flatBonus
+	if level < 1 {
+		level = 1
+	}
+	m := e.BaseMax + e.PerLevel*(level-1) + e.PerStatPoint*statEnergy + flatBonus
 	if m < 1 {
 		return 1
 	}

@@ -14,7 +14,7 @@ RAW="$ROOT/art/painted"
 OUT="$ROOT/client/assets/items"
 mkdir -p "$RAW" "$OUT"
 
-STYLE="Painted 2D RPG loot icon, mobile game inventory art. Rendered with real volume and material: polished steel with visible specular highlights, worn leather, warm gold trim. Dramatic rim lighting from the upper left, soft ambient occlusion, rich saturated colour. Clean semi-realistic painterly rendering, crisp edges, high contrast so it reads at small size. Single object centred, filling 85 percent of the frame, no hands, no character, no scene, no ground, no shadow cast on the background. Flat solid uniform mid-teal background RGB 45 110 110, no gradient, no vignette, no border, no text, no watermark."
+STYLE="Hand-painted stylised fantasy game art, the look of a Blizzard card illustration. Bold exaggerated silhouette, chunky heroic proportions, thick forms. Painterly brushwork with visible strokes, warm rim lighting, deep saturated colour, weathered and battle-worn materials. Heavy contrast between light and shadow, dark rich shadows. Not photorealistic, not flat vector, not cute, not childish. Single object centred filling 85 percent of the frame, no hands, no character, no scene, no ground, no cast shadow. Flat solid uniform mid-teal background RGB 45 110 110, no gradient, no vignette, no border, no text, no watermark."
 
 # How much of the finished icon is still background teal. rembg usually cuts
 # cleanly, but on some compositions it returns the whole frame -- and a shipped

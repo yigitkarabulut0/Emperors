@@ -29,6 +29,13 @@ SLUGS = ["grapes","strawberries","wheat","orchard","timber","fish","stone","iron
 ENERGY = [1,2,3,4,6,8,10,13,16,20,25,31,38,46,55]
 UNLOCK = [1,3,5,8,11,14,18,22,26,30,35,40,45,52,60]
 GPE_BASE, GPE_STEP = 2.00, 1.22
+# Experience per energy ramps the way gold does, one step per rung. It used to be
+# (1.40 + 0.02 * unlock_level), which rises 1.3x across the whole ladder while the
+# experience a level costs rises about 400x -- so every rung earned gold faster
+# and levels slower, and the curve flattened into a wall. This rises 5.5x.
+# Deliberately shallower than gold's 13.3x: the gold ladder has to stay the
+# steeper one, or "use the best job you can afford" stops being a gold decision.
+XPE_BASE, XPE_STEP = 2.00, 1.14
 
 jobs = []
 for i, (name, slug, e, u) in enumerate(zip(NAMES, SLUGS, ENERGY, UNLOCK), start=1):
@@ -37,7 +44,7 @@ for i, (name, slug, e, u) in enumerate(zip(NAMES, SLUGS, ENERGY, UNLOCK), start=
         "id": slug, "order": i, "name": name,
         "unlock_level": u, "energy_cost": e,
         "base_gold": round(e * gpe),
-        "base_xp": max(2, round(e * (1.40 + 0.02 * u))),
+        "base_xp": max(2, round(e * XPE_BASE * XPE_STEP ** max(0, i - 2))),
     })
 
 # Milestones replace rather than stack: reaching 50 means +10% total, not +15%.
@@ -52,7 +59,7 @@ MILESTONES = [
 
 emit("jobs.json", json.dumps({
     "_comment": "Collect ladder. gold = round(energy * 2.00 * 1.22^max(0,n-2)); "
-                "xp = max(2, round(energy * (1.40 + 0.02*unlock_level))). "
+                "xp = max(2, round(energy * 2.00 * 1.14^max(0,n-2))). "
                 "Gold-per-energy rises 13.3x across the ladder so the best affordable "
                 "job is always correct, while leftover energy still earns something. "
                 "Milestone bonuses REPLACE (max +30%), they do not stack.",
@@ -83,14 +90,22 @@ emit("progression.json", json.dumps({
                 "bounds the entire gold supply.",
     "level_cap": LEVEL_CAP,
     "energy": {
-        "base_max": 60,
-        "per_stat_point": 3,
-        "regen_base_seconds": 60,
+        "base_max": 120,
+        # The ceiling grows on its own, no stat point required. Without this the
+        # pool fills during any gap longer than it takes to fill, and every
+        # further minute of regeneration is thrown away -- which made the regen
+        # rate a number that only mattered to somebody checking in every half
+        # hour. See scripts/pace.py for the measurement.
+        "per_level": 4,
+        "per_stat_point": 5,
+        "regen_base_seconds": 30,
         "overflow": False,
         "levelup_refill": True,
         "regen_bonus_cap_bp": 6000,
     },
-    "stat_points_per_level": 1,
+    # The design specifies 3. It shipped as 1, so every level-up delivered a
+    # third of the intended reward.
+    "stat_points_per_level": 3,
     # The Treasury is the game's largest gold sink and its only real risk
     # decision: banked gold cannot be stolen, but banking it costs. The fee is
     # what stops "deposit everything, always" from being free safety.

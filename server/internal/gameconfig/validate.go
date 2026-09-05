@@ -8,6 +8,10 @@ import (
 // Validate rejects a bundle that would break the game. It runs on the embedded
 // seed at startup and, crucially, on every candidate the admin panel tries to
 // publish — a bad publish must fail before it reaches players, not after.
+// How much experience per energy must improve from the first job to the last.
+// Not a design target -- a floor below which the ladder stops being a ladder.
+const minXPERamp = 4.0
+
 func (b *Bundle) Validate() error {
 	var p []string
 
@@ -57,6 +61,35 @@ func (b *Bundle) Validate() error {
 		prev, prevName = gpe, j.ID
 	}
 
+	// Experience per energy has to climb too, and by enough to matter.
+	//
+	// This is the check that would have caught the curve that shipped: gold per
+	// energy rose 13.3x across the ladder while experience rose 1.3x, and the
+	// experience a level costs rises about 400x. Every rung therefore earned gold
+	// faster and levels slower, and progression flattened into a wall that took a
+	// three-sessions-a-day player 700 days to reach the cap.
+	var prevXPE float64
+	var prevXPEName string
+	var firstXPE, lastXPE float64
+	for _, j := range b.jobsAsc {
+		xpe := float64(j.BaseXP) / float64(j.EnergyCost)
+		if firstXPE == 0 {
+			firstXPE = xpe
+		}
+		lastXPE = xpe
+		if prevXPE > 0 && xpe < prevXPE {
+			p = append(p, fmt.Sprintf(
+				"job %q has worse xp/energy (%.2f) than the earlier %q (%.2f) — levelling would slow down as you climb",
+				j.ID, xpe, prevXPEName, prevXPE))
+		}
+		prevXPE, prevXPEName = xpe, j.ID
+	}
+	if firstXPE > 0 && lastXPE/firstXPE < minXPERamp {
+		p = append(p, fmt.Sprintf(
+			"xp/energy only rises %.1fx across the ladder (%.2f to %.2f); below %.1fx the level curve flattens into a wall",
+			lastXPE/firstXPE, firstXPE, lastXPE, minXPERamp))
+	}
+
 	// --- milestones ---
 	var lastBP int64 = -1
 	for _, m := range b.Jobs.Milestones {
@@ -72,6 +105,22 @@ func (b *Bundle) Validate() error {
 	// --- progression ---
 	if b.Progression.LevelCap < 1 {
 		p = append(p, "level_cap must be at least 1")
+	}
+
+	// The pool must hold at least an hour of regeneration.
+	//
+	// Otherwise the regen rate is a number that only matters to somebody checking
+	// in more often than it takes to fill, and everyone else's extra minutes are
+	// discarded on arrival. A 60-point pool at one a minute filled in half an
+	// hour, so halving the regen period changed a three-sessions-a-day player's
+	// daily energy by exactly zero.
+	if e := b.Progression.Energy; e.RegenBaseSeconds > 0 {
+		perHour := 3600 / e.RegenBaseSeconds
+		if e.BaseMax < perHour {
+			p = append(p, fmt.Sprintf(
+				"energy base_max %d holds less than one hour of regen (%d at one per %ds) — the regen rate would not reach anyone who checks in less often",
+				e.BaseMax, perHour, e.RegenBaseSeconds))
+		}
 	}
 	for l := 1; l < b.Progression.LevelCap; l++ {
 		if b.levelByIx[l].Level != l {

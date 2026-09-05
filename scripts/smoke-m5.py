@@ -136,17 +136,26 @@ check("eight hours idle is worth less than one active session",
 base_tax = e["tax"]["per_hour_milli"]
 
 print("\n== the intended first-session beat ==")
-# The design prices Granary Lv1 at 400 gold "so the player is ~200 short,
-# creating a clear 60-second goal". A first session ends around 322 gold, so this
-# asserts the beat still lands rather than quietly drifting out of reach.
+# This used to assert the opposite: the Granary was priced at 400 so a first
+# session ended about 200 short, "creating a clear 60-second goal".
+#
+# The level curve was rebalanced and a first sitting now ends around 3,000 gold,
+# so the beat is inverted on purpose -- the first permanent upgrade is something
+# you buy in your first session rather than something you come back for. The
+# owner's complaint was that progression was too slow; a deliberate wall in the
+# first ten minutes is the wrong side of that trade.
+#
+# What still has to hold is that the upgrade is REACHABLE and the purchase works.
 gran = next(u for u in e["upgrades"] if u["id"] == "granary")
 _, cur = call("GET", "/v1/state", token=token)
 gold = int(cur["player"]["gold"])
-check("the Granary is deliberately just out of reach after one session",
-      gold < gran["next_cost"] and gold > gran["next_cost"] * 0.5,
-      f"{gold} gold vs {gran['next_cost']} cost")
-st, poor = call("POST", "/v1/estates/upgrade", {"id": "granary", "action_seq": seq(token)}, token=token)
-check("and the server refuses it", st == 409 and poor.get("code") == "not_enough_gold", (st, poor))
+check("a first session can afford its first permanent upgrade",
+      gold >= gran["next_cost"], f"{gold} gold vs {gran['next_cost']} cost")
+st, bought = call("POST", "/v1/estates/upgrade", {"id": "granary", "action_seq": seq(token)}, token=token)
+check("and buying it succeeds", st == 200, (st, bought))
+if st == 200:
+    g2 = next(u for u in bought["upgrades"] if u["id"] == "granary")
+    check("the Granary gained a level", g2["level"] == gran["level"] + 1, g2)
 
 print("\n== territory ==")
 # Cheapest first, which is also the order a player can actually afford.

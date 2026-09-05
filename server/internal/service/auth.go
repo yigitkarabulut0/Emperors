@@ -43,7 +43,7 @@ func (d Deps) Register(ctx context.Context, username, password, userAgent string
 
 		// A new player starts with a full bar so the first session is not spent
 		// waiting for a meter to fill.
-		startEnergy := economy.MaxEnergy(d.Config, 0, 0) * economy.MilliPerEnergy
+		startEnergy := economy.MaxEnergy(d.Config, 1, 0, 0) * economy.MilliPerEnergy
 
 		p, err := q.CreatePlayer(ctx, sqlcdb.CreatePlayerParams{
 			Username:           canonical,

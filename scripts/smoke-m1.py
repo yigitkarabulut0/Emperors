@@ -75,7 +75,15 @@ check("state returns 200", st == 200, st)
 p, e = s["player"], s["energy"]
 print(f"        lv{p['level']} gold={p['gold']} xp={p['xp']}/{p['xp_to_next']} seq={p['action_seq']}")
 print(f"        energy {e['current']}/{e['max']}, regen {e['regen_period_ms']}ms, full in {e['seconds_to_full']}s")
-check("new player starts with a full bar", e["current"] == e["max"] == 60, e)
+check("new player starts with a full bar", e["current"] == e["max"] > 0, e)
+# The pool has to hold at least an hour of regeneration, or every minute a player
+# spends away past the fill time is discarded and the regen rate stops reaching
+# anyone who checks in less often than that. gameconfig.Validate blocks a publish
+# that breaks this; asserting it here too catches a live server running an older
+# published version.
+check("the pool holds at least an hour of regen",
+      e["max"] >= 3600 // (e["regen_period_ms"] // 1000),
+      f'{e["max"]} max at one per {e["regen_period_ms"] // 1000}s')
 unlocked = [j for j in s["jobs"] if j["unlocked"]]
 check("exactly one job unlocked at level 1", len(unlocked) == 1, [j["id"] for j in unlocked])
 check("locked jobs are still listed (so the ladder is visible)", len(s["jobs"]) == 15, len(s["jobs"]))

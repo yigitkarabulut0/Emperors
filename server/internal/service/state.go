@@ -137,7 +137,7 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 
 // settleEnergy materialises energy up to now and returns the derived limits.
 func settleEnergy(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, eff estates.Effects, now time.Time) (economy.EnergyState, int64, int64) {
-	maxEnergy := economy.MaxEnergy(cfg, int64(p.StatEnergy), eff.MaxEnergyFlat)
+	maxEnergy := economy.MaxEnergy(cfg, int64(p.Level), int64(p.StatEnergy), eff.MaxEnergyFlat)
 	period := economy.RegenPeriodMillis(cfg, eff.Bonuses)
 	state := economy.Settle(
 		economy.EnergyState{Milli: p.EnergyMilli, UpdatedAt: p.EnergyUpdatedAt},

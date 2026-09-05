@@ -323,7 +323,7 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 
 		final := spent
 		if up.Refilled {
-			final = economy.Refill(economy.MaxEnergy(d.Config, int64(me.StatEnergy), eff.MaxEnergyFlat), now)
+			final = economy.Refill(economy.MaxEnergy(d.Config, int64(me.Level), int64(me.StatEnergy), eff.MaxEnergyFlat), now)
 		}
 
 		afterAtt, err := q.ApplyBattleAttacker(ctx, sqlcdb.ApplyBattleAttackerParams{

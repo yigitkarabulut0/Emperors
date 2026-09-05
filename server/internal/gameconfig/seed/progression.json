@@ -2,14 +2,15 @@
   "_comment": "xp_to_next(L) = floor(1.7*L^2.2 + 10L + 5). Energy regen is FLAT: Max Energy is a 'how long can I be away' stat, regen speed is a 'how much do I earn per day' stat. Because regen does not scale with max, buying Max Energy cannot inflate daily income \u2014 this is what bounds the entire gold supply.",
   "level_cap": 60,
   "energy": {
-    "base_max": 60,
-    "per_stat_point": 3,
-    "regen_base_seconds": 60,
+    "base_max": 120,
+    "per_level": 4,
+    "per_stat_point": 5,
+    "regen_base_seconds": 30,
     "overflow": false,
     "levelup_refill": true,
     "regen_bonus_cap_bp": 6000
   },
-  "stat_points_per_level": 1,
+  "stat_points_per_level": 3,
   "treasury": {
     "deposit_fee_bp": 1000
   },

@@ -123,6 +123,7 @@ type TreasuryConfig struct {
 
 type EnergyConfig struct {
 	BaseMax          int64 `json:"base_max"`
+	PerLevel         int64 `json:"per_level"`
 	PerStatPoint     int64 `json:"per_stat_point"`
 	RegenBaseSeconds int64 `json:"regen_base_seconds"`
 	Overflow         bool  `json:"overflow"`

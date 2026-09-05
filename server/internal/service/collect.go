@@ -97,7 +97,7 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 		// level-up would silently refund the cost of the collect that caused it.
 		final := spent
 		if up.Refilled {
-			final = economy.Refill(economy.MaxEnergy(d.Config, int64(p.StatEnergy), eff.MaxEnergyFlat), now)
+			final = economy.Refill(economy.MaxEnergy(d.Config, int64(p.Level), int64(p.StatEnergy), eff.MaxEnergyFlat), now)
 		}
 
 		if _, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{

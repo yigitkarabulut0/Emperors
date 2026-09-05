@@ -27,10 +27,16 @@ func TestSettleFrequentPollingDoesNotLoseEnergy(t *testing.T) {
 	// would regenerate strictly slower than one that polls once a minute — a
 	// bug that only shows up as "my energy fills slower than my friend's".
 	c := cfg(t)
-	period := RegenPeriodMillis(c, Bonuses{}) // 60_000 ms
-	maxE := int64(60)
+	period := RegenPeriodMillis(c, Bonuses{})
 
-	rare := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, maxE, period, t0.Add(59*time.Minute))
+	// Derived from the configured period rather than hardcoded, and the ceiling
+	// is set above the answer, so this stays a test of Settle rather than a
+	// second copy of the balance numbers that fails on every retune.
+	const window = 59 * time.Minute
+	want := int64(window/time.Millisecond) / period
+	maxE := want * 2
+
+	rare := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, maxE, period, t0.Add(window))
 
 	frequent := EnergyState{Milli: 0, UpdatedAt: t0}
 	for i := 1; i <= 59*60; i++ { // once a second for 59 minutes
@@ -41,8 +47,8 @@ func TestSettleFrequentPollingDoesNotLoseEnergy(t *testing.T) {
 		t.Errorf("polling frequency changed the result: rare=%d frequent=%d (lost %d milli)",
 			rare.Milli, frequent.Milli, rare.Milli-frequent.Milli)
 	}
-	if got := Whole(rare); got != 59 {
-		t.Errorf("59 minutes at 1/min = %d energy, want 59", got)
+	if got := Whole(rare); got != want {
+		t.Errorf("%v at one per %dms = %d energy, want %d", window, period, got, want)
 	}
 }
 
@@ -113,10 +119,23 @@ func TestMaxEnergyDoesNotChangeRegenRate(t *testing.T) {
 	// throughput, income would be unbounded.
 	c := cfg(t)
 	period := RegenPeriodMillis(c, Bonuses{})
-	small := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, MaxEnergy(c, 0, 0), period, t0.Add(30*time.Minute))
-	large := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, MaxEnergy(c, 100, 0), period, t0.Add(30*time.Minute))
+	small := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, MaxEnergy(c, 1, 0, 0), period, t0.Add(10*time.Minute))
+	large := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, MaxEnergy(c, 1, 100, 0), period, t0.Add(10*time.Minute))
 	if small.Milli != large.Milli {
 		t.Errorf("max energy changed accrual rate: %d vs %d", small.Milli, large.Milli)
+	}
+
+	// The same has to hold for the level term. The ceiling now grows with level
+	// so that a long absence is not thrown away; if it also sped regeneration up,
+	// income would compound with level and the gold supply would be unbounded --
+	// which is the one invariant the whole economy rests on.
+	lowLevel := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, MaxEnergy(c, 1, 0, 0), period, t0.Add(10*time.Minute))
+	highLevel := Settle(EnergyState{Milli: 0, UpdatedAt: t0}, MaxEnergy(c, 60, 0, 0), period, t0.Add(10*time.Minute))
+	if lowLevel.Milli != highLevel.Milli {
+		t.Errorf("level changed accrual rate: %d vs %d", lowLevel.Milli, highLevel.Milli)
+	}
+	if MaxEnergy(c, 60, 0, 0) <= MaxEnergy(c, 1, 0, 0) {
+		t.Error("the pool did not grow with level, so a long absence is still wasted")
 	}
 }
 
@@ -165,8 +184,13 @@ func TestAwardXPHandlesMultipleLevelsAtOnce(t *testing.T) {
 	if up.LevelsGained < 2 {
 		t.Fatalf("a huge award gained only %d level(s)", up.LevelsGained)
 	}
-	if up.StatPoints != int64(up.LevelsGained) {
-		t.Errorf("stat points %d != levels gained %d", up.StatPoints, up.LevelsGained)
+	perLevel := int64(c.Progression.StatPointsPerLevel)
+	if perLevel < 1 {
+		t.Fatal("stat_points_per_level is not configured")
+	}
+	if up.StatPoints != int64(up.LevelsGained)*perLevel {
+		t.Errorf("stat points %d != %d levels x %d per level",
+			up.StatPoints, up.LevelsGained, perLevel)
 	}
 	if !up.Refilled {
 		t.Error("levelling up should refill energy")

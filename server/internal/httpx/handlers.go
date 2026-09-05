@@ -74,6 +74,8 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "already_purchased", "someone already took that one")
 	case errors.Is(err, service.ErrInvalidAmount):
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "amount must be positive")
+	case errors.Is(err, service.ErrNothingToBuy):
+		WriteProblem(w, r, http.StatusConflict, "nothing_to_buy", "that would do nothing right now")
 	case errors.Is(err, service.ErrNotEnoughDiamonds):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_diamonds", "not enough diamonds")
 	case errors.Is(err, service.ErrNotEnoughGold):
@@ -864,6 +866,47 @@ func (a *api) rerollShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v, err := a.s().RerollShop(r.Context(), pid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+
+// --- the diamond store ---
+//
+// Sits on the Shop screen beside the Market. Diamonds never buy gold and never
+// buy power; these are convenience and protection.
+
+func (a *api) diamondStore(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetStore(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *api) buyStoreGood(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req struct {
+		Good      string `json:"good"`
+		ActionSeq int64  `json:"action_seq"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().BuyStoreGood(r.Context(), pid, req.Good, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return

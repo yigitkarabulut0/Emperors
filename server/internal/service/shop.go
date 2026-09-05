@@ -19,6 +19,7 @@ var (
 	ErrAlreadyPurchased  = errors.New("that offer is already sold")
 	ErrNotEnoughGold     = errors.New("not enough gold")
 	ErrNotEnoughDiamonds = errors.New("not enough diamonds")
+	ErrNothingToBuy      = errors.New("that would do nothing right now")
 	ErrInventoryFull     = errors.New("inventory is full")
 	ErrShopStale         = errors.New("the shop has refreshed")
 )

@@ -14,6 +14,11 @@
     "deposit_fee_bp": 1000
   },
   "levelup_diamonds": 5,
+  "store": {
+    "energy_refill_diamonds": 12,
+    "shield_diamonds": 20,
+    "shield_hours": 8
+  },
   "sections": [
     {
       "id": "jobs",

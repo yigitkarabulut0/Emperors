@@ -100,6 +100,17 @@ emit("progression.json", json.dumps({
     # it is the one reward that cannot be farmed faster by playing more, since
     # the XP curve already bounds it.
     "levelup_diamonds": 5,
+    # What diamonds buy.
+    #
+    # Never gold and never power -- that rule is what keeps the premium currency
+    # from being a shortcut past the game. These are the two things a player
+    # actually wants and cannot otherwise have: the pool back before it refills
+    # on its own, and a night where nobody can raid you.
+    "store": {
+        "energy_refill_diamonds": 12,
+        "shield_diamonds": 20,
+        "shield_hours": 8,
+    },
     # Which sections a player can reach, and when.
     #
     # A new player meeting nine tabs at once cannot tell which one matters, and

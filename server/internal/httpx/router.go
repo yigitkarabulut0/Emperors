@@ -85,6 +85,9 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/shop/buy", a.buy)
 			r.Post("/shop/reroll", a.rerollShop)
 
+			r.Get("/store", a.diamondStore)
+			r.Post("/store/buy", a.buyStoreGood)
+
 			r.Get("/inventory", a.inventory)
 			r.Post("/inventory/equip", a.equip)
 			r.Post("/inventory/unequip", a.unequip)

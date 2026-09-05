@@ -17,8 +17,8 @@ extends Control
 ## Keep, which made the Keep a grab bag of five unrelated things and put the
 ## clan system two taps deep behind a line of text.
 const SECTIONS := [
-	{"id": "jobs", "icon": "fields", "glyph": "J", "label": "Jobs"},
 	{"id": "hero", "icon": "keep", "glyph": "H", "label": "Hero"},
+	{"id": "jobs", "icon": "fields", "glyph": "J", "label": "Jobs"},
 	{"id": "shop", "icon": "market", "glyph": "S", "label": "Shop"},
 	{"id": "items", "icon": "armory", "glyph": "I", "label": "Items"},
 	{"id": "estates", "icon": "territory", "glyph": "E", "label": "Estates"},

@@ -31,8 +31,12 @@ type Querier interface {
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
 	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
 	BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error)
+	// Spends diamonds and refills the energy pool in one statement. The WHERE is the
+	// guard: no row comes back if the player cannot afford it.
+	BuyEnergyRefill(ctx context.Context, arg BuyEnergyRefillParams) (AppPlayer, error)
 	BuyHoldingLevel(ctx context.Context, arg BuyHoldingLevelParams) (AppPlayerHolding, error)
 	BuyKingdomUpgradeLevel(ctx context.Context, arg BuyKingdomUpgradeLevelParams) (AppKingdomUpgrade, error)
+	BuyShield(ctx context.Context, arg BuyShieldParams) (AppPlayer, error)
 	BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) (AppPlayer, error)
 	// Buys one level. The current level is in the WHERE clause, so two concurrent
 	// taps cannot both see the same level and both succeed.

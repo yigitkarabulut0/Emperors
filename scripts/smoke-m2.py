@@ -153,6 +153,49 @@ check("gold went up by exactly the sale", int(sell["gold_left"]) == gold_before 
 st, inv4 = call("GET", "/v1/inventory", token=token)
 check("the item is gone", all(i["id"] != item["id"] for i in inv4["items"]))
 
+# --- the diamond store ----------------------------------------------------------
+#
+# Sits on the Shop screen beside the Market. Diamonds never buy gold and never
+# buy power -- these are convenience and protection, and the store refuses to
+# sell something that would do nothing.
+print("\n== the diamond store ==")
+st, store = call("GET", "/v1/store", token=token)
+check("the store returns 200", st == 200, st)
+ids = [g["id"] for g in store.get("goods", [])]
+check("it sells energy and protection", ids == ["energy_refill", "shield"], ids)
+check("it reports what you can spend", "diamonds" in store, store.keys())
+for g in store.get("goods", []):
+    check(f"{g['id']} quotes a price and says whether it is worth buying",
+          g.get("diamonds", 0) > 0 and "useful" in g, g)
+
+st, before = call("GET", "/v1/state", token=token)
+have = int(before["player"]["diamonds"])
+refill_cost = next(g["diamonds"] for g in store["goods"] if g["id"] == "energy_refill")
+
+if have >= refill_cost and before["energy"]["current"] < before["energy"]["max"]:
+    st, bought = call("POST", "/v1/store/buy",
+                      {"good": "energy_refill", "action_seq": next_seq(token)}, token=token)
+    check("buying a refill returns 200", st == 200, (st, bought))
+    check("the pool is full afterwards",
+          bought["energy"]["current"] == bought["energy"]["max"], bought.get("energy"))
+    check("diamonds were spent, and gold was not",
+          int(bought["player"]["diamonds"]) == have - refill_cost
+          and bought["player"]["gold"] == before["player"]["gold"],
+          (have, refill_cost, bought["player"]["diamonds"]))
+
+    # Refusing to sell a refill to a full pool is the point: a premium currency
+    # you cannot waste by accident is one people trust.
+    st, again = call("POST", "/v1/store/buy",
+                     {"good": "energy_refill", "action_seq": next_seq(token)}, token=token)
+    check("it will not sell a refill to a full pool",
+          st == 409 and again.get("code") == "nothing_to_buy", (st, again))
+else:
+    print(f"        (need {refill_cost} diamonds and a partial pool — skipped)")
+
+st, bogus = call("POST", "/v1/store/buy",
+                 {"good": "a_castle", "action_seq": next_seq(token)}, token=token)
+check("an unknown good is refused", st == 404, (st, bogus))
+
 # --- diamonds and rerolls -------------------------------------------------------
 #
 # Diamonds were shown in the top bar with no way to earn one and nothing to
@@ -193,7 +236,12 @@ if have >= cost:
     check("rerolling with no diamonds is refused cleanly",
           st == 409 and r.get("code") == "not_enough_diamonds", (st, r))
 else:
-    check("a first reroll is affordable after a few levels", False, (have, cost))
+    # The store section above spends from the same purse, so being broke here is
+    # ordinary. The refusal is still worth checking, and it is the half that
+    # matters most: running out must not produce a 500.
+    st, r = call("POST", "/v1/shop/reroll", {"action_seq": next_seq(token)}, token=token)
+    check("rerolling with no diamonds is refused cleanly",
+          st == 409 and r.get("code") == "not_enough_diamonds", (st, r))
 
 print()
 if FAILURES:

@@ -30,3 +30,18 @@ SET gold = gold + $2, treasury_gold = treasury_gold - $2,
     action_seq = $3, last_seen_at = now()
 WHERE id = $1 AND treasury_gold >= $2
 RETURNING *;
+
+-- Spends diamonds and refills the energy pool in one statement. The WHERE is the
+-- guard: no row comes back if the player cannot afford it.
+-- name: BuyEnergyRefill :one
+UPDATE app.players
+SET diamonds = diamonds - $2, energy_milli = $3, energy_updated_at = $4,
+    action_seq = $5, last_seen_at = now()
+WHERE id = $1 AND diamonds >= $2
+RETURNING *;
+
+-- name: BuyShield :one
+UPDATE app.players
+SET diamonds = diamonds - $2, shield_until = $3, action_seq = $4, last_seen_at = now()
+WHERE id = $1 AND diamonds >= $2
+RETURNING *;

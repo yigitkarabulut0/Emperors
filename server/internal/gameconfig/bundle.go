@@ -75,6 +75,7 @@ type ProgressionConfig struct {
 	Treasury           TreasuryConfig `json:"treasury"`
 	LevelupDiamonds    int64          `json:"levelup_diamonds"`
 	Sections           []SectionGate  `json:"sections"`
+	Store              StoreConfig    `json:"store"`
 	Avatars            []string       `json:"avatars"`
 	Levels             []Level        `json:"levels"`
 }
@@ -100,6 +101,14 @@ func (b *Bundle) DefaultAvatar() string {
 		return "knight"
 	}
 	return b.Progression.Avatars[0]
+}
+
+// StoreConfig is what diamonds buy. Never gold and never power -- that rule is
+// what keeps the premium currency from being a shortcut past the game.
+type StoreConfig struct {
+	EnergyRefillDiamonds int64 `json:"energy_refill_diamonds"`
+	ShieldDiamonds       int64 `json:"shield_diamonds"`
+	ShieldHours          int64 `json:"shield_hours"`
 }
 
 // SectionGate is one navigation entry and the level that reveals it.

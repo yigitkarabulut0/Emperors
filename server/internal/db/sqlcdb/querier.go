@@ -28,6 +28,7 @@ type Querier interface {
 	// action sequence. Energy is written back already settled by the caller.
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
 	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
+	BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (AppPlayer, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
 	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
 	BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error)

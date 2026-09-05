@@ -285,6 +285,58 @@ st, ghost = call("POST", "/v1/army/dismiss",
 check("dismissing an already-dismissed soldier is refused",
       st == 404 and ghost.get("code") == "not_found", (st, ghost))
 
+# --- equip the best ------------------------------------------------------------
+#
+# "Best" is item Power -- the same figure printed on every card, so the button
+# agrees with what the player can see. Which unit holds an item does not change
+# Might (it is 2*sqrt(sum ATK * sum EHP), and both are plain sums), but the hero
+# is served first anyway: it is your character, it is on every screen, and it
+# cannot be dismissed.
+print("\n== equip the best ==")
+st, a8 = call("GET", "/v1/army", token=token)
+before_might = a8["totals"]["might"]
+
+st, auto = call("POST", "/v1/army/autoequip",
+                {"scope": "army", "action_seq": seq(token)}, token=token)
+check("auto-equip returns 200", st == 200, (st, auto))
+check("it reports how many it moved", "equipped" in auto, auto.keys())
+check("might did not go down", auto["army"]["totals"]["might"] >= before_might,
+      (before_might, auto["army"]["totals"]["might"]))
+
+st, again2 = call("POST", "/v1/army/autoequip",
+                  {"scope": "army", "action_seq": seq(token)}, token=token)
+check("running it twice changes nothing the second time",
+      st == 200 and again2.get("equipped") == 0, (st, again2.get("equipped")))
+
+# One item cannot end up on two units. There are two holder columns, so this is
+# not something the schema alone guarantees.
+st, inv3 = call("GET", "/v1/inventory", token=token)
+worn = [i["equipped_on"] for i in inv3["items"] if i.get("equipped_on")]
+by_holder_slot = [(i["equipped_on"], i["slot"]) for i in inv3["items"] if i.get("equipped_on")]
+check("nobody is wearing two items in one slot",
+      len(by_holder_slot) == len(set(by_holder_slot)), by_holder_slot)
+
+st, a9 = call("GET", "/v1/army", token=token)
+hero_worn = [k for k, v in (a9["hero"].get("equipped") or {}).items() if v]
+if worn:
+    check("the hero was served first", len(hero_worn) > 0, a9["hero"].get("equipped"))
+
+# The hero pass must not strip a soldier to dress you.
+soldiers_before = sum(1 for x in a9["slots"] if x.get("soldier")
+                      and any((x["soldier"].get("equipped") or {}).values()))
+st, heroauto = call("POST", "/v1/army/autoequip",
+                    {"scope": "hero", "action_seq": seq(token)}, token=token)
+check("a hero-only pass returns 200", st == 200, st)
+st, a10 = call("GET", "/v1/army", token=token)
+soldiers_after = sum(1 for x in a10["slots"] if x.get("soldier")
+                     and any((x["soldier"].get("equipped") or {}).values()))
+check("equipping the hero did not undress the soldiers",
+      soldiers_after >= soldiers_before, (soldiers_before, soldiers_after))
+
+st, bad = call("POST", "/v1/army/autoequip",
+               {"scope": "everything", "action_seq": seq(token)}, token=token)
+check("an unknown scope is refused", st == 404, (st, bad))
+
 print()
 if FAILURES:
     print(f"{len(FAILURES)} FAILED: " + ", ".join(FAILURES))

@@ -13,6 +13,7 @@ var _action: Button
 var _action_sub: Label
 var _busy := false
 var _dev_sheet_done := false
+var _auto: Button
 
 
 func _ready() -> void:
@@ -25,6 +26,14 @@ func _ready() -> void:
 	head.add_child(_might)
 	_sub = UI.label("", 13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	head.add_child(_sub)
+
+	# Dressing four units from a bag of 150 by hand is busywork, and the server
+	# already knows what "best" means. You first, then the strongest soldier down.
+	_auto = UI.ghost_button("EQUIP EVERYONE'S BEST GEAR", 13)
+	_auto.custom_minimum_size = Vector2(0, 38)
+	_auto.pressed.connect(_auto_equip)
+	head.add_child(UI.spacer(6))
+	head.add_child(_auto)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -337,6 +346,26 @@ func _do_action() -> void:
 			await _post("/v1/army/train", {"soldier_id": str(sold.get("id", "")), "action_seq": _next_seq()})
 
 	_busy = false
+	await GameState.refresh()
+	await _reload()
+
+
+func _auto_equip() -> void:
+	if _busy:
+		return
+	_busy = true
+	_auto.disabled = true
+	_refresh_action()
+	var res: Api.Response = await Api.post_json("/v1/army/autoequip",
+		{"scope": "army", "action_seq": _next_seq()})
+	_busy = false
+	_auto.disabled = false
+	if res.ok:
+		var n := int(res.data.get("equipped", 0))
+		GameState.action_failed.emit(
+			"Nothing better to wear" if n == 0 else "Equipped %d item%s" % [n, "" if n == 1 else "s"])
+	else:
+		GameState.action_failed.emit(res.error)
 	await GameState.refresh()
 	await _reload()
 

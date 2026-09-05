@@ -913,3 +913,26 @@ func (a *api) buyStoreGood(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJSON(w, http.StatusOK, v)
 }
+
+
+// autoEquip puts the best gear the player owns on the hero, or on everyone.
+func (a *api) autoEquip(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req struct {
+		Scope     string `json:"scope"`
+		ActionSeq int64  `json:"action_seq"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().AutoEquip(r.Context(), pid, req.Scope, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}

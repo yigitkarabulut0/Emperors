@@ -202,6 +202,15 @@ func _render_hero() -> void:
 	for slot in ["weapon", "armor", "horse"]:
 		gear.add_child(_gear_button(slot, worn.get(slot)))
 
+	# Picking the best of three slots out of a bag of 150 by hand is busywork, and
+	# the server already knows what "best" means -- it is the Power number on
+	# every card.
+	var auto := UI.ghost_button("EQUIP MY BEST GEAR", 13)
+	auto.custom_minimum_size = Vector2(0, 38)
+	auto.disabled = _busy
+	auto.pressed.connect(_auto_equip.bind("hero"))
+	col.add_child(auto)
+
 	# Stat points were displayed with nowhere to spend them. They are the whole
 	# reason a player with no soldiers still gets stronger every level.
 	var unspent := int(p.get("stat_points_unspent", 0))
@@ -250,6 +259,25 @@ func _gear_button(slot: String, item: Variant) -> Control:
 		img.modulate = Palette.EMPTY_SLOT
 	b.add_child(img)
 	return b
+
+
+func _auto_equip(scope: String) -> void:
+	if _busy:
+		return
+	_busy = true
+	_rebuild()
+	var res: Api.Response = await Api.post_json("/v1/army/autoequip",
+		{"scope": scope, "action_seq": int(GameState.player().get("action_seq", 0)) + 1})
+	_busy = false
+	if res.ok:
+		var n := int(res.data.get("equipped", 0))
+		GameState.action_failed.emit(
+			"Nothing better to wear" if n == 0 else "Equipped %d item%s" % [n, "" if n == 1 else "s"])
+		await GameState.refresh()
+		await _reload()
+	else:
+		GameState.action_failed.emit(res.error)
+	_rebuild()
 
 
 func _spend_point(stat: String) -> void:

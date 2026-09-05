@@ -48,3 +48,6 @@ WHERE state = 'active'
   AND lower(username) LIKE lower($2)
 ORDER BY level DESC
 LIMIT 20;
+
+-- name: BumpActionSeq :one
+UPDATE app.players SET action_seq = $2, last_seen_at = now() WHERE id = $1 RETURNING *;

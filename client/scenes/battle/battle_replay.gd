@@ -25,10 +25,18 @@ var _result: Dictionary = {}
 var _target: Dictionary = {}
 var _replay: Dictionary = {}
 
+# Per-unit health is still tracked, because that is what the server's events
+# carry, but nothing per-unit is DRAWN. The screen shows one champion a side and
+# one pooled bar: the warband is the champion's strength, not a queue of
+# separate duels.
 var _hp: Dictionary = {}        # unit id -> current hp
 var _max_hp: Dictionary = {}
-var _bars: Dictionary = {}      # unit id -> ProgressBar
-var _rows: Dictionary = {}      # unit id -> Control
+var _side_of: Dictionary = {}   # unit id -> "a" | "d"
+var _bars: Dictionary = {}      # side -> ProgressBar
+var _pool_max: Dictionary = {}  # side -> summed starting hp
+var _anchors: Dictionary = {}   # side -> the portrait, for floaters
+var _tokens: Dictionary = {}    # unit id -> its pip under the portrait
+var _standing: Dictionary = {}  # side -> Label, "4 of 5 still standing"
 
 var _skip := false
 var _interval := MAX_INTERVAL
@@ -91,6 +99,7 @@ func _ready() -> void:
 	col.add_child(_side_block(_replay.get("defender", {}), "d", Palette.DANGER))
 	col.add_child(UI.label("versus", 13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 	col.add_child(_side_block(_replay.get("attacker", {}), "a", Palette.SUCCESS))
+	_scale_bars()
 	col.add_child(UI.spacer(10))
 
 	_floaters = Control.new()
@@ -109,40 +118,118 @@ func _ready() -> void:
 	_play()
 
 
+## One champion: portrait, name, Might, a single health pool, and the warband
+## shown as pips beneath rather than as a stack of separate fighters.
 func _side_block(army: Dictionary, side: String, accent: Color) -> Control:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, accent))
+
+	var pad := MarginContainer.new()
+	for edge in ["left", "right"]:
+		pad.add_theme_constant_override("margin_" + edge, 12)
+	for edge in ["top", "bottom"]:
+		pad.add_theme_constant_override("margin_" + edge, 10)
+	card.add_child(pad)
+
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 3)
+	box.add_theme_constant_override("separation", 6)
+	pad.add_child(box)
+
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 10)
+	box.add_child(head)
+
+	var face := TextureRect.new()
+	face.texture = ArtRegistry.portrait(str(army.get("avatar", "knight")))
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	face.custom_minimum_size = Vector2(56, 56)
+	head.add_child(face)
+
+	var who := VBoxContainer.new()
+	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	who.alignment = BoxContainer.ALIGNMENT_CENTER
+	who.add_theme_constant_override("separation", 2)
+	who.add_child(UI.label(str(army.get("name", "")), 16, accent))
 
 	var might := int(_replay.get("attacker_might", 0)) if side == "a" \
 		else int(_replay.get("defender_might", 0))
-	var title := "%s  ·  Might %s" % [str(army.get("name", "")), UI.number(might)]
-	box.add_child(UI.label(title, 15, accent))
+	who.add_child(UI.label("Might %s" % UI.number(might), 12, Palette.TEXT_DIM))
+	head.add_child(who)
 
-	for u in army.get("units", []):
+	# One bar for the whole side. Every unit's health flows into it, so damage
+	# reads as pressure on one champion instead of a queue of separate duels.
+	var total := 0
+	var units: Array = army.get("units", [])
+	for u in units:
 		var id := str(u.get("id", ""))
-		_hp[id] = int(u.get("hp", 1))
-		_max_hp[id] = maxi(int(u.get("hp", 1)), 1)
+		var hp := maxi(int(u.get("hp", 1)), 1)
+		_hp[id] = hp
+		_max_hp[id] = hp
+		_side_of[id] = side
+		total += hp
+	_pool_max[side] = maxi(total, 1)
 
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-		box.add_child(row)
-		_rows[id] = row
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.max_value = 1.0   # set once both sides are known, in _scale_bars()
+	bar.value = float(total)
+	bar.custom_minimum_size = Vector2(0, 18)
+	bar.add_theme_stylebox_override("background", UI.panel_box(Palette.BG, Palette.LINE, 5))
+	bar.add_theme_stylebox_override("fill", UI.panel_box(accent, Color.TRANSPARENT, 5))
+	box.add_child(bar)
+	_bars[side] = bar
 
-		var name := UI.label(str(u.get("name", "")), 13, Palette.TEXT_DIM)
-		name.custom_minimum_size = Vector2(110, 0)
-		row.add_child(name)
+	var pips := HBoxContainer.new()
+	pips.add_theme_constant_override("separation", 4)
+	box.add_child(pips)
+	for u in units:
+		var pip := _pip(str(u.get("tier", "")), bool(u.get("is_hero", false)))
+		pips.add_child(pip)
+		_tokens[str(u.get("id", ""))] = pip
 
-		var bar := ProgressBar.new()
-		bar.show_percentage = false
-		bar.max_value = _max_hp[id]
-		bar.value = _hp[id]
-		bar.custom_minimum_size = Vector2(0, 14)
-		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bar.add_theme_stylebox_override("background", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, 4))
-		bar.add_theme_stylebox_override("fill", UI.panel_box(accent, Color.TRANSPARENT, 4))
-		row.add_child(bar)
-		_bars[id] = bar
-	return box
+	var standing := UI.label("", 11, Palette.TEXT_FAINT)
+	box.add_child(standing)
+	_standing[side] = standing
+	_refresh_standing(side)
+	_anchors[side] = card
+	return card
+
+
+## One warband member, as a tier-coloured chip. Greys out when they fall.
+## Both health bars share one scale, so the longer bar is the bigger army.
+##
+## Normalised per side, a 450-Might warband's bar was exactly as long as a
+## 2,438-Might one and the mismatch was invisible until the numbers were read.
+func _scale_bars() -> void:
+	var biggest := 1
+	for side in _pool_max:
+		biggest = maxi(biggest, int(_pool_max[side]))
+	for side in _bars:
+		var bar: ProgressBar = _bars[side]
+		bar.max_value = float(biggest)
+		bar.value = float(_pool_max[side])
+
+
+func _pip(tier: String, is_hero: bool) -> Control:
+	var p := PanelContainer.new()
+	p.custom_minimum_size = Vector2(20, 20)
+	var tint := Palette.GOLD if is_hero else (Palette.tier(tier) if tier != "" else Palette.TEXT_DIM)
+	p.add_theme_stylebox_override("panel", UI.panel_box(tint, Color.TRANSPARENT, 4))
+	return p
+
+
+func _refresh_standing(side: String) -> void:
+	var alive := 0
+	var total := 0
+	for id in _side_of:
+		if str(_side_of[id]) != side:
+			continue
+		total += 1
+		if int(_hp[id]) > 0:
+			alive += 1
+	var label: Label = _standing[side]
+	label.text = "%d of %d  ·  still standing" % [alive, total]
 
 
 func _play() -> void:
@@ -184,22 +271,32 @@ func _wait(seconds: float) -> void:
 	await get_tree().create_timer(seconds).timeout
 
 
+## The server reports health per unit; the screen shows it per side. Summing the
+## living is what turns a line of separate fighters into one champion under
+## pressure.
 func _set_hp(id: String, hp: int) -> void:
-	if not _bars.has(id):
+	if not _side_of.has(id):
 		return
 	_hp[id] = hp
-	var bar: ProgressBar = _bars[id]
+	var side := str(_side_of[id])
+	var pool := 0
+	for other_id in _side_of:
+		if str(_side_of[other_id]) == side:
+			pool += int(_hp[other_id])
+	_refresh_standing(side)
+
+	var bar: ProgressBar = _bars[side]
 	if _skip:
-		bar.value = hp
+		bar.value = pool
 		return
 	var tw := create_tween()
-	tw.tween_property(bar, "value", float(hp), minf(0.12, _interval * 2.0))
+	tw.tween_property(bar, "value", float(pool), minf(0.12, _interval * 2.0))
 
 
 func _kill(id: String) -> void:
-	if _rows.has(id):
-		var row: Control = _rows[id]
-		row.modulate = Color(0.45, 0.4, 0.38, 0.55)
+	if _tokens.has(id):
+		var pip: Control = _tokens[id]
+		pip.modulate = Color(0.35, 0.32, 0.3, 0.9)
 
 
 func _show_damage(id: String, dmg: int, crit: bool) -> void:
@@ -207,12 +304,19 @@ func _show_damage(id: String, dmg: int, crit: bool) -> void:
 		Palette.GOLD if crit else Palette.DANGER, crit)
 
 
+## Damage floats off the champion taking it, not off a row, because there are no
+## rows any more.
 func _show_text(id: String, text: String, colour: Color, big: bool = false) -> void:
-	if _skip or not _rows.has(id):
+	if _skip or not _side_of.has(id):
 		return
-	var row: Control = _rows[id]
+	var side := str(_side_of[id])
+	if not _anchors.has(side):
+		return
+	var card: Control = _anchors[side]
 	var l := UI.label(text, 20 if big else 15, colour)
-	l.position = row.global_position + Vector2(row.size.x * 0.62, 0)
+	# Down the right-hand edge of the card: over the portrait it landed on the
+	# name, which is the one thing on the card you always want readable.
+	l.position = card.global_position + Vector2(card.size.x - 62.0, 10.0)
 	_floaters.add_child(l)
 
 	var tw := create_tween()

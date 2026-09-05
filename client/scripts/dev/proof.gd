@@ -39,6 +39,15 @@ func _ready() -> void:
 	# the mouse pointer makes macOS deliver a click-through, which lands on
 	# whatever button is under the cursor and fires a phantom press.
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
+	# ...but get out of the way. A capture run has to stay on top to keep
+	# drawing, and a run takes a few seconds, so a series of them was flashing
+	# windows over the middle of whatever the owner was doing. Bottom-right
+	# corner instead: still composited, still drawn, no longer in the way.
+	var screen := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+	var size := DisplayServer.window_get_size()
+	DisplayServer.window_set_position(Vector2i(
+		screen.position.x + screen.size.x - size.x - 24,
+		screen.position.y + screen.size.y - size.y - 24))
 	# A capture run is non-interactive by definition. Ignoring input also stops
 	# the pointer, which now sits over an always-on-top window, from pressing
 	# whatever button happens to be under it.

@@ -30,6 +30,11 @@ var _avatar_img: TextureRect
 var _name: Label
 var _diamonds: Label
 
+## Section id -> the tab node, and -> its action bar. Both are kept alive for
+## the lifetime of the shell; see _open().
+var _tabs: Dictionary = {}
+var _action_bars: Dictionary = {}
+
 var _gold_shown := 0
 var _gold_seen := false
 var _gold_tween: Tween
@@ -107,6 +112,15 @@ func _ready() -> void:
 	_open(_current)
 	_on_state_changed()
 
+	# Dev-only: hammer the section switcher. This is the shape that crashed --
+	# leaving a section while its HTTP request is still in the air -- so it is
+	# worth being able to reproduce on demand.
+	for i in OS.get_cmdline_user_args().size():
+		var ta := OS.get_cmdline_user_args()
+		if ta[i] == "--dev-thrash" and i + 1 < ta.size():
+			_thrash(int(ta[i + 1]))
+			return
+
 	# Dev-only: open the portrait picker for a proof capture, since a capture run
 	# disables input and cannot press the button itself.
 	if OS.get_cmdline_user_args().has("--dev-avatars"):
@@ -132,6 +146,21 @@ func _open_avatar_picker() -> void:
 	var picker: CanvasLayer = load("res://scenes/shell/avatar_picker.gd").new(
 		str(GameState.player().get("avatar", "knight")))
 	add_child(picker)
+
+
+## Cycles every section `rounds` times with barely a frame between, so requests
+## are always still outstanding when the section changes, then quits.
+func _thrash(rounds: int) -> void:
+	var ids: Array[String] = []
+	for sec in SECTIONS:
+		ids.append(str(sec["id"]))
+	for r in rounds:
+		for id in ids:
+			_open(id)
+			await get_tree().process_frame
+			await get_tree().process_frame
+	print("[thrash] survived ", rounds * ids.size(), " section switches")
+	get_tree().quit(0)
 
 
 func _build_top_bar() -> Control:
@@ -294,36 +323,73 @@ func _build_rail() -> Control:
 	return panel
 
 
+const TABS := {
+	"collect": "res://scenes/tabs/collect.gd",
+	"shop": "res://scenes/tabs/shop.gd",
+	"inventory": "res://scenes/tabs/inventory.gd",
+	"soldiers": "res://scenes/tabs/barracks.gd",
+	"attack": "res://scenes/tabs/attack.gd",
+	"family": "res://scenes/tabs/keep.gd",
+	"territory": "res://scenes/tabs/territory.gd",
+}
+
+
+## Switches sections. Tabs are built once and then hidden, never freed.
+##
+## Freeing them was crashing the game. Every tab loads over HTTP, and GDScript's
+## await resumes wherever it left off -- so leaving a section while its request
+## was still in the air resumed the coroutine inside a freed node and took the
+## process down with it. There are ~58 await sites across the scenes; guarding
+## each one would leave the next one someone writes unguarded. Keeping the node
+## alive removes the whole class of bug, and it is what the design asked for
+## anyway: instant switching, and no reload of a list you just looked at.
 func _open(id: String) -> void:
 	_current = id
 	_style_rail()
 
-	for c in _content.get_children():
-		c.queue_free()
-	for c in _action_host.get_children():
-		c.queue_free()
+	for other_id in _tabs:
+		var node: Node = _tabs[other_id]
+		if not is_instance_valid(node):
+			continue
+		var on: bool = other_id == id
+		(node as CanvasItem).visible = on
+		# A hidden tab must stop ticking, or seven of them poll at once.
+		node.process_mode = Node.PROCESS_MODE_INHERIT if on else Node.PROCESS_MODE_DISABLED
+		if _action_bars.has(other_id) and is_instance_valid(_action_bars[other_id]):
+			(_action_bars[other_id] as CanvasItem).visible = on
 
-	var section: Dictionary = {}
-	for s in SECTIONS:
-		if s["id"] == id:
-			section = s
+	if _tabs.has(id) and is_instance_valid(_tabs[id]):
+		# A cached tab has to re-fetch, or reopening the Market shows the offers
+		# from the last time you looked and the Barracks a soldier you dismissed.
+		# Collect has no _reload: it renders straight from GameState, which the
+		# shell keeps current.
+		var shown: Node = _tabs[id]
+		if shown.has_method("_reload"):
+			shown.call("_reload")
+		return
 
-	const TABS := {
-		"collect": "res://scenes/tabs/collect.gd",
-		"shop": "res://scenes/tabs/shop.gd",
-		"inventory": "res://scenes/tabs/inventory.gd",
-		"soldiers": "res://scenes/tabs/barracks.gd",
-		"attack": "res://scenes/tabs/attack.gd",
-		"family": "res://scenes/tabs/keep.gd",
-		"territory": "res://scenes/tabs/territory.gd",
-	}
+	# The action bar is cached alongside its tab, because the tab holds direct
+	# references into it -- rebuilding it on every switch would hand the tab a
+	# freed button and reintroduce the same crash from the other side.
+	var bar := VBoxContainer.new()
+	bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_action_host.add_child(bar)
+	_action_bars[id] = bar
+
 	if TABS.has(id):
 		var tab: Node = load(TABS[id]).new()
 		_content.add_child(tab)
-		tab.mount_action_bar(_action_host)
+		_tabs[id] = tab
+		tab.mount_action_bar(bar)
 		return
 
-	_content.add_child(_placeholder(str(section.get("label", id)), str(section.get("milestone", ""))))
+	var section: Dictionary = {}
+	for sec in SECTIONS:
+		if sec["id"] == id:
+			section = sec
+	var ph := _placeholder(str(section.get("label", id)), str(section.get("milestone", "")))
+	_content.add_child(ph)
+	_tabs[id] = ph
 
 
 func _placeholder(title: String, milestone: String) -> Control:

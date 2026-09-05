@@ -96,9 +96,19 @@ func _ready() -> void:
 	col.add_child(_fortune)
 
 	col.add_child(UI.spacer(6))
-	col.add_child(_side_block(_replay.get("defender", {}), "d", Palette.DANGER))
-	col.add_child(UI.label("versus", 13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
-	col.add_child(_side_block(_replay.get("attacker", {}), "a", Palette.SUCCESS))
+	# Side by side, because that is what a duel looks like. Stacked, the two
+	# champions read as a list of two things rather than as one facing the other.
+	var lists := HBoxContainer.new()
+	lists.add_theme_constant_override("separation", 6)
+	lists.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_child(lists)
+
+	lists.add_child(_side_block(_replay.get("attacker", {}), "a", Palette.SUCCESS))
+	var vs := UI.label("VS", 15, Palette.GOLD_DEEP, HORIZONTAL_ALIGNMENT_CENTER)
+	vs.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	vs.custom_minimum_size = Vector2(26, 0)
+	lists.add_child(vs)
+	lists.add_child(_side_block(_replay.get("defender", {}), "d", Palette.DANGER))
 	_scale_bars()
 	col.add_child(UI.spacer(10))
 
@@ -118,44 +128,39 @@ func _ready() -> void:
 	_play()
 
 
-## One champion: portrait, name, Might, a single health pool, and the warband
-## shown as pips beneath rather than as a stack of separate fighters.
+## One champion, as a column: portrait, name, Might, a single health pool, and
+## the warband as pips beneath rather than as a stack of separate fighters.
 func _side_block(army: Dictionary, side: String, accent: Color) -> Control:
 	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(148, 0)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, accent))
 
 	var pad := MarginContainer.new()
 	for edge in ["left", "right"]:
-		pad.add_theme_constant_override("margin_" + edge, 12)
+		pad.add_theme_constant_override("margin_" + edge, 8)
 	for edge in ["top", "bottom"]:
 		pad.add_theme_constant_override("margin_" + edge, 10)
 	card.add_child(pad)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
+	box.add_theme_constant_override("separation", 5)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	pad.add_child(box)
-
-	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 10)
-	box.add_child(head)
 
 	var face := TextureRect.new()
 	face.texture = ArtRegistry.portrait(str(army.get("avatar", "knight")))
 	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	face.custom_minimum_size = Vector2(56, 56)
-	head.add_child(face)
+	face.custom_minimum_size = Vector2(0, 72)
+	box.add_child(face)
 
-	var who := VBoxContainer.new()
-	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	who.alignment = BoxContainer.ALIGNMENT_CENTER
-	who.add_theme_constant_override("separation", 2)
-	who.add_child(UI.label(str(army.get("name", "")), 16, accent))
+	box.add_child(UI.label(str(army.get("name", "")), 15, accent, HORIZONTAL_ALIGNMENT_CENTER))
 
 	var might := int(_replay.get("attacker_might", 0)) if side == "a" \
 		else int(_replay.get("defender_might", 0))
-	who.add_child(UI.label("Might %s" % UI.number(might), 12, Palette.TEXT_DIM))
-	head.add_child(who)
+	box.add_child(UI.label("Might %s" % UI.number(might), 11, Palette.TEXT_DIM,
+		HORIZONTAL_ALIGNMENT_CENTER))
 
 	# One bar for the whole side. Every unit's health flows into it, so damage
 	# reads as pressure on one champion instead of a queue of separate duels.
@@ -174,21 +179,24 @@ func _side_block(army: Dictionary, side: String, accent: Color) -> Control:
 	bar.show_percentage = false
 	bar.max_value = 1.0   # set once both sides are known, in _scale_bars()
 	bar.value = float(total)
-	bar.custom_minimum_size = Vector2(0, 18)
+	bar.custom_minimum_size = Vector2(0, 16)
 	bar.add_theme_stylebox_override("background", UI.panel_box(Palette.BG, Palette.LINE, 5))
 	bar.add_theme_stylebox_override("fill", UI.panel_box(accent, Color.TRANSPARENT, 5))
 	box.add_child(bar)
 	_bars[side] = bar
 
-	var pips := HBoxContainer.new()
-	pips.add_theme_constant_override("separation", 4)
+	# Wrapped, because a wide warband will not fit across a narrow column.
+	var pips := HFlowContainer.new()
+	pips.alignment = FlowContainer.ALIGNMENT_CENTER
+	pips.add_theme_constant_override("h_separation", 3)
+	pips.add_theme_constant_override("v_separation", 3)
 	box.add_child(pips)
 	for u in units:
 		var pip := _pip(str(u.get("tier", "")), bool(u.get("is_hero", false)))
 		pips.add_child(pip)
 		_tokens[str(u.get("id", ""))] = pip
 
-	var standing := UI.label("", 11, Palette.TEXT_FAINT)
+	var standing := UI.label("", 10, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	box.add_child(standing)
 	_standing[side] = standing
 	_refresh_standing(side)
@@ -316,7 +324,7 @@ func _show_text(id: String, text: String, colour: Color, big: bool = false) -> v
 	var l := UI.label(text, 20 if big else 15, colour)
 	# Down the right-hand edge of the card: over the portrait it landed on the
 	# name, which is the one thing on the card you always want readable.
-	l.position = card.global_position + Vector2(card.size.x - 62.0, 10.0)
+	l.position = card.global_position + Vector2(card.size.x * 0.5 - 14.0, 6.0)
 	_floaters.add_child(l)
 
 	var tw := create_tween()

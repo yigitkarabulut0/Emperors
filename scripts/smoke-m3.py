@@ -261,11 +261,24 @@ if gear_before:
     check("the dismissed soldier's gear came back to the bag",
           len(loose) >= len(gear_before), (len(gear_before), len(loose)))
 
-st, again = call("POST", "/v1/army/recruit",
-                 {"slot": 1, "type_id": "peasant", "action_seq": seq(token)}, token=token)
-check("the freed slot can be recruited into again", st == 200, (st, again))
-cost = again.get("paid", 0)
-check("a reroll costs more than the refund gives back", cost > refund, (cost, refund))
+# What the next recruit would cost, read off the view rather than by buying one:
+# this player has just spent a random amount in a random shop, so whether they
+# can currently AFFORD a recruit is luck, and a test that depends on luck fails
+# for reasons that have nothing to do with the thing it is checking.
+st, a7 = call("GET", "/v1/army", token=token)
+quoted = min((r["cost"] for r in a7.get("recruits", []) if not r.get("free")), default=0)
+check("a reroll costs more than the refund gives back", quoted > refund, (quoted, refund))
+
+st, s7 = call("GET", "/v1/state", token=token)
+if int(s7["player"]["gold"]) >= quoted:
+    st, again = call("POST", "/v1/army/recruit",
+                     {"slot": 1, "type_id": "peasant", "action_seq": seq(token)}, token=token)
+    check("the freed slot can be recruited into again", st == 200, (st, again))
+else:
+    st, broke = call("POST", "/v1/army/recruit",
+                     {"slot": 1, "type_id": "peasant", "action_seq": seq(token)}, token=token)
+    check("recruiting with too little gold is refused cleanly",
+          st == 409 and broke.get("code") == "not_enough_gold", (st, broke))
 
 st, ghost = call("POST", "/v1/army/dismiss",
                  {"soldier_id": victim["id"], "action_seq": seq(token)}, token=token)

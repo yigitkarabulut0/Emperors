@@ -176,14 +176,133 @@ func _build_leaderboard() -> void:
 
 
 func _build_members() -> void:
+	var my_role := str(_kv.get("me", {}).get("role", "member"))
+	var may_invite := my_role == "king" or my_role == "marshal"
+
+	# Kingdoms are invite-only, and Invite needs a player id. Without a way to
+	# turn a name into one, a founded kingdom was a dead end: you sat in it alone
+	# and no one could ever join.
+	if may_invite:
+		_list.add_child(_invite_box())
+
 	for m in _kv.get("members", []):
 		var role := str(m.get("role", "member"))
 		var colour := Palette.GOLD if role == "king" else \
 			(Palette.SUCCESS if role == "marshal" else Palette.TEXT_DIM)
-		_list.add_child(_card(str(m.get("name", "")),
+		var card := _card(str(m.get("name", "")),
 			"%s  ·  level %d  ·  gave %s" % [role, int(m.get("level", 1)),
 				UI.number(int(str(m.get("donated", "0"))))],
-			colour))
+			colour)
+		_list.add_child(card)
+
+		# Only the king may change ranks, and never their own. The button sits in
+		# the card's own row, to the right of the name.
+		var target := str(m.get("player_id", ""))
+		if my_role == "king" and role != "king":
+			var next_role := "member" if role == "marshal" else "marshal"
+			var promote := UI.ghost_button(
+				("Demote" if role == "marshal" else "Raise to marshal"), 12)
+			promote.custom_minimum_size = Vector2(124, 34)
+			promote.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			promote.pressed.connect(_set_role.bind(target, next_role))
+			(card.get_child(0) as HBoxContainer).add_child(promote)
+
+	_list.add_child(UI.spacer(8))
+	var leave := UI.ghost_button("LEAVE THE KINGDOM", 13)
+	leave.custom_minimum_size = Vector2(0, 40)
+	leave.add_theme_color_override("font_color", Palette.DANGER)
+	leave.disabled = my_role == "king"
+	leave.pressed.connect(_leave)
+	_list.add_child(leave)
+	if my_role == "king":
+		_list.add_child(UI.label("A king cannot walk away. Raise a marshal and pass the crown first.",
+			11, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+
+
+## Search by name, then invite. Results say whether someone already holds a
+## banner, because inviting them would fail and the reason should be visible
+## before the tap rather than after it.
+func _invite_box() -> Control:
+	var card := _card("Invite a lord", "they must not already hold a banner", Palette.GOLD_DEEP)
+	# _card nests a row before the text column, so the body is one level deeper.
+	var col: VBoxContainer = card.get_child(0).get_child(0)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	col.add_child(row)
+	var field := UI.line_edit("name")
+	field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(field)
+	var go := UI.button("FIND", 14)
+	go.custom_minimum_size = Vector2(84, 40)
+	row.add_child(go)
+
+	var results := VBoxContainer.new()
+	results.add_theme_constant_override("separation", 4)
+	col.add_child(results)
+
+	var run := func() -> void:
+		for c in results.get_children():
+			c.queue_free()
+		var term := field.text.strip_edges()
+		if term.length() < 2:
+			results.add_child(UI.label("Type at least two letters.", 12, Palette.TEXT_FAINT))
+			return
+		var res: Api.Response = await Api.get_json("/v1/kingdom/search?q=" + term.uri_encode())
+		if not res.ok:
+			results.add_child(UI.label(res.error, 12, Palette.DANGER))
+			return
+		var found: Array = res.data.get("players", [])
+		if found.is_empty():
+			results.add_child(UI.label("Nobody by that name.", 12, Palette.TEXT_FAINT))
+			return
+		for pl in found:
+			results.add_child(_invite_row(pl))
+
+	go.pressed.connect(run)
+	field.text_submitted.connect(func(_t: String) -> void: run.call())
+	return card
+
+
+func _invite_row(pl: Dictionary) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+
+	var face := TextureRect.new()
+	face.texture = ArtRegistry.portrait(str(pl.get("avatar", "knight")))
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	face.custom_minimum_size = Vector2(34, 34)
+	row.add_child(face)
+
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 0)
+	col.add_child(UI.label(str(pl.get("name", "")), 14, Palette.TEXT))
+	col.add_child(UI.label("level %d" % int(pl.get("level", 1)), 11, Palette.TEXT_FAINT))
+	row.add_child(col)
+
+	if bool(pl.get("in_kingdom", false)):
+		row.add_child(UI.label("already sworn", 12, Palette.TEXT_FAINT))
+	else:
+		var b := UI.ghost_button("INVITE", 12)
+		b.custom_minimum_size = Vector2(84, 34)
+		b.pressed.connect(_invite.bind(str(pl.get("player_id", ""))))
+		row.add_child(b)
+	return row
+
+
+func _invite(player_id: String) -> void:
+	await _post("/v1/kingdom/invite", {"player_id": player_id})
+
+
+func _set_role(player_id: String, role: String) -> void:
+	await _post("/v1/kingdom/role", {"player_id": player_id, "role": role})
+
+
+func _leave() -> void:
+	await _post("/v1/kingdom/leave", {})
 
 
 func _build_upgrades() -> void:

@@ -501,12 +501,21 @@ func _refresh_kingdom_button() -> void:
 			Palette.SUCCESS if not invites.is_empty() else Palette.TEXT_DIM)
 
 
+## The column the shell handed us in mount_action_bar, or null before it has.
+func _action_host() -> Control:
+	if _action == null:
+		return null
+	return _action.get_parent() as Control
+
+
 func _open_kingdom() -> void:
 	if _kingdom_screen != null:
 		return
-	# Everything the Keep owns steps aside, or the estate card and the family tree
-	# bleed through behind the realm screen.
-	for node in [_body, _kingdom_button, _stats, _estate_card]:
+	# Everything the Keep owns steps aside, or its cards bleed through behind the
+	# realm screen. _body is the scroll that holds them all, and the action bar
+	# lives outside it -- it was left reading "SELECT AN UPGRADE" underneath a
+	# screen with no upgrades on it.
+	for node in [_body, _action_host()]:
 		if node != null:
 			node.visible = false
 
@@ -522,7 +531,7 @@ func _close_kingdom() -> void:
 		return
 	_kingdom_screen.queue_free()
 	_kingdom_screen = null
-	for node in [_body, _kingdom_button, _stats, _estate_card]:
+	for node in [_body, _action_host()]:
 		if node != null:
 			node.visible = true
 	_refresh_kingdom_button()

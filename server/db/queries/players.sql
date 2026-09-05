@@ -34,3 +34,17 @@ RETURNING *;
 -- name: SetAvatar :one
 UPDATE app.players SET avatar = $2, action_seq = $3, last_seen_at = now()
 WHERE id = $1 RETURNING *;
+
+-- Finds someone to invite. Prefix match rather than substring, so a search is
+-- index-friendly and a player cannot enumerate the roster by typing one letter.
+--
+-- Bots are excluded: they exist to fill the Attack tab and cannot accept.
+-- name: FindInvitablePlayers :many
+SELECT id, username, display_name, avatar, level, kingdom_id
+FROM app.players
+WHERE state = 'active'
+  AND is_bot = false
+  AND id <> $1
+  AND lower(username) LIKE lower($2)
+ORDER BY level DESC
+LIMIT 20;

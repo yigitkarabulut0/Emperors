@@ -102,6 +102,7 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/estates/tax/claim", a.claimTax)
 
 			r.Get("/kingdom", a.kingdom)
+			r.Get("/kingdom/search", a.kingdomSearch)
 			r.Post("/kingdom/found", a.found)
 			for _, act := range []string{"invite", "accept", "leave", "role", "donate", "upgrade"} {
 				name := act

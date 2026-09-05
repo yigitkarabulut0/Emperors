@@ -82,9 +82,16 @@ func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry:
 
 	var code := str(data.get("code", ""))
 
-	# An expired access token is recoverable without bothering the player: refresh
+	# A rejected access token is recoverable without bothering the player: refresh
 	# once and replay. Only one retry, or a server that always 401s would loop.
-	if status == 401 and authed and may_retry and code == "token_expired":
+	#
+	# ANY 401 on an authenticated call, not just code "token_expired". The refresh
+	# token lives in Postgres and survives things the access token does not: a
+	# restarted server with a new signing key, a rotated key, clock skew. Those
+	# all come back as a plain "unauthorized", and refusing to refresh on them
+	# signed the player out over something a single retry would have fixed. If
+	# the refresh token really is dead, try_refresh() signs out anyway.
+	if status == 401 and authed and may_retry and Session.is_signed_in():
 		if await Session.try_refresh():
 			return await _send(method, path, body, authed, false)
 

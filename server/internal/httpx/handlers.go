@@ -830,3 +830,19 @@ func (a *api) treasuryMove(w http.ResponseWriter, r *http.Request, in bool) {
 	}
 	WriteJSON(w, http.StatusOK, v)
 }
+
+
+// kingdomSearch turns a name into a player id so a king can invite someone.
+func (a *api) kingdomSearch(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	list, err := a.s().SearchPlayers(r.Context(), pid, r.URL.Query().Get("q"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"players": list})
+}

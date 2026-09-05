@@ -99,6 +99,30 @@ st, dup = call("POST", "/v1/kingdom/found",
                {"name": "House " + sfx, "tag": "ZZ", "action_seq": seq(king)}, token=king)
 check("you cannot found a second kingdom", st == 409 and dup.get("code") == "already_in_kingdom", (st, dup))
 
+# Invite takes a player UUID, and until now nothing turned a name into one --
+# so a founded kingdom was a dead end: you sat in it alone and no one could join.
+print("\n== finding someone to invite ==")
+st, found = call("GET", "/v1/kingdom/search?q=" + outsider_name[:6], token=king)
+check("search returns 200", st == 200, st)
+names = [p["name"] for p in found.get("players", [])]
+check("it finds the player by the start of their name", outsider_name in names, names)
+hit = next((p for p in found["players"] if p["name"] == outsider_name), {})
+check("the result carries an id to invite with", bool(hit.get("player_id")), hit)
+check("and a face and a level to recognise them by",
+      bool(hit.get("avatar")) and hit.get("level", 0) >= 1, hit)
+check("it says whether they already hold a banner", "in_kingdom" in hit, hit)
+
+st, tiny = call("GET", "/v1/kingdom/search?q=a", token=king)
+check("a one-letter search returns nothing, so the roster cannot be enumerated",
+      tiny.get("players") == [], tiny)
+st, bots = call("GET", "/v1/kingdom/search?q=bot_", token=king)
+check("bots are not offered — they exist to fill the Attack tab and cannot accept",
+      bots.get("players") == [], len(bots.get("players", [])))
+st, me = call("GET", "/v1/kingdom/search?q=" + king_name[:6], token=king)
+check("you cannot find yourself",
+      king_name not in [p["name"] for p in me.get("players", [])],
+      [p["name"] for p in me.get("players", [])])
+
 print("\n== invitations ==")
 st, no = call("POST", "/v1/kingdom/accept", {"kingdom_id": kid}, token=vassal)
 check("you cannot join uninvited", st == 403 and no.get("code") == "not_invited", (st, no))

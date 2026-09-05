@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -350,4 +351,43 @@ func (d Deps) courtBonus(ctx context.Context, q *sqlcdb.Queries, kingdomID uuid.
 		}
 	}
 	return 0
+}
+
+// SearchablePlayer is one result from the invite search.
+type SearchablePlayer struct {
+	PlayerID  string `json:"player_id"`
+	Name      string `json:"name"`
+	Avatar    string `json:"avatar"`
+	Level     int    `json:"level"`
+	InKingdom bool   `json:"in_kingdom"`
+}
+
+// SearchPlayers finds people to invite.
+//
+// Kingdoms are invite-only and Invite takes a player UUID, so without a way to
+// turn a name into an id the whole system was a dead end: you could found a
+// kingdom and then sit in it alone forever. This is the missing half.
+//
+// Deliberately thin. It returns a name, a face, a level and whether they already
+// belong somewhere -- enough to recognise the person you meant, and nothing that
+// would make it a way to scout targets.
+func (d Deps) SearchPlayers(ctx context.Context, playerID uuid.UUID, term string) ([]SearchablePlayer, error) {
+	term = strings.TrimSpace(term)
+	if len(term) < 2 {
+		return []SearchablePlayer{}, nil
+	}
+	rows, err := sqlcdb.New(d.Pool).FindInvitablePlayers(ctx, sqlcdb.FindInvitablePlayersParams{
+		ID: playerID, Lower: term + "%",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("search players: %w", err)
+	}
+	out := make([]SearchablePlayer, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, SearchablePlayer{
+			PlayerID: r.ID.String(), Name: r.DisplayName, Avatar: r.Avatar,
+			Level: int(r.Level), InKingdom: r.KingdomID != nil,
+		})
+	}
+	return out, nil
 }

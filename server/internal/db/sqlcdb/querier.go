@@ -64,6 +64,11 @@ type Querier interface {
 	// Donating: take the gold, credit the treasury, and record the daily total in
 	// one place so the cap cannot be bypassed by racing two requests.
 	DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlayer, error)
+	// Finds someone to invite. Prefix match rather than substring, so a search is
+	// index-friendly and a player cannot enumerate the roster by typing one letter.
+	//
+	// Bots are excluded: they exist to fill the Attack tab and cannot accept.
+	FindInvitablePlayers(ctx context.Context, arg FindInvitablePlayersParams) ([]FindInvitablePlayersRow, error)
 	// Candidate opponents inside a level band, excluding the player, bots-or-not by
 	// flag, the shielded, and anyone banned. Ordered by a stable pseudo-random key
 	// so the list changes between refreshes without a table scan.

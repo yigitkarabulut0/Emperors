@@ -72,6 +72,62 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (App
 	return i, err
 }
 
+const findInvitablePlayers = `-- name: FindInvitablePlayers :many
+SELECT id, username, display_name, avatar, level, kingdom_id
+FROM app.players
+WHERE state = 'active'
+  AND is_bot = false
+  AND id <> $1
+  AND lower(username) LIKE lower($2)
+ORDER BY level DESC
+LIMIT 20
+`
+
+type FindInvitablePlayersParams struct {
+	ID    uuid.UUID
+	Lower string
+}
+
+type FindInvitablePlayersRow struct {
+	ID          uuid.UUID
+	Username    string
+	DisplayName string
+	Avatar      string
+	Level       int32
+	KingdomID   *uuid.UUID
+}
+
+// Finds someone to invite. Prefix match rather than substring, so a search is
+// index-friendly and a player cannot enumerate the roster by typing one letter.
+//
+// Bots are excluded: they exist to fill the Attack tab and cannot accept.
+func (q *Queries) FindInvitablePlayers(ctx context.Context, arg FindInvitablePlayersParams) ([]FindInvitablePlayersRow, error) {
+	rows, err := q.db.Query(ctx, findInvitablePlayers, arg.ID, arg.Lower)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FindInvitablePlayersRow{}
+	for rows.Next() {
+		var i FindInvitablePlayersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.DisplayName,
+			&i.Avatar,
+			&i.Level,
+			&i.KingdomID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPlayerByID = `-- name: GetPlayerByID :one
 SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar FROM app.players WHERE id = $1
 `

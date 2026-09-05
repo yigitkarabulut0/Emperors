@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -87,6 +88,36 @@ func Load() (*Config, error) {
 	return c, c.validate()
 }
 
+// devSecret returns a stable 32-byte secret for local development, generating
+// and caching it on first use.
+//
+// NEVER reached in prod: validate() requires the environment variable there, so
+// this cannot silently become the production key. The file sits beside the repo
+// rather than in it, and is created 0600.
+func devSecret(name string) ([]byte, error) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return nil, err
+	}
+	dir = filepath.Join(dir, "emperors-dev")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil, err
+	}
+	path := filepath.Join(dir, name)
+
+	if raw, err := os.ReadFile(path); err == nil && len(raw) == 32 {
+		return raw, nil
+	}
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(path, secret, 0o600); err != nil {
+		return nil, err
+	}
+	return secret, nil
+}
+
 func (c *Config) validate() error {
 	var problems []string
 	if c.DatabaseURL == "" {
@@ -104,12 +135,15 @@ func (c *Config) validate() error {
 	case len(c.TokenSeed) == 0 && c.Env == "prod":
 		problems = append(problems, "EMPERORS_TOKEN_SEED is required in prod (base64 of 32 random bytes)")
 	case len(c.TokenSeed) == 0:
-		// Dev convenience: a random seed per boot. Restarting logs you out, which
-		// is fine locally and would be unacceptable in production.
-		c.TokenSeed = make([]byte, 32)
-		if _, err := rand.Read(c.TokenSeed); err != nil {
-			problems = append(problems, "could not generate a development token seed")
+		// Dev convenience: generate one, but KEEP it. A fresh seed per boot
+		// invalidates every outstanding access token, and a restart during
+		// development happens constantly -- it was signing the player out mid-play
+		// every time the server came back.
+		seed, err := devSecret("token_seed")
+		if err != nil {
+			problems = append(problems, "could not obtain a development token seed: "+err.Error())
 		}
+		c.TokenSeed = seed
 	case len(c.TokenSeed) != 32:
 		problems = append(problems, fmt.Sprintf("EMPERORS_TOKEN_SEED must decode to 32 bytes, got %d", len(c.TokenSeed)))
 	}
@@ -126,10 +160,14 @@ func (c *Config) validate() error {
 	case len(c.ShopSecret) == 0 && c.Env == "prod":
 		problems = append(problems, "EMPERORS_SHOP_SECRET is required in prod (base64 of 32 random bytes)")
 	case len(c.ShopSecret) == 0:
-		c.ShopSecret = make([]byte, 32)
-		if _, err := rand.Read(c.ShopSecret); err != nil {
-			problems = append(problems, "could not generate a development shop secret")
+		// Same reasoning, plus one of its own: a fresh shop secret reshuffles
+		// every player's current offers mid-window, so a restart could snatch back
+		// an offer someone was about to buy.
+		secret, err := devSecret("shop_secret")
+		if err != nil {
+			problems = append(problems, "could not obtain a development shop secret: "+err.Error())
 		}
+		c.ShopSecret = secret
 	case len(c.ShopSecret) < 16:
 		problems = append(problems, "EMPERORS_SHOP_SECRET must decode to at least 16 bytes")
 	}

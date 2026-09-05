@@ -11,6 +11,10 @@ var _tax_button: Button
 var _action: Button
 var _action_sub: Label
 var _busy := false
+var _kingdom_button: Button
+var _body: Control
+var _kingdom_screen: Node
+var _estate_card: Control
 
 
 func _ready() -> void:
@@ -22,6 +26,7 @@ func _ready() -> void:
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))
 	add_child(card)
+	_estate_card = card
 	var crow := HBoxContainer.new()
 	crow.add_theme_constant_override("separation", 10)
 	card.add_child(crow)
@@ -41,10 +46,18 @@ func _ready() -> void:
 	_tax_button.pressed.connect(_claim_tax)
 	crow.add_child(_tax_button)
 
+	_kingdom_button = UI.ghost_button("", 15)
+	_kingdom_button.custom_minimum_size = Vector2(0, 46)
+	_kingdom_button.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL, Palette.LINE))
+	_kingdom_button.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.GOLD_DEEP))
+	_kingdom_button.pressed.connect(_open_kingdom)
+	add_child(_kingdom_button)
+
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
+	_body = scroll
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_list.add_theme_constant_override("separation", 6)
@@ -52,6 +65,13 @@ func _ready() -> void:
 
 	GameState.changed.connect(_rebuild)
 	_reload()
+	_refresh_kingdom_button()
+
+	# Dev-only: open the realm screen directly, so a capture run (which disables
+	# input) can reach a screen that normally needs a tap.
+	if OS.get_cmdline_user_args().has("--dev-open-kingdom"):
+		await get_tree().create_timer(1.0).timeout
+		_open_kingdom()
 
 
 func mount_action_bar(host: Control) -> void:
@@ -192,3 +212,53 @@ func _claim_tax() -> void:
 			UI.number(int(res.data.get("collected", 0))))
 	await GameState.refresh()
 	await _reload()
+
+
+## The kingdom lives behind a card here rather than in its own rail slot: a
+## player has no kingdom for the first twelve levels, and a permanently empty
+## icon teaches the wrong thing about the game.
+func _refresh_kingdom_button() -> void:
+	if _kingdom_button == null:
+		return
+	var res: Api.Response = await Api.get_json("/v1/kingdom")
+	if not res.ok:
+		return
+	if bool(res.data.get("in_kingdom", false)):
+		var k: Dictionary = res.data.get("kingdom", {})
+		_kingdom_button.text = "%s [%s]   ·   renown %s   >" % [
+			str(k.get("name", "")), str(k.get("tag", "")),
+			UI.number(int(k.get("reputation", 0)))]
+		_kingdom_button.add_theme_color_override("font_color", Palette.GOLD)
+	else:
+		var invites: Array = res.data.get("invites", [])
+		_kingdom_button.text = "You hold no banner   >" if invites.is_empty() \
+			else "%d kingdom invitation(s)   >" % invites.size()
+		_kingdom_button.add_theme_color_override("font_color",
+			Palette.SUCCESS if not invites.is_empty() else Palette.TEXT_DIM)
+
+
+func _open_kingdom() -> void:
+	if _kingdom_screen != null:
+		return
+	# Everything the Keep owns steps aside, or the estate card and the family tree
+	# bleed through behind the realm screen.
+	for node in [_body, _kingdom_button, _stats, _estate_card]:
+		if node != null:
+			node.visible = false
+
+	_kingdom_screen = preload("res://scenes/tabs/kingdom.gd").new()
+	_kingdom_screen.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_kingdom_screen.closed.connect(_close_kingdom)
+	add_child(_kingdom_screen)
+	move_child(_kingdom_screen, 1)
+
+
+func _close_kingdom() -> void:
+	if _kingdom_screen == null:
+		return
+	_kingdom_screen.queue_free()
+	_kingdom_screen = null
+	for node in [_body, _kingdom_button, _stats, _estate_card]:
+		if node != null:
+			node.visible = true
+	_refresh_kingdom_button()

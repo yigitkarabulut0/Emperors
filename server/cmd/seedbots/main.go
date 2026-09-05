@@ -91,8 +91,17 @@ func run(want int) error {
 		pts := int32(level - 1)
 		slots := int32(min(level/4+1, bundle.Soldiers.MaxSlots))
 
+		// A face each, walked round the roster. Every bot wearing the default
+		// portrait would make the raid list read as one anonymous stranger
+		// repeated, which is the opposite of what portraits are for.
+		avatars := bundle.Progression.Avatars
+		avatar := "knight"
+		if len(avatars) > 0 {
+			avatar = avatars[i%len(avatars)]
+		}
+
 		p, err := q.CreateBot(ctx, sqlcdb.CreateBotParams{
-			Username: username, DisplayName: name, Level: int32(level),
+			Username: username, DisplayName: name, Level: int32(level), Avatar: avatar,
 			Gold:         int64(200 + level*180),
 			SoldierSlots: slots,
 			StatAttack:   pts / 2, StatDefense: pts - pts/2,

@@ -59,8 +59,8 @@ SET last_at = now(),
 
 -- name: CreateBot :one
 INSERT INTO app.players (username, display_name, level, gold, is_bot, soldier_slots,
-                         stat_attack, stat_defense, energy_milli)
-VALUES ($1,$2,$3,$4,true,$5,$6,$7,0)
+                         stat_attack, stat_defense, energy_milli, avatar)
+VALUES ($1,$2,$3,$4,true,$5,$6,$7,0,$8)
 RETURNING *;
 
 -- name: CountBots :one

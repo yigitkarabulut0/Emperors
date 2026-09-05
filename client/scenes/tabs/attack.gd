@@ -124,6 +124,17 @@ func _target_row(t: Dictionary) -> Control:
 	row.add_theme_constant_override("separation", 10)
 	margin.add_child(row)
 
+	# The face is the point of portraits. In asynchronous PvP an opponent is a row
+	# on a list and never a person you meet, so without it every raid target reads
+	# as the same anonymous stranger.
+	var face := TextureRect.new()
+	face.texture = ArtRegistry.portrait(str(t.get("avatar", "knight")))
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	face.custom_minimum_size = Vector2(52, 52)
+	face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(face)
+
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER

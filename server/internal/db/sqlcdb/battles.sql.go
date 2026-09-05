@@ -154,8 +154,8 @@ func (q *Queries) CountBots(ctx context.Context) (int64, error) {
 
 const createBot = `-- name: CreateBot :one
 INSERT INTO app.players (username, display_name, level, gold, is_bot, soldier_slots,
-                         stat_attack, stat_defense, energy_milli)
-VALUES ($1,$2,$3,$4,true,$5,$6,$7,0)
+                         stat_attack, stat_defense, energy_milli, avatar)
+VALUES ($1,$2,$3,$4,true,$5,$6,$7,0,$8)
 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
 `
 
@@ -167,6 +167,7 @@ type CreateBotParams struct {
 	SoldierSlots int32
 	StatAttack   int32
 	StatDefense  int32
+	Avatar       string
 }
 
 func (q *Queries) CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer, error) {
@@ -178,6 +179,7 @@ func (q *Queries) CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer
 		arg.SoldierSlots,
 		arg.StatAttack,
 		arg.StatDefense,
+		arg.Avatar,
 	)
 	var i AppPlayer
 	err := row.Scan(

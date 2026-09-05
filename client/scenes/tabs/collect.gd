@@ -5,6 +5,8 @@ extends VBoxContainer
 ## strip because that is the only part of a tall phone a thumb reaches, and this
 ## is the action a player performs hundreds of times a session.
 
+const ICON_SIZE := 42
+
 var _selected := ""
 var _rows: Dictionary = {}
 var _list: VBoxContainer
@@ -96,6 +98,15 @@ func _build_row(job: Dictionary) -> Control:
 	row.add_theme_constant_override("separation", 10)
 	margin.add_child(row)
 
+	# Fifteen rows of near-identical text are hard to scan. The icon is how a
+	# player finds the job they were on without reading every name.
+	var icon := TextureRect.new()
+	icon.texture = ArtRegistry.ui_icon("jobs/" + str(job.get("id", "")))
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
+	row.add_child(icon)
+
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -121,8 +132,16 @@ func _update_row(row: Control, job: Dictionary) -> void:
 	var affordable := unlocked and GameState.display_energy() >= int(job.get("energy_cost", 0))
 
 	var box := row.get_child(0).get_child(0)
-	var left: VBoxContainer = box.get_child(0)
-	var right: VBoxContainer = box.get_child(1)
+	var icon: TextureRect = box.get_child(0)
+	var left: VBoxContainer = box.get_child(1)
+	var right: VBoxContainer = box.get_child(2)
+
+	# Gold when it is the job you are about to run, plain when available, faint
+	# when still locked -- the same three states the row's text already uses.
+	if selected:
+		icon.modulate = Palette.GOLD
+	else:
+		icon.modulate = Palette.TEXT if unlocked else Palette.TEXT_FAINT
 
 	(left.get_child(0) as Label).text = str(job.get("name", ""))
 	(left.get_child(0) as Label).add_theme_color_override("font_color",

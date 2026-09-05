@@ -5,6 +5,7 @@ These are all mistakes already made once in this project. None of them raise an
 error at runtime -- they just quietly produce a wrong-looking screen -- so they
 are worth catching in text.
 """
+import json
 import pathlib
 import re
 import sys
@@ -113,7 +114,18 @@ elif not wanted:
 else:
     ok(f"all {len(wanted)} navigation icons ship")
 
-# 5. An unimported asset does not exist as far as an exported build is concerned.
+# 5. Every job in the balance document needs a row icon. The registry falls back
+#    to nothing, so a job added to balance without art is a blank row -- visible
+#    only to someone who scrolls to it.
+jobs_doc = json.loads((ROOT / "balance/jobs.json").read_text())
+job_ids = [j["id"] for j in (jobs_doc["jobs"] if isinstance(jobs_doc, dict) else jobs_doc)]
+no_art = [j for j in job_ids if not (CLIENT / f"assets/ui/jobs/{j}.png").exists()]
+if no_art:
+    fail(f"jobs with no row icon: {no_art}")
+else:
+    ok(f"all {len(job_ids)} jobs have a row icon")
+
+# 6. An unimported asset does not exist as far as an exported build is concerned.
 unimported = [p.relative_to(ROOT) for p in (CLIENT / "assets").rglob("*.png")
               if not p.with_suffix(".png.import").exists()]
 if unimported:

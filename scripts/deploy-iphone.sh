@@ -68,6 +68,11 @@ mkdir -p "$ROOT/build/ios"
 echo "==> exporting (this runs xcodebuild; first run is slow)"
 godot --headless --path "$ROOT/client" --export-debug "iOS" || true
 
+# The export has read it; remove it again. It lives in res://, so leaving it
+# behind would point every later DESKTOP run at this Mac's LAN address instead of
+# localhost -- and break entirely the next time the Wi-Fi hands out a new one.
+rm -f "$ROOT/client/env.build.json"
+
 IPA="$(find "$ROOT/build/ios" -maxdepth 1 -name '*.ipa' | head -1)"
 [ -n "$IPA" ] || { echo "no .ipa produced -- see the xcodebuild errors above" >&2; exit 1; }
 

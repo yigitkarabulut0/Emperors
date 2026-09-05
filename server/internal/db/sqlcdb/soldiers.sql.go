@@ -186,6 +186,20 @@ func (q *Queries) ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (A
 	return i, err
 }
 
+const deleteSoldier = `-- name: DeleteSoldier :exec
+DELETE FROM app.soldiers WHERE id = $1 AND player_id = $2
+`
+
+type DeleteSoldierParams struct {
+	ID       uuid.UUID
+	PlayerID uuid.UUID
+}
+
+func (q *Queries) DeleteSoldier(ctx context.Context, arg DeleteSoldierParams) error {
+	_, err := q.db.Exec(ctx, deleteSoldier, arg.ID, arg.PlayerID)
+	return err
+}
+
 const getSoldier = `-- name: GetSoldier :one
 SELECT id, player_id, slot_index, type_id, tier, level, name, recruited_at, rolled_config_version FROM app.soldiers WHERE id = $1 AND player_id = $2
 `

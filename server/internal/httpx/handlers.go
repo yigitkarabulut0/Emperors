@@ -436,6 +436,30 @@ func (a *api) train(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
+// dismissSoldier releases a soldier and frees the slot for another roll.
+func (a *api) dismissSoldier(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req soldierReq
+	if !decode(w, r, &req) {
+		return
+	}
+	sid, err := uuid.Parse(req.SoldierID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "soldier_id must be a uuid")
+		return
+	}
+	v, err := a.s().Dismiss(r.Context(), pid, sid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
 func (a *api) equipSoldier(w http.ResponseWriter, r *http.Request) {
 	pid, ok := PlayerID(r.Context())
 	if !ok {

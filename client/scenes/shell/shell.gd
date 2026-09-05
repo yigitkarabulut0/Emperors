@@ -19,6 +19,15 @@ const SECTIONS := [
 const RAIL_WIDTH := 88
 const ICON_SIZE := 34
 
+## Short enough that spamming Collect never leaves the counter visibly behind the
+## real balance, long enough to read as movement.
+const GOLD_ROLL_SECONDS := 0.30
+
+
+var _gold_shown := 0
+var _gold_seen := false
+var _gold_tween: Tween
+
 var _current := "collect"
 var _rail_buttons: Dictionary = {}
 var _content: Control
@@ -264,8 +273,47 @@ func _on_state_changed() -> void:
 		return
 	var p := GameState.player()
 	_level.text = "Lv %d" % int(p.get("level", 1))
-	_gold.text = UI.number(GameState.display_gold())
+	_show_gold(GameState.display_gold())
 	_update_energy()
+
+
+## Rolls the gold counter to `target` instead of snapping to it.
+##
+## Gold going up IS the game, so it is the one number worth animating. Two rules
+## keep the animation from ever lying:
+##
+##  - the roll always starts from what is currently on screen, not from the last
+##    target, so a change arriving mid-roll continues from where the eye is;
+##  - `_gold_shown` is set to the target immediately. The tween only drives the
+##    LABEL. If anything interrupts it the next change still starts from the true
+##    figure, and a stalled tween can never leave a stale number on screen.
+##
+## display_gold() is confirmed + replayed pending, so it also moves DOWN when a
+## prediction is rolled back. Rolling down reads as an honest correction; only
+## the flash is suppressed, because a gain cue on a loss would be a lie.
+func _show_gold(target: int) -> void:
+	var from := _gold_shown
+	_gold_shown = target
+
+	# First paint: no roll. Spinning up from zero on every sign-in is theatre.
+	if not _gold_seen:
+		_gold_seen = true
+		_gold.text = UI.number(target)
+		return
+	if from == target:
+		return
+
+	if _gold_tween != null and _gold_tween.is_valid():
+		_gold_tween.kill()
+	_gold_tween = create_tween()
+	_gold_tween.tween_method(
+		func(v: float) -> void: _gold.text = UI.number(int(v)),
+		float(from), float(target), GOLD_ROLL_SECONDS)
+	_gold_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	if target > from:
+		_gold_tween.parallel().tween_property(_gold, "modulate", Color(1.35, 1.3, 1.1), 0.08)
+		_gold_tween.chain().tween_property(_gold, "modulate", Color.WHITE, 0.22)
 
 
 func _update_energy() -> void:
@@ -275,7 +323,7 @@ func _update_energy() -> void:
 	var mx := GameState.max_energy()
 	_energy_bar.max_value = maxf(float(mx), 1.0)
 	_energy_bar.value = float(cur)
-	var secs := int(GameState.snapshot.get("energy", {}).get("seconds_to_full", 0))
+	var secs := GameState.display_seconds_to_full()
 	_energy.text = "%d/%d  %s" % [cur, mx, UI.duration(secs)]
 
 

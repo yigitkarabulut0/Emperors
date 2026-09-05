@@ -19,6 +19,11 @@ var loading := false
 var _pending: Array[Dictionary] = []
 var _sending := false
 
+## When the energy in `snapshot` was true, by the local clock. Energy is the one
+## value that moves on its own between polls, so it is projected forward from
+## here rather than sitting frozen until the next request.
+var _energy_at_ms: int = 0
+
 
 func _ready() -> void:
 	Session.signed_out.connect(func() -> void:
@@ -39,6 +44,7 @@ func refresh() -> void:
 	loading = false
 	if res.ok:
 		snapshot = res.data
+		_energy_at_ms = Time.get_ticks_msec()
 		changed.emit()
 	else:
 		action_failed.emit(res.error)
@@ -53,11 +59,46 @@ func display_gold() -> int:
 	return g
 
 
+## Energy accrued since the snapshot, in milliseconds of progress toward the next
+## whole point.
+##
+## The server sends the whole part only, but `seconds_to_full` encodes the
+## fraction it is already carrying: filling (max - current) points from an empty
+## remainder would take (max - current) * period, so whatever that overshoots
+## seconds_to_full by is the remainder already banked. Recovering it is what lets
+## the bar move in step with the server instead of a period out of phase.
+func _energy_progress_ms() -> int:
+	var e: Dictionary = snapshot.get("energy", {})
+	var cur := int(e.get("current", 0))
+	var mx := int(e.get("max", 0))
+	var period := int(e.get("regen_period_ms", 0))
+	if period <= 0 or cur >= mx:
+		return 0
+	var to_full_ms := int(e.get("seconds_to_full", 0)) * 1000
+	var banked: int = maxi(0, (mx - cur) * period - to_full_ms)
+	return banked + (Time.get_ticks_msec() - _energy_at_ms)
+
+
 func display_energy() -> int:
-	var e := int(snapshot.get("energy", {}).get("current", 0))
+	var e: Dictionary = snapshot.get("energy", {})
+	var v := int(e.get("current", 0))
+	var mx := int(e.get("max", 0))
+	var period := int(e.get("regen_period_ms", 0))
+	if period > 0 and v < mx:
+		v = mini(mx, v + _energy_progress_ms() / period)
 	for a in _pending:
-		e -= int(a["energy_cost"])
-	return maxi(e, 0)
+		v -= int(a["energy_cost"])
+	return maxi(v, 0)
+
+
+## Seconds until the pool is full, counting down between polls.
+func display_seconds_to_full() -> int:
+	var e: Dictionary = snapshot.get("energy", {})
+	var secs := int(e.get("seconds_to_full", 0))
+	if secs <= 0:
+		return 0
+	var gone := (Time.get_ticks_msec() - _energy_at_ms) / 1000
+	return maxi(0, secs - gone)
 
 
 func max_energy() -> int:

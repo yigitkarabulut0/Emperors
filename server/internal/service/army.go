@@ -554,3 +554,92 @@ func checkSeq(p sqlcdb.AppPlayer, wantSeq int64) error {
 	}
 	return nil
 }
+
+// DismissResult is what the player gets back for letting a soldier go.
+type DismissResult struct {
+	Refund   int64     `json:"refund"`
+	GoldLeft string    `json:"gold_left"`
+	Army     *ArmyView `json:"army"`
+}
+
+// dismissRefund is what a soldier is worth on the way out.
+//
+// Deliberately a fraction of what recruiting THAT TYPE COSTS RIGHT NOW, not of
+// what this particular soldier once cost. Recruit price rises with the player's
+// level, so pricing the refund off the soldier's own stored level would let a
+// trained soldier refund more than an untrained one and turn Train into an
+// investment. Off the current price, dismiss-and-recruit always costs the same
+// fraction of a recruit, whatever the player has done in between.
+func dismissRefund(cfg *gameconfig.Bundle, t *gameconfig.SoldierType, level int64) int64 {
+	ratio := cfg.Items.Price.SellRatioBP
+	return recruitCost(cfg, t, level) * ratio / 10000
+}
+
+// Dismiss releases a soldier, frees the slot and refunds part of the recruit
+// price. This is the reroll loop: a player hunting a legendary recruits,
+// dismisses, and recruits again, paying the difference every cycle.
+func (d Deps) Dismiss(ctx context.Context, playerID, soldierID uuid.UUID, wantSeq int64) (*DismissResult, error) {
+	var res DismissResult
+	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
+		q := sqlcdb.New(tx)
+
+		p, err := q.LockPlayer(ctx, playerID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("lock player: %w", err)
+		}
+		if err := checkSeq(p, wantSeq); err != nil {
+			return err
+		}
+
+		s, err := q.LockSoldier(ctx, sqlcdb.LockSoldierParams{ID: soldierID, PlayerID: playerID})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("lock soldier: %w", err)
+		}
+
+		// Gear goes back to the bag. Destroying it with the soldier would make a
+		// reroll cost far more than the refund suggests.
+		if err := q.ReleaseSoldierItems(ctx, sqlcdb.ReleaseSoldierItemsParams{
+			PlayerID: playerID, EquippedSoldierID: &s.ID,
+		}); err != nil {
+			return fmt.Errorf("release gear: %w", err)
+		}
+		if err := q.DeleteSoldier(ctx, sqlcdb.DeleteSoldierParams{
+			ID: soldierID, PlayerID: playerID,
+		}); err != nil {
+			return fmt.Errorf("delete soldier: %w", err)
+		}
+
+		refund := int64(0)
+		if t := d.Config.SoldierType(s.TypeID); t != nil {
+			refund = dismissRefund(d.Config, t, int64(p.Level))
+		}
+		after, err := q.CreditGold(ctx, sqlcdb.CreditGoldParams{
+			ID: playerID, Gold: refund, ActionSeq: wantSeq,
+		})
+		if err != nil {
+			return fmt.Errorf("credit gold: %w", err)
+		}
+		if refund > 0 {
+			if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+				PlayerID: playerID, Delta: refund, BalanceAfter: after.Gold,
+				Reason: "soldier_dismiss", RefID: strPtr(soldierID.String()),
+			}); err != nil {
+				return fmt.Errorf("ledger: %w", err)
+			}
+		}
+
+		res = DismissResult{Refund: refund, GoldLeft: itoa(after.Gold)}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	res.Army, err = d.GetArmy(ctx, playerID)
+	return &res, err
+}

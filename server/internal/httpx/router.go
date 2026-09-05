@@ -88,6 +88,7 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/army/slot", a.buySlot)
 			r.Post("/army/recruit", a.recruit)
 			r.Post("/army/train", a.train)
+			r.Post("/army/dismiss", a.dismissSoldier)
 			r.Post("/army/equip", a.equipSoldier)
 
 			r.Get("/estates", a.estates)

@@ -172,6 +172,51 @@ if sold and sold["level"] >= a4["hero"]["level"]:
 else:
     check("train is offered when the soldier is behind", sold.get("can_train") is True, sold)
 
+# --- dismiss ------------------------------------------------------------------
+#
+# The reroll loop. A player hunting a legendary recruits, dismisses, recruits
+# again -- so dismiss has to free the slot, hand back gear rather than destroy
+# it, and cost something every cycle.
+print("\n== dismiss and reroll ==")
+st, a5 = call("GET", "/v1/army", token=token)
+victim = a5["slots"][0]["soldier"]
+gear_before = [k for k, v in (victim.get("equipped") or {}).items() if v]
+st, before = call("GET", "/v1/state", token=token)
+gold_before = int(before["player"]["gold"])
+
+st, dm = call("POST", "/v1/army/dismiss",
+              {"soldier_id": victim["id"], "action_seq": seq(token)}, token=token)
+check("dismissing returns 200", st == 200, (st, dm))
+refund = dm.get("refund", 0)
+check("it refunds something", refund > 0, dm)
+check("the gold actually arrived", int(dm.get("gold_left", 0)) == gold_before + refund,
+      (gold_before, refund, dm.get("gold_left")))
+
+st, a6 = call("GET", "/v1/army", token=token)
+check("the slot is empty afterwards",
+      not any(x.get("soldier") for x in a6["slots"]), a6["slots"])
+check("the slot itself is not lost", len(a6["slots"]) == len(a5["slots"]),
+      (len(a5["slots"]), len(a6["slots"])))
+
+# Gear must survive its owner. Destroying it would make a reroll cost far more
+# than the refund suggests.
+if gear_before:
+    st, inv = call("GET", "/v1/inventory", token=token)
+    loose = [i for i in inv["items"] if not i.get("equipped_on") ]
+    check("the dismissed soldier's gear came back to the bag",
+          len(loose) >= len(gear_before), (len(gear_before), len(loose)))
+
+st, again = call("POST", "/v1/army/recruit",
+                 {"slot": 1, "type_id": "peasant", "action_seq": seq(token)}, token=token)
+check("the freed slot can be recruited into again", st == 200, (st, again))
+cost = again.get("paid", 0)
+check("a reroll costs more than the refund gives back", cost > refund, (cost, refund))
+
+st, ghost = call("POST", "/v1/army/dismiss",
+                 {"soldier_id": victim["id"], "action_seq": seq(token)}, token=token)
+check("dismissing an already-dismissed soldier is refused",
+      st == 404 and ghost.get("code") == "not_found", (st, ghost))
+
 print()
 if FAILURES:
     print(f"{len(FAILURES)} FAILED: " + ", ".join(FAILURES))

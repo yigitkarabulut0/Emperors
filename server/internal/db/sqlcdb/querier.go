@@ -60,6 +60,7 @@ type Querier interface {
 	DeleteInvite(ctx context.Context, arg DeleteInviteParams) error
 	DeleteInvitesForPlayer(ctx context.Context, playerID uuid.UUID) error
 	DeletePlayerItem(ctx context.Context, arg DeletePlayerItemParams) error
+	DeleteSoldier(ctx context.Context, arg DeleteSoldierParams) error
 	// Donating: take the gold, credit the treasury, and record the daily total in
 	// one place so the cap cannot be bypassed by racing two requests.
 	DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlayer, error)

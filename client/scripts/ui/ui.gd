@@ -54,9 +54,14 @@ const GAP_XL := 32
 const GUTTER := 24
 
 
-## Nine-slice margin. The source art is 96 square with a 20-unit corner radius,
-## so 28 keeps the whole rounded corner inside the fixed part of the slice.
-const SKIN_SLICE := 28
+## Nine-slice margins for the generated skins. The source art is 128 square: a
+## 14-unit shadow margin, then a body with a 22-unit corner radius. The slice has
+## to contain the shadow and the whole corner, and SKIN_BLEED pushes the drawn
+## area back out by the shadow margin so the BODY lines up with the control's
+## rect -- without it every button would render inset by its own shadow and look
+## smaller than the space it occupies.
+const SKIN_SLICE := 42
+const SKIN_BLEED := 14
 
 static var _skins: Dictionary = {}
 
@@ -96,6 +101,7 @@ static func skin(name: String, fallback: Color, pad_h: int = 16, pad_v: int = 12
 	s.texture = tex
 	for side in ["left", "top", "right", "bottom"]:
 		s.set("texture_margin_" + side, SKIN_SLICE)
+		s.set("expand_margin_" + side, SKIN_BLEED)
 	s.content_margin_left = pad_h
 	s.content_margin_right = pad_h
 	s.content_margin_top = pad_v
@@ -161,6 +167,12 @@ static func button(text: String, size: int = F_H2) -> Button:
 	b.add_theme_color_override("font_hover_color", Palette.BG)
 	b.add_theme_color_override("font_pressed_color", Palette.BG)
 	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
+	# A dark rim on light text and a light one on dark: at a glance it is what
+	# stops a caption dissolving into the gradient underneath it.
+	b.add_theme_constant_override("outline_size", 0)
+	b.add_theme_color_override("font_shadow_color", Color(1, 1, 1, 0.35))
+	b.add_theme_constant_override("shadow_offset_x", 0)
+	b.add_theme_constant_override("shadow_offset_y", 1)
 	b.add_theme_stylebox_override("normal", skin("gold", Palette.GOLD))
 	b.add_theme_stylebox_override("hover", skin("gold_hover", Color("#F0D793")))
 	b.add_theme_stylebox_override("pressed", skin("gold_press", Palette.GOLD_DEEP))

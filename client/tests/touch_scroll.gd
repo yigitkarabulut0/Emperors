@@ -86,9 +86,69 @@ func _run() -> void:
 		_fail("a plain tap no longer presses the row under it")
 		return
 
-	print("PASS  drag scrolls %d units, does not click; a tap still clicks"
+	# --- one event family, never both ---------------------------------------
+	#
+	# emulate_mouse_from_touch is on by default, so on a phone one finger drag
+	# arrives TWICE: as a ScreenDrag and again as a synthesised MouseMotion.
+	# Handling both moved the list at double speed and fought itself, which is
+	# what "it scrolls strangely" was. A device that speaks touch must ignore the
+	# mouse events describing the same finger.
+	var ds: DragScroll = null
+	for c in _scroll.get_children():
+		if c is DragScroll:
+			ds = c
+	if ds == null:
+		_fail("DragScroll is not installed on the container")
+		return
+
+	ds.set("_touch", true)          # pretend this is a phone
+	_scroll.scroll_vertical = 0
+	await process_frame
+	await _gesture(-40.0, 10)       # ...and send it MOUSE events
+	if _scroll.scroll_vertical != 0:
+		_fail("a touch device also acted on emulated mouse events: every drag would count twice (moved %d)"
+			% _scroll.scroll_vertical)
+		return
+
+	_scroll.scroll_vertical = 0
+	await process_frame
+	await _touch_gesture(-40.0, 10) # ...and now real touch
+	if _scroll.scroll_vertical <= 0:
+		_fail("a touch device ignored touch events too: nothing scrolls at all")
+		return
+
+	print("PASS  drag scrolls %d units, does not click, a tap still clicks, and one gesture counts once"
 		% (after - before))
 	quit(0)
+
+
+## The same gesture as _gesture, expressed as touch instead of mouse.
+func _touch_gesture(dy: float, steps: int) -> void:
+	var at := root.get_visible_rect().size * 0.5
+	var down := InputEventScreenTouch.new()
+	down.index = 0
+	down.pressed = true
+	down.position = at
+	Input.parse_input_event(down)
+	await process_frame
+
+	var y := at.y
+	for i in steps:
+		y += dy
+		var d := InputEventScreenDrag.new()
+		d.index = 0
+		d.position = Vector2(at.x, y)
+		d.relative = Vector2(0, dy)
+		Input.parse_input_event(d)
+		await process_frame
+
+	var up := InputEventScreenTouch.new()
+	up.index = 0
+	up.pressed = false
+	up.position = Vector2(at.x, y)
+	Input.parse_input_event(up)
+	for i in 3:
+		await process_frame
 
 
 ## One press, `steps` moves of `dy` each, one release.

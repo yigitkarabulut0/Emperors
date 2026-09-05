@@ -26,12 +26,22 @@ GOLD       = "#E5C97B"
 GOLD_DEEP  = "#B99A45"
 DANGER     = "#D95A4E"
 
-SIZE = 96        # nine-slice source size
-RADIUS = 20      # corner radius, comfortably inside the slice margin of 28
+SIZE = 128       # nine-slice source
+PAD = 14         # room around the body for the drop shadow
+RADIUS = 22      # corner radius of the body itself
+SLICE = PAD + RADIUS + 6   # nine-slice margin: the whole corner must sit inside it
 
 
 def run(args):
-    subprocess.run(args, check=True)
+    """Runs magick, always writing sRGB with a full alpha channel.
+
+    Without this the shadow layer -- which contains nothing but black -- is saved
+    as a grayscale PNG, and compositing the coloured body over a grayscale base
+    converts the whole button to grey. That is not a subtle degradation: the gold
+    primary button came out white.
+    """
+    subprocess.run(args[:1] + ["-colorspace", "sRGB"] + args[1:-1]
+                   + ["PNG32:" + str(args[-1])], check=True)
 
 
 def shade(hex_colour, factor):
@@ -42,39 +52,59 @@ def shade(hex_colour, factor):
     return "#%02X%02X%02X" % (f(r), f(g), f(b))
 
 
-def slice_png(name, top, bottom, border, border_px=2, lit=1.25, shade_bottom=0.72):
-    """One rounded, vertically graded nine-slice with a lit top and shaded foot."""
+def slice_png(name, top, bottom, border, gloss=True, shadow=True, border_px=2):
+    """One rounded, graded nine-slice: drop shadow, body, gloss, rim, foot.
+
+    The five layers are what separate a button from a coloured rectangle. A flat
+    fill has no light source, so nothing about it suggests it can be pressed.
+    """
     out = OUT / (name + ".png")
-    grad = OUT / ("_grad_" + name + ".png")
-    mask = OUT / ("_mask_" + name + ".png")
+    tmp = lambda tag: OUT / ("_%s_%s.png" % (tag, name))
+    lo, hi = PAD, SIZE - 1 - PAD
+    body = f"roundrectangle {lo},{lo} {hi},{hi} {RADIUS},{RADIUS}"
 
-    # The body: a vertical gradient, light at the top the way a lit surface is.
-    run(["magick", "-size", f"{SIZE}x{SIZE}",
-         f"gradient:{top}-{bottom}", str(grad)])
+    # 1. the shadow the object casts, offset down and blurred
+    if shadow:
+        run(["magick", "-size", f"{SIZE}x{SIZE}", "xc:none",
+             "-fill", "#00000099", "-draw",
+             f"roundrectangle {lo},{lo + 5} {hi},{hi + 5} {RADIUS},{RADIUS}",
+             "-blur", "0x6", str(tmp("sh"))])
+    else:
+        run(["magick", "-size", f"{SIZE}x{SIZE}", "xc:none", str(tmp("sh"))])
 
-    # A rounded-rectangle mask, so the corners are actually round rather than
-    # relying on the StyleBox to clip something square.
+    # 2. the body: a vertical gradient, lit from above
+    run(["magick", "-size", f"{SIZE}x{SIZE}", f"gradient:{top}-{bottom}", str(tmp("g"))])
     run(["magick", "-size", f"{SIZE}x{SIZE}", "xc:none", "-fill", "white",
-         "-draw", f"roundrectangle 0,0 {SIZE-1},{SIZE-1} {RADIUS},{RADIUS}",
-         str(mask)])
+         "-draw", body, str(tmp("m"))])
+    run(["magick", str(tmp("g")), str(tmp("m")), "-alpha", "off",
+         "-compose", "CopyOpacity", "-composite", str(tmp("b"))])
 
-    # Border, plus a brighter hairline along the top edge and a darker one along
-    # the bottom: that pair is what makes a flat rectangle read as a raised
-    # surface, and it costs two lines.
-    inner = RADIUS - border_px
-    run(["magick", str(grad), str(mask), "-alpha", "off",
-         "-compose", "CopyOpacity", "-composite",
-         "-fill", "none",
-         "-stroke", border, "-strokewidth", str(border_px * 2),
-         "-draw", f"roundrectangle 0,0 {SIZE-1},{SIZE-1} {RADIUS},{RADIUS}",
-         "-stroke", shade(top, lit), "-strokewidth", str(border_px),
-         "-draw", f"line {RADIUS},{border_px} {SIZE-1-RADIUS},{border_px}",
-         "-stroke", shade(bottom, shade_bottom), "-strokewidth", str(border_px),
-         "-draw", f"line {RADIUS},{SIZE-1-border_px} {SIZE-1-RADIUS},{SIZE-1-border_px}",
-         str(out)])
+    # 3. a gloss across the upper half, so the surface reads as curved
+    if gloss:
+        half = lo + (hi - lo) // 2
+        run(["magick", "-size", f"{SIZE}x{SIZE}", "xc:none",
+             "-fill", "#FFFFFF22", "-draw",
+             f"roundrectangle {lo + 2},{lo + 2} {hi - 2},{half} {RADIUS - 2},{RADIUS - 2}",
+             "-blur", "0x2", str(tmp("gl"))])
+        run(["magick", str(tmp("b")), str(tmp("gl")), "-compose", "over",
+             "-composite", str(tmp("m")), "-alpha", "off",
+             "-compose", "CopyOpacity", "-composite", str(tmp("b"))])
 
-    grad.unlink(missing_ok=True)
-    mask.unlink(missing_ok=True)
+    # 4. border, plus a lit rim along the top and a shaded foot along the bottom
+    run(["magick", str(tmp("b")), "-fill", "none",
+         "-stroke", border, "-strokewidth", str(border_px * 2), "-draw", body,
+         "-stroke", shade(top, 1.35), "-strokewidth", str(border_px),
+         "-draw", f"line {lo + RADIUS},{lo + border_px} {hi - RADIUS},{lo + border_px}",
+         "-stroke", shade(bottom, 0.66), "-strokewidth", str(border_px),
+         "-draw", f"line {lo + RADIUS},{hi - border_px} {hi - RADIUS},{hi - border_px}",
+         str(tmp("b"))])
+
+    # 5. composite the body over its own shadow
+    run(["magick", str(tmp("sh")), str(tmp("b")), "-compose", "over",
+         "-composite", str(out)])
+
+    for tag in ("sh", "g", "m", "b", "gl"):
+        tmp(tag).unlink(missing_ok=True)
     print("  %-22s %s -> %s" % (name, top, bottom))
 
 
@@ -83,22 +113,22 @@ def main():
     print("nine-slice skins ->", OUT)
 
     # Surfaces.
-    slice_png("panel",        shade(PANEL, 1.22),      PANEL,               LINE)
-    slice_png("panel_high",   shade(PANEL_HIGH, 1.20), PANEL_HIGH,          shade(LINE, 1.2))
-    slice_png("panel_sunk",   shade(BG, 0.88),         shade(BG, 1.10),     LINE)
-    slice_png("panel_gold",   shade(PANEL_HIGH, 1.18), PANEL,               GOLD_DEEP)
+    slice_png("panel",        shade(PANEL, 1.22),      PANEL,               LINE, gloss=False)
+    slice_png("panel_high",   shade(PANEL_HIGH, 1.20), PANEL_HIGH,          shade(LINE, 1.2), gloss=False)
+    slice_png("panel_sunk",   shade(BG, 0.88),         shade(BG, 1.10),     LINE, gloss=False, shadow=False)
+    slice_png("panel_gold",   shade(PANEL_HIGH, 1.18), PANEL,               GOLD_DEEP, gloss=False)
 
     # The primary button, and the two states it needs to look pressable.
     slice_png("gold",         shade(GOLD, 1.10),       GOLD_DEEP,           shade(GOLD_DEEP, 0.8))
     slice_png("gold_hover",   shade(GOLD, 1.20),       shade(GOLD_DEEP, 1.12), shade(GOLD_DEEP, 0.9))
-    slice_png("gold_press",   GOLD_DEEP,               shade(GOLD_DEEP, 0.80), shade(GOLD_DEEP, 0.7))
+    slice_png("gold_press",   GOLD_DEEP,               shade(GOLD_DEEP, 0.80), shade(GOLD_DEEP, 0.7), gloss=False, shadow=False)
     slice_png("danger",       shade(DANGER, 1.12),     shade(DANGER, 0.78),  shade(DANGER, 0.62))
-    slice_png("danger_press", shade(DANGER, 0.86),     shade(DANGER, 0.62),  shade(DANGER, 0.55))
+    slice_png("danger_press", shade(DANGER, 0.86),     shade(DANGER, 0.62),  shade(DANGER, 0.55), gloss=False, shadow=False)
 
     # Ghost buttons: a raised surface that is clearly not the primary action.
     slice_png("ghost",        shade(PANEL_HIGH, 1.16), PANEL,               LINE)
-    slice_png("ghost_press",  shade(PANEL, 0.92),      shade(PANEL, 0.80),  LINE)
-    slice_png("disabled",     shade(PANEL, 1.04),      shade(PANEL, 0.92),  shade(LINE, 0.8))
+    slice_png("ghost_press",  shade(PANEL, 0.92),      shade(PANEL, 0.80),  LINE, gloss=False, shadow=False)
+    slice_png("disabled",     shade(PANEL, 1.04),      shade(PANEL, 0.92),  shade(LINE, 0.8), gloss=False, shadow=False)
     print("done")
 
 

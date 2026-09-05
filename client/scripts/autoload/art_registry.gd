@@ -11,9 +11,28 @@ extends Node
 ##     moved to a downloadable pack without touching a single scene.
 
 const ITEM_DIR := "res://assets/items/"
+const UI_DIR := "res://assets/ui/"
 
 var _cache: Dictionary = {}
 var _missing: Dictionary = {}
+
+
+## Returns a flat white UI glyph, tintable with modulate. Null when absent, so a
+## caller can fall back to its own text rather than get a coloured diamond where
+## a navigation icon belongs.
+func ui_icon(name: String) -> Texture2D:
+	var key := "ui:" + name
+	if _cache.has(key):
+		return _cache[key]
+	var path := UI_DIR + name + ".png"
+	if not ResourceLoader.exists(path):
+		if not _missing.has(key):
+			_missing[key] = true
+			print("[art] missing ", path)
+		return null
+	var tex: Texture2D = load(path)
+	_cache[key] = tex
+	return tex
 
 
 ## Returns the icon for an item design at a tier, or a placeholder.

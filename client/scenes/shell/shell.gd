@@ -7,16 +7,17 @@ extends Control
 ## the thumb reaches comfortably, and this game is mostly one repeated tap.
 
 const SECTIONS := [
-	{"id": "family",    "glyph": "K", "label": "Keep",     "milestone": ""},
-	{"id": "collect",   "glyph": "F", "label": "Fields",   "milestone": ""},
-	{"id": "inventory", "glyph": "A", "label": "Armory",   "milestone": ""},
-	{"id": "shop",      "glyph": "M", "label": "Market",   "milestone": ""},
-	{"id": "soldiers",  "glyph": "B", "label": "Barracks", "milestone": ""},
-	{"id": "attack",    "glyph": "W", "label": "War Gate", "milestone": ""},
-	{"id": "territory", "glyph": "T", "label": "Map",      "milestone": ""},
+	{"id": "family", "icon": "keep", "glyph": "K", "label": "Keep", "milestone": ""},
+	{"id": "collect", "icon": "fields", "glyph": "F", "label": "Fields", "milestone": ""},
+	{"id": "inventory", "icon": "armory", "glyph": "A", "label": "Armory", "milestone": ""},
+	{"id": "shop", "icon": "market", "glyph": "M", "label": "Market", "milestone": ""},
+	{"id": "soldiers", "icon": "barracks", "glyph": "B", "label": "Barracks", "milestone": ""},
+	{"id": "attack", "icon": "war_gate", "glyph": "W", "label": "War Gate", "milestone": ""},
+	{"id": "territory", "icon": "territory", "glyph": "T", "label": "Map", "milestone": ""},
 ]
 
 const RAIL_WIDTH := 88
+const ICON_SIZE := 34
 
 var _current := "collect"
 var _rail_buttons: Dictionary = {}
@@ -176,7 +177,25 @@ func _build_rail() -> Control:
 		inner.set_anchors_preset(Control.PRESET_FULL_RECT)
 		inner.alignment = BoxContainer.ALIGNMENT_CENTER
 		inner.add_theme_constant_override("separation", 2)
-		inner.add_child(UI.label(str(s["glyph"]), 24, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		# EXPAND_IGNORE_SIZE matters: without it a TextureRect reports the source
+		# texture's own size as its minimum, and a 96 px icon would force the
+		# 74 px rail button to grow.
+		var tex := ArtRegistry.ui_icon(str(s["icon"]))
+		if tex != null:
+			var icon := TextureRect.new()
+			icon.texture = tex
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
+			icon.modulate = Palette.TEXT_DIM
+			inner.add_child(icon)
+		else:
+			# An unshipped icon must not leave an unlabelled button. Both branches
+			# tint through the same call below, so _style_rail needs no branch.
+			var glyph := UI.label(str(s["glyph"]), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+			glyph.modulate = Palette.TEXT_DIM
+			glyph.custom_minimum_size = Vector2(0, ICON_SIZE)
+			inner.add_child(glyph)
 		inner.add_child(UI.label(str(s["label"]), 11, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 		b.add_child(inner)
 
@@ -236,7 +255,7 @@ func _style_rail() -> void:
 		b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT, 0))
 		b.add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, 0))
 		var inner := b.get_child(0)
-		inner.get_child(0).add_theme_color_override("font_color", Palette.GOLD if active else Palette.TEXT_DIM)
+		inner.get_child(0).modulate = Palette.GOLD if active else Palette.TEXT_DIM
 		inner.get_child(1).add_theme_color_override("font_color", Palette.TEXT_DIM if active else Palette.TEXT_FAINT)
 
 

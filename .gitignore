@@ -51,3 +51,8 @@ admin/next-env.d.ts
 
 # Written by scripts/deploy-iphone.sh; holds a machine-specific LAN address.
 client/env.build.json
+
+# Generation intermediates. The raw render is the source and is kept; the matted
+# working copy and the style probes are reproducible from it.
+art/**/*_cut.png
+art/styletest/

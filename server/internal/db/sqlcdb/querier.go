@@ -30,6 +30,7 @@ type Querier interface {
 	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
 	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
+	BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error)
 	BuyHoldingLevel(ctx context.Context, arg BuyHoldingLevelParams) (AppPlayerHolding, error)
 	BuyKingdomUpgradeLevel(ctx context.Context, arg BuyKingdomUpgradeLevelParams) (AppKingdomUpgrade, error)
 	BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) (AppPlayer, error)
@@ -129,6 +130,10 @@ type Querier interface {
 	// Founding: pay, and join in the same statement so a crash cannot leave a
 	// kingdom with no king.
 	PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomParams) (AppPlayer, error)
+	// Pays for a reroll and advances the counter in one statement. The WHERE is the
+	// guard: no row comes back if the player cannot afford it, and the window check
+	// stops a reroll bought in one window from applying to the next.
+	PayForReroll(ctx context.Context, arg PayForRerollParams) (AppPlayer, error)
 	PlayerCounts(ctx context.Context) (PlayerCountsRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
 	// Takes an item off whoever is wearing it: the hero, a soldier, or nobody.

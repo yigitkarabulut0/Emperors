@@ -153,6 +153,48 @@ check("gold went up by exactly the sale", int(sell["gold_left"]) == gold_before 
 st, inv4 = call("GET", "/v1/inventory", token=token)
 check("the item is gone", all(i["id"] != item["id"] for i in inv4["items"]))
 
+# --- diamonds and rerolls -------------------------------------------------------
+#
+# Diamonds were shown in the top bar with no way to earn one and nothing to
+# spend it on: a currency stuck at zero reads as broken. Levelling is the source
+# (the XP curve already bounds it) and a shop reroll is the sink.
+print("\n== diamonds and rerolls ==")
+st, s2 = call("GET", "/v1/state", token=token)
+have = int(s2["player"]["diamonds"])
+check("levelling granted diamonds", have > 0, have)
+
+st, shop2 = call("GET", "/v1/shop", token=token)
+cost = shop2.get("reroll_cost", 0)
+check("the shop quotes a reroll price up front", cost > 0, shop2.get("reroll_cost"))
+check("and says whether it is affordable",
+      shop2.get("can_afford_reroll") == (have >= cost), (have, cost, shop2.get("can_afford_reroll")))
+before = [o["item"]["def_id"] for o in shop2["offers"]]
+
+if have >= cost:
+    st, rolled = call("POST", "/v1/shop/reroll", {"action_seq": next_seq(token)}, token=token)
+    check("rerolling returns 200", st == 200, (st, rolled))
+    after = [o["item"]["def_id"] for o in rolled["offers"]]
+    check("the offers actually changed", before != after, (before, after))
+    check("the price went up for the next one", rolled["reroll_cost"] > cost,
+          (cost, rolled.get("reroll_cost")))
+    check("the counter advanced", rolled["rerolls_used"] == shop2["rerolls_used"] + 1, rolled)
+
+    st, s3 = call("GET", "/v1/state", token=token)
+    check("diamonds were spent, and only diamonds",
+          int(s3["player"]["diamonds"]) == have - cost
+          and int(s3["player"]["gold"]) == int(s2["player"]["gold"]),
+          (have, cost, s3["player"]["diamonds"], s2["player"]["gold"], s3["player"]["gold"]))
+
+    # Drain the purse and confirm the refusal is clean rather than a 500.
+    for _ in range(20):
+        st, r = call("POST", "/v1/shop/reroll", {"action_seq": next_seq(token)}, token=token)
+        if st != 200:
+            break
+    check("rerolling with no diamonds is refused cleanly",
+          st == 409 and r.get("code") == "not_enough_diamonds", (st, r))
+else:
+    check("a first reroll is affordable after a few levels", False, (have, cost))
+
 print()
 if FAILURES:
     print(f"{len(FAILURES)} FAILED: " + ", ".join(FAILURES))

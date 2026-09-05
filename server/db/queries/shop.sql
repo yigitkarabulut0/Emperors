@@ -22,3 +22,18 @@ UPDATE app.shop_state
 SET purchased_mask = purchased_mask | $2
 WHERE player_id = $1
 RETURNING *;
+
+-- Pays for a reroll and advances the counter in one statement. The WHERE is the
+-- guard: no row comes back if the player cannot afford it, and the window check
+-- stops a reroll bought in one window from applying to the next.
+-- name: PayForReroll :one
+UPDATE app.players
+SET diamonds = diamonds - $2, action_seq = $3, last_seen_at = now()
+WHERE id = $1 AND diamonds >= $2
+RETURNING *;
+
+-- name: BumpReroll :one
+UPDATE app.shop_state
+SET reroll_index = reroll_index + 1
+WHERE player_id = $1 AND window_id = $2
+RETURNING *;

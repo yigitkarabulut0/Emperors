@@ -12,13 +12,15 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
+	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
 
 var (
-	ErrAlreadyPurchased = errors.New("that offer is already sold")
-	ErrNotEnoughGold    = errors.New("not enough gold")
-	ErrInventoryFull    = errors.New("inventory is full")
-	ErrShopStale        = errors.New("the shop has refreshed")
+	ErrAlreadyPurchased  = errors.New("that offer is already sold")
+	ErrNotEnoughGold     = errors.New("not enough gold")
+	ErrNotEnoughDiamonds = errors.New("not enough diamonds")
+	ErrInventoryFull     = errors.New("inventory is full")
+	ErrShopStale         = errors.New("the shop has refreshed")
 )
 
 // ShopView is the Market tab.
@@ -28,6 +30,12 @@ type ShopView struct {
 	Offers        []ShopOffer `json:"offers"`
 	InventoryUsed int64       `json:"inventory_used"`
 	InventoryCap  int64       `json:"inventory_cap"`
+
+	// What the next reroll would cost, and whether it can be afforded. Shown so
+	// the price is visible before the tap rather than after it.
+	RerollCost    int64 `json:"reroll_cost"`
+	RerollsUsed   int64 `json:"rerolls_used"`
+	CanAffordRoll bool  `json:"can_afford_reroll"`
 }
 
 type ShopOffer struct {
@@ -72,7 +80,11 @@ func (d Deps) GetShop(ctx context.Context, playerID uuid.UUID) (*ShopView, error
 		return nil, err
 	}
 
+	cost := rerollCost(d.Config, int64(st.RerollIndex))
 	return &ShopView{
+		RerollCost:    cost,
+		RerollsUsed:   int64(st.RerollIndex),
+		CanAffordRoll: p.Diamonds >= cost,
 		WindowID:      windowID,
 		SecondsLeft:   secondsLeft,
 		Offers:        d.rollOffers(playerID, st, int(p.Level), eff.ShopDiscount),
@@ -238,3 +250,64 @@ func (d Deps) Buy(ctx context.Context, playerID uuid.UUID, slot int, wantSeq int
 }
 
 func strPtr(s string) *string { return &s }
+
+// rerollCost escalates within a window and resets when the window turns.
+//
+// Flat pricing would make a legendary a matter of patience with a wallet; an
+// escalating one keeps the fifth reroll of a window a real decision. Diamonds
+// only -- a gold reroll would be a way to convert income straight into rarity,
+// which is the one thing the premium currency is not allowed to do either.
+func rerollCost(cfg *gameconfig.Bundle, used int64) int64 {
+	return cfg.Items.Shop.RerollBaseDiamonds + cfg.Items.Shop.RerollStepDiamonds*used
+}
+
+// RerollShop buys a fresh set of offers.
+//
+// Nothing about the offers is stored: they are a pure function of
+// (secret, player, window, reroll index), so advancing the index IS the reroll.
+// Slots already bought stay bought, because the purchase mask is per window --
+// otherwise a reroll would be a way to buy the same slot twice.
+func (d Deps) RerollShop(ctx context.Context, playerID uuid.UUID, wantSeq int64) (*ShopView, error) {
+	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
+		q := sqlcdb.New(tx)
+
+		p, err := q.LockPlayer(ctx, playerID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("lock player: %w", err)
+		}
+		if err := checkSeq(p, wantSeq); err != nil {
+			return err
+		}
+
+		windowID, _ := d.shopWindow()
+		st, err := q.UpsertShopWindow(ctx, sqlcdb.UpsertShopWindowParams{
+			PlayerID: playerID, WindowID: windowID,
+		})
+		if err != nil {
+			return fmt.Errorf("shop window: %w", err)
+		}
+
+		cost := rerollCost(d.Config, int64(st.RerollIndex))
+		if _, err := q.PayForReroll(ctx, sqlcdb.PayForRerollParams{
+			ID: playerID, Diamonds: cost, ActionSeq: wantSeq,
+		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotEnoughDiamonds
+			}
+			return fmt.Errorf("pay for reroll: %w", err)
+		}
+		if _, err := q.BumpReroll(ctx, sqlcdb.BumpRerollParams{
+			PlayerID: playerID, WindowID: windowID,
+		}); err != nil {
+			return fmt.Errorf("bump reroll: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return d.GetShop(ctx, playerID)
+}

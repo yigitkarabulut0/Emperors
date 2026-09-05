@@ -95,6 +95,11 @@ emit("progression.json", json.dumps({
     # decision: banked gold cannot be stolen, but banking it costs. The fee is
     # what stops "deposit everything, always" from being free safety.
     "treasury": {"deposit_fee_bp": 1000},
+    # Diamonds have to come from somewhere before purchasing exists, or the
+    # counter sits at zero forever and reads as broken. Levelling is the source:
+    # it is the one reward that cannot be farmed faster by playing more, since
+    # the XP curve already bounds it.
+    "levelup_diamonds": 5,
     "avatars": AVATARS,
     "levels": levels,
 }, indent=2) + "\n")
@@ -220,6 +225,12 @@ emit("items.json", json.dumps({
         "base_weights": {"common": 100.0, "uncommon": 45.0, "rare": 16.0, "epic": 5.0,
                          "legendary": 1.2, "mystic": 0.20, "special": 0.02},
         "luck_coef": 0.014,
+        # Rerolling costs diamonds, never gold. A gold reroll would be a way to
+        # convert income straight into rarity, which is the one thing the premium
+        # currency is not allowed to do either -- so the price escalates within a
+        # window and resets when the window turns.
+        "reroll_base_diamonds": 8,
+        "reroll_step_diamonds": 6,
     },
     "definitions": item_defs,
 }, indent=2) + "\n")

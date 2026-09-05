@@ -39,10 +39,12 @@ type PriceConfig struct {
 }
 
 type ShopConfig struct {
-	Slots         int                `json:"slots"`
-	WindowSeconds int64              `json:"window_seconds"`
-	BaseWeights   map[string]float64 `json:"base_weights"`
-	LuckCoef      float64            `json:"luck_coef"`
+	Slots              int                `json:"slots"`
+	WindowSeconds      int64              `json:"window_seconds"`
+	BaseWeights        map[string]float64 `json:"base_weights"`
+	LuckCoef           float64            `json:"luck_coef"`
+	RerollBaseDiamonds int64              `json:"reroll_base_diamonds"`
+	RerollStepDiamonds int64              `json:"reroll_step_diamonds"`
 }
 
 type ItemDef struct {

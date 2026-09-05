@@ -74,6 +74,8 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "already_purchased", "someone already took that one")
 	case errors.Is(err, service.ErrInvalidAmount):
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "amount must be positive")
+	case errors.Is(err, service.ErrNotEnoughDiamonds):
+		WriteProblem(w, r, http.StatusConflict, "not_enough_diamonds", "not enough diamonds")
 	case errors.Is(err, service.ErrNotEnoughGold):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_gold", "not enough gold")
 	case errors.Is(err, service.ErrInventoryFull):
@@ -845,4 +847,26 @@ func (a *api) kingdomSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"players": list})
+}
+
+
+// rerollShop buys a fresh set of offers with diamonds.
+func (a *api) rerollShop(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req struct {
+		ActionSeq int64 `json:"action_seq"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().RerollShop(r.Context(), pid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
 }

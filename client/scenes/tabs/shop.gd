@@ -12,6 +12,8 @@ var _cards: Array[ItemCard] = []
 var _shop: Dictionary = {}
 var _busy := false
 var _seconds_left := 0
+var _reroll: Button
+var _reroll_sub: Label
 
 
 func _ready() -> void:
@@ -41,9 +43,21 @@ func _ready() -> void:
 
 
 func mount_action_bar(host: Control) -> void:
-	var l := UI.label("Tap an offer to buy it", 14, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
-	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	host.add_child(l)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	host.add_child(col)
+
+	# Diamonds had no sink at all: the counter sat at zero and nothing spent it.
+	# A reroll is the design's own listed use, and it buys a CHANCE rather than
+	# an item -- you still pay gold for whatever it turns up.
+	_reroll = UI.button("REROLL", 17)
+	_reroll.custom_minimum_size = Vector2(0, 48)
+	_reroll.pressed.connect(_do_reroll)
+	col.add_child(_reroll)
+
+	_reroll_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	col.add_child(_reroll_sub)
+	_update_reroll()
 
 
 func _reload() -> void:
@@ -70,6 +84,7 @@ func _rebuild() -> void:
 		_cards.append(card)
 
 	_update_header()
+	_update_reroll()
 	# No frame await needed: add_child runs _ready synchronously, so every card's
 	# children are already built by the time this returns.
 	_update_affordability()
@@ -79,6 +94,42 @@ func _update_header() -> void:
 	var used := int(_shop.get("inventory_used", 0))
 	var cap := int(_shop.get("inventory_cap", 0))
 	_header.text = "Restocks in %s     armory %d/%d" % [UI.duration(_seconds_left), used, cap]
+
+
+## The price escalates within a window and resets when the window turns, so it
+## has to be read back from the server rather than counted locally.
+func _update_reroll() -> void:
+	if _reroll == null:
+		return
+	var cost := int(_shop.get("reroll_cost", 0))
+	var used := int(_shop.get("rerolls_used", 0))
+	var have := int(GameState.player().get("diamonds", 0))
+	_reroll.text = "REROLL — %d ◆" % cost
+	_reroll.disabled = _busy or have < cost
+	if have < cost:
+		_reroll_sub.text = "you have %d diamonds — level up to earn more" % have
+	elif used > 0:
+		_reroll_sub.text = "%d this window · the price rises each time" % used
+	else:
+		_reroll_sub.text = "a fresh set of offers, same window"
+
+
+func _do_reroll() -> void:
+	if _busy:
+		return
+	_busy = true
+	_update_reroll()
+	var res: Api.Response = await Api.post_json("/v1/shop/reroll",
+		{"action_seq": int(GameState.player().get("action_seq", 0)) + 1})
+	_busy = false
+	if res.ok:
+		_shop = res.data
+		_seconds_left = int(_shop.get("seconds_left", 0))
+		await GameState.refresh()
+		_rebuild()
+	else:
+		GameState.action_failed.emit(res.error)
+		_update_reroll()
 
 
 func _update_affordability() -> void:

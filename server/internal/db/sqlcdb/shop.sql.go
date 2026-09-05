@@ -11,6 +11,30 @@ import (
 	"github.com/google/uuid"
 )
 
+const bumpReroll = `-- name: BumpReroll :one
+UPDATE app.shop_state
+SET reroll_index = reroll_index + 1
+WHERE player_id = $1 AND window_id = $2
+RETURNING player_id, window_id, purchased_mask, reroll_index
+`
+
+type BumpRerollParams struct {
+	PlayerID uuid.UUID
+	WindowID int64
+}
+
+func (q *Queries) BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error) {
+	row := q.db.QueryRow(ctx, bumpReroll, arg.PlayerID, arg.WindowID)
+	var i AppShopState
+	err := row.Scan(
+		&i.PlayerID,
+		&i.WindowID,
+		&i.PurchasedMask,
+		&i.RerollIndex,
+	)
+	return i, err
+}
+
 const getShopState = `-- name: GetShopState :one
 SELECT player_id, window_id, purchased_mask, reroll_index FROM app.shop_state WHERE player_id = $1
 `
@@ -63,6 +87,65 @@ func (q *Queries) MarkShopSlotPurchased(ctx context.Context, arg MarkShopSlotPur
 		&i.WindowID,
 		&i.PurchasedMask,
 		&i.RerollIndex,
+	)
+	return i, err
+}
+
+const payForReroll = `-- name: PayForReroll :one
+UPDATE app.players
+SET diamonds = diamonds - $2, action_seq = $3, last_seen_at = now()
+WHERE id = $1 AND diamonds >= $2
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+`
+
+type PayForRerollParams struct {
+	ID        uuid.UUID
+	Diamonds  int64
+	ActionSeq int64
+}
+
+// Pays for a reroll and advances the counter in one statement. The WHERE is the
+// guard: no row comes back if the player cannot afford it, and the window check
+// stops a reroll bought in one window from applying to the next.
+func (q *Queries) PayForReroll(ctx context.Context, arg PayForRerollParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, payForReroll, arg.ID, arg.Diamonds, arg.ActionSeq)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
 	)
 	return i, err
 }

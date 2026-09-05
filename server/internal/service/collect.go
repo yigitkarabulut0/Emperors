@@ -17,11 +17,12 @@ import (
 // the new snapshot so the client can reconcile its optimistic prediction and
 // animate the difference, rather than snapping numbers.
 type CollectResult struct {
-	GoldGained   int64     `json:"gold_gained"`
-	XPGained     int64     `json:"xp_gained"`
-	LevelsGained int       `json:"levels_gained"`
-	MilestoneHit int64     `json:"milestone_hit,omitempty"`
-	Snapshot     *Snapshot `json:"snapshot"`
+	GoldGained     int64     `json:"gold_gained"`
+	XPGained       int64     `json:"xp_gained"`
+	LevelsGained   int       `json:"levels_gained"`
+	DiamondsGained int64     `json:"diamonds_gained,omitempty"`
+	MilestoneHit   int64     `json:"milestone_hit,omitempty"`
+	Snapshot       *Snapshot `json:"snapshot"`
 }
 
 // Collect performs one job.
@@ -107,15 +108,17 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 			Xp:                up.XP,
 			Level:             int32(up.Level),
 			StatPointsUnspent: int32(up.StatPoints),
+			Diamonds:          up.Diamonds,
 			ActionSeq:         wantSeq,
 		}); err != nil {
 			return fmt.Errorf("apply collect: %w", err)
 		}
 
 		res = CollectResult{
-			GoldGained:   reward.Gold,
-			XPGained:     reward.XP,
-			LevelsGained: up.LevelsGained,
+			GoldGained:     reward.Gold,
+			XPGained:       reward.XP,
+			LevelsGained:   up.LevelsGained,
+			DiamondsGained: up.Diamonds,
 		}
 		if reward.MilestoneHit != nil {
 			res.MilestoneHit = reward.MilestoneHit.Collects

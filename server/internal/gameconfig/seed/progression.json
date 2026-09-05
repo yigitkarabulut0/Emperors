@@ -13,6 +13,7 @@
   "treasury": {
     "deposit_fee_bp": 1000
   },
+  "levelup_diamonds": 5,
   "avatars": [
     "knight",
     "king",

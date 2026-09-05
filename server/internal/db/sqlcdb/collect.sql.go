@@ -20,7 +20,8 @@ SET energy_milli      = $2,
     xp                = $5,
     level             = $6,
     stat_points_unspent = stat_points_unspent + $7,
-    action_seq        = $8,
+    diamonds          = diamonds + $8,
+    action_seq        = $9,
     last_seen_at      = now()
 WHERE id = $1
 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
@@ -34,6 +35,7 @@ type ApplyCollectParams struct {
 	Xp                int64
 	Level             int32
 	StatPointsUnspent int32
+	Diamonds          int64
 	ActionSeq         int64
 }
 
@@ -48,6 +50,7 @@ func (q *Queries) ApplyCollect(ctx context.Context, arg ApplyCollectParams) (App
 		arg.Xp,
 		arg.Level,
 		arg.StatPointsUnspent,
+		arg.Diamonds,
 		arg.ActionSeq,
 	)
 	var i AppPlayer

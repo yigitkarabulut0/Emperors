@@ -21,7 +21,8 @@ SET energy_milli      = $2,
     xp                = $5,
     level             = $6,
     stat_points_unspent = stat_points_unspent + $7,
-    action_seq        = $8,
+    diamonds          = diamonds + $8,
+    action_seq        = $9,
     last_seen_at      = now()
 WHERE id = $1
 RETURNING *;

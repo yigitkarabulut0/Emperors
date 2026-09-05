@@ -8,6 +8,7 @@ type LevelUp struct {
 	XP           int64 // XP accumulated within the current level
 	LevelsGained int
 	StatPoints   int64 // points granted by those levels
+	Diamonds     int64 // premium currency granted by those levels
 	Refilled     bool  // whether energy should be topped up
 }
 
@@ -39,6 +40,9 @@ func AwardXP(cfg *gameconfig.Bundle, level int, xpInLevel, gain int64, bonuses B
 		out.Level++
 		out.LevelsGained++
 		out.StatPoints += int64(cfg.Progression.StatPointsPerLevel)
+		// The only source of diamonds until purchasing exists. Levelling is the
+		// right one: the XP curve already bounds it, so it cannot be farmed.
+		out.Diamonds += cfg.Progression.LevelupDiamonds
 	}
 
 	if out.Level >= cap {

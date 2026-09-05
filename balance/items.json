@@ -62,7 +62,9 @@
       "mystic": 0.2,
       "special": 0.02
     },
-    "luck_coef": 0.014
+    "luck_coef": 0.014,
+    "reroll_base_diamonds": 8,
+    "reroll_step_diamonds": 6
   },
   "definitions": [
     {

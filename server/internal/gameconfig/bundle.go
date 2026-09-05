@@ -73,6 +73,7 @@ type ProgressionConfig struct {
 	Energy             EnergyConfig `json:"energy"`
 	StatPointsPerLevel int             `json:"stat_points_per_level"`
 	Treasury           TreasuryConfig  `json:"treasury"`
+	LevelupDiamonds    int64           `json:"levelup_diamonds"`
 	Avatars            []string        `json:"avatars"`
 	Levels             []Level      `json:"levels"`
 }

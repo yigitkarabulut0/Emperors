@@ -78,6 +78,9 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/collect", a.collect)
 			r.Post("/stats/spend", a.spendStats)
 
+			r.Post("/treasury/deposit", a.deposit)
+			r.Post("/treasury/withdraw", a.withdraw)
+
 			r.Get("/shop", a.shop)
 			r.Post("/shop/buy", a.buy)
 

@@ -91,6 +91,10 @@ emit("progression.json", json.dumps({
         "regen_bonus_cap_bp": 6000,
     },
     "stat_points_per_level": 1,
+    # The Treasury is the game's largest gold sink and its only real risk
+    # decision: banked gold cannot be stolen, but banking it costs. The fee is
+    # what stops "deposit everything, always" from being free safety.
+    "treasury": {"deposit_fee_bp": 1000},
     "avatars": AVATARS,
     "levels": levels,
 }, indent=2) + "\n")

@@ -72,6 +72,8 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "not_enough_energy", "not enough energy")
 	case errors.Is(err, service.ErrAlreadyPurchased):
 		WriteProblem(w, r, http.StatusConflict, "already_purchased", "someone already took that one")
+	case errors.Is(err, service.ErrInvalidAmount):
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "amount must be positive")
 	case errors.Is(err, service.ErrNotEnoughGold):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_gold", "not enough gold")
 	case errors.Is(err, service.ErrInventoryFull):
@@ -785,6 +787,43 @@ func (a *api) setAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v, err := a.s().SetAvatar(r.Context(), pid, req.Avatar, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+
+// --- treasury ---
+//
+// Banked gold cannot be stolen. Depositing costs a fee, withdrawing is free.
+
+type treasuryReq struct {
+	Amount    int64 `json:"amount"`
+	ActionSeq int64 `json:"action_seq"`
+}
+
+func (a *api) deposit(w http.ResponseWriter, r *http.Request)  { a.treasuryMove(w, r, true) }
+func (a *api) withdraw(w http.ResponseWriter, r *http.Request) { a.treasuryMove(w, r, false) }
+
+func (a *api) treasuryMove(w http.ResponseWriter, r *http.Request, in bool) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req treasuryReq
+	if !decode(w, r, &req) {
+		return
+	}
+	var v any
+	var err error
+	if in {
+		v, err = a.s().Deposit(r.Context(), pid, req.Amount, req.ActionSeq)
+	} else {
+		v, err = a.s().Withdraw(r.Context(), pid, req.Amount, req.ActionSeq)
+	}
 	if err != nil {
 		a.fail(w, r, err)
 		return

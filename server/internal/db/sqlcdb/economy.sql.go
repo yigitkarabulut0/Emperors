@@ -67,6 +67,129 @@ func (q *Queries) CreditGold(ctx context.Context, arg CreditGoldParams) (AppPlay
 	return i, err
 }
 
+const moveFromTreasury = `-- name: MoveFromTreasury :one
+UPDATE app.players
+SET gold = gold + $2, treasury_gold = treasury_gold - $2,
+    action_seq = $3, last_seen_at = now()
+WHERE id = $1 AND treasury_gold >= $2
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+`
+
+type MoveFromTreasuryParams struct {
+	ID        uuid.UUID
+	Gold      int64
+	ActionSeq int64
+}
+
+func (q *Queries) MoveFromTreasury(ctx context.Context, arg MoveFromTreasuryParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, moveFromTreasury, arg.ID, arg.Gold, arg.ActionSeq)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+	)
+	return i, err
+}
+
+const moveToTreasury = `-- name: MoveToTreasury :one
+UPDATE app.players
+SET gold = gold - $2, treasury_gold = treasury_gold + $3,
+    action_seq = $4, last_seen_at = now()
+WHERE id = $1 AND gold >= $2
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar
+`
+
+type MoveToTreasuryParams struct {
+	ID           uuid.UUID
+	Gold         int64
+	TreasuryGold int64
+	ActionSeq    int64
+}
+
+// Moves gold between the purse and the vault in one statement, so the pair can
+// never be seen half-applied. The guards are in the WHERE: no row comes back if
+// the player cannot cover it, and the CHECK constraints refuse a negative side.
+func (q *Queries) MoveToTreasury(ctx context.Context, arg MoveToTreasuryParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, moveToTreasury,
+		arg.ID,
+		arg.Gold,
+		arg.TreasuryGold,
+		arg.ActionSeq,
+	)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+	)
+	return i, err
+}
+
 const recordGold = `-- name: RecordGold :exec
 INSERT INTO app.gold_ledger (player_id, delta, balance_after, reason, ref_id)
 VALUES ($1, $2, $3, $4, $5)

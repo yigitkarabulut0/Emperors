@@ -51,9 +51,13 @@ static func ghost_button(text: String, size: int = 16) -> Button:
 	b.add_theme_font_size_override("font_size", size)
 	b.add_theme_color_override("font_color", Palette.TEXT_DIM)
 	b.add_theme_color_override("font_hover_color", Palette.TEXT)
-	b.add_theme_stylebox_override("normal", panel_box(Color.TRANSPARENT))
-	b.add_theme_stylebox_override("hover", panel_box(Palette.PANEL_HIGH))
-	b.add_theme_stylebox_override("pressed", panel_box(Palette.PANEL))
+	# A visible edge, because a fully transparent "button" sitting on a card reads
+	# as a caption and nobody taps it.
+	b.add_theme_stylebox_override("normal", panel_box(Palette.PANEL_HIGH, Palette.LINE))
+	b.add_theme_stylebox_override("hover", panel_box(Palette.PANEL_HIGH, Palette.GOLD_DEEP))
+	b.add_theme_stylebox_override("pressed", panel_box(Palette.PANEL, Palette.GOLD))
+	b.add_theme_stylebox_override("disabled", panel_box(Palette.BG, Palette.LINE))
+	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
 	b.focus_mode = Control.FOCUS_NONE
 	return b
 

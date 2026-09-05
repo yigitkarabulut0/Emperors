@@ -10,6 +10,9 @@
     "regen_bonus_cap_bp": 6000
   },
   "stat_points_per_level": 1,
+  "treasury": {
+    "deposit_fee_bp": 1000
+  },
   "avatars": [
     "knight",
     "king",

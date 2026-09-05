@@ -55,6 +55,60 @@ print(f"\n== setup ==  ({user})")
 s = grind(token)
 print(f"        lv{s['player']['level']} gold={s['player']['gold']}")
 
+# --- the treasury --------------------------------------------------------------
+#
+# The game's largest sink and its only standing risk decision: a raid takes a
+# share of gold ON HAND and never touches the vault, so the fee is what stops
+# "bank everything, always" from being free safety.
+print("\n== the treasury ==")
+
+
+def purse(t):
+    _, s = call("GET", "/v1/state", token=t)
+    return int(s["player"]["gold"]), int(s["player"]["treasury"])
+
+
+gold0, vault0 = purse(token)
+if gold0 < 100:
+    print("        (too poor to bank anything — skipped)")
+else:
+    amount = gold0 // 2
+    st, dep = call("POST", "/v1/treasury/deposit",
+                   {"amount": amount, "action_seq": seq(token)}, token=token)
+    check("depositing returns 200", st == 200, (st, dep))
+    fee = dep.get("fee", -1)
+    check("the fee is a tenth", fee == amount // 10, (amount, fee))
+    check("what banks is the rest", dep.get("banked") == amount - fee, dep)
+
+    gold1, vault1 = purse(token)
+    check("the purse lost the whole amount", gold1 == gold0 - amount, (gold0, amount, gold1))
+    check("the vault gained the amount minus the fee", vault1 == vault0 + amount - fee,
+          (vault0, amount, fee, vault1))
+    # The fee has to LEAVE the economy. A fee that landed somewhere would just be
+    # gold changing pockets, and the sink dashboard would be reporting a lie.
+    check("the fee was destroyed, not moved",
+          (gold1 + vault1) == (gold0 + vault0) - fee, (gold0, vault0, gold1, vault1, fee))
+
+    st, wd = call("POST", "/v1/treasury/withdraw",
+                  {"amount": vault1, "action_seq": seq(token)}, token=token)
+    check("withdrawing returns 200", st == 200, (st, wd))
+    gold2, vault2 = purse(token)
+    check("taking it out is free", gold2 == gold1 + vault1 and vault2 == 0,
+          (gold1, vault1, gold2, vault2))
+
+    st, over = call("POST", "/v1/treasury/deposit",
+                    {"amount": gold2 + 1_000_000, "action_seq": seq(token)}, token=token)
+    check("banking more than you carry is refused",
+          st == 409 and over.get("code") == "not_enough_gold", (st, over))
+    st, empty = call("POST", "/v1/treasury/withdraw",
+                     {"amount": 1, "action_seq": seq(token)}, token=token)
+    check("taking from an empty vault is refused",
+          st == 409 and empty.get("code") == "not_enough_gold", (st, empty))
+    for bad in (0, -500):
+        st, r = call("POST", "/v1/treasury/deposit",
+                     {"amount": bad, "action_seq": seq(token)}, token=token)
+        check(f"an amount of {bad} is refused", st == 400, (st, r))
+
 print("\n== the estate ==")
 st, e = call("GET", "/v1/estates", token=token)
 check("estates returns 200", st == 200, st)

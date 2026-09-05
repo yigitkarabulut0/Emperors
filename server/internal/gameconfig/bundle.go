@@ -71,8 +71,9 @@ type Milestone struct {
 type ProgressionConfig struct {
 	LevelCap           int          `json:"level_cap"`
 	Energy             EnergyConfig `json:"energy"`
-	StatPointsPerLevel int          `json:"stat_points_per_level"`
-	Avatars            []string     `json:"avatars"`
+	StatPointsPerLevel int             `json:"stat_points_per_level"`
+	Treasury           TreasuryConfig  `json:"treasury"`
+	Avatars            []string        `json:"avatars"`
 	Levels             []Level      `json:"levels"`
 }
 
@@ -97,6 +98,10 @@ func (b *Bundle) DefaultAvatar() string {
 		return "knight"
 	}
 	return b.Progression.Avatars[0]
+}
+
+type TreasuryConfig struct {
+	DepositFeeBP int64 `json:"deposit_fee_bp"`
 }
 
 type EnergyConfig struct {

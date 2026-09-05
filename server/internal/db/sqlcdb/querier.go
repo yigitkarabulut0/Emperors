@@ -116,6 +116,11 @@ type Querier interface {
 	MarkIdentityUsed(ctx context.Context, id uuid.UUID) error
 	MarkSessionUsed(ctx context.Context, id uuid.UUID) error
 	MarkShopSlotPurchased(ctx context.Context, arg MarkShopSlotPurchasedParams) (AppShopState, error)
+	MoveFromTreasury(ctx context.Context, arg MoveFromTreasuryParams) (AppPlayer, error)
+	// Moves gold between the purse and the vault in one statement, so the pair can
+	// never be seen half-applied. The guards are in the WHERE: no row comes back if
+	// the player cannot cover it, and the CHECK constraints refuse a negative side.
+	MoveToTreasury(ctx context.Context, arg MoveToTreasuryParams) (AppPlayer, error)
 	// Founding: pay, and join in the same statement so a crash cannot leave a
 	// kingdom with no king.
 	PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomParams) (AppPlayer, error)

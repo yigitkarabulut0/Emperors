@@ -177,6 +177,8 @@ func _ready() -> void:
 		for c in _action_host.get_children():
 			_press_first_button(c)
 
+	_prefetch()
+
 	# A 4 Hz tick drives only the two numbers that move on their own (the energy
 	# bar and its countdown). Everything else redraws on `changed`, so no node
 	# polls state per frame.
@@ -185,6 +187,32 @@ func _ready() -> void:
 	t.autostart = true
 	t.timeout.connect(_tick)
 	add_child(t)
+
+
+## Builds the other sections in the background so opening one is instant.
+##
+## A tab is built on first open and fetches over HTTP, so the first tap on every
+## section showed an empty screen for a round trip. They are all cached after
+## that, which is why only the first tap felt slow -- and the first tap is the one
+## that forms the impression.
+##
+## Staggered rather than fired at once: nine simultaneous requests would queue
+## behind two lanes anyway and would delay the section the player is actually
+## looking at. The order is the order people reach for.
+func _prefetch() -> void:
+	await get_tree().create_timer(0.4).timeout
+	for id in ["hero", "shop", "items", "army", "estates", "bank", "fight", "house"]:
+		if not is_instance_valid(self):
+			return
+		if _tabs.has(id) or not _unlocked(id):
+			continue
+		_build_tab(id)
+		# A freshly built tab is visible by default and would land on top of the
+		# section the player is actually looking at.
+		_show_only(_current)
+		# One at a time. The point is to be ready before the player asks, not to
+		# be ready first.
+		await get_tree().create_timer(0.35).timeout
 
 
 ## Opens the portrait picker over everything.
@@ -530,6 +558,25 @@ func _open(id: String) -> void:
 	_current = id
 	_style_rail()
 
+	_show_only(id)
+
+	if _tabs.has(id) and is_instance_valid(_tabs[id]):
+		# A cached tab has to re-fetch, or reopening the Market shows the offers
+		# from the last time you looked and the Barracks a soldier you dismissed.
+		# Collect has no _reload: it renders straight from GameState, which the
+		# shell keeps current.
+		var shown: Node = _tabs[id]
+		if shown.has_method("_reload"):
+			shown.call("_reload")
+		return
+
+	_build_tab(id)
+	_show_only(id)
+
+
+## Shows one section and hides every other, including the ones built ahead of
+## time by _prefetch which have never been on screen.
+func _show_only(id: String) -> void:
 	for other_id in _tabs:
 		var node: Node = _tabs[other_id]
 		if not is_instance_valid(node):
@@ -541,14 +588,11 @@ func _open(id: String) -> void:
 		if _action_bars.has(other_id) and is_instance_valid(_action_bars[other_id]):
 			(_action_bars[other_id] as CanvasItem).visible = on
 
+
+## Builds one section and its action bar, hidden. Called both when the player
+## opens a section and, ahead of time, by _prefetch.
+func _build_tab(id: String) -> void:
 	if _tabs.has(id) and is_instance_valid(_tabs[id]):
-		# A cached tab has to re-fetch, or reopening the Market shows the offers
-		# from the last time you looked and the Barracks a soldier you dismissed.
-		# Collect has no _reload: it renders straight from GameState, which the
-		# shell keeps current.
-		var shown: Node = _tabs[id]
-		if shown.has_method("_reload"):
-			shown.call("_reload")
 		return
 
 	# The action bar is cached alongside its tab, because the tab holds direct

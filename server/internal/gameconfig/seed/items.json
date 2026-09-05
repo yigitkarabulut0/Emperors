@@ -225,141 +225,141 @@
       "id": "armor_common_02",
       "slot": "armor",
       "tier": "common",
-      "name": "Patched Leathers",
+      "name": "Militia Jerkin",
       "art": "armor_02"
     },
     {
       "id": "armor_common_03",
       "slot": "armor",
       "tier": "common",
-      "name": "Militia Jerkin",
+      "name": "Rusted Hauberk",
       "art": "armor_03"
     },
     {
       "id": "armor_uncommon_01",
       "slot": "armor",
       "tier": "uncommon",
-      "name": "Studded Brigandine",
-      "art": "armor_01"
+      "name": "Guard's Breastplate",
+      "art": "armor_04"
     },
     {
       "id": "armor_uncommon_02",
       "slot": "armor",
       "tier": "uncommon",
-      "name": "Guard's Hauberk",
-      "art": "armor_02"
+      "name": "Tempered Cuirass",
+      "art": "armor_05"
     },
     {
       "id": "armor_uncommon_03",
       "slot": "armor",
       "tier": "uncommon",
-      "name": "Ironweave Coat",
-      "art": "armor_03"
+      "name": "Ironweave Harness",
+      "art": "armor_06"
     },
     {
       "id": "armor_rare_01",
       "slot": "armor",
       "tier": "rare",
-      "name": "Chainmail of the Watch",
-      "art": "armor_01"
+      "name": "Riverbend Aegis",
+      "art": "armor_07"
     },
     {
       "id": "armor_rare_02",
       "slot": "armor",
       "tier": "rare",
-      "name": "Riverbend Cuirass",
-      "art": "armor_02"
+      "name": "Warden's Gambeson",
+      "art": "armor_01"
     },
     {
       "id": "armor_rare_03",
       "slot": "armor",
       "tier": "rare",
-      "name": "Warden's Plate",
-      "art": "armor_03"
+      "name": "Silvered Jerkin",
+      "art": "armor_02"
     },
     {
       "id": "armor_epic_01",
       "slot": "armor",
       "tier": "epic",
-      "name": "Duskplate Harness",
-      "art": "armor_01"
+      "name": "Duskmail Hauberk",
+      "art": "armor_03"
     },
     {
       "id": "armor_epic_02",
       "slot": "armor",
       "tier": "epic",
-      "name": "Bastion Armour",
-      "art": "armor_02"
+      "name": "Bastion Breastplate",
+      "art": "armor_04"
     },
     {
       "id": "armor_epic_03",
       "slot": "armor",
       "tier": "epic",
-      "name": "Kingsguard Mail",
-      "art": "armor_03"
+      "name": "Kingsguard Cuirass",
+      "art": "armor_05"
     },
     {
       "id": "armor_legendary_01",
       "slot": "armor",
       "tier": "legendary",
-      "name": "Aegis of the Ninth Siege",
-      "art": "armor_01"
+      "name": "Dawnward Harness",
+      "art": "armor_06"
     },
     {
       "id": "armor_legendary_02",
       "slot": "armor",
       "tier": "legendary",
-      "name": "Dawnward Plate",
-      "art": "armor_02"
+      "name": "The Gilded Aegis",
+      "art": "armor_07"
     },
     {
       "id": "armor_legendary_03",
       "slot": "armor",
       "tier": "legendary",
-      "name": "The Gilded Bulwark",
-      "art": "armor_03"
+      "name": "Ashen Gambeson",
+      "art": "armor_01"
     },
     {
       "id": "armor_mystic_01",
       "slot": "armor",
       "tier": "mystic",
-      "name": "Starfall Carapace",
-      "art": "armor_01"
+      "name": "Starfall Jerkin",
+      "art": "armor_02"
     },
     {
       "id": "armor_mystic_02",
       "slot": "armor",
       "tier": "mystic",
-      "name": "Wyrmscale Harness",
-      "art": "armor_02"
+      "name": "Wyrmscale Hauberk",
+      "art": "armor_03"
     },
     {
       "id": "armor_mystic_03",
       "slot": "armor",
       "tier": "mystic",
-      "name": "The Unbroken",
-      "art": "armor_03"
+      "name": "The Unbroken Breastplate",
+      "art": "armor_04"
     },
     {
       "id": "armor_special_01",
       "slot": "armor",
       "tier": "special",
-      "name": "Crown of Iron",
-      "art": "armor_01"
+      "name": "Crown Cuirass",
+      "art": "armor_05"
     },
     {
       "id": "armor_special_02",
       "slot": "armor",
       "tier": "special",
-      "name": "The Last Wall",
-      "art": "armor_02"
+      "name": "The Last Harness",
+      "art": "armor_06"
     },
     {
       "id": "armor_special_03",
       "slot": "armor",
       "tier": "special",
       "name": "Emperor's Aegis",
-      "art": "armor_03"
+      "art": "armor_07"
     },
     {
       "id": "horse_common_01",
@@ -372,141 +372,141 @@
       "id": "horse_common_02",
       "slot": "horse",
       "tier": "common",
-      "name": "Swaybacked Mare",
+      "name": "Village Pony",
       "art": "horse_02"
     },
     {
       "id": "horse_common_03",
       "slot": "horse",
       "tier": "common",
-      "name": "Village Pony",
+      "name": "Guard's Rouncey",
       "art": "horse_03"
     },
     {
       "id": "horse_uncommon_01",
       "slot": "horse",
       "tier": "uncommon",
-      "name": "Courser",
-      "art": "horse_01"
+      "name": "Trail Courser",
+      "art": "horse_04"
     },
     {
       "id": "horse_uncommon_02",
       "slot": "horse",
       "tier": "uncommon",
-      "name": "Guard's Rouncey",
-      "art": "horse_02"
+      "name": "Riverbend Destrier",
+      "art": "horse_05"
     },
     {
       "id": "horse_uncommon_03",
       "slot": "horse",
       "tier": "uncommon",
-      "name": "Trail Palfrey",
-      "art": "horse_03"
+      "name": "Bastion Warhorse",
+      "art": "horse_06"
     },
     {
       "id": "horse_rare_01",
       "slot": "horse",
       "tier": "rare",
-      "name": "Riverbend Destrier",
-      "art": "horse_01"
+      "name": "Warden's Charger",
+      "art": "horse_07"
     },
     {
       "id": "horse_rare_02",
       "slot": "horse",
       "tier": "rare",
-      "name": "Silvermane",
-      "art": "horse_02"
+      "name": "Swaybacked Plough Horse",
+      "art": "horse_01"
     },
     {
       "id": "horse_rare_03",
       "slot": "horse",
       "tier": "rare",
-      "name": "Warden's Charger",
-      "art": "horse_03"
+      "name": "Silvermane Pony",
+      "art": "horse_02"
     },
     {
       "id": "horse_epic_01",
       "slot": "horse",
       "tier": "epic",
-      "name": "Duskmane Destrier",
-      "art": "horse_01"
+      "name": "Duskmane Rouncey",
+      "art": "horse_03"
     },
     {
       "id": "horse_epic_02",
       "slot": "horse",
       "tier": "epic",
-      "name": "Bastion Warhorse",
-      "art": "horse_02"
+      "name": "Kingsguard Courser",
+      "art": "horse_04"
     },
     {
       "id": "horse_epic_03",
       "slot": "horse",
       "tier": "epic",
-      "name": "Kingsguard Steed",
-      "art": "horse_03"
+      "name": "Dawnward Destrier",
+      "art": "horse_05"
     },
     {
       "id": "horse_legendary_01",
       "slot": "horse",
       "tier": "legendary",
-      "name": "Ninth Siege Charger",
-      "art": "horse_01"
+      "name": "The Ninth Siege Warhorse",
+      "art": "horse_06"
     },
     {
       "id": "horse_legendary_02",
       "slot": "horse",
       "tier": "legendary",
-      "name": "Dawnrunner",
-      "art": "horse_02"
+      "name": "The Gilded Charger",
+      "art": "horse_07"
     },
     {
       "id": "horse_legendary_03",
       "slot": "horse",
       "tier": "legendary",
-      "name": "The Gilded Stallion",
-      "art": "horse_03"
+      "name": "Starfall Plough Horse",
+      "art": "horse_01"
     },
     {
       "id": "horse_mystic_01",
       "slot": "horse",
       "tier": "mystic",
-      "name": "Starfall Courser",
-      "art": "horse_01"
+      "name": "Wyrmborn Pony",
+      "art": "horse_02"
     },
     {
       "id": "horse_mystic_02",
       "slot": "horse",
       "tier": "mystic",
-      "name": "Wyrmborn Steed",
-      "art": "horse_02"
+      "name": "The Tempest Rouncey",
+      "art": "horse_03"
     },
     {
       "id": "horse_mystic_03",
       "slot": "horse",
       "tier": "mystic",
-      "name": "The Tempest",
-      "art": "horse_03"
+      "name": "Crown Courser",
+      "art": "horse_04"
     },
     {
       "id": "horse_special_01",
       "slot": "horse",
       "tier": "special",
-      "name": "Crown Destrier",
-      "art": "horse_01"
+      "name": "The Last Destrier",
+      "art": "horse_05"
     },
     {
       "id": "horse_special_02",
       "slot": "horse",
       "tier": "special",
-      "name": "The Last Ride",
-      "art": "horse_02"
+      "name": "Emperor's Warhorse",
+      "art": "horse_06"
     },
     {
       "id": "horse_special_03",
       "slot": "horse",
       "tier": "special",
-      "name": "Emperor's Own",
-      "art": "horse_03"
+      "name": "Sunrise Charger",
+      "art": "horse_07"
     }
   ]
 }

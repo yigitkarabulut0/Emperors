@@ -172,23 +172,26 @@ NAMES = {
         ["Starfall Falchion", "Wyrmtongue Broadsword", "The Sundering"],
         ["Crown of Flame", "Emperor's Mercy", "The Last Word"],
     ],
+    # Ordered to match the design walk: item i is drawn as design (i % 7) + 1,
+    # so each tier's three names must name designs (1,2,3), (4,5,6), (7,1,2) and
+    # so on. SHAPE_WORDS below refuses to generate if they ever drift apart.
     "armor": [
-        ["Padded Gambeson", "Patched Leathers", "Militia Jerkin"],
-        ["Studded Brigandine", "Guard's Hauberk", "Ironweave Coat"],
-        ["Chainmail of the Watch", "Riverbend Cuirass", "Warden's Plate"],
-        ["Duskplate Harness", "Bastion Armour", "Kingsguard Mail"],
-        ["Aegis of the Ninth Siege", "Dawnward Plate", "The Gilded Bulwark"],
-        ["Starfall Carapace", "Wyrmscale Harness", "The Unbroken"],
-        ["Crown of Iron", "The Last Wall", "Emperor's Aegis"],
+        ["Padded Gambeson", "Militia Jerkin", "Rusted Hauberk"],
+        ["Guard's Breastplate", "Tempered Cuirass", "Ironweave Harness"],
+        ["Riverbend Aegis", "Warden's Gambeson", "Silvered Jerkin"],
+        ["Duskmail Hauberk", "Bastion Breastplate", "Kingsguard Cuirass"],
+        ["Dawnward Harness", "The Gilded Aegis", "Ashen Gambeson"],
+        ["Starfall Jerkin", "Wyrmscale Hauberk", "The Unbroken Breastplate"],
+        ["Crown Cuirass", "The Last Harness", "Emperor's Aegis"],
     ],
     "horse": [
-        ["Plough Horse", "Swaybacked Mare", "Village Pony"],
-        ["Courser", "Guard's Rouncey", "Trail Palfrey"],
-        ["Riverbend Destrier", "Silvermane", "Warden's Charger"],
-        ["Duskmane Destrier", "Bastion Warhorse", "Kingsguard Steed"],
-        ["Ninth Siege Charger", "Dawnrunner", "The Gilded Stallion"],
-        ["Starfall Courser", "Wyrmborn Steed", "The Tempest"],
-        ["Crown Destrier", "The Last Ride", "Emperor's Own"],
+        ["Plough Horse", "Village Pony", "Guard's Rouncey"],
+        ["Trail Courser", "Riverbend Destrier", "Bastion Warhorse"],
+        ["Warden's Charger", "Swaybacked Plough Horse", "Silvermane Pony"],
+        ["Duskmane Rouncey", "Kingsguard Courser", "Dawnward Destrier"],
+        ["The Ninth Siege Warhorse", "The Gilded Charger", "Starfall Plough Horse"],
+        ["Wyrmborn Pony", "The Tempest Rouncey", "Crown Courser"],
+        ["The Last Destrier", "Emperor's Warhorse", "Sunrise Charger"],
     ],
 }
 
@@ -196,7 +199,7 @@ NAMES = {
 # the line work, so one PNG serves all seven tiers of a design -- but with only
 # three designs a slot, a legendary sword was the SAME SHAPE as the rusted blade
 # you started with, in a different colour. Climbing has to look like something.
-ART_DESIGNS = {"weapon": 7, "armor": 3, "horse": 3}
+ART_DESIGNS = {"weapon": 7, "armor": 7, "horse": 7}
 
 item_defs = []
 for slot, tiers in NAMES.items():
@@ -220,14 +223,17 @@ for slot, tiers in NAMES.items():
 # drawn as that shape: rotating the design pool through the table silently broke
 # this once, and a "Tempered Falchion" rendered as a wavy flamberge.
 SHAPE_WORDS = {
-    "arming sword": 1, "falchion": 2, "broadsword": 3,
-    "greatsword": 4, "flamberge": 5, "rapier": 6, "leafblade": 7,
+    "weapon": {"arming sword": 1, "falchion": 2, "broadsword": 3,
+               "greatsword": 4, "flamberge": 5, "rapier": 6, "leafblade": 7},
+    "armor": {"gambeson": 1, "jerkin": 2, "hauberk": 3,
+              "breastplate": 4, "cuirass": 5, "harness": 6, "aegis": 7},
+    "horse": {"plough horse": 1, "pony": 2, "rouncey": 3,
+              "courser": 4, "destrier": 5, "warhorse": 6, "charger": 7},
 }
 for d in item_defs:
-    if d["slot"] != "weapon":
-        continue
+    words = SHAPE_WORDS.get(d["slot"], {})
     lowered = d["name"].lower()
-    for word, design in SHAPE_WORDS.items():
+    for word, design in words.items():
         if word in lowered:
             got = int(d["art"].split("_")[1])
             assert got == design, (

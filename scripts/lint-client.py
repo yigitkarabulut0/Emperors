@@ -144,13 +144,22 @@ for family, wanted_ids in families:
 #    blade. Nothing surfaces that but this check.
 items_doc = json.loads((ROOT / "balance/items.json").read_text())
 tiers = [t["id"] for t in json.loads((ROOT / "balance/tiers.json").read_text())["tiers"]]
-pairs = {(d["art"], t) for d in items_doc["definitions"] for t in tiers}
-gone = sorted(f"{a}_{t}" for a, t in pairs
-              if not (CLIENT / f"assets/items/{a}_{t}.png").exists())
+# Painted icons are per DESIGN; the older line art was per design-and-tier. Both
+# are accepted while the folder is half migrated -- what must never happen is a
+# design with no art at all, because ArtRegistry then falls back to design 01 of
+# the same slot and a whole tier of swords quietly shows the wrong blade.
+designs = sorted({d["art"] for d in items_doc["definitions"]})
+gone = []
+for art in designs:
+    painted = (CLIENT / f"assets/items/{art}.png").exists()
+    tinted = all((CLIENT / f"assets/items/{art}_{t}.png").exists() for t in tiers)
+    if not painted and not tinted:
+        gone.append(art)
 if gone:
-    fail(f"{len(gone)} item art files missing: {gone[:4]}")
+    fail(f"{len(gone)} item designs have no art: {gone[:5]}")
 else:
-    ok(f"all {len(pairs)} item design/tier pairs ship")
+    painted_n = sum(1 for a in designs if (CLIENT / f"assets/items/{a}.png").exists())
+    ok(f"all {len(designs)} item designs have art ({painted_n} painted)")
 
 # 7. An unimported asset does not exist as far as an exported build is concerned.
 unimported = [p.relative_to(ROOT) for p in (CLIENT / "assets").rglob("*.png")

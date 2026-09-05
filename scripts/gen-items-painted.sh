@@ -16,23 +16,45 @@ mkdir -p "$RAW" "$OUT"
 
 STYLE="Painted 2D RPG loot icon, mobile game inventory art. Rendered with real volume and material: polished steel with visible specular highlights, worn leather, warm gold trim. Dramatic rim lighting from the upper left, soft ambient occlusion, rich saturated colour. Clean semi-realistic painterly rendering, crisp edges, high contrast so it reads at small size. Single object centred, filling 85 percent of the frame, no hands, no character, no scene, no ground, no shadow cast on the background. Flat solid uniform mid-teal background RGB 45 110 110, no gradient, no vignette, no border, no text, no watermark."
 
+# How much of the finished icon is still background teal. rembg usually cuts
+# cleanly, but on some compositions it returns the whole frame -- and a shipped
+# icon with a teal slab behind it is worse than no icon. A good cut leaves about
+# 3% teal (anti-aliased edges); a failed one leaves 60% or more, so the two are
+# nowhere near each other and one threshold separates them.
+teal_left() {
+  magick "$1" -alpha off -fuzz 16% -fill white -opaque 'rgb(45,110,110)' \
+    -fill black +opaque white -colorspace gray -format "%[fx:mean]" info:
+}
+
 gen() {
   local name="$1" subject="$2"
   if [ -f "$OUT/$name.png" ]; then echo "  $name already done"; return; fi
-  rm -f "$RAW/$name.png" "$RAW/$name.metadata.json"
-  "$ROOT/art/.venv/bin/mflux-generate-flux2" \
-    --model Runpod/FLUX.2-klein-4B-mflux-4bit --base-model flux2-klein-4b \
-    --prompt "$subject $STYLE" --steps 6 --width 1024 --height 1024 --low-ram \
-    --output "$RAW/$name.png" >/dev/null 2>&1
-  [ -f "$RAW/$name.png" ] || { echo "  $name FAILED" >&2; return; }
 
-  # Cut the teal away and trim to the object, so every icon fills its box no
-  # matter how much empty background the model left around it.
-  "$ROOT/art/.venv/bin/python" "$ROOT/.claude/skills/asset-gen/tools/rembg_matting.py" \
-    "$RAW/$name.png" -o "$RAW/${name}_cut.png" --alpha-floor 0.06 >/dev/null 2>&1
-  magick "$RAW/${name}_cut.png" -trim +repage -resize 220x220 \
-    -background none -gravity center -extent 256x256 "$OUT/$name.png"
-  echo "  $name"
+  for attempt in 1 2 3; do
+    rm -f "$RAW/$name.png" "$RAW/$name.metadata.json"
+    "$ROOT/art/.venv/bin/mflux-generate-flux2" \
+      --model Runpod/FLUX.2-klein-4B-mflux-4bit --base-model flux2-klein-4b \
+      --prompt "$subject $STYLE" --steps 6 --width 1024 --height 1024 --low-ram \
+      --output "$RAW/$name.png" >/dev/null 2>&1
+    [ -f "$RAW/$name.png" ] || { echo "  $name generation FAILED" >&2; return; }
+
+    # Cut the background away and trim to the object, so every icon fills its box
+    # no matter how much empty space the model left around it.
+    "$ROOT/art/.venv/bin/python" "$ROOT/.claude/skills/asset-gen/tools/rembg_matting.py" \
+      "$RAW/$name.png" -o "$RAW/${name}_cut.png" --alpha-floor 0.06 >/dev/null 2>&1
+    magick "$RAW/${name}_cut.png" -trim +repage -resize 220x220 \
+      -background none -gravity center -extent 256x256 "$OUT/$name.png"
+
+    local left
+    left="$(teal_left "$OUT/$name.png")"
+    if awk -v v="$left" 'BEGIN{exit !(v < 0.15)}'; then
+      printf '  %-11s ok (teal %.3f)\n' "$name" "$left"
+      return
+    fi
+    printf '  %-11s cut failed (teal %.3f), attempt %d\n' "$name" "$left" "$attempt"
+    rm -f "$OUT/$name.png"
+  done
+  echo "  $name GAVE UP after 3 attempts" >&2
 }
 
 gen weapon_01 "A medieval knight's arming sword, straight double-edged steel blade, gold crossguard, leather-wrapped grip."

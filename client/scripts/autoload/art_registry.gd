@@ -58,34 +58,41 @@ func portrait(name: String) -> Texture2D:
 	return null
 
 
-## Returns the icon for an item design at a tier, or a placeholder.
+## Returns the icon for an item design.
+##
+## Painted icons are per DESIGN, not per design-and-tier. The old flat line art
+## was recoloured into all seven tiers from one render, which was efficient and
+## looked like an outline rather than an object; a painted sword cannot be
+## hue-shifted without turning the steel green. Tier is carried by the card --
+## its border, its name and its pip count -- which is how the reference game does
+## it and how most RPGs do it.
+##
+## The tiered path is still tried as a fallback so a half-migrated asset folder
+## keeps working.
 func item_icon(art_key: String, tier: String) -> Texture2D:
 	var key := "%s_%s" % [art_key, tier]
 	if _cache.has(key):
 		return _cache[key]
 
-	var path := ITEM_DIR + key + ".png"
-	if ResourceLoader.exists(path):
-		var tex: Texture2D = load(path)
-		_cache[key] = tex
-		return tex
-
-	# Fall back to the first design of the same slot before giving up. A missing
-	# variant should show a sibling sword, not a coloured diamond — that is also
-	# the right behaviour in production if one asset ever fails to ship.
 	var slot := art_key.split("_")[0]
-	var sibling := ITEM_DIR + "%s_01_%s.png" % [slot, tier]
-	if ResourceLoader.exists(sibling):
-		if not _missing.has(key):
-			_missing[key] = true
-			print("[art] no ", key, " — using ", slot, "_01")
-		var sib: Texture2D = load(sibling)
-		_cache[key] = sib
-		return sib
+	var candidates: Array[String] = [
+		art_key,                          # painted, one per design
+		"%s_%s" % [art_key, tier],        # the old tinted line art
+		"%s_01" % slot,                   # a sibling of the same slot
+	]
+	for candidate in candidates:
+		var path := ITEM_DIR + candidate + ".png"
+		if ResourceLoader.exists(path):
+			if candidate != art_key and not _missing.has(key):
+				_missing[key] = true
+				print("[art] no ", art_key, " — using ", candidate)
+			var tex: Texture2D = load(path)
+			_cache[key] = tex
+			return tex
 
 	if not _missing.has(key):
 		_missing[key] = true
-		print("[art] missing ", path, " — using placeholder")
+		print("[art] missing ", ITEM_DIR, art_key, " — using placeholder")
 	var ph := _placeholder(tier)
 	_cache[key] = ph
 	return ph

@@ -24,6 +24,13 @@ services:
     image: caddy:2.11-alpine
     restart: unless-stopped
     ports: ["80:80", "443:443", "443:443/udp"]
+    # The Caddyfile reads {$EMPERORS_DOMAIN} and {$CADDY_EMAIL} from the
+    # CONTAINER's environment. compose's own .env only substitutes into this
+    # file, so without passing them through Caddy saw empty strings and refused
+    # to start with "wrong argument count ... after 'email'".
+    environment:
+      EMPERORS_DOMAIN: ${EMPERORS_DOMAIN:?set EMPERORS_DOMAIN in infra/.env}
+      CADDY_EMAIL: ${CADDY_EMAIL:?set CADDY_EMAIL in infra/.env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data     # certificates — losing this re-issues and can hit rate limits

@@ -458,12 +458,14 @@ func _build_rail() -> Control:
 		# is worth keeping -- it just cannot cost vertical space.
 		var lock := PanelContainer.new()
 		lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		lock.add_theme_stylebox_override(
-			"panel", UI.chip_box(Palette.BG, Palette.LINE, 10))
+		var lock_style := UI.chip_box(Palette.BG, Palette.LINE, 10)
+		lock_style.content_margin_left = 6
+		lock_style.content_margin_right = 6
+		lock.add_theme_stylebox_override("panel", lock_style)
 		lock.anchor_left = 1.0
 		lock.anchor_right = 1.0
-		lock.offset_left = -46
-		lock.offset_top = 4
+		lock.offset_left = -40
+		lock.offset_top = 0
 		lock.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 		b.add_child(lock)
 		var lock_text := UI.label("", UI.F_MICRO, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)

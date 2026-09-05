@@ -81,9 +81,13 @@ static func label(text: String, size: int, color: Color, align: int = HORIZONTAL
 	return l
 
 
-static func button(text: String, size: int = 20) -> Button:
+static func button(text: String, size: int = F_H2) -> Button:
 	var b := Button.new()
 	b.text = text
+	# A floor, not a fixed height: four buttons in the overlays set no size at all
+	# and fell back to about 18 pt, and every explicit height in the client was
+	# below Apple's 44 pt minimum on every device we ship to.
+	b.custom_minimum_size.y = TAP_MIN
 	b.add_theme_font_size_override("font_size", size)
 	b.add_theme_color_override("font_color", Palette.BG)
 	b.add_theme_color_override("font_hover_color", Palette.BG)
@@ -97,9 +101,10 @@ static func button(text: String, size: int = 20) -> Button:
 	return b
 
 
-static func ghost_button(text: String, size: int = 16) -> Button:
+static func ghost_button(text: String, size: int = F_BODY) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.custom_minimum_size.y = TAP_MIN
 	b.add_theme_font_size_override("font_size", size)
 	b.add_theme_color_override("font_color", Palette.TEXT_DIM)
 	b.add_theme_color_override("font_hover_color", Palette.TEXT)
@@ -118,7 +123,8 @@ static func line_edit(placeholder: String, secret: bool = false) -> LineEdit:
 	var e := LineEdit.new()
 	e.placeholder_text = placeholder
 	e.secret = secret
-	e.add_theme_font_size_override("font_size", 20)
+	e.custom_minimum_size.y = TAP_PRIMARY
+	e.add_theme_font_size_override("font_size", F_H2)
 	e.add_theme_color_override("font_color", Palette.TEXT)
 	e.add_theme_color_override("font_placeholder_color", Palette.TEXT_FAINT)
 	e.add_theme_stylebox_override("normal", panel_box(Palette.PANEL, Palette.LINE))

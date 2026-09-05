@@ -16,7 +16,7 @@ var _busy := false
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
-	_header = UI.label("Scouting…", 14, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_header = UI.label("Scouting…", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_header)
 
 	var scroll := ScrollContainer.new()
@@ -36,11 +36,11 @@ func mount_action_bar(host: Control) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	host.add_child(col)
-	_action = UI.button("SELECT A TARGET", 19)
-	_action.custom_minimum_size = Vector2(0, 54)
+	_action = UI.button("SELECT A TARGET", UI.F_H2)
+	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_action.pressed.connect(_raid)
 	col.add_child(_action)
-	_action_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_action_sub)
 	_refresh_action()
 
@@ -103,7 +103,7 @@ func _target_row(t: Dictionary) -> Control:
 		risk_word = "an even match"
 
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 86)
+	b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
 	b.focus_mode = Control.FOCUS_NONE
 	b.pressed.connect(func() -> void:
 		_selected = id
@@ -140,17 +140,17 @@ func _target_row(t: Dictionary) -> Control:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 2)
 	row.add_child(col)
-	col.add_child(UI.label(str(t.get("name", "")), 17, Palette.TEXT))
+	col.add_child(UI.label(str(t.get("name", "")), UI.F_BODY, Palette.TEXT))
 	col.add_child(UI.label("level %d   ·   %s" % [int(t.get("level", 1)), risk_word], 12, risk))
-	col.add_child(UI.label("Might %s" % UI.number(int(t.get("might", 0))), 13, Palette.TEXT_DIM))
+	col.add_child(UI.label("Might %s" % UI.number(int(t.get("might", 0))), UI.F_CAPTION, Palette.TEXT_DIM))
 
 	var right := VBoxContainer.new()
 	right.alignment = BoxContainer.ALIGNMENT_CENTER
 	right.add_theme_constant_override("separation", 2)
 	row.add_child(right)
-	right.add_child(UI.label("+%s" % UI.number(int(t.get("estimated_steal", 0))), 18, Palette.GOLD,
+	right.add_child(UI.label("+%s" % UI.number(int(t.get("estimated_steal", 0))), UI.F_H2, Palette.GOLD,
 		HORIZONTAL_ALIGNMENT_RIGHT))
-	right.add_child(UI.label("if you win", 11, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
+	right.add_child(UI.label("if you win", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
 	return b
 
 

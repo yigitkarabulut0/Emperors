@@ -42,19 +42,19 @@ func _ready() -> void:
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_theme_constant_override("separation", 1)
 	row.add_child(col)
-	col.add_child(UI.label("YOUR ESTATES EARN", 11, Palette.TEXT_FAINT))
-	_income = UI.label("", 17, Palette.GOLD)
+	col.add_child(UI.label("YOUR ESTATES EARN", UI.F_MICRO, Palette.TEXT_FAINT))
+	_income = UI.label("", UI.F_BODY, Palette.GOLD)
 	col.add_child(_income)
-	_waiting = UI.label("", 12, Palette.TEXT_DIM)
+	_waiting = UI.label("", UI.F_MICRO, Palette.TEXT_DIM)
 	col.add_child(_waiting)
 
-	_collect = UI.button("COLLECT", 15)
+	_collect = UI.button("COLLECT", UI.F_BODY)
 	_collect.custom_minimum_size = Vector2(110, 44)
 	_collect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_collect.pressed.connect(_claim_tax)
 	row.add_child(_collect)
 
-	_header = UI.label("Surveying your lands…", 14, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_header = UI.label("Surveying your lands…", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_header)
 
@@ -75,11 +75,11 @@ func mount_action_bar(host: Control) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	host.add_child(col)
-	_action = UI.button("SELECT AN ESTATE", 19)
-	_action.custom_minimum_size = Vector2(0, 54)
+	_action = UI.button("SELECT AN ESTATE", UI.F_H2)
+	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_action.pressed.connect(_buy)
 	col.add_child(_action)
-	_action_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_action_sub)
 	_refresh_action()
 

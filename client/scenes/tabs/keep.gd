@@ -38,12 +38,12 @@ func _ready() -> void:
 		"panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))
 	stack.add_child(_hero_card)
 
-	_stats = UI.label("", 13, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_stats = UI.label("", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	_stats.visible = false
 	stack.add_child(_stats)
 
 
-	stack.add_child(UI.label("PERMANENT UPGRADES", 12, Palette.TEXT_FAINT))
+	stack.add_child(UI.label("PERMANENT UPGRADES", UI.F_MICRO, Palette.TEXT_FAINT))
 	_body = scroll_all
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -59,11 +59,11 @@ func mount_action_bar(host: Control) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	host.add_child(col)
-	_action = UI.button("SELECT AN UPGRADE", 19)
-	_action.custom_minimum_size = Vector2(0, 54)
+	_action = UI.button("SELECT AN UPGRADE", UI.F_H2)
+	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_action.pressed.connect(_buy)
 	col.add_child(_action)
-	_action_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_action_sub)
 	_refresh_action()
 
@@ -163,7 +163,7 @@ func _render_hero() -> void:
 	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	who.alignment = BoxContainer.ALIGNMENT_CENTER
 	who.add_theme_constant_override("separation", 3)
-	who.add_child(UI.label(str(p.get("username", "")), 19, Palette.TEXT))
+	who.add_child(UI.label(str(p.get("username", "")), UI.F_H2, Palette.TEXT))
 
 	var xp := int(p.get("xp", 0))
 	var need := int(p.get("xp_to_next", 1))
@@ -176,22 +176,22 @@ func _render_hero() -> void:
 	bar.add_theme_stylebox_override("fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 4))
 	who.add_child(bar)
 	who.add_child(UI.label("Level %d   ·   %s / %s xp" % [
-		int(p.get("level", 1)), UI.number(xp), UI.number(need)], 12, Palette.TEXT_DIM))
+		int(p.get("level", 1)), UI.number(xp), UI.number(need)], UI.F_MICRO, Palette.TEXT_DIM))
 	head.add_child(who)
 
 	var might := VBoxContainer.new()
 	might.alignment = BoxContainer.ALIGNMENT_CENTER
 	might.add_theme_constant_override("separation", 0)
 	var totals: Dictionary = _army.get("totals", {})
-	might.add_child(UI.label(UI.number(int(totals.get("might", 0))), 26, Palette.GOLD,
+	might.add_child(UI.label(UI.number(int(totals.get("might", 0))), UI.F_H1, Palette.GOLD,
 		HORIZONTAL_ALIGNMENT_RIGHT))
-	might.add_child(UI.label("MIGHT", 11, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
+	might.add_child(UI.label("MIGHT", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
 	head.add_child(might)
 
 	col.add_child(UI.label("ATK %d      DEF %d      HP %d      %d in the field" % [
 		int(totals.get("attack", 0)), int(hero.get("defense", 0)),
 		int(hero.get("hp", 0)), int(totals.get("units", 1))],
-		13, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 
 	# Your own three slots, gear-able here rather than only in the Barracks.
 	var gear := HBoxContainer.new()
@@ -205,8 +205,8 @@ func _render_hero() -> void:
 	# Picking the best of three slots out of a bag of 150 by hand is busywork, and
 	# the server already knows what "best" means -- it is the Power number on
 	# every card.
-	var auto := UI.ghost_button("EQUIP MY BEST GEAR", 13)
-	auto.custom_minimum_size = Vector2(0, 38)
+	var auto := UI.ghost_button("EQUIP MY BEST GEAR", UI.F_CAPTION)
+	auto.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	auto.disabled = _busy
 	auto.pressed.connect(_auto_equip.bind("hero"))
 	col.add_child(auto)
@@ -216,14 +216,14 @@ func _render_hero() -> void:
 	var unspent := int(p.get("stat_points_unspent", 0))
 	if unspent > 0:
 		col.add_child(UI.label("%d point%s to spend" % [unspent, "" if unspent == 1 else "s"],
-			13, Palette.SUCCESS, HORIZONTAL_ALIGNMENT_CENTER))
+			UI.F_CAPTION, Palette.SUCCESS, HORIZONTAL_ALIGNMENT_CENTER))
 		var spend := HBoxContainer.new()
 		spend.add_theme_constant_override("separation", 6)
 		spend.alignment = BoxContainer.ALIGNMENT_CENTER
 		col.add_child(spend)
 		for pair in [["Max Energy", "energy"], ["Attack", "attack"], ["Defense", "defense"]]:
-			var b := UI.ghost_button("+ " + str(pair[0]), 13)
-			b.custom_minimum_size = Vector2(0, 36)
+			var b := UI.ghost_button("+ " + str(pair[0]), UI.F_CAPTION)
+			b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			b.disabled = _busy
 			b.pressed.connect(_spend_point.bind(str(pair[1])))

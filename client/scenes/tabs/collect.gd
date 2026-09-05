@@ -5,7 +5,7 @@ extends VBoxContainer
 ## strip because that is the only part of a tall phone a thumb reaches, and this
 ## is the action a player performs hundreds of times a session.
 
-const ICON_SIZE := 42
+const ICON_SIZE := UI.ICON_LG
 
 var _selected := ""
 var _rows: Dictionary = {}
@@ -38,12 +38,12 @@ func mount_action_bar(host: Control) -> void:
 	col.add_theme_constant_override("separation", 2)
 	host.add_child(col)
 
-	_action = UI.button("SELECT A JOB", 21)
-	_action.custom_minimum_size = Vector2(0, 54)
+	_action = UI.button("SELECT A JOB", UI.F_H2)
+	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_action.pressed.connect(_collect_selected)
 	col.add_child(_action)
 
-	_action_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_action_sub)
 
 	_refresh_action()
@@ -82,7 +82,7 @@ func _rebuild() -> void:
 
 func _build_row(job: Dictionary) -> Control:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 76)
+	b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
 	b.focus_mode = Control.FOCUS_NONE
 	b.pressed.connect(_select.bind(str(job.get("id", ""))))
 	b.set_meta("job_id", str(job.get("id", "")))
@@ -111,15 +111,15 @@ func _build_row(job: Dictionary) -> Control:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.alignment = BoxContainer.ALIGNMENT_CENTER
 	left.add_theme_constant_override("separation", 2)
-	left.add_child(UI.label("", 18, Palette.TEXT))     # 0 name
-	left.add_child(UI.label("", 12, Palette.TEXT_FAINT)) # 1 mastery / unlock
+	left.add_child(UI.label("", UI.F_H2, Palette.TEXT))     # 0 name
+	left.add_child(UI.label("", UI.F_MICRO, Palette.TEXT_FAINT)) # 1 mastery / unlock
 	row.add_child(left)
 
 	var right := VBoxContainer.new()
 	right.alignment = BoxContainer.ALIGNMENT_CENTER
 	right.add_theme_constant_override("separation", 2)
-	right.add_child(UI.label("", 18, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT))   # 0 gold
-	right.add_child(UI.label("", 13, Palette.ENERGY, HORIZONTAL_ALIGNMENT_RIGHT)) # 1 cost
+	right.add_child(UI.label("", UI.F_H2, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT))   # 0 gold
+	right.add_child(UI.label("", UI.F_CAPTION, Palette.ENERGY, HORIZONTAL_ALIGNMENT_RIGHT)) # 1 cost
 	row.add_child(right)
 
 	return b

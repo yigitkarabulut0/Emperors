@@ -22,15 +22,15 @@ func _ready() -> void:
 	var head := VBoxContainer.new()
 	head.add_theme_constant_override("separation", 0)
 	add_child(head)
-	_might = UI.label("—", 34, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_might = UI.label("—", UI.F_DISPLAY, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	head.add_child(_might)
-	_sub = UI.label("", 13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_sub = UI.label("", UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	head.add_child(_sub)
 
 	# Dressing four units from a bag of 150 by hand is busywork, and the server
 	# already knows what "best" means. You first, then the strongest soldier down.
-	_auto = UI.ghost_button("EQUIP EVERYONE'S BEST GEAR", 13)
-	_auto.custom_minimum_size = Vector2(0, 38)
+	_auto = UI.ghost_button("EQUIP EVERYONE'S BEST GEAR", UI.F_CAPTION)
+	_auto.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	_auto.pressed.connect(_auto_equip)
 	head.add_child(UI.spacer(6))
 	head.add_child(_auto)
@@ -53,12 +53,12 @@ func mount_action_bar(host: Control) -> void:
 	col.add_theme_constant_override("separation", 2)
 	host.add_child(col)
 
-	_action = UI.button("—", 19)
-	_action.custom_minimum_size = Vector2(0, 54)
+	_action = UI.button("—", UI.F_H2)
+	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_action.pressed.connect(_do_action)
 	col.add_child(_action)
 
-	_action_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_action_sub)
 	_refresh_action()
 
@@ -100,7 +100,7 @@ func _rebuild() -> void:
 
 func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 84)
+	b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
 	b.focus_mode = Control.FOCUS_NONE
 	# First tap selects, so the action bar targets it. Tapping the one already
 	# selected opens its sheet -- gear and dismissal live there. Two gestures on
@@ -140,14 +140,14 @@ func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 	row.add_child(col)
 
 	if not (unit is Dictionary) or unit.is_empty():
-		col.add_child(UI.label("Slot %d — empty" % slot_index, 17, Palette.TEXT_DIM))
-		col.add_child(UI.label("Recruit someone to fill it", 12, Palette.TEXT_FAINT))
+		col.add_child(UI.label("Slot %d — empty" % slot_index, UI.F_BODY, Palette.TEXT_DIM))
+		col.add_child(UI.label("Recruit someone to fill it", UI.F_MICRO, Palette.TEXT_FAINT))
 		return b
 
 	var title := str(unit.get("name", ""))
 	if is_hero:
 		title += "   (you)"
-	col.add_child(UI.label(title, 17, Palette.TEXT))
+	col.add_child(UI.label(title, UI.F_BODY, Palette.TEXT))
 
 	var meta := "level %d" % int(unit.get("level", 1))
 	if tier != "":
@@ -157,7 +157,7 @@ func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 
 	col.add_child(UI.label("ATK %d   DEF %d   SPD %d   HP %d" % [
 		int(unit.get("attack", 0)), int(unit.get("defense", 0)),
-		int(unit.get("speed", 0)), int(unit.get("hp", 0))], 13, Palette.TEXT_DIM))
+		int(unit.get("speed", 0)), int(unit.get("hp", 0))], UI.F_CAPTION, Palette.TEXT_DIM))
 
 	# Three small squares showing which gear slots are filled: the fastest way to
 	# see at a glance that a soldier is naked.
@@ -215,7 +215,7 @@ func _open_sheet(unit: Dictionary, is_hero: bool) -> void:
 
 func _next_slot_row(next: Dictionary) -> Control:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 68)
+	b.custom_minimum_size = Vector2(0, UI.TAP_ROW_TIGHT)
 	b.focus_mode = Control.FOCUS_NONE
 	b.pressed.connect(func() -> void:
 		_selected = int(next.get("index", 0))
@@ -240,19 +240,19 @@ func _next_slot_row(next: Dictionary) -> Control:
 	col.add_theme_constant_override("separation", 2)
 	margin.add_child(col)
 
-	col.add_child(UI.label("Slot %d" % int(next.get("index", 0)), 16, Palette.TEXT_DIM))
+	col.add_child(UI.label("Slot %d" % int(next.get("index", 0)), UI.F_BODY, Palette.TEXT_DIM))
 	if free:
-		col.add_child(UI.label("FREE — your first barracks slot", 13, Palette.SUCCESS))
+		col.add_child(UI.label("FREE — your first barracks slot", UI.F_CAPTION, Palette.SUCCESS))
 	elif unlocked:
-		col.add_child(UI.label("%s gold" % UI.number(int(next.get("cost", 0))), 13, Palette.GOLD))
+		col.add_child(UI.label("%s gold" % UI.number(int(next.get("cost", 0))), UI.F_CAPTION, Palette.GOLD))
 		# On the row, not just in the action bar: this is where the eye lands, and
 		# nobody should grind 500 gold for the slot they are about to be given.
 		var free_at := int(next.get("free_at_level", 0))
 		if free_at > 0:
 			col.add_child(UI.label("free at level %d — you can wait" % free_at,
-				12, Palette.SUCCESS))
+				UI.F_MICRO, Palette.SUCCESS))
 	else:
-		col.add_child(UI.label("unlocks at level %d" % int(next.get("level_gate", 0)), 13, Palette.TEXT_FAINT))
+		col.add_child(UI.label("unlocks at level %d" % int(next.get("level_gate", 0)), UI.F_CAPTION, Palette.TEXT_FAINT))
 	return b
 
 

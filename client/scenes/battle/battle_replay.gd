@@ -88,12 +88,12 @@ func _ready() -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(col)
 
-	_round_label = UI.label("", 15, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_round_label = UI.label("", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_round_label)
 
 	# The Fortune roll is shown BEFORE anything moves. A visible die the player
 	# watches is dramatic; the identical maths applied silently reads as a bug.
-	_fortune = UI.label("", 15, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_fortune = UI.label("", UI.F_CAPTION, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_fortune.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_fortune)
 
@@ -106,7 +106,7 @@ func _ready() -> void:
 	col.add_child(lists)
 
 	lists.add_child(_side_block(_replay.get("attacker", {}), "a", Palette.SUCCESS))
-	var vs := UI.label("VS", 15, Palette.GOLD_DEEP, HORIZONTAL_ALIGNMENT_CENTER)
+	var vs := UI.label("VS", UI.F_CAPTION, Palette.GOLD_DEEP, HORIZONTAL_ALIGNMENT_CENTER)
 	vs.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	vs.custom_minimum_size = Vector2(26, 0)
 	lists.add_child(vs)
@@ -121,8 +121,8 @@ func _ready() -> void:
 	_floaters.anchor_bottom = 1.0
 	_root.add_child(_floaters)
 
-	var skip := UI.ghost_button("SKIP", 16)
-	skip.custom_minimum_size = Vector2(0, 44)
+	var skip := UI.ghost_button("SKIP", UI.F_BODY)
+	skip.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	skip.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL, Palette.LINE))
 	skip.pressed.connect(func() -> void: _skip = true)
 	col.add_child(skip)
@@ -161,7 +161,7 @@ func _side_block(army: Dictionary, side: String, accent: Color) -> Control:
 
 	var might := int(_replay.get("attacker_might", 0)) if side == "a" \
 		else int(_replay.get("defender_might", 0))
-	box.add_child(UI.label("Might %s" % UI.number(might), 11, Palette.TEXT_DIM,
+	box.add_child(UI.label("Might %s" % UI.number(might), UI.F_MICRO, Palette.TEXT_DIM,
 		HORIZONTAL_ALIGNMENT_CENTER))
 
 	# One bar for the whole side. Every unit's health flows into it, so damage
@@ -198,7 +198,7 @@ func _side_block(army: Dictionary, side: String, accent: Color) -> Control:
 		pips.add_child(pip)
 		_tokens[str(u.get("id", ""))] = pip
 
-	var standing := UI.label("", 10, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	var standing := UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	box.add_child(standing)
 	_standing[side] = standing
 	_refresh_standing(side)
@@ -349,19 +349,19 @@ func _show_outcome() -> void:
 	col.add_theme_constant_override("separation", 6)
 	panel.add_child(col)
 
-	col.add_child(UI.label("VICTORY" if won else "DEFEAT", 30,
+	col.add_child(UI.label("VICTORY" if won else "DEFEAT", UI.F_H1,
 		Palette.SUCCESS if won else Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER))
 
 	if won:
 		col.add_child(UI.label("+%s gold" % UI.number(int(_result.get("gold_stolen", 0))),
-			20, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
+			UI.F_H2, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
 	else:
-		col.add_child(UI.label("They kept their coin", 15, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		col.add_child(UI.label("They kept their coin", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 	col.add_child(UI.label("+%d experience" % int(_result.get("xp_gained", 0)),
-		15, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 
-	var close := UI.button("CONTINUE", 18)
-	close.custom_minimum_size = Vector2(0, 48)
+	var close := UI.button("CONTINUE", UI.F_H2)
+	close.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	close.pressed.connect(func() -> void:
 		finished.emit()
 		queue_free())

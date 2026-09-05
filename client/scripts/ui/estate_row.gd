@@ -16,13 +16,21 @@ var _icon: TextureRect
 
 var _icon_dir := ""
 
-const ICON_SIZE := 40
+const ICON_SIZE := UI.ICON_LG
+
+## Name, up to two lines of blurb, and the effect line. Fixed rather than sized to
+## content: the blurb autowraps, and a wrapping label's minimum height depends on
+## the width it is given, which depends on the row -- so letting the row follow the
+## text is circular. Two lines is enough for every blurb we ship, and the height
+## being predictable is what keeps a list of them from jittering as it loads.
+const ROW_H := 150
+const BLURB_LINES := 2
 
 
 func _init(p_id: String, p_icon_dir: String = "") -> void:
 	id = p_id
 	_icon_dir = p_icon_dir
-	custom_minimum_size = Vector2(0, 82)
+	custom_minimum_size = Vector2(0, ROW_H)
 	focus_mode = Control.FOCUS_NONE
 
 
@@ -32,6 +40,8 @@ func _ready() -> void:
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right"]:
 		margin.add_theme_constant_override("margin_" + side, 12)
+	for side in ["top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 10)
 	add_child(margin)
 
 	var row := HBoxContainer.new()
@@ -49,8 +59,8 @@ func _ready() -> void:
 		_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(_icon)
 
-	_level = UI.label("", 15, Palette.GOLD_DEEP)
-	_level.custom_minimum_size = Vector2(46, 0)
+	_level = UI.label("", UI.F_CAPTION, Palette.GOLD_DEEP)
+	_level.custom_minimum_size = Vector2(64, 0)
 	_level.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(_level)
 
@@ -60,17 +70,22 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 1)
 	row.add_child(col)
 
-	_name = UI.label("", 17, Palette.TEXT)
+	_name = UI.label("", UI.F_BODY, Palette.TEXT)
 	col.add_child(_name)
-	_blurb = UI.label("", 12, Palette.TEXT_FAINT)
+	_blurb = UI.label("", UI.F_CAPTION, Palette.TEXT_DIM)
 	_blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Without a line cap a long blurb silently grew past the row and printed over
+	# the next one; with it, the overflow becomes an ellipsis.
+	_blurb.max_lines_visible = BLURB_LINES
+	_blurb.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_blurb.custom_minimum_size = Vector2(0, UI.F_CAPTION * BLURB_LINES * 1.35)
 	col.add_child(_blurb)
-	_effect = UI.label("", 13, Palette.SUCCESS)
+	_effect = UI.label("", UI.F_CAPTION, Palette.SUCCESS)
 	col.add_child(_effect)
 
-	_cost = UI.label("", 16, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
+	_cost = UI.label("", UI.F_BODY, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
 	_cost.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_cost.custom_minimum_size = Vector2(72, 0)
+	_cost.custom_minimum_size = Vector2(110, 0)
 	row.add_child(_cost)
 
 

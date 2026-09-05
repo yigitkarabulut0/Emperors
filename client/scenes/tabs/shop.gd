@@ -34,8 +34,8 @@ func _ready() -> void:
 	_tabs.add_theme_constant_override("separation", 4)
 	add_child(_tabs)
 	for entry in [[Mode.MARKET, "Market", "currency/coin"], [Mode.DIAMONDS, "Diamonds", "currency/gem"]]:
-		var b := UI.ghost_button(str(entry[1]), 14)
-		b.custom_minimum_size = Vector2(0, 38)
+		var b := UI.ghost_button(str(entry[1]), UI.F_BODY)
+		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.icon = ArtRegistry.ui_icon(str(entry[2]))
 		b.expand_icon = true
@@ -47,7 +47,7 @@ func _ready() -> void:
 		_tabs.add_child(b)
 		_tab_buttons.append(b)
 
-	_header = UI.label("Loading the market…", 14, Palette.TEXT_DIM)
+	_header = UI.label("Loading the market…", UI.F_CAPTION, Palette.TEXT_DIM)
 	add_child(_header)
 
 	var scroll := ScrollContainer.new()
@@ -82,12 +82,12 @@ func mount_action_bar(host: Control) -> void:
 	# Diamonds had no sink at all: the counter sat at zero and nothing spent it.
 	# A reroll is the design's own listed use, and it buys a CHANCE rather than
 	# an item -- you still pay gold for whatever it turns up.
-	_reroll = UI.button("REROLL", 17)
-	_reroll.custom_minimum_size = Vector2(0, 48)
+	_reroll = UI.button("REROLL", UI.F_BODY)
+	_reroll.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	_reroll.pressed.connect(_do_reroll)
 	col.add_child(_reroll)
 
-	_reroll_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_reroll_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_reroll_sub)
 	_update_reroll()
 
@@ -159,7 +159,7 @@ func _build_store() -> void:
 		var useful := bool(g.get("useful", true))
 
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, 84)
+		b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
 		b.focus_mode = Control.FOCUS_NONE
 		b.disabled = _busy or not useful or not affordable
 		var accent := Palette.DIAMOND if (useful and affordable) else Palette.LINE
@@ -192,15 +192,15 @@ func _build_store() -> void:
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		col.alignment = BoxContainer.ALIGNMENT_CENTER
 		col.add_theme_constant_override("separation", 2)
-		col.add_child(UI.label(str(g.get("name", "")), 17, Palette.TEXT if useful else Palette.TEXT_FAINT))
-		var blurb := UI.label(str(g.get("blurb", "")), 12, Palette.TEXT_DIM)
+		col.add_child(UI.label(str(g.get("name", "")), UI.F_BODY, Palette.TEXT if useful else Palette.TEXT_FAINT))
+		var blurb := UI.label(str(g.get("blurb", "")), UI.F_MICRO, Palette.TEXT_DIM)
 		blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		col.add_child(blurb)
 		if not useful:
-			col.add_child(UI.label(str(g.get("note", "")), 11, Palette.SUCCESS))
+			col.add_child(UI.label(str(g.get("note", "")), UI.F_MICRO, Palette.SUCCESS))
 		elif not affordable:
 			col.add_child(UI.label("you need %d more" % (int(g.get("diamonds", 0)) - have),
-				11, Palette.DANGER))
+				UI.F_MICRO, Palette.DANGER))
 		row.add_child(col)
 
 		var price := HBoxContainer.new()
@@ -214,7 +214,7 @@ func _build_store() -> void:
 		gem.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		gem.modulate = Palette.DIAMOND
 		price.add_child(gem)
-		price.add_child(UI.label(str(int(g.get("diamonds", 0))), 18, Palette.DIAMOND))
+		price.add_child(UI.label(str(int(g.get("diamonds", 0))), UI.F_H2, Palette.DIAMOND))
 		price.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(price)
 

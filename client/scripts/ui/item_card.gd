@@ -19,7 +19,7 @@ var _foot: Label
 
 func _init(p_item: Dictionary) -> void:
 	item = p_item
-	custom_minimum_size = Vector2(0, 92)
+	custom_minimum_size = Vector2(0, UI.TAP_ROW)
 	focus_mode = Control.FOCUS_NONE
 
 
@@ -48,14 +48,14 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 1)
 	row.add_child(col)
 
-	_name = UI.label("", 17, Palette.TEXT)
+	_name = UI.label("", UI.F_BODY, Palette.TEXT)
 	col.add_child(_name)
-	_tier = UI.label("", 12, Palette.TEXT_DIM)
+	_tier = UI.label("", UI.F_MICRO, Palette.TEXT_DIM)
 	col.add_child(_tier)
-	_stats = UI.label("", 13, Palette.TEXT_DIM)
+	_stats = UI.label("", UI.F_CAPTION, Palette.TEXT_DIM)
 	col.add_child(_stats)
 
-	_foot = UI.label("", 15, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
+	_foot = UI.label("", UI.F_CAPTION, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
 	_foot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(_foot)
 

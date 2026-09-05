@@ -12,7 +12,7 @@ var _sell: Button
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
 
-	_header = UI.label("Loading the armory…", 14, Palette.TEXT_DIM)
+	_header = UI.label("Loading the armory…", UI.F_CAPTION, Palette.TEXT_DIM)
 	add_child(_header)
 
 	var scroll := ScrollContainer.new()
@@ -33,13 +33,13 @@ func mount_action_bar(host: Control) -> void:
 	row.add_theme_constant_override("separation", 8)
 	host.add_child(row)
 
-	_action = UI.button("EQUIP", 19)
-	_action.custom_minimum_size = Vector2(0, 54)
+	_action = UI.button("EQUIP", UI.F_H2)
+	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_action.pressed.connect(_toggle_equip)
 	row.add_child(_action)
 
-	_sell = UI.ghost_button("SELL", 17)
+	_sell = UI.ghost_button("SELL", UI.F_BODY)
 	_sell.custom_minimum_size = Vector2(120, 54)
 	_sell.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL, Palette.LINE))
 	_sell.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.DANGER))

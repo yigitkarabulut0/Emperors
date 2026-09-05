@@ -29,11 +29,11 @@ func mount_action_bar(host: Control) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	host.add_child(col)
-	_action = UI.button("BANK ALL", 18)
+	_action = UI.button("BANK ALL", UI.F_H2)
 	_action.custom_minimum_size = Vector2(0, 52)
 	_action.pressed.connect(func() -> void: _move("deposit", GameState.display_gold()))
 	col.add_child(_action)
-	_action_sub = UI.label("", 12, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	col.add_child(_action_sub)
 	_refresh_action()
 
@@ -62,7 +62,7 @@ func _rebuild() -> void:
 
 	_body.add_child(UI.label(
 		"Putting gold in costs %d%% of what you put in. Taking it out is free." % (FEE_BP / 100),
-		13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+		UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 	_refresh_action()
 
 
@@ -95,16 +95,16 @@ func _pile(title: String, amount: int, tint: Color, note: String, icon: String) 
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_theme_constant_override("separation", 1)
-	col.add_child(UI.label(title, 12, Palette.TEXT_FAINT))
+	col.add_child(UI.label(title, UI.F_MICRO, Palette.TEXT_FAINT))
 	col.add_child(UI.label(UI.number(amount), 27, tint))
-	col.add_child(UI.label(note, 12, Palette.TEXT_DIM))
+	col.add_child(UI.label(note, UI.F_MICRO, Palette.TEXT_DIM))
 	row.add_child(col)
 	return card
 
 
 func _move_button(text: String, direction: String, amount: int, enabled: bool) -> Button:
-	var b := UI.ghost_button(text, 14)
-	b.custom_minimum_size = Vector2(0, 44)
+	var b := UI.ghost_button(text, UI.F_BODY)
+	b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.disabled = _busy or not enabled
 	b.pressed.connect(_move.bind(direction, amount))

@@ -52,7 +52,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
 	pad.add_child(col)
-	col.add_child(UI.label("Choose a " + _slot, 18, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.label("Choose a " + _slot, UI.F_H2, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -76,7 +76,7 @@ func _ready() -> void:
 func _load() -> void:
 	var res: Api.Response = await Api.get_json("/v1/inventory")
 	if not res.ok:
-		_list.add_child(UI.label("Could not load your armory.", 14, Palette.DANGER))
+		_list.add_child(UI.label("Could not load your armory.", UI.F_CAPTION, Palette.DANGER))
 		return
 
 	# Anything already worn by someone else is not offered. Equipping it would
@@ -104,7 +104,7 @@ func _load() -> void:
 		_list.add_child(_unequip_row())
 	if mine.is_empty():
 		_list.add_child(UI.label("Nothing in your armory fits this slot.\nVisit the Market.",
-			13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+			UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 		return
 	for it in mine:
 		_list.add_child(_row(it))
@@ -112,7 +112,7 @@ func _load() -> void:
 
 func _row(item: Dictionary) -> Control:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 64)
+	b.custom_minimum_size = Vector2(0, UI.TAP_ROW_TIGHT)
 	b.focus_mode = Control.FOCUS_NONE
 	var tier := str(item.get("tier", "common"))
 	b.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL_HIGH, Palette.tier(tier)))
@@ -142,10 +142,10 @@ func _row(item: Dictionary) -> Control:
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 1)
-	col.add_child(UI.label(str(item.get("name", "")), 15, Palette.TEXT))
+	col.add_child(UI.label(str(item.get("name", "")), UI.F_CAPTION, Palette.TEXT))
 	col.add_child(UI.label("ATK %d   DEF %d   SPD %d" % [
 		int(item.get("attack", 0)), int(item.get("defense", 0)), int(item.get("speed", 0))],
-		11, Palette.tier(tier)))
+		UI.F_MICRO, Palette.tier(tier)))
 	row.add_child(col)
 
 	# The number that actually decides it: better or worse than what is worn.
@@ -161,7 +161,7 @@ func _row(item: Dictionary) -> Control:
 
 func _unequip_row() -> Control:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 44)
+	b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	b.focus_mode = Control.FOCUS_NONE
 	b.text = "Take off what is worn"
 	b.add_theme_stylebox_override("normal", UI.panel_box(Palette.BG, Palette.TEXT_FAINT))

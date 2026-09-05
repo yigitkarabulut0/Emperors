@@ -24,7 +24,7 @@ func _ready() -> void:
 	top.add_theme_constant_override("separation", 8)
 	add_child(top)
 
-	_header = UI.label("Loading…", 15, Palette.GOLD)
+	_header = UI.label("Loading…", UI.F_CAPTION, Palette.GOLD)
 	_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	top.add_child(_header)
@@ -77,8 +77,8 @@ func _rebuild() -> void:
 	_header.text = "%s  [%s]" % [str(k.get("name", "")), str(k.get("tag", ""))]
 
 	for entry in [[Mode.OVERVIEW, "Realm"], [Mode.MEMBERS, "Lords"], [Mode.UPGRADES, "Works"]]:
-		var b := UI.ghost_button(str(entry[1]), 14)
-		b.custom_minimum_size = Vector2(0, 32)
+		var b := UI.ghost_button(str(entry[1]), UI.F_BODY)
+		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var active: bool = _mode == int(entry[0])
 		b.add_theme_stylebox_override("normal",
@@ -102,7 +102,7 @@ func _build_landless() -> void:
 	for inv in _kv.get("invites", []):
 		var card := _card("%s [%s]" % [str(inv.get("name", "")), str(inv.get("tag", ""))],
 			"has invited you to join", Palette.SUCCESS)
-		var accept := UI.button("ACCEPT", 15)
+		var accept := UI.button("ACCEPT", UI.F_BODY)
 		accept.custom_minimum_size = Vector2(110, 40)
 		accept.pressed.connect(_accept.bind(str(inv.get("kingdom_id", ""))))
 		(card.get_child(0) as HBoxContainer).add_child(accept)
@@ -116,14 +116,14 @@ func _build_landless() -> void:
 		"%s gold and level %d" % [UI.number(cost), need],
 		Palette.GOLD if can else Palette.TEXT_FAINT)
 	if can:
-		var b := UI.button("FOUND", 15)
+		var b := UI.button("FOUND", UI.F_BODY)
 		b.custom_minimum_size = Vector2(110, 40)
 		b.pressed.connect(_found)
 		(found.get_child(0) as HBoxContainer).add_child(b)
 	_list.add_child(found)
 
 	_list.add_child(UI.spacer(8))
-	_list.add_child(UI.label("GREATEST REALMS", 12, Palette.TEXT_FAINT))
+	_list.add_child(UI.label("GREATEST REALMS", UI.F_MICRO, Palette.TEXT_FAINT))
 	_build_leaderboard()
 
 
@@ -147,7 +147,7 @@ func _build_overview() -> void:
 			int(me.get("favour", 0))],
 		Palette.GOLD if remaining > 0 else Palette.TEXT_FAINT)
 	if remaining > 0:
-		var b := UI.button("GIVE", 15)
+		var b := UI.button("GIVE", UI.F_BODY)
 		b.custom_minimum_size = Vector2(100, 40)
 		b.disabled = GameState.display_gold() <= 0
 		b.pressed.connect(_donate.bind(remaining))
@@ -155,7 +155,7 @@ func _build_overview() -> void:
 	_list.add_child(donate_card)
 
 	_list.add_child(UI.spacer(8))
-	_list.add_child(UI.label("GREATEST REALMS", 12, Palette.TEXT_FAINT))
+	_list.add_child(UI.label("GREATEST REALMS", UI.F_MICRO, Palette.TEXT_FAINT))
 	_build_leaderboard()
 
 
@@ -197,22 +197,22 @@ func _build_members() -> void:
 		if my_role == "king" and role != "king":
 			var next_role := "member" if role == "marshal" else "marshal"
 			var promote := UI.ghost_button(
-				("Demote" if role == "marshal" else "Raise to marshal"), 12)
+				("Demote" if role == "marshal" else "Raise to marshal"), UI.F_CAPTION)
 			promote.custom_minimum_size = Vector2(124, 34)
 			promote.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			promote.pressed.connect(_set_role.bind(target, next_role))
 			(card.get_child(0) as HBoxContainer).add_child(promote)
 
 	_list.add_child(UI.spacer(8))
-	var leave := UI.ghost_button("LEAVE THE KINGDOM", 13)
-	leave.custom_minimum_size = Vector2(0, 40)
+	var leave := UI.ghost_button("LEAVE THE KINGDOM", UI.F_CAPTION)
+	leave.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	leave.add_theme_color_override("font_color", Palette.DANGER)
 	leave.disabled = my_role == "king"
 	leave.pressed.connect(_leave)
 	_list.add_child(leave)
 	if my_role == "king":
 		_list.add_child(UI.label("A king cannot walk away. Raise a marshal and pass the crown first.",
-			11, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+			UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 
 
 ## Search by name, then invite. Results say whether someone already holds a
@@ -229,7 +229,7 @@ func _invite_box() -> Control:
 	var field := UI.line_edit("name")
 	field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(field)
-	var go := UI.button("FIND", 14)
+	var go := UI.button("FIND", UI.F_BODY)
 	go.custom_minimum_size = Vector2(84, 40)
 	row.add_child(go)
 
@@ -242,15 +242,15 @@ func _invite_box() -> Control:
 			c.queue_free()
 		var term := field.text.strip_edges()
 		if term.length() < 2:
-			results.add_child(UI.label("Type at least two letters.", 12, Palette.TEXT_FAINT))
+			results.add_child(UI.label("Type at least two letters.", UI.F_MICRO, Palette.TEXT_FAINT))
 			return
 		var res: Api.Response = await Api.get_json("/v1/kingdom/search?q=" + term.uri_encode())
 		if not res.ok:
-			results.add_child(UI.label(res.error, 12, Palette.DANGER))
+			results.add_child(UI.label(res.error, UI.F_MICRO, Palette.DANGER))
 			return
 		var found: Array = res.data.get("players", [])
 		if found.is_empty():
-			results.add_child(UI.label("Nobody by that name.", 12, Palette.TEXT_FAINT))
+			results.add_child(UI.label("Nobody by that name.", UI.F_MICRO, Palette.TEXT_FAINT))
 			return
 		for pl in found:
 			results.add_child(_invite_row(pl))
@@ -275,14 +275,14 @@ func _invite_row(pl: Dictionary) -> Control:
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 0)
-	col.add_child(UI.label(str(pl.get("name", "")), 14, Palette.TEXT))
-	col.add_child(UI.label("level %d" % int(pl.get("level", 1)), 11, Palette.TEXT_FAINT))
+	col.add_child(UI.label(str(pl.get("name", "")), UI.F_CAPTION, Palette.TEXT))
+	col.add_child(UI.label("level %d" % int(pl.get("level", 1)), UI.F_MICRO, Palette.TEXT_FAINT))
 	row.add_child(col)
 
 	if bool(pl.get("in_kingdom", false)):
-		row.add_child(UI.label("already sworn", 12, Palette.TEXT_FAINT))
+		row.add_child(UI.label("already sworn", UI.F_MICRO, Palette.TEXT_FAINT))
 	else:
-		var b := UI.ghost_button("INVITE", 12)
+		var b := UI.ghost_button("INVITE", UI.F_CAPTION)
 		b.custom_minimum_size = Vector2(84, 34)
 		b.pressed.connect(_invite.bind(str(pl.get("player_id", ""))))
 		row.add_child(b)
@@ -320,7 +320,7 @@ func _build_upgrades() -> void:
 
 	if not may_spend:
 		_list.add_child(UI.label("Only the king and marshals may spend the treasury.",
-			13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+			UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 
 
 func _describe(bucket: String, amount: int) -> String:
@@ -340,7 +340,7 @@ func _card(title: String, sub: String, accent: Color) -> PanelContainer:
 	col.add_theme_constant_override("separation", 1)
 	row.add_child(col)
 	col.add_child(UI.label(title, 16, accent))
-	var s := UI.label(sub, 12, Palette.TEXT_FAINT)
+	var s := UI.label(sub, UI.F_MICRO, Palette.TEXT_FAINT)
 	s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(s)
 	return p
@@ -389,7 +389,7 @@ func _found() -> void:
 ## deliberately empty: every action on this screen belongs to the row it acts on
 ## -- accept THIS invitation, invite THIS person, buy THIS work.
 func mount_action_bar(host: Control) -> void:
-	var l := UI.label("", 13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	var l := UI.label("", UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	host.add_child(l)
 	_action_hint = l

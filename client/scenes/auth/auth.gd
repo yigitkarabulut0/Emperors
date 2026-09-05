@@ -32,26 +32,26 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 14)
 	margin.add_child(col)
 
-	col.add_child(UI.label("EMPERORS", 52, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
-	col.add_child(UI.label("Rise, and let the realm remember your name.", 15,
+	col.add_child(UI.label("EMPERORS", 88, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.label("Rise, and let the realm remember your name.", UI.F_CAPTION,
 		Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 	col.add_child(UI.spacer(24))
 
 	_username = UI.line_edit("Username")
-	_username.custom_minimum_size = Vector2(0, 56)
+	_username.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	col.add_child(_username)
 
 	_password = UI.line_edit("Password", true)
-	_password.custom_minimum_size = Vector2(0, 56)
+	_password.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	_password.text_submitted.connect(func(_t: String) -> void: _submit_pressed())
 	col.add_child(_password)
 
-	_error = UI.label("", 15, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
+	_error = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
 	_error.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_error.custom_minimum_size = Vector2(0, 40)
+	_error.custom_minimum_size = Vector2(0, 44)
 	col.add_child(_error)
 
-	_submit = UI.button("CREATE ACCOUNT", 20)
+	_submit = UI.button("CREATE ACCOUNT", UI.F_H2)
 	_submit.custom_minimum_size = Vector2(0, 60)
 	_submit.pressed.connect(_submit_pressed)
 	col.add_child(_submit)

@@ -74,19 +74,19 @@ func _render() -> void:
 
 	var tier := str(_unit.get("tier", ""))
 	var title := str(_unit.get("name", "Unit"))
-	_body.add_child(UI.label(title, 19, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
+	_body.add_child(UI.label(title, UI.F_H2, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
 
 	var sub := "level %d" % int(_unit.get("level", 1))
 	if tier != "":
 		sub = "%s %s   ·   %s" % [tier.capitalize(), "•".repeat(int(TIER_PIPS.get(tier, 1))), sub]
-	var sub_label := UI.label(sub, 12, Palette.tier(tier) if tier != "" else Palette.TEXT_FAINT,
+	var sub_label := UI.label(sub, UI.F_MICRO, Palette.tier(tier) if tier != "" else Palette.TEXT_FAINT,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	_body.add_child(sub_label)
 
 	_body.add_child(UI.label("ATK %d   DEF %d   SPD %d   HP %d" % [
 		int(_unit.get("attack", 0)), int(_unit.get("defense", 0)),
 		int(_unit.get("speed", 0)), int(_unit.get("hp", 0))],
-		13, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 
 	var equipped: Dictionary = _unit.get("equipped", {})
 	for slot in SLOTS:
@@ -103,7 +103,7 @@ func _render() -> void:
 		_body.add_child(danger)
 		_body.add_child(UI.label(
 			"Frees the slot and refunds a quarter of the recruit price. Gear goes back to your armory.",
-			11, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+			UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 
 	var close := Button.new()
 	close.text = "Close"
@@ -115,7 +115,7 @@ func _render() -> void:
 ## One equipment slot: what is in it, or the silhouette of what could be.
 func _slot_row(slot: String, item: Variant) -> Control:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 62)
+	b.custom_minimum_size = Vector2(0, UI.TAP_ROW_TIGHT)
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT))
 	b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.GOLD_DEEP))
@@ -147,17 +147,17 @@ func _slot_row(slot: String, item: Variant) -> Control:
 
 	if item is Dictionary:
 		icon.texture = ArtRegistry.item_icon(str(item.get("art", "")), str(item.get("tier", "common")))
-		col.add_child(UI.label(str(item.get("name", "")), 15, Palette.TEXT))
+		col.add_child(UI.label(str(item.get("name", "")), UI.F_CAPTION, Palette.TEXT))
 		col.add_child(UI.label("ATK %d   DEF %d   SPD %d" % [
 			int(item.get("attack", 0)), int(item.get("defense", 0)), int(item.get("speed", 0))],
-			11, Palette.tier(str(item.get("tier", "common")))))
+			UI.F_MICRO, Palette.tier(str(item.get("tier", "common")))))
 	else:
 		icon.texture = ArtRegistry.ui_icon("slots/" + slot)
 		icon.modulate = Palette.EMPTY_SLOT
-		col.add_child(UI.label(str(SLOT_NAMES.get(slot, slot)), 15, Palette.TEXT_FAINT))
-		col.add_child(UI.label("empty — tap to equip", 11, Palette.TEXT_FAINT))
+		col.add_child(UI.label(str(SLOT_NAMES.get(slot, slot)), UI.F_CAPTION, Palette.TEXT_FAINT))
+		col.add_child(UI.label("empty — tap to equip", UI.F_MICRO, Palette.TEXT_FAINT))
 
-	row.add_child(UI.label(">", 15, Palette.TEXT_FAINT))
+	row.add_child(UI.label(">", UI.F_CAPTION, Palette.TEXT_FAINT))
 	return b
 
 

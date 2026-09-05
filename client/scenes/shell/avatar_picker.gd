@@ -47,7 +47,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 12)
 	pad.add_child(col)
-	col.add_child(UI.label("Choose your portrait", 19, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.label("Choose your portrait", UI.F_H2, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
 
 	_grid = GridContainer.new()
 	_grid.columns = COLUMNS
@@ -67,7 +67,7 @@ func _ready() -> void:
 func _load() -> void:
 	var res: Api.Response = await Api.get_json("/v1/avatars")
 	if not res.ok:
-		_grid.add_child(UI.label("Could not load portraits.", 14, Palette.DANGER))
+		_grid.add_child(UI.label("Could not load portraits.", UI.F_CAPTION, Palette.DANGER))
 		return
 	for c in _grid.get_children():
 		c.queue_free()

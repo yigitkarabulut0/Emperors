@@ -161,23 +161,42 @@ else:
     ok("every shipped asset is imported")
 
 # 8. Everything above reads the scripts as text. Only Godot actually parses
-#    GDScript, and a parse error takes the whole autoload down at runtime while
-#    looking perfectly fine to every rule above -- so let the engine have the
-#    last word.
+#    GDScript, and a parse error takes a whole screen down at runtime while
+#    looking perfectly fine to every rule above.
+#
+#    Every file individually, via --check-only. Booting the project only parses
+#    what the boot scene reaches, so a broken tab that nobody opens at startup
+#    passed this rule cleanly -- which is exactly how one shipped.
+#
+#    --check-only does not register autoloads, so every file that uses one
+#    reports "Identifier not found: Api" and friends. That is the one false
+#    positive and it is filtered by name; anything else is a real finding.
 godot = shutil.which("godot")
 if not godot:
     print("  SKIP  godot is not on PATH, so scripts were not parsed")
 else:
-    proc = subprocess.run([godot, "--headless", "--path", str(CLIENT), "--quit-after", "2"],
-                          capture_output=True, text=True, timeout=180)
-    noise = proc.stdout + proc.stderr
-    bad = [ln.strip() for ln in noise.splitlines()
-           if "Parse Error" in ln or "SCRIPT ERROR" in ln or "Failed to load script" in ln]
-    if bad:
-        for b in bad[:6]:
-            fail(b[:150])
+    project = (CLIENT / "project.godot").read_text()
+    block = re.search(r"\[autoload\](.*?)(\n\[|\Z)", project, re.S)
+    autoloads = [m.group(1) for m in re.finditer(r"^(\w+)\s*=", block.group(1), re.M)] if block else []
+    benign = {f"Identifier not found: {name}" for name in autoloads}
+
+    problems = []
+    for f in gd:
+        rel = f.relative_to(CLIENT).as_posix()
+        proc = subprocess.run(
+            [godot, "--headless", "--path", str(CLIENT), "--check-only", "--script", "res://" + rel],
+            capture_output=True, text=True, timeout=120)
+        for ln in (proc.stdout + proc.stderr).splitlines():
+            if "Parse Error" not in ln and "Compile Error" not in ln:
+                continue
+            if any(b in ln for b in benign):
+                continue
+            problems.append(f"{rel}: {ln.strip()[:110]}")
+    if problems:
+        for pr in problems[:6]:
+            fail(pr)
     else:
-        ok("every script parses and the autoloads come up")
+        ok(f"all {len(gd)} scripts parse")
 
 print()
 if FAILURES:

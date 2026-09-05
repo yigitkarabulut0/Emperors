@@ -9,6 +9,10 @@ var _estates: Dictionary = {}
 var _selected := ""
 var _list: VBoxContainer
 var _header: Label
+var _income_card: PanelContainer
+var _income: Label
+var _waiting: Label
+var _collect: Button
 var _action: Button
 var _action_sub: Label
 var _busy := false
@@ -16,6 +20,40 @@ var _busy := false
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
+	# The income and the button that claims it belong with the estates that earn
+	# it. They used to sit on the Hero screen, one tab away from the thing they
+	# were describing.
+	_income_card = PanelContainer.new()
+	_income_card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))
+	add_child(_income_card)
+
+	var pad := MarginContainer.new()
+	for side in ["left", "right"]:
+		pad.add_theme_constant_override("margin_" + side, 12)
+	for side in ["top", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, 10)
+	_income_card.add_child(pad)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	pad.add_child(row)
+
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 1)
+	row.add_child(col)
+	col.add_child(UI.label("YOUR ESTATES EARN", 11, Palette.TEXT_FAINT))
+	_income = UI.label("", 17, Palette.GOLD)
+	col.add_child(_income)
+	_waiting = UI.label("", 12, Palette.TEXT_DIM)
+	col.add_child(_waiting)
+
+	_collect = UI.button("COLLECT", 15)
+	_collect.custom_minimum_size = Vector2(110, 44)
+	_collect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_collect.pressed.connect(_claim_tax)
+	row.add_child(_collect)
+
 	_header = UI.label("Surveying your lands…", 14, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_header)
@@ -60,9 +98,15 @@ func _rebuild() -> void:
 		return
 
 	var tax: Dictionary = _estates.get("tax", {})
+	# Per hour, never per second: a rate of 0.008 gold a second reads as nothing.
 	var per_hour := float(int(tax.get("per_hour_milli", 0))) / 1000.0
-	_header.text = "Your lands earn %.1f gold/hour, and hold up to %d hours while you are away." % [
-		per_hour, int(tax.get("cap_seconds", 0)) / 3600]
+	var pending := int(tax.get("pending", 0))
+	_income.text = "%.1f gold every hour" % per_hour
+	_waiting.text = "%s waiting to be collected" % UI.number(pending) if pending > 0 \
+		else "nothing waiting yet"
+	_collect.disabled = pending <= 0 or _busy
+	_header.text = "They keep earning while you are away, up to %d hours' worth." % [
+		int(tax.get("cap_seconds", 0)) / 3600]
 
 	var holdings: Array = _estates.get("holdings", [])
 	var gold := GameState.display_gold()
@@ -146,3 +190,20 @@ func _buy() -> void:
 		_estates = res.data
 	await GameState.refresh()
 	_rebuild()
+
+
+func _claim_tax() -> void:
+	if _busy:
+		return
+	_busy = true
+	_rebuild()
+	var res: Api.Response = await Api.post_json("/v1/estates/tax/claim",
+		{"action_seq": int(GameState.player().get("action_seq", 0)) + 1})
+	_busy = false
+	if not res.ok:
+		GameState.action_failed.emit(res.error)
+	else:
+		GameState.action_failed.emit("Collected %s gold from your estates" %
+			UI.number(int(res.data.get("collected", 0))))
+	await GameState.refresh()
+	await _reload()

@@ -666,7 +666,29 @@ def cur_bolt() -> str:
 CURRENCY = {"coin": cur_coin, "gem": cur_gem, "bolt": cur_bolt}
 
 
+
+def bank() -> str:
+    """Bank: coin stacks. The vault used to be a card inside the Keep; it is its
+    own section now, so it needs its own glyph."""
+    parts = []
+    for cx, n in ((8, 4), (16, 6), (24, 3)):
+        for i in range(n):
+            parts.append(ellipse(cx, 27 - i * 3.5, 4.3, 1.7))
+    return " ".join(parts)
+
+
+def house() -> str:
+    """House: a hanging banner with a charge on it. The clan system was buried
+    behind a line of text inside another screen; it is a section of its own now."""
+    return " ".join([
+        rect(3, 2.5, 26, 2.6),                           # the pole it hangs from
+        poly((7, 5.1), (25, 5.1), (25, 23), (16, 29.5), (7, 23)),   # the banner
+        poly((16, 9), (20.5, 13), (16, 21), (11.5, 13)),            # charge (hole)
+    ])
+
+
 ICONS = {
+    "bank": bank, "house": house,
     "keep": keep, "fields": fields, "armory": armory, "market": market,
     "barracks": barracks, "war_gate": war_gate, "territory": territory,
 }

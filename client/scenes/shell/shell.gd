@@ -6,14 +6,26 @@ extends Control
 ## primary action of the current section — it is the only part of a tall phone
 ## the thumb reaches comfortably, and this game is mostly one repeated tap.
 
+## The navigation rail.
+##
+## Names are literal on purpose. "Keep", "Fields", "Armory", "War Gate" and "Map"
+## are good flavour and tell a new player nothing about what is behind them --
+## the reference game calls its screens Jobs, Properties, Crew, Bank, Fight, and
+## you always know where you are. The flavour moved into the screens themselves.
+##
+## One entry does one thing. Bank and House used to be buttons buried inside the
+## Keep, which made the Keep a grab bag of five unrelated things and put the
+## clan system two taps deep behind a line of text.
 const SECTIONS := [
-	{"id": "family", "icon": "keep", "glyph": "K", "label": "Keep", "milestone": ""},
-	{"id": "collect", "icon": "fields", "glyph": "F", "label": "Fields", "milestone": ""},
-	{"id": "inventory", "icon": "armory", "glyph": "A", "label": "Armory", "milestone": ""},
-	{"id": "shop", "icon": "market", "glyph": "M", "label": "Market", "milestone": ""},
-	{"id": "soldiers", "icon": "barracks", "glyph": "B", "label": "Barracks", "milestone": ""},
-	{"id": "attack", "icon": "war_gate", "glyph": "W", "label": "War Gate", "milestone": ""},
-	{"id": "territory", "icon": "territory", "glyph": "T", "label": "Map", "milestone": ""},
+	{"id": "jobs", "icon": "fields", "glyph": "J", "label": "Jobs"},
+	{"id": "hero", "icon": "keep", "glyph": "H", "label": "Hero"},
+	{"id": "shop", "icon": "market", "glyph": "S", "label": "Shop"},
+	{"id": "items", "icon": "armory", "glyph": "I", "label": "Items"},
+	{"id": "estates", "icon": "territory", "glyph": "E", "label": "Estates"},
+	{"id": "army", "icon": "barracks", "glyph": "A", "label": "Army"},
+	{"id": "bank", "icon": "bank", "glyph": "B", "label": "Bank"},
+	{"id": "fight", "icon": "war_gate", "glyph": "F", "label": "Fight"},
+	{"id": "house", "icon": "house", "glyph": "K", "label": "House"},
 ]
 
 const RAIL_WIDTH := 88
@@ -33,13 +45,14 @@ var _diamonds: Label
 ## Section id -> the tab node, and -> its action bar. Both are kept alive for
 ## the lifetime of the shell; see _open().
 var _tabs: Dictionary = {}
+var _rail_locks: Dictionary = {}
 var _action_bars: Dictionary = {}
 
 var _gold_shown := 0
 var _gold_seen := false
 var _gold_tween: Tween
 
-var _current := "collect"
+var _current := "jobs"
 var _rail_buttons: Dictionary = {}
 var _content: Control
 var _action_host: Control
@@ -319,18 +332,22 @@ func _build_rail() -> Control:
 
 		col.add_child(b)
 		_rail_buttons[str(s["id"])] = b
+		_rail_locks[str(s["id"])] = UI.label("", 10, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+		inner.add_child(_rail_locks[str(s["id"])])
 
 	return panel
 
 
 const TABS := {
-	"collect": "res://scenes/tabs/collect.gd",
+	"jobs": "res://scenes/tabs/collect.gd",
+	"hero": "res://scenes/tabs/keep.gd",
 	"shop": "res://scenes/tabs/shop.gd",
-	"inventory": "res://scenes/tabs/inventory.gd",
-	"soldiers": "res://scenes/tabs/barracks.gd",
-	"attack": "res://scenes/tabs/attack.gd",
-	"family": "res://scenes/tabs/keep.gd",
-	"territory": "res://scenes/tabs/territory.gd",
+	"items": "res://scenes/tabs/inventory.gd",
+	"estates": "res://scenes/tabs/territory.gd",
+	"army": "res://scenes/tabs/barracks.gd",
+	"bank": "res://scenes/tabs/bank.gd",
+	"fight": "res://scenes/tabs/attack.gd",
+	"house": "res://scenes/tabs/kingdom.gd",
 }
 
 
@@ -401,16 +418,44 @@ func _placeholder(title: String, milestone: String) -> Control:
 	return col
 
 
+## Which sections the player has reached. Nine tabs handed to a new player at
+## once is the single biggest reason this was hard to read: most of them do
+## nothing yet -- no gold to spend, no army to gear, no house to join. Locked
+## ones stay VISIBLE but dim with their level on them, because seeing what is
+## coming is most of what makes levelling feel like progress.
+func _unlocked(id: String) -> bool:
+	for sec in GameState.snapshot.get("sections", []):
+		if str(sec.get("id", "")) == id:
+			return bool(sec.get("unlocked", false))
+	return true   # before the first snapshot arrives, assume open rather than hide everything
+
+
+func _unlock_level(id: String) -> int:
+	for sec in GameState.snapshot.get("sections", []):
+		if str(sec.get("id", "")) == id:
+			return int(sec.get("unlock_level", 0))
+	return 0
+
+
 func _style_rail() -> void:
 	for id in _rail_buttons:
 		var b: Button = _rail_buttons[id]
+		var open := _unlocked(str(id))
+		b.disabled = not open
+		if _rail_locks.has(id):
+			var lock: Label = _rail_locks[id]
+			lock.text = "" if open else "lv %d" % _unlock_level(str(id))
+			lock.visible = not open
 		var active: bool = id == _current
 		var bg := Palette.PANEL if active else Color.TRANSPARENT
 		b.add_theme_stylebox_override("normal", UI.panel_box(bg, Color.TRANSPARENT, 0))
 		b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT, 0))
 		b.add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, 0))
 		var inner := b.get_child(0)
-		inner.get_child(0).modulate = Palette.GOLD if active else Palette.TEXT_DIM
+		var tint := Palette.GOLD if active else Palette.TEXT_DIM
+		if not open:
+			tint = Palette.EMPTY_SLOT
+		inner.get_child(0).modulate = tint
 		inner.get_child(1).add_theme_color_override("font_color", Palette.TEXT_DIM if active else Palette.TEXT_FAINT)
 
 
@@ -424,6 +469,7 @@ func _on_state_changed() -> void:
 	_avatar_img.texture = ArtRegistry.portrait(str(p.get("avatar", "knight")))
 	_show_gold(GameState.display_gold())
 	_update_energy()
+	_style_rail()
 
 
 ## Rolls the gold counter to `target` instead of snapping to it.

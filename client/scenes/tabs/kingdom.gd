@@ -5,7 +5,6 @@ extends VBoxContainer
 ## without a kingdom has almost nothing to look at here, and a rail icon that is
 ## empty for the first twelve levels teaches the wrong thing about the game.
 
-signal closed
 
 enum Mode { OVERVIEW, MEMBERS, UPGRADES }
 
@@ -15,6 +14,7 @@ var _list: VBoxContainer
 var _header: Label
 var _tabs: HBoxContainer
 var _busy := false
+var _action_hint: Label
 
 
 func _ready() -> void:
@@ -23,11 +23,6 @@ func _ready() -> void:
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 8)
 	add_child(top)
-
-	var back := UI.ghost_button("< Keep", 15)
-	back.custom_minimum_size = Vector2(84, 34)
-	back.pressed.connect(func() -> void: closed.emit())
-	top.add_child(back)
 
 	_header = UI.label("Loading…", 15, Palette.GOLD)
 	_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -73,6 +68,7 @@ func _rebuild() -> void:
 	for c in _tabs.get_children():
 		c.queue_free()
 
+	_refresh_hint()
 	if not bool(_kv.get("in_kingdom", false)):
 		_build_landless()
 		return
@@ -387,3 +383,23 @@ func _found() -> void:
 	await _post("/v1/kingdom/found", {
 		"name": "House " + n, "tag": n.substr(0, 3).to_upper(),
 		"action_seq": int(GameState.player().get("action_seq", 0)) + 1})
+
+
+## A section of its own now, so it needs an action bar like the rest. It stays
+## deliberately empty: every action on this screen belongs to the row it acts on
+## -- accept THIS invitation, invite THIS person, buy THIS work.
+func mount_action_bar(host: Control) -> void:
+	var l := UI.label("", 13, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	host.add_child(l)
+	_action_hint = l
+	_refresh_hint()
+
+
+func _refresh_hint() -> void:
+	if _action_hint == null:
+		return
+	if not bool(_kv.get("in_kingdom", false)):
+		_action_hint.text = "Found a house, or wait to be invited to one"
+	else:
+		_action_hint.text = "Realm · Lords · Works"

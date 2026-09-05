@@ -342,3 +342,35 @@ Steam · texture atlasing · WebSockets · Redis.
 2. Run the M0 machine setup above.
 3. Stand up the Go server, Neon Frankfurt schema, and the Godot shell, and get a number from
    Postgres onto the iPhone.
+
+
+## Navigation, after the Idle Mafia Game pass (September 2026)
+
+The owner's complaint was that the game read as strange and the Keep in
+particular was unintelligible, with the clan system buried two taps deep. The
+reference game was re-examined and three rules came out of it.
+
+**One section does one thing.** Idle Mafia gives Jobs, Properties, Crew, Bank,
+Fight and Family each their own rail entry. Ours had a "Keep" holding your
+character, the vault, estate income, a link into the clan system, and the
+upgrade tree -- five unrelated things, which is why it could not be understood
+at a glance. Bank and House are now sections of their own, estate income moved
+next to the estates that earn it, and Hero is your character and your upgrades.
+
+**Names are literal.** "Keep", "Fields", "Armory", "War Gate" and "Map" are good
+flavour and tell a new player nothing. The rail now reads Jobs, Hero, Shop,
+Items, Estates, Army, Bank, Fight, House. The flavour lives inside the screens.
+
+**Sections unlock as you level, and locked ones stay visible.** Nine tabs handed
+to a new player at once is unreadable, and most of them do nothing yet: no gold
+to spend, no army to gear, no house to join. The gates live in the balance
+document (`progression.sections`) and ride along on `/v1/state`, so they are
+tunable without a deploy. A locked entry is dimmed and carries its level, because
+seeing what is coming is most of what makes levelling feel like progress.
+
+Levels land just before the thing behind them turns on: Shop at 2 when a job
+pays enough to buy from it, Army at 5 when the first slot becomes free, House at
+20 when founding unlocks.
+
+Sources consulted: idlemafiagame.wiki, allthings.how progression guide,
+roblox.com/games/73897506680154.

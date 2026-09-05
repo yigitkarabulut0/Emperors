@@ -14,6 +14,44 @@
     "deposit_fee_bp": 1000
   },
   "levelup_diamonds": 5,
+  "sections": [
+    {
+      "id": "jobs",
+      "level": 1
+    },
+    {
+      "id": "hero",
+      "level": 1
+    },
+    {
+      "id": "shop",
+      "level": 2
+    },
+    {
+      "id": "items",
+      "level": 3
+    },
+    {
+      "id": "estates",
+      "level": 4
+    },
+    {
+      "id": "army",
+      "level": 5
+    },
+    {
+      "id": "bank",
+      "level": 8
+    },
+    {
+      "id": "fight",
+      "level": 10
+    },
+    {
+      "id": "house",
+      "level": 20
+    }
+  ],
   "avatars": [
     "knight",
     "king",

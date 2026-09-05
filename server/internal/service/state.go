@@ -23,9 +23,19 @@ import (
 type Snapshot struct {
 	Player   PlayerView    `json:"player"`
 	Energy   EnergyView    `json:"energy"`
+	Sections []SectionView `json:"sections"`
 	Jobs     []JobView     `json:"jobs"`
 	ServerAt time.Time     `json:"server_at"`
 	Config   ConfigVersion `json:"config"`
+}
+
+// SectionView is one navigation entry: whether the player has reached it, and
+// the level that opens it if not. Sent with state so the client never has to
+// hold its own copy of the progression rules.
+type SectionView struct {
+	ID          string `json:"id"`
+	UnlockLevel int    `json:"unlock_level"`
+	Unlocked    bool   `json:"unlocked"`
 }
 
 type PlayerView struct {
@@ -118,6 +128,7 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 	return &Snapshot{
 		Player:   playerView(d.Config, p),
 		Energy:   energyView(settled, maxEnergy, period),
+		Sections: sectionViews(d.Config, int(p.Level)),
 		Jobs:     jobViews(d.Config, p, collects, eff.Bonuses),
 		ServerAt: now.UTC(),
 		Config:   ConfigVersion{Version: d.Config.Version},
@@ -133,6 +144,16 @@ func settleEnergy(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, eff estates.Effect
 		maxEnergy, period, now,
 	)
 	return state, maxEnergy, period
+}
+
+func sectionViews(cfg *gameconfig.Bundle, level int) []SectionView {
+	out := make([]SectionView, 0, len(cfg.Progression.Sections))
+	for _, g := range cfg.Progression.Sections {
+		out = append(out, SectionView{
+			ID: g.ID, UnlockLevel: g.Level, Unlocked: level >= g.Level,
+		})
+	}
+	return out
 }
 
 func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {

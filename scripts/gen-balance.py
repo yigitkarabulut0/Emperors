@@ -100,6 +100,29 @@ emit("progression.json", json.dumps({
     # it is the one reward that cannot be farmed faster by playing more, since
     # the XP curve already bounds it.
     "levelup_diamonds": 5,
+    # Which sections a player can reach, and when.
+    #
+    # A new player meeting nine tabs at once cannot tell which one matters, and
+    # most of them do nothing yet: there is no gold to spend, no army to gear, no
+    # kingdom to join. Handing them Jobs and Hero and revealing the rest as each
+    # becomes useful is the single biggest thing that makes the reference game
+    # legible. Locked sections stay VISIBLE but dimmed with their level, because
+    # seeing what is coming is most of what makes levelling feel like progress.
+    #
+    # Levels are chosen to land just before the thing behind them turns on:
+    # the Shop matters once a job pays enough to buy from it, Army at 5 is when
+    # the first slot becomes free, House at 20 is when founding unlocks.
+    "sections": [
+        {"id": "jobs", "level": 1},
+        {"id": "hero", "level": 1},
+        {"id": "shop", "level": 2},
+        {"id": "items", "level": 3},
+        {"id": "estates", "level": 4},
+        {"id": "army", "level": 5},
+        {"id": "bank", "level": 8},
+        {"id": "fight", "level": 10},
+        {"id": "house", "level": 20},
+    ],
     "avatars": AVATARS,
     "levels": levels,
 }, indent=2) + "\n")

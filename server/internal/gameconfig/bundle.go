@@ -69,13 +69,14 @@ type Milestone struct {
 }
 
 type ProgressionConfig struct {
-	LevelCap           int          `json:"level_cap"`
-	Energy             EnergyConfig `json:"energy"`
-	StatPointsPerLevel int             `json:"stat_points_per_level"`
-	Treasury           TreasuryConfig  `json:"treasury"`
-	LevelupDiamonds    int64           `json:"levelup_diamonds"`
-	Avatars            []string        `json:"avatars"`
-	Levels             []Level      `json:"levels"`
+	LevelCap           int            `json:"level_cap"`
+	Energy             EnergyConfig   `json:"energy"`
+	StatPointsPerLevel int            `json:"stat_points_per_level"`
+	Treasury           TreasuryConfig `json:"treasury"`
+	LevelupDiamonds    int64          `json:"levelup_diamonds"`
+	Sections           []SectionGate  `json:"sections"`
+	Avatars            []string       `json:"avatars"`
+	Levels             []Level        `json:"levels"`
 }
 
 // HasAvatar reports whether a portrait id is one a player may choose.
@@ -99,6 +100,12 @@ func (b *Bundle) DefaultAvatar() string {
 		return "knight"
 	}
 	return b.Progression.Avatars[0]
+}
+
+// SectionGate is one navigation entry and the level that reveals it.
+type SectionGate struct {
+	ID    string `json:"id"`
+	Level int    `json:"level"`
 }
 
 type TreasuryConfig struct {

@@ -15,6 +15,7 @@ const LINE        := Color("#3A322B")  ## dividers and borders
 const TEXT        := Color("#EDE6DA")
 const TEXT_DIM    := Color("#9C9284")
 const TEXT_FAINT  := Color("#6B6258")
+const EMPTY_SLOT  := Color("#4A443C")  ## an unfilled equipment slot
 
 const GOLD        := Color("#E5C97B")  ## primary accent, currency
 const GOLD_DEEP   := Color("#B99A45")

@@ -45,6 +45,18 @@ def circle(cx: float, cy: float, r: float) -> str:
             f"a{r:.3g},{r:.3g} 0 1 0 {-2 * r:.3g},0Z")
 
 
+def circle_rev(cx: float, cy: float, r: float) -> str:
+    """A circle wound the other way.
+
+    Under fill-rule nonzero, winding direction is what makes a hole -- so this is
+    how an icon drawn with nonzero cuts one. Under evenodd it behaves like any
+    other subpath; direction is irrelevant there.
+    """
+    return (f"M{cx - r:.3g},{cy:.3g}"
+            f"a{r:.3g},{r:.3g} 0 1 1 {2 * r:.3g},0"
+            f"a{r:.3g},{r:.3g} 0 1 1 {-2 * r:.3g},0Z")
+
+
 def crenellated(x: float, w: float, top: float, bottom: float, merlons: int = 3) -> str:
     """A tower: solid body, with square merlons standing on top of it.
 
@@ -357,6 +369,273 @@ JOBS = {
 }
 
 
+
+# --- keep upgrades -----------------------------------------------------------
+
+def up_granary() -> str:
+    return " ".join([
+        "M9.5,28.5 C7,21 9,12.5 11,9.5 L21,9.5 C23,12.5 25,21 22.5,28.5 Z",
+        rect(10, 6, 12, 3.8),                            # tied neck
+        rect(9.5, 18.5, 13, 2.4),                        # band (hole)
+        poly((16, 1), (13.5, 6), (18.5, 6)),             # a grain ear above
+    ])
+
+
+def up_tithe_barn() -> str:
+    return " ".join([
+        poly((2, 14.5), (16, 4), (30, 14.5)),            # roof
+        rect(5, 14.5, 22, 14),                           # body
+        rect(11.5, 18, 9, 10.5),                         # doorway (hole)
+        rect(15.4, 18, 1.2, 10.5),                       # door split (filled again)
+    ])
+
+
+def up_scriptorium() -> str:
+    """An open book. A filled spine between the two pages welded them into one
+    curved slab, so the pages simply stop short of the middle and the gap is the
+    spine."""
+    return " ".join([
+        poly((2, 8), (15, 11.5), (15, 27), (2, 23.5)),
+        poly((17, 11.5), (30, 8), (30, 23.5), (17, 27)),
+    ])
+
+
+def up_beacons() -> str:
+    """A signal fire in a brazier.
+
+    Two earlier tries put the flame on a crenellated tower; at 42 px the merlons
+    are barely three pixels tall and the whole thing read as a candle. A brazier
+    -- bowl, stem, splayed foot -- says signal fire at any size.
+    """
+    return " ".join([
+        "M16,2 C19,6.5 20.2,9 20.2,11.3 A4.2,4.2 0 0 1 11.8,11.3"
+        " C11.8,9 13,6.5 16,2 Z",                        # flame
+        poly((6.5, 14.5), (25.5, 14.5), (22, 20.5), (10, 20.5)),   # bowl
+        rect(14.6, 20.5, 2.8, 4),                        # stem
+        poly((7, 28.5), (25, 28.5), (21.5, 24.5), (10.5, 24.5)),   # foot
+    ])
+
+
+def up_larder() -> str:
+    return " ".join([
+        "M9.5,6.5 C5,12 5,22 9.5,27.5 L22.5,27.5 C27,22 27,12 22.5,6.5 Z",
+        rect(6, 12, 20, 2.3),                            # hoops (holes)
+        rect(6, 19.5, 20, 2.3),
+    ])
+
+
+def up_armoury() -> str:
+    """An anvil. With the face and the base the same width it read as an I-beam,
+    so the base is now clearly the widest part and the waist tapers into it."""
+    return " ".join([
+        rect(7, 10, 18, 4.6),                            # face
+        poly((7, 10.2), (1.5, 12.4), (7, 14.6)),         # horn
+        poly((11, 14.6), (21, 14.6), (19.5, 21), (12.5, 21)),      # waist
+        rect(4, 21, 24, 6.5),                            # base, wider than the face
+    ])
+
+
+def up_bulwark() -> str:
+    return " ".join([
+        "M16,1.5 L28.5,6 C28.5,18 23,26.5 16,30.5 C9,26.5 3.5,18 3.5,6 Z",
+        rect(4.5, 12, 23, 2.6),                          # band (hole)
+    ])
+
+
+def up_stables() -> str:
+    return " ".join([
+        "M16,3 A12.5,12.5 0 0 1 28.5,15.5 L28.5,27 L21.5,27 L21.5,15.5"
+        " A5.5,5.5 0 0 0 10.5,15.5 L10.5,27 L3.5,27 L3.5,15.5 A12.5,12.5 0 0 1 16,3 Z",
+        circle(7, 21, 1.3), circle(25, 21, 1.3),         # nail holes
+    ])
+
+
+def up_merchant() -> str:
+    def pan(cx: float, y: float, r: float) -> str:
+        return f"M{cx - r:.3g},{y:.3g} a{r:.3g},{r * 0.72:.3g} 0 0 0 {2 * r:.3g},0Z"
+    return " ".join([
+        rect(3.5, 7.5, 25, 2.2),                         # beam
+        rect(15.1, 7.5, 1.8, 17.5),                      # post
+        poly((9, 28), (23, 28), (21, 25), (11, 25)),     # foot
+        rect(6.4, 9.7, 1.2, 3.6), rect(24.4, 9.7, 1.2, 3.6),      # cords
+        pan(7, 13.3, 5), pan(25, 13.3, 5),               # pans
+    ])
+
+
+def up_war_chest() -> str:
+    return " ".join([
+        rect(2.5, 11.5, 27, 16),                         # flat-topped strongbox
+        rect(2.5, 15.5, 27, 1.8),                        # lid seam (hole)
+        rect(7.5, 11.5, 2.6, 16),                        # bands (holes)
+        rect(21.9, 11.5, 2.6, 16),
+        rect(13.8, 18.5, 4.4, 5),                        # lock (hole)
+    ])
+
+
+def up_coffers() -> str:
+    parts = []
+    for cx, n in ((8, 4), (16, 6), (24, 3)):
+        for i in range(n):
+            parts.append(ellipse(cx, 27 - i * 3.5, 4.3, 1.7))
+    return " ".join(parts)
+
+
+UPGRADES = {
+    "granary": up_granary, "tithe_barn": up_tithe_barn,
+    "scriptorium": up_scriptorium, "beacons": up_beacons, "larder": up_larder,
+    "armoury": up_armoury, "bulwark": up_bulwark, "stables": up_stables,
+    "merchant": up_merchant, "war_chest": up_war_chest, "coffers": up_coffers,
+}
+
+
+# --- territory holdings ------------------------------------------------------
+
+def hold_wheat_farm() -> str:
+    parts = [
+        poly((2, 28), (30, 28), (27, 23.5), (5, 23.5)),           # furrows, in perspective
+        poly((5.5, 22.5), (26.5, 22.5), (24.5, 18.5), (7.5, 18.5)),
+        poly((8, 17.5), (24, 17.5), (22.5, 14), (9.5, 14)),
+    ]
+    for x in (10.5, 16, 21.5):                                    # crop standing in it
+        parts.append(poly((x, 13), (x - 2.3, 8), (x, 3), (x + 2.3, 8)))
+    return " ".join(parts)
+
+
+def hold_watermill() -> tuple[str, str]:
+    """A paddle wheel turning in the water.
+
+    Drawn with fill-rule NONZERO rather than evenodd, and that is the point of it.
+    Under evenodd two overlapping filled subpaths punch each other out, so spokes
+    laid across a rim cancelled against it and the wheel came out as speckle.
+    Under nonzero they union, and the rim's inner edge is cut by winding it the
+    other way instead.
+
+    The mill house that used to stand beside it is gone. Two objects do not fit in
+    32 units: the house came out narrower than it was tall under a steep roof,
+    which reads as an arrow, and shrinking the wheel to make room turned it into a
+    cog. One large wheel over a waterline says watermill on its own.
+    """
+    cx, cy, r = 16.0, 14.5, 10.2
+    parts = [circle(cx, cy, r), circle_rev(cx, cy, r - 2.6)]      # rim
+    spoke = rect(cx - 1.0, cy - r, 2.0, 2 * r)
+    for k in range(3):                                            # three spokes, six arms
+        parts.append(spoke if k == 0 else rotated([spoke], k * 60, cx, cy))
+    paddle = rect(cx - 1.6, cy - r - 2.8, 3.2, 3.2)
+    for k in range(8):
+        parts.append(paddle if k == 0 else rotated([paddle], k * 45, cx, cy))
+    parts.append(rect(0.5, 27.4, 31, 2.6))                        # the water it dips into
+    return " ".join(parts), "nonzero"
+
+
+def hold_quarry() -> str:
+    """Terraces cut down into the ground.
+
+    The first version left every terrace flush on the right, so it stepped on one
+    side only and read as a solid slab with a notch. Stepping symmetrically, with
+    a gap between courses, makes it a worked pit.
+    """
+    return " ".join([
+        rect(2, 22.4, 28, 5.6),
+        rect(6, 16, 20, 5.6),
+        rect(10, 9.6, 12, 5.6),
+        rect(2, 16.6, 3.4, 3.4),                         # a hewn block set aside
+    ])
+
+
+def hold_vineyard() -> str:
+    parts = [rect(3.5, 7, 2.4, 21), rect(26.1, 7, 2.4, 21), rect(3.5, 9.5, 25, 2)]
+    for i, n in enumerate((3, 2, 1)):
+        y = 15.5 + i * 4.6
+        for k in range(n):
+            parts.append(circle(16 + (k - (n - 1) / 2) * 5.4, y, 2.5))
+    parts.append(poly((19.5, 12), (27, 11), (22.5, 17)))          # leaf
+    return " ".join(parts)
+
+
+def hold_iron_mine() -> str:
+    return " ".join([
+        "M1,28.5 C4,14 11.5,5.5 16,5.5 C20.5,5.5 28,14 31,28.5 Z",   # hillside
+        "M10.5,28.5 L10.5,20 A5.5,5.5 0 0 1 21.5,20 L21.5,28.5 Z",   # adit (hole)
+        rect(10.5, 19, 2.2, 9.5),                                    # pit props (filled)
+        rect(19.3, 19, 2.2, 9.5),
+        rect(10.5, 17, 11, 2.2),                                     # lintel
+    ])
+
+
+def hold_market() -> str:
+    parts = [rect(1.5, 25, 29, 3)]
+    for cx in (8, 16, 24):                               # a square of stalls, not one stall
+        parts += [
+            poly((cx - 5.5, 16), (cx + 5.5, 16), (cx + 3.8, 8.5), (cx - 3.8, 8.5)),
+            rect(cx - 4.6, 16, 1.6, 9), rect(cx + 3, 16, 1.6, 9),
+        ]
+    return " ".join(parts)
+
+
+def hold_river_port() -> str:
+    return " ".join([
+        poly((1.5, 19.5), (30.5, 19.5), (26, 26.5), (6, 26.5)),   # hull
+        rect(15.1, 3, 1.8, 16.5),                                 # mast
+        poly((17.5, 4.5), (28, 13), (17.5, 18.5)),                # mainsail
+        poly((13.6, 6.5), (4.5, 14), (13.6, 18.5)),               # foresail
+        rect(1.5, 28, 29, 2),                                     # waterline
+    ])
+
+
+def hold_mint() -> str:
+    return " ".join([
+        circle(16, 16.5, 11),                            # the blank
+        poly((10, 22), (10, 12.5), (13, 17), (16, 10.5), (19, 17), (22, 12.5), (22, 22)),
+        ellipse(8.5, 27.5, 5, 2), ellipse(23.5, 27.5, 5, 2),      # struck coins
+    ])
+
+
+HOLDINGS = {
+    "wheat_farm": hold_wheat_farm, "watermill": hold_watermill,
+    "quarry": hold_quarry, "vineyard": hold_vineyard, "iron_mine": hold_iron_mine,
+    "market": hold_market, "river_port": hold_river_port, "mint": hold_mint,
+}
+
+
+# --- empty equipment slots ---------------------------------------------------
+#
+# Shown dimmed where a soldier or the player has nothing equipped, so the shape
+# says WHICH kind of thing is missing without a word of text.
+
+def slot_weapon() -> str:
+    return " ".join([
+        poly((16, 1.5), (18.9, 6.5), (18.9, 19), (13.1, 19), (13.1, 6.5)),
+        rect(8.5, 19, 15, 2.9),                          # crossguard
+        rect(14.4, 21.9, 3.2, 5.5),                      # grip
+        poly((13.2, 27.4), (18.8, 27.4), (17.6, 30.5), (14.4, 30.5)),
+    ])
+
+
+def slot_armor() -> str:
+    """A cuirass. A domed top over two square tassets read as a mushroom on legs,
+    so the plate now has a squared neckline notch, real shoulders, and a waist."""
+    return " ".join([
+        poly((5.5, 11), (9.5, 5.5), (13, 6.5), (16, 8.5), (19, 6.5), (22.5, 5.5),
+             (26.5, 11), (24.5, 17.5), (23, 28), (9, 28), (7.5, 17.5)),
+        rect(15.4, 14.5, 1.2, 13.5),                     # centre ridge (hole)
+        rect(9, 23, 14, 1.6),                            # fauld line (hole)
+    ])
+
+
+def slot_horse() -> str:
+    """A horse's head in profile -- the knight silhouette. The first attempt had
+    no muzzle and no ears to speak of and read as a blob with a notch."""
+    return " ".join([
+        poly((10, 29.5), (9, 18), (11, 12), (13, 9), (14, 2.5), (17, 8),
+             (20, 2.5), (21.5, 9.5), (25, 11), (27.5, 15.5), (24, 18.5),
+             (20.5, 19.5), (21, 29.5)),
+        circle(19, 12.5, 1.3),                           # eye (hole)
+    ])
+
+
+SLOTS = {"weapon": slot_weapon, "armor": slot_armor, "horse": slot_horse}
+
+
 ICONS = {
     "keep": keep, "fields": fields, "armory": armory, "market": market,
     "barracks": barracks, "war_gate": war_gate, "territory": territory,
@@ -376,7 +655,9 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     promote.mkdir(parents=True, exist_ok=True)
 
-    families = [("", ICONS, args.px), ("jobs/", JOBS, args.px)]
+    families = [("", ICONS, args.px), ("jobs/", JOBS, args.px),
+                ("upgrades/", UPGRADES, args.px), ("holdings/", HOLDINGS, args.px),
+                ("slots/", SLOTS, args.px)]
     total = 0
     for prefix, table, px in families:
         (out / prefix).mkdir(parents=True, exist_ok=True)
@@ -389,10 +670,12 @@ def main() -> int:
 def render(table, out: pathlib.Path, promote: pathlib.Path, px: int,
            root: pathlib.Path) -> int:
     for name, fn in table.items():
+        drawn = fn()
+        d, rule = drawn if isinstance(drawn, tuple) else (drawn, "evenodd")
         svg = (
             f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VIEW:g} {VIEW:g}" '
             f'width="{VIEW:g}" height="{VIEW:g}">'
-            f'<path fill="#FFFFFF" fill-rule="evenodd" d="{fn()}"/></svg>'
+            f'<path fill="#FFFFFF" fill-rule="{rule}" d="{d}"/></svg>'
         )
         svg_path = out / f"{name}.svg"
         svg_path.write_text(svg)

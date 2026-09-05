@@ -20,6 +20,54 @@ prompt more precisely, which matters for grid sheets where each cell must be a
 specific tier. The vendored CLI already defaults to `--model gemini`, and
 `--gemini-model pro` selects Nano Banana Pro.
 
+## Two kinds of art, and how to tell which you need
+
+**Loot is generated. Interface is authored.** The split is by display size, not by
+subject.
+
+An item icon is shown at 80-96 px on a card, so a painterly render reads and the
+tier recolouring in `tier-tint.py` has something to work with. A navigation glyph
+is shown at 34 px on the rail and a row glyph at 40-44 px; at that size a
+painterly render is mush, and no amount of prompt work fixes it. Those are
+geometry in `scripts/gen-ui-icons.py`, rasterised by `rsvg-convert`.
+
+Authored icons are free, instant, deterministic, and diff as text. There are five
+families, all rendered at 96 px into `client/assets/ui/`:
+
+| family | count | where |
+|---|---|---|
+| (root) | 7 | the navigation rail |
+| `jobs/` | 15 | Collect rows |
+| `upgrades/` | 11 | Keep rows |
+| `holdings/` | 8 | Territory rows |
+| `slots/` | 3 | empty equipment slots |
+
+Each is ONE flat white path on transparency, so the client tints a single texture
+per state with `modulate` -- gold when selected, plain when available, faint when
+locked -- rather than shipping a variant per state. `ArtRegistry.ui_icon()`
+returns null when one is absent, never a placeholder: a coloured diamond does not
+belong in a nav rail, and the caller falls back to text instead.
+
+### Judge every icon at the size it is used
+
+Everything here that had to be redrawn looked fine at 96 px and failed at 40.
+Three ears of wheat closed into a blob. Crossed swords pivoted at their centre
+stacked both crossguards on one point and read as a bowtie. A canopy with fruit
+punched out of it read as a face on a stick. A castle whose three towers were
+nearly the same height collapsed into a wall. Render at the real size, magnified
+with `-filter point`, and look at that.
+
+### fill-rule is load-bearing
+
+Icons are drawn as a single path, with holes as extra subpaths. Under the default
+`evenodd`, **overlapping filled subpaths punch each other out** -- which is what
+gives you holes for free, and also what silently destroys a shape built by
+overlapping pieces. A wheel with spokes laid across its rim came out as speckle.
+
+So: build with non-overlapping pieces under `evenodd`, or return
+`(path, "nonzero")` from the icon function and cut holes by winding them the
+other way with `circle_rev()`. `hold_watermill` is the worked example.
+
 ## Pipeline
 
 ```

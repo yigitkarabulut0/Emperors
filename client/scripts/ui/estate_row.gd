@@ -12,10 +12,16 @@ var _blurb: Label
 var _effect: Label
 var _cost: Label
 var _level: Label
+var _icon: TextureRect
+
+var _icon_dir := ""
+
+const ICON_SIZE := 40
 
 
-func _init(p_id: String) -> void:
+func _init(p_id: String, p_icon_dir: String = "") -> void:
 	id = p_id
+	_icon_dir = p_icon_dir
 	custom_minimum_size = Vector2(0, 82)
 	focus_mode = Control.FOCUS_NONE
 
@@ -31,6 +37,17 @@ func _ready() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	margin.add_child(row)
+
+	# The same row serves Keep upgrades and Territory holdings, so the caller says
+	# which family of art to draw from. Both are lists of otherwise identical rows.
+	if _icon_dir != "":
+		_icon = TextureRect.new()
+		_icon.texture = ArtRegistry.ui_icon(_icon_dir + "/" + id)
+		_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
+		_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(_icon)
 
 	_level = UI.label("", 15, Palette.GOLD_DEEP)
 	_level.custom_minimum_size = Vector2(46, 0)
@@ -68,6 +85,14 @@ func refresh(name: String, blurb: String, level: int, max_level: int,
 	_level.text = "%d/%d" % [level, max_level]
 	_effect.text = effect
 	_effect.visible = effect != ""
+
+	if _icon != null:
+		if locked:
+			_icon.modulate = Palette.TEXT_FAINT
+		elif selected:
+			_icon.modulate = Palette.GOLD
+		else:
+			_icon.modulate = Palette.TEXT
 
 	var maxed := level >= max_level
 	if maxed:

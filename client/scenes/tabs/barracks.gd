@@ -161,8 +161,10 @@ func _unit_row(unit: Variant, slot_index: int, is_hero: bool) -> Control:
 		if it is Dictionary:
 			cell.texture = ArtRegistry.item_icon(str(it.get("art", "")), str(it.get("tier", "common")))
 		else:
-			cell.modulate = Color(1, 1, 1, 0.18)
-			cell.texture = ArtRegistry.item_icon("%s_01" % slot_name, "common")
+			# A painterly loot icon ghosted to 18% is mush at 30 px. The flat slot
+			# silhouette still says WHICH kind of gear is missing at this size.
+			cell.texture = ArtRegistry.ui_icon("slots/" + slot_name)
+			cell.modulate = Palette.EMPTY_SLOT
 		gear.add_child(cell)
 
 	return b

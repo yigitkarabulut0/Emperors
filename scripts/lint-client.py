@@ -114,16 +114,27 @@ elif not wanted:
 else:
     ok(f"all {len(wanted)} navigation icons ship")
 
-# 5. Every job in the balance document needs a row icon. The registry falls back
-#    to nothing, so a job added to balance without art is a blank row -- visible
-#    only to someone who scrolls to it.
-jobs_doc = json.loads((ROOT / "balance/jobs.json").read_text())
-job_ids = [j["id"] for j in (jobs_doc["jobs"] if isinstance(jobs_doc, dict) else jobs_doc)]
-no_art = [j for j in job_ids if not (CLIENT / f"assets/ui/jobs/{j}.png").exists()]
-if no_art:
-    fail(f"jobs with no row icon: {no_art}")
-else:
-    ok(f"all {len(job_ids)} jobs have a row icon")
+# 5. Every thing the balance documents name needs its row icon. ArtRegistry
+#    returns null for a missing UI glyph rather than a placeholder, so a job or
+#    holding added to balance without art is a blank row -- visible only to
+#    someone who happens to scroll to it.
+def ids(path: str, key: str) -> list[str]:
+    doc = json.loads((ROOT / path).read_text())
+    return [e["id"] for e in (doc[key] if isinstance(doc, dict) else doc)]
+
+
+families = [
+    ("jobs", ids("balance/jobs.json", "jobs")),
+    ("upgrades", ids("balance/estates.json", "upgrades")),
+    ("holdings", ids("balance/estates.json", "holdings")),
+    ("slots", ["weapon", "armor", "horse"]),
+]
+for family, wanted_ids in families:
+    absent = [i for i in wanted_ids if not (CLIENT / f"assets/ui/{family}/{i}.png").exists()]
+    if absent:
+        fail(f"{family} with no icon: {absent}")
+    else:
+        ok(f"all {len(wanted_ids)} {family} have an icon")
 
 # 6. An unimported asset does not exist as far as an exported build is concerned.
 unimported = [p.relative_to(ROOT) for p in (CLIENT / "assets").rglob("*.png")

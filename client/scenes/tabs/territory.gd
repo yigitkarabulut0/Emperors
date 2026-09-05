@@ -71,7 +71,7 @@ func _rebuild() -> void:
 		for c in _list.get_children():
 			c.queue_free()
 		for h in holdings:
-			var row := EstateRow.new(str(h.get("id", "")))
+			var row := EstateRow.new(str(h.get("id", "")), "holdings")
 			row.pressed.connect(_select.bind(str(h.get("id", ""))))
 			_list.add_child(row)
 

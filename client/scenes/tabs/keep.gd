@@ -118,7 +118,7 @@ func _rebuild() -> void:
 		for c in _list.get_children():
 			c.queue_free()
 		for u in upgrades:
-			var row := EstateRow.new(str(u.get("id", "")))
+			var row := EstateRow.new(str(u.get("id", "")), "upgrades")
 			row.pressed.connect(_select.bind(str(u.get("id", ""))))
 			_list.add_child(row)
 

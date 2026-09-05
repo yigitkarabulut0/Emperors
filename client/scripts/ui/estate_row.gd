@@ -23,7 +23,7 @@ const ICON_SIZE := UI.ICON_LG
 ## the width it is given, which depends on the row -- so letting the row follow the
 ## text is circular. Two lines is enough for every blurb we ship, and the height
 ## being predictable is what keeps a list of them from jittering as it loads.
-const ROW_H := 150
+const ROW_H := 124
 const BLURB_LINES := 2
 
 

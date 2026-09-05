@@ -110,6 +110,7 @@ func _ready() -> void:
 
 	_detail = UI.label(_footer_text(), UI.F_MICRO, Palette.TEXT_FAINT,
 		HORIZONTAL_ALIGNMENT_CENTER)
+	_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	foot.add_child(_detail)
 
 	_start()
@@ -122,9 +123,18 @@ func _ready() -> void:
 ## during development knowing which server you are pointed at is the whole
 ## question.
 func _footer_text() -> String:
-	if OS.has_feature("debug"):
-		return "%s  ·  %s" % [Env.build_version, Env.api_base_url]
-	return Env.build_version
+	if not OS.has_feature("debug"):
+		return Env.build_version
+	# On a device this line is the only window into what the platform actually
+	# reported. Screen, viewport and the insets derived from them: if the layout
+	# looks wrong on a phone, these three numbers say why without a rebuild.
+	var i := SafeArea.insets()
+	var vp := get_viewport_rect().size
+	return "%s  ·  %s\nwin %s  vp %.0fx%.0f  safe %s\ninset l%.0f t%.0f r%.0f b%.0f" % [
+		Env.build_version, Env.api_base_url,
+		str(DisplayServer.window_get_size()), vp.x, vp.y,
+		str(DisplayServer.get_display_safe_area()),
+		i.x, i.y, i.z, i.w]
 
 
 func _stage_to(key: String) -> void:

@@ -9,9 +9,12 @@ extends SceneTree
 ## chips in the TOP bar were 142 units tall, because panel_box carries 10 units of
 ## padding above and below and a MarginContainer inside them added four more.
 ##
-## The rail is inside a ScrollContainer so overflow can never actually clip, which
-## is what makes this test necessary: without it the column's own minimum would be
-## satisfied by a rail one section tall and nothing would ever fail.
+## The rail is deliberately NOT in a scroll view -- one running the full height of
+## a phone's left edge captures every vertical drag, so swiping anywhere near it
+## scrolls a rail that does not need scrolling instead of the list underneath.
+## That means nothing catches an overflow at runtime, and this test is the only
+## thing between a slightly taller top bar and a House button that has quietly
+## fallen off the bottom of the screen.
 ##
 ## Viewport heights come from stretch mode canvas_items with aspect expand, where
 ## scale = min(w/720, h/1280) -- so a tall phone gets a TALLER viewport than the
@@ -35,12 +38,15 @@ func _initialize() -> void:
 	_run()
 
 
-## The rail's button column, found through its scroll view.
+## The rail's button column: the VBox whose children are the section buttons.
 func _rail_content(node: Node) -> Control:
-	if node is ScrollContainer:
+	if node is VBoxContainer and node.get_child_count() >= 9:
+		var all_buttons := true
 		for c in node.get_children():
-			if c is VBoxContainer:
-				return c
+			if not (c is Button):
+				all_buttons = false
+		if all_buttons:
+			return node
 	for c in node.get_children():
 		var hit := _rail_content(c)
 		if hit != null:

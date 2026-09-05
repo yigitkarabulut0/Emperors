@@ -28,7 +28,7 @@ const SECTIONS := [
 	{"id": "house", "icon": "house", "glyph": "K", "label": "House"},
 ]
 
-const RAIL_WIDTH := 104
+const RAIL_WIDTH := 96
 const ICON_SIZE := UI.ICON_MD
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
@@ -40,10 +40,10 @@ const AVATAR_SIZE := UI.TAP_MIN
 ## host to the tallest bar any section mounts; these only stop them collapsing.
 ## The safe-area inset is added on top of both at runtime, so the numbers here
 ## stay device-independent.
-const TOPBAR_MIN_H := 168
+const TOPBAR_MIN_H := 140
 ## 116 for the button, a line of caption under it, and margins. Measured on an
 ## iPhone SE, which is the tightest device: at 164 the caption grazed the edge.
-const ACTION_H := 176
+const ACTION_H := 150
 
 
 var _avatar_btn: Button
@@ -451,26 +451,22 @@ func _build_rail() -> Control:
 	_rail_pad = MarginContainer.new()
 	panel.add_child(_rail_pad)
 
-	# Inside a scroll view, with no visible scrollbar. Nine sections at a real
-	# touch-target height plus a top bar carrying two currencies, experience and
-	# energy leaves eight units spare on an iPhone SE. That is enough today and
-	# nowhere near enough to rely on: without this, the next thing that grows by
-	# ten units silently clips the ninth section off the bottom of the rail, which
-	# would look like the House screen simply not existing.
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.get_v_scroll_bar().modulate = Color.TRANSPARENT
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_rail_pad.add_child(scroll)
-
+	# NOT a ScrollContainer.
+	#
+	# The rail was briefly wrapped in one so that overflow would degrade to
+	# scrolling instead of clipping. On a phone that is a trap: a scroll view
+	# running the full height of the left edge captures vertical drags, so every
+	# swipe that starts anywhere near it scrolls a rail that does not need
+	# scrolling instead of the list the player is trying to move. The cure was
+	# worse than the disease, and shell_fits.gd already guarantees all nine
+	# sections fit on every device we ship to.
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	# No gap between rail buttons. Nine 2-unit gaps cost 16 units of a budget with
 	# six to spare on an iPad, and they buy nothing: the selected section already
 	# has its own background, which is what separates the buttons visually.
 	col.add_theme_constant_override("separation", 0)
-	scroll.add_child(col)
+	_rail_pad.add_child(col)
 
 	for s in SECTIONS:
 		var b := Button.new()

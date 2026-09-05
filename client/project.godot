@@ -56,12 +56,6 @@ window/handheld/orientation=1
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-[input_devices]
-
-; A mouse must generate touch events, or a desktop run cannot drive controls that
-; only listen for touch -- which is every control in a portrait phone game.
-pointing/emulate_touch_from_mouse=true
-
 [rendering]
 
 ; The same colour as the boot splash. Without this the frame between the splash

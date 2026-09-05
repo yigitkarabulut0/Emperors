@@ -25,6 +25,13 @@ extends MarginContainer
 
 @export var extra := Vector4(24, 8, 24, 8)   ## left, top, right, bottom (units)
 
+## No real device insets more than this fraction of the screen on any edge.
+const MAX_INSET := 0.2
+
+## The most recent computed insets, for the loading screen's debug readout. On a
+## device this is the only way to see what the platform actually reported.
+static var last := Vector4.ZERO
+
 
 ## The safe-area insets in stretch units: (left, top, right, bottom).
 ##
@@ -46,16 +53,46 @@ static func insets() -> Vector4:
 	if not (loop is SceneTree):
 		return Vector4.ZERO
 	var vp: Vector2 = (loop as SceneTree).root.get_visible_rect().size
-	var screen := DisplayServer.screen_get_size(DisplayServer.window_get_current_screen())
-	if screen.x <= 0 or screen.y <= 0:
+
+	# Measured against the WINDOW, not the screen.
+	#
+	# get_display_safe_area() and window_get_size() are both DisplayServer APIs
+	# reporting the same surface in the same units, so the fraction between them
+	# is right whatever those units turn out to be. screen_get_size() is a
+	# different measurement of a different thing, and if the platform ever reports
+	# one in points and the other in pixels the mismatch is a silent factor of
+	# three -- which on a phone means a third of the screen given away to a margin
+	# that should have been a sixteenth.
+	var win := DisplayServer.window_get_size()
+	if win.x <= 0 or win.y <= 0:
+		win = DisplayServer.screen_get_size(DisplayServer.window_get_current_screen())
+	if win.x <= 0 or win.y <= 0:
 		return Vector4.ZERO
 
 	var safe := DisplayServer.get_display_safe_area()
-	return Vector4(
-		(float(safe.position.x) / float(screen.x)) * vp.x,
-		(float(safe.position.y) / float(screen.y)) * vp.y,
-		(float(screen.x - safe.end.x) / float(screen.x)) * vp.x,
-		(float(screen.y - safe.end.y) / float(screen.y)) * vp.y)
+	if safe.size.x <= 0 or safe.size.y <= 0:
+		return Vector4.ZERO
+
+	var i := Vector4(
+		(float(safe.position.x) / float(win.x)) * vp.x,
+		(float(safe.position.y) / float(win.y)) * vp.y,
+		(float(win.x - safe.end.x) / float(win.x)) * vp.x,
+		(float(win.y - safe.end.y) / float(win.y)) * vp.y)
+
+	# A last line of defence against exactly that unit mismatch.
+	#
+	# No shipping device has a safe-area inset anywhere near a fifth of the
+	# screen. If the arithmetic says otherwise the inputs disagreed about units,
+	# and under-insetting -- a status bar slightly overlapping a panel edge -- is
+	# vastly better than a layout squeezed into half its screen with the buttons
+	# pushed off the bottom. The reason is logged rather than swallowed.
+	var cap := Vector4(vp.x * MAX_INSET, vp.y * MAX_INSET, vp.x * MAX_INSET, vp.y * MAX_INSET)
+	if i.x > cap.x or i.y > cap.y or i.z > cap.z or i.w > cap.w:
+		push_warning("[safe_area] implausible insets %s for window %s / viewport %s — clamped"
+			% [str(i), str(win), str(vp)])
+		i = Vector4(minf(i.x, cap.x), minf(i.y, cap.y), minf(i.z, cap.z), minf(i.w, cap.w))
+	last = i
+	return i
 
 
 ## Writes insets + extra onto a MarginContainer's four margin constants.
@@ -147,8 +184,8 @@ static func debug_overlay() -> CanvasLayer:
 	if i.z > 0.0:
 		band.call(1.0, 0.0, 1.0, 1.0, -i.z, 0.0, 0.0, 0.0)
 
-	# One 88x88 swatch, bottom-left of the safe region: the minimum touch target,
-	# so "is that button big enough" is a comparison rather than a guess.
+	# One TAP_MIN swatch, bottom-left of the safe region: the minimum touch
+	# target, so "is that button big enough" is a comparison, not a guess.
 	var swatch := ColorRect.new()
 	swatch.color = Color(Palette.GOLD.r, Palette.GOLD.g, Palette.GOLD.b, 0.35)
 	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -157,8 +194,8 @@ static func debug_overlay() -> CanvasLayer:
 	swatch.anchor_right = 0.0
 	swatch.anchor_bottom = 1.0
 	swatch.offset_left = i.x
-	swatch.offset_top = -i.w - 88.0
-	swatch.offset_right = i.x + 88.0
+	swatch.offset_top = -i.w - float(UI.TAP_MIN)
+	swatch.offset_right = i.x + float(UI.TAP_MIN)
 	swatch.offset_bottom = -i.w
 	host.add_child(swatch)
 	return layer

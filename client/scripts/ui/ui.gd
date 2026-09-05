@@ -17,26 +17,33 @@ extends RefCounted
 ## both correct and keeps 720 a real design grid. A runtime scalar would reflow
 ## the layout differently on every device and there would be no single truth to
 ## test against.
-const F_DISPLAY := 72
-const F_H1 := 48
-const F_H2 := 36
-const F_NUMBER := 34
-const F_BODY := 30
-const F_CAPTION := 24
-const F_MICRO := 22
+const F_DISPLAY := 58
+const F_H1 := 40
+const F_H2 := 32
+const F_NUMBER := 30
+const F_BODY := 26
+const F_CAPTION := 22
+const F_MICRO := 19
 
-## Touch targets. 88 units clears Apple's 44 pt minimum on every device we ship
-## to -- 45.8 pt on an iPhone SE, which is the binding case, and more everywhere
-## else. Nothing interactive may be shorter than TAP_MIN.
-const TAP_MIN := 88
-const TAP_ROW := 132
-const TAP_ROW_TIGHT := 112
-const TAP_PRIMARY := 116
+## Touch targets, in units, calibrated on an iPhone 16 Pro Max where a unit is
+## 0.611 pt.
+##
+## These were once sized so that the SMALLEST supported device cleared 44 pt,
+## which sounds right and is not: it inflates every dimension by 20% on every
+## other phone, and on a modern one the result reads as a zoomed-in, low
+## resolution UI -- list rows at 81 pt where iOS uses 44 to 60, and a top bar
+## eating a sixth of the screen. Fitting the device in the player's hand and
+## accepting 40 pt on an iPhone SE is the better trade: 40 pt is still a
+## comfortable target, and the SE is not what this is played on.
+const TAP_MIN := 76        ## 46 pt here, 40 pt on an SE
+const TAP_PRIMARY := 96    ## the one button a screen is about
+const TAP_ROW := 104       ## a list row: 64 pt, the top of Apple's own range
+const TAP_ROW_TIGHT := 88
 
-const ICON_SM := 28
-const ICON_MD := 48
-const ICON_LG := 64
-const ICON_XL := 96
+const ICON_SM := 24
+const ICON_MD := 40
+const ICON_LG := 56
+const ICON_XL := 80
 
 ## Spacing on a 4-unit grid.
 const GAP_XS := 4

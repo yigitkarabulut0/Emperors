@@ -8,6 +8,14 @@ extends Node
 ## roll back, because nothing was ever written.
 
 signal changed                      ## snapshot or pending queue moved
+## Energy crossed a whole number on its own.
+##
+## `changed` cannot carry this: regeneration is a pure projection computed on
+## read, so nothing writes to the snapshot and nothing fires. That is why an
+## action button stayed disabled while the energy to afford it was visibly
+## arriving, and why reselecting the job "fixed" it -- reselecting was the only
+## thing that re-ran the check.
+signal energy_changed(current: int)
 signal action_failed(message: String)
 signal level_up(new_level: int)
 
@@ -117,6 +125,21 @@ func display_energy() -> int:
 
 
 ## Seconds until the pool is full, counting down between polls.
+## Recomputes the projected energy and emits only when the whole number moves.
+##
+## Called from the shell's existing 4 Hz tick. Emitting on every tick would
+## repaint four times a second for a value that changes once a period.
+var _energy_emitted := -1
+
+func tick_projection() -> void:
+	if snapshot.is_empty():
+		return
+	var v := display_energy()
+	if v != _energy_emitted:
+		_energy_emitted = v
+		energy_changed.emit(v)
+
+
 func display_seconds_to_full() -> int:
 	var e: Dictionary = snapshot.get("energy", {})
 	var secs := int(e.get("seconds_to_full", 0))

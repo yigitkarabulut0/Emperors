@@ -28,6 +28,10 @@ func _ready() -> void:
 	scroll.add_child(_list)
 
 	GameState.changed.connect(_rebuild)
+	# Energy regenerates without the snapshot changing, so the button has to be
+	# re-armed from its own signal or it stays disabled until something else
+	# happens to redraw it.
+	GameState.energy_changed.connect(func(_v: int) -> void: _refresh_action())
 	_rebuild()
 
 
@@ -196,8 +200,18 @@ func _collect_selected() -> void:
 	if job.is_empty():
 		return
 	if not GameState.collect(job):
-		# Refused locally, so there is no round trip and no flicker.
-		_action_sub.text = "Not enough energy"
+		# Refused locally, so there is no round trip and no flicker. Re-running
+		# the whole refresh rather than only writing the message: the message was
+		# the half that never got cleared, because the only thing that rewrites it
+		# is the call that was not happening.
+		_refresh_action()
+
+
+## The shell calls this on every re-entry to a cached section. Collect renders
+## straight from GameState so it has nothing to re-fetch, but re-arming the
+## button here kills the stale-disabled bug from a second direction.
+func _reload() -> void:
+	_rebuild()
 
 
 func _refresh_action() -> void:

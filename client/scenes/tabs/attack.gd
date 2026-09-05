@@ -29,6 +29,10 @@ func _ready() -> void:
 	_list.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list)
 
+	# Raiding is gated on energy the same way collecting is, and regeneration
+	# never touches the snapshot, so the button needs its own signal to re-arm.
+	GameState.energy_changed.connect(func(_v: int) -> void: _refresh_action())
+
 	_reload()
 
 

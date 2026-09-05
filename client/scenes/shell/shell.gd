@@ -677,6 +677,7 @@ func _update_energy() -> void:
 
 
 func _tick() -> void:
+	GameState.tick_projection()
 	_update_energy()
 
 

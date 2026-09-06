@@ -11,6 +11,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
 )
 
 var (
@@ -57,6 +58,18 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 		}
 		estates.ApplyKingdom(d.Config, &eff, int64(p.Level), kLevels, holdLevels)
 	}
+
+	// The admin override ADDS to whatever the config granted, and the sum is
+	// clamped exactly once, here. Keeping it out of estates.Derive is what lets
+	// internal/game stay pure and unaware of the database, while still giving
+	// live-ops a per-player knob.
+	//
+	// An expiry in the past is simply not applied -- no sweeper, no job, and no
+	// window where a lapsed override is still live because nothing ran.
+	if p.LuckBp != 0 && (p.LuckExpiresAt == nil || p.LuckExpiresAt.After(d.Now())) {
+		eff.LuckBP += int64(p.LuckBp)
+	}
+	eff.LuckBP = items.ClampLuckBP(eff.LuckBP)
 	return eff, nil
 }
 

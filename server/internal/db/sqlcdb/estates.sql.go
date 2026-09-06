@@ -66,7 +66,7 @@ SET gold = gold + $2,
     action_seq = $4,
     last_seen_at = now()
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
 `
 
 type ClaimTaxParams struct {
@@ -122,6 +122,8 @@ func (q *Queries) ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, 
 		&i.Avatar,
 		&i.TaxMilliPerHour,
 		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
 	)
 	return i, err
 }
@@ -155,7 +157,7 @@ SET gold              = p.gold + calc.total / 1000,
 FROM calc
 WHERE p.id = calc.pid
   AND calc.total > p.tax_milli_accrued
-RETURNING p.id, p.username, p.display_name, p.level, p.xp, p.gold, p.treasury_gold, p.diamonds, p.energy_milli, p.energy_updated_at, p.stat_energy, p.stat_attack, p.stat_defense, p.stat_points_unspent, p.shield_until, p.action_seq, p.state, p.reset_offset_minutes, p.created_at, p.last_seen_at, p.soldier_slots, p.free_slot_claimed, p.free_recruit_claimed, p.is_bot, p.tax_milli_accrued, p.tax_updated_at, p.kingdom_id, p.kingdom_role, p.kingdom_joined_at, p.kingdom_donated_total, p.kingdom_favour, p.kingdom_rep_today, p.kingdom_donated_today, p.kingdom_day, p.avatar, p.tax_milli_per_hour, p.tax_unlogged
+RETURNING p.id, p.username, p.display_name, p.level, p.xp, p.gold, p.treasury_gold, p.diamonds, p.energy_milli, p.energy_updated_at, p.stat_energy, p.stat_attack, p.stat_defense, p.stat_points_unspent, p.shield_until, p.action_seq, p.state, p.reset_offset_minutes, p.created_at, p.last_seen_at, p.soldier_slots, p.free_slot_claimed, p.free_recruit_claimed, p.is_bot, p.tax_milli_accrued, p.tax_updated_at, p.kingdom_id, p.kingdom_role, p.kingdom_joined_at, p.kingdom_donated_total, p.kingdom_favour, p.kingdom_rep_today, p.kingdom_donated_today, p.kingdom_day, p.avatar, p.tax_milli_per_hour, p.tax_unlogged, p.luck_bp, p.luck_expires_at
 `
 
 type CreditTaxParams struct {
@@ -218,6 +220,8 @@ func (q *Queries) CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer
 		&i.Avatar,
 		&i.TaxMilliPerHour,
 		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
 	)
 	return i, err
 }

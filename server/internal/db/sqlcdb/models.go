@@ -168,6 +168,8 @@ type AppPlayer struct {
 	Avatar              string
 	TaxMilliPerHour     int64
 	TaxUnlogged         int64
+	LuckBp              int32
+	LuckExpiresAt       *time.Time
 }
 
 type AppPlayerHolding struct {
@@ -231,6 +233,7 @@ type AppShopState struct {
 	WindowID      int64
 	PurchasedMask int32
 	RerollIndex   int32
+	LuckBp        int32
 }
 
 type AppSoldier struct {

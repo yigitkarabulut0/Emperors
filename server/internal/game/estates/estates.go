@@ -22,6 +22,13 @@ type Effects struct {
 	SoldierAtkBP  int64
 	SoldierDefBP  int64
 	SoldierSpdBP  int64
+	// A bonus on the tier ladder's LEVEL coefficient, not a scaler on an amount.
+	//
+	// Deliberately not in economy.Bonuses: ApplyBucket's contract is "scale an
+	// amount, clamped to that bucket's cap", and luck scales a distribution
+	// parameter instead. A bucket whose ApplyBucket is never called is a cap
+	// that is not a cap.
+	LuckBP int64
 
 	// Per HOUR, not per second. Dividing to a per-second rate loses so much to
 	// integer truncation that a whole wheat farm level changed nothing: at
@@ -79,6 +86,8 @@ func Derive(cfg *gameconfig.Bundle, level int64, upgradeLevels, holdingLevels ma
 			e.SoldierDefBP += amount
 		case gameconfig.BucketSoldierSpd:
 			e.SoldierSpdBP += amount
+		case gameconfig.BucketLuck:
+			e.LuckBP += amount
 		}
 	}
 
@@ -179,6 +188,8 @@ func ApplyKingdom(cfg *gameconfig.Bundle, e *Effects, level int64, kingdomLevels
 			e.SoldierDefBP += amount
 		case gameconfig.BucketSoldierSpd:
 			e.SoldierSpdBP += amount
+		case gameconfig.BucketLuck:
+			e.LuckBP += amount
 		case gameconfig.BucketReputation:
 			e.ReputationBP += amount
 		case gameconfig.BucketTaxIncome:

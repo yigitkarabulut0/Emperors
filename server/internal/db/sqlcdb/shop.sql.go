@@ -15,7 +15,7 @@ const bumpReroll = `-- name: BumpReroll :one
 UPDATE app.shop_state
 SET reroll_index = reroll_index + 1
 WHERE player_id = $1 AND window_id = $2
-RETURNING player_id, window_id, purchased_mask, reroll_index
+RETURNING player_id, window_id, purchased_mask, reroll_index, luck_bp
 `
 
 type BumpRerollParams struct {
@@ -31,12 +31,13 @@ func (q *Queries) BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShop
 		&i.WindowID,
 		&i.PurchasedMask,
 		&i.RerollIndex,
+		&i.LuckBp,
 	)
 	return i, err
 }
 
 const getShopState = `-- name: GetShopState :one
-SELECT player_id, window_id, purchased_mask, reroll_index FROM app.shop_state WHERE player_id = $1
+SELECT player_id, window_id, purchased_mask, reroll_index, luck_bp FROM app.shop_state WHERE player_id = $1
 `
 
 func (q *Queries) GetShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error) {
@@ -47,12 +48,13 @@ func (q *Queries) GetShopState(ctx context.Context, playerID uuid.UUID) (AppShop
 		&i.WindowID,
 		&i.PurchasedMask,
 		&i.RerollIndex,
+		&i.LuckBp,
 	)
 	return i, err
 }
 
 const lockShopState = `-- name: LockShopState :one
-SELECT player_id, window_id, purchased_mask, reroll_index FROM app.shop_state WHERE player_id = $1 FOR UPDATE
+SELECT player_id, window_id, purchased_mask, reroll_index, luck_bp FROM app.shop_state WHERE player_id = $1 FOR UPDATE
 `
 
 func (q *Queries) LockShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error) {
@@ -63,6 +65,7 @@ func (q *Queries) LockShopState(ctx context.Context, playerID uuid.UUID) (AppSho
 		&i.WindowID,
 		&i.PurchasedMask,
 		&i.RerollIndex,
+		&i.LuckBp,
 	)
 	return i, err
 }
@@ -71,7 +74,7 @@ const markShopSlotPurchased = `-- name: MarkShopSlotPurchased :one
 UPDATE app.shop_state
 SET purchased_mask = purchased_mask | $2
 WHERE player_id = $1
-RETURNING player_id, window_id, purchased_mask, reroll_index
+RETURNING player_id, window_id, purchased_mask, reroll_index, luck_bp
 `
 
 type MarkShopSlotPurchasedParams struct {
@@ -87,6 +90,7 @@ func (q *Queries) MarkShopSlotPurchased(ctx context.Context, arg MarkShopSlotPur
 		&i.WindowID,
 		&i.PurchasedMask,
 		&i.RerollIndex,
+		&i.LuckBp,
 	)
 	return i, err
 }
@@ -95,7 +99,7 @@ const payForReroll = `-- name: PayForReroll :one
 UPDATE app.players
 SET diamonds = diamonds - $2, action_seq = $3, last_seen_at = now()
 WHERE id = $1 AND diamonds >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
 `
 
 type PayForRerollParams struct {
@@ -148,37 +152,47 @@ func (q *Queries) PayForReroll(ctx context.Context, arg PayForRerollParams) (App
 		&i.Avatar,
 		&i.TaxMilliPerHour,
 		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
 	)
 	return i, err
 }
 
 const upsertShopWindow = `-- name: UpsertShopWindow :one
-INSERT INTO app.shop_state (player_id, window_id, purchased_mask, reroll_index)
-VALUES ($1, $2, 0, 0)
+INSERT INTO app.shop_state (player_id, window_id, purchased_mask, reroll_index, luck_bp)
+VALUES ($1, $2, 0, 0, $3)
 ON CONFLICT (player_id) DO UPDATE
 SET window_id      = EXCLUDED.window_id,
     purchased_mask = CASE WHEN app.shop_state.window_id = EXCLUDED.window_id
                           THEN app.shop_state.purchased_mask ELSE 0 END,
     reroll_index   = CASE WHEN app.shop_state.window_id = EXCLUDED.window_id
-                          THEN app.shop_state.reroll_index ELSE 0 END
-RETURNING player_id, window_id, purchased_mask, reroll_index
+                          THEN app.shop_state.reroll_index ELSE 0 END,
+    luck_bp        = CASE WHEN app.shop_state.window_id = EXCLUDED.window_id
+                          THEN app.shop_state.luck_bp ELSE EXCLUDED.luck_bp END
+RETURNING player_id, window_id, purchased_mask, reroll_index, luck_bp
 `
 
 type UpsertShopWindowParams struct {
 	PlayerID uuid.UUID
 	WindowID int64
+	LuckBp   int32
 }
 
 // Creates the row on first use and resets it whenever the 5-minute window rolls
 // over, in one statement so two concurrent requests cannot both "reset" it.
+// The luck column is written ONLY when the window turns. Holding it still for
+// the life of a window is what makes a shelf immutable: offers are recomputed on
+// every read and once more inside Buy, so a luck change taking effect mid-window
+// would swap the item under the player's finger.
 func (q *Queries) UpsertShopWindow(ctx context.Context, arg UpsertShopWindowParams) (AppShopState, error) {
-	row := q.db.QueryRow(ctx, upsertShopWindow, arg.PlayerID, arg.WindowID)
+	row := q.db.QueryRow(ctx, upsertShopWindow, arg.PlayerID, arg.WindowID, arg.LuckBp)
 	var i AppShopState
 	err := row.Scan(
 		&i.PlayerID,
 		&i.WindowID,
 		&i.PurchasedMask,
 		&i.RerollIndex,
+		&i.LuckBp,
 	)
 	return i, err
 }

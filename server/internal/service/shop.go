@@ -63,9 +63,16 @@ func (d Deps) GetShop(ctx context.Context, playerID uuid.UUID) (*ShopView, error
 		return nil, fmt.Errorf("load player: %w", err)
 	}
 
+	// Read before the upsert: a window is stamped with the luck it is rolled
+	// with, and only when it turns.
+	eff, err := d.loadEffects(ctx, q, p)
+	if err != nil {
+		return nil, err
+	}
+
 	windowID, secondsLeft := d.shopWindow()
 	st, err := q.UpsertShopWindow(ctx, sqlcdb.UpsertShopWindowParams{
-		PlayerID: playerID, WindowID: windowID,
+		PlayerID: playerID, WindowID: windowID, LuckBp: int32(eff.LuckBP),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("shop window: %w", err)
@@ -74,11 +81,6 @@ func (d Deps) GetShop(ctx context.Context, playerID uuid.UUID) (*ShopView, error
 	used, err := q.CountPlayerItems(ctx, playerID)
 	if err != nil {
 		return nil, fmt.Errorf("count items: %w", err)
-	}
-
-	eff, err := d.loadEffects(ctx, q, p)
-	if err != nil {
-		return nil, err
 	}
 
 	cost := rerollCost(d.Config, int64(st.RerollIndex))
@@ -121,11 +123,19 @@ func (d Deps) rollOffers(playerID uuid.UUID, st sqlcdb.AppShopState, level int, 
 		rng := game.SeedForString(d.ShopSecret, playerID.String(),
 			uint64(st.WindowID), uint64(st.RerollIndex), uint64(i))
 
-		tier := items.RollTier(cfg, rng, shop.BaseWeights, shop.LuckCoef, level)
+		// The luck the window was rolled WITH, not the player's luck right now.
+		// Offers are recomputed on every GetShop and once more inside Buy; if
+		// luck were read live, an override applied mid-window would change which
+		// item is on the shelf -- not just its price, the way a discount does --
+		// and the player would be charged for something they never saw.
+		luckBP := int64(st.LuckBp)
+		coef := items.EffectiveLuckCoef(shop.LuckCoef, luckBP)
+
+		tier := items.RollTier(cfg, rng, shop.BaseWeights, coef, level)
 		slot := []string{"weapon", "armor", "horse"}[rng.IntN(3)]
 		// Shop stock is always at the player's own level, so old gear reliably
 		// ages out and the shop stays relevant for the whole run.
-		item := items.Roll(cfg, rng, slot, tier, int64(level))
+		item := items.Roll(cfg, rng, slot, tier, int64(level), luckBP)
 
 		out = append(out, ShopOffer{
 			Slot:      i,
@@ -283,9 +293,14 @@ func (d Deps) RerollShop(ctx context.Context, playerID uuid.UUID, wantSeq int64)
 			return err
 		}
 
+		reff, err := d.loadEffects(ctx, q, p)
+		if err != nil {
+			return err
+		}
+
 		windowID, _ := d.shopWindow()
 		st, err := q.UpsertShopWindow(ctx, sqlcdb.UpsertShopWindowParams{
-			PlayerID: playerID, WindowID: windowID,
+			PlayerID: playerID, WindowID: windowID, LuckBp: int32(reff.LuckBP),
 		})
 		if err != nil {
 			return fmt.Errorf("shop window: %w", err)

@@ -68,20 +68,60 @@ func Stat(cfg *gameconfig.Bundle, slot, tier string, ilvl, qualityPct int64, mas
 	return scale(base.Attack), scale(base.Defense), scale(base.Speed)
 }
 
+// ClampLuckBP bounds a luck bonus.
+//
+// -10000 flattens the level term to the base weights, which is the worst a
+// player can be made: exactly a level-1 ladder, never worse than the game's own
+// floor. +10000 doubles the level coefficient.
+func ClampLuckBP(bp int64) int64 {
+	if bp > gameconfig.MaxLuckBP {
+		return gameconfig.MaxLuckBP
+	}
+	if bp < -gameconfig.MaxLuckBP {
+		return -gameconfig.MaxLuckBP
+	}
+	return bp
+}
+
+// EffectiveLuckCoef applies a player's luck to the config's luck coefficient.
+// luckBP == 0 returns base unchanged, so behaviour with no override is exact.
+func EffectiveLuckCoef(base float64, luckBP int64) float64 {
+	return base * float64(10000+ClampLuckBP(luckBP)) / 10000.0
+}
+
 // Roll produces one item of a given slot and tier at an item level.
-func Roll(cfg *gameconfig.Bundle, rng *rand.Rand, slot, tier string, ilvl int64) Instance {
+//
+// luckBP tilts quality and the masterwork threshold. It does NOT change how many
+// values are drawn from rng, or in what order: shop.go pulls the equipment slot
+// from the same stream between RollTier and Roll, so a changed draw count would
+// silently reshuffle every shelf in the game.
+func Roll(cfg *gameconfig.Bundle, rng *rand.Rand, slot, tier string, ilvl, luckBP int64) Instance {
 	defs := cfg.ItemDefsFor(slot, tier)
 	if len(defs) == 0 {
 		return Instance{}
 	}
 	def := defs[rng.IntN(len(defs))]
 
+	luckBP = ClampLuckBP(luckBP)
+
 	q := cfg.Items.Quality
 	quality := q.MinPct
 	if span := q.MaxPct - q.MinPct; span > 0 {
-		quality += rng.Int64N(span + 1)
+		quality += rng.Int64N(span + 1) // the same single draw as before
 	}
-	masterwork := rng.Int64N(10000) < cfg.Items.Masterwork.ChanceBP
+	// Luck PULLS the drawn value toward the top of the band rather than adding
+	// to it, so the result can never leave [MinPct, MaxPct] -- the range test
+	// holds by construction rather than by arithmetic luck. It also saturates:
+	// at the maximum bonus it closes half the remaining gap, so no amount of
+	// luck ever guarantees a perfect roll.
+	switch {
+	case luckBP > 0:
+		quality += (q.MaxPct - quality) * luckBP / (10000 + luckBP)
+	case luckBP < 0:
+		quality -= (quality - q.MinPct) * -luckBP / (10000 - luckBP)
+	}
+	// Scale the THRESHOLD, not the draw: one Int64N as before, a different bar.
+	masterwork := rng.Int64N(10000) < cfg.Items.Masterwork.ChanceBP*(10000+luckBP)/10000
 
 	atk, def_, spd := Stat(cfg, slot, tier, ilvl, quality, masterwork)
 	return Instance{
@@ -91,13 +131,13 @@ func Roll(cfg *gameconfig.Bundle, rng *rand.Rand, slot, tier string, ilvl int64)
 	}
 }
 
-// RollTier picks a tier from a weighted table.
+// tierWeights is the ONE place the ladder formula lives.
 //
-// Weight grows with player level raised to the TIER INDEX, so higher levels
-// shift mass up the ladder without ever making commons impossible — which is
-// the shape you want, because "no more junk drops" removes the contrast that
-// makes a good drop feel good.
-func RollTier(cfg *gameconfig.Bundle, rng *rand.Rand, baseWeights map[string]float64, luckCoef float64, level int) string {
+// RollTier and TierOdds both call it, so the odds the admin panel previews
+// cannot drift from the odds the game actually rolls -- which is the entire
+// point of previewing them.
+func tierWeights(cfg *gameconfig.Bundle, baseWeights map[string]float64,
+	luckCoef float64, level int) ([]string, []float64, float64) {
 	tiers := cfg.TierIDsAscending()
 	weights := make([]float64, len(tiers))
 	var total float64
@@ -108,6 +148,39 @@ func RollTier(cfg *gameconfig.Bundle, rng *rand.Rand, baseWeights map[string]flo
 		weights[i] = w
 		total += w
 	}
+	return tiers, weights, total
+}
+
+// TierOdd is one tier's probability, in basis points.
+type TierOdd struct {
+	Tier string `json:"tier"`
+	BP   int64  `json:"bp"`
+}
+
+// TierOdds is what an operator sees before committing a luck change: the real
+// distribution, from the real formula, at that player's real level.
+func TierOdds(cfg *gameconfig.Bundle, baseWeights map[string]float64,
+	luckCoef float64, level int) []TierOdd {
+	tiers, weights, total := tierWeights(cfg, baseWeights, luckCoef, level)
+	out := make([]TierOdd, 0, len(tiers))
+	for i, id := range tiers {
+		var bp int64
+		if total > 0 {
+			bp = int64(weights[i] / total * 10000)
+		}
+		out = append(out, TierOdd{Tier: id, BP: bp})
+	}
+	return out
+}
+
+// RollTier picks a tier from a weighted table.
+//
+// Weight grows with player level raised to the TIER INDEX, so higher levels
+// shift mass up the ladder without ever making commons impossible — which is
+// the shape you want, because "no more junk drops" removes the contrast that
+// makes a good drop feel good.
+func RollTier(cfg *gameconfig.Bundle, rng *rand.Rand, baseWeights map[string]float64, luckCoef float64, level int) string {
+	tiers, weights, total := tierWeights(cfg, baseWeights, luckCoef, level)
 	if total <= 0 {
 		return tiers[0]
 	}

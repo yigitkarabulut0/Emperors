@@ -209,6 +209,10 @@ type Querier interface {
 	UnequipSoldierSlot(ctx context.Context, arg UnequipSoldierSlotParams) error
 	// Creates the row on first use and resets it whenever the 5-minute window rolls
 	// over, in one statement so two concurrent requests cannot both "reset" it.
+	// The luck column is written ONLY when the window turns. Holding it still for
+	// the life of a window is what makes a shelf immutable: offers are recomputed on
+	// every read and once more inside Buy, so a luck change taking effect mid-window
+	// would swap the item under the player's finger.
 	UpsertShopWindow(ctx context.Context, arg UpsertShopWindowParams) (AppShopState, error)
 	// Recruiting into an occupied slot replaces the occupant, so this is an upsert
 	// rather than an insert.

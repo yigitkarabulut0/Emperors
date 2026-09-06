@@ -408,11 +408,19 @@ func (d Deps) Recruit(ctx context.Context, playerID uuid.UUID, slotIndex int, ty
 			}
 		}
 
+		// Loaded BEFORE the roll, because the roll now depends on it. It was
+		// read further down purely to build the response.
+		eff, err := d.loadEffects(ctx, q, p)
+		if err != nil {
+			return err
+		}
+
 		// Seeded from a counter that only ever moves forward, so a retried
 		// request cannot reroll for a better tier.
 		rng := game.SeedForString(d.ShopSecret, playerID.String(),
 			uint64(wantSeq), uint64(slotIndex), 0xA11CE)
-		tier := items.RollTier(d.Config, rng, t.Weights, t.LuckCoef, int(p.Level))
+		tier := items.RollTier(d.Config, rng, t.Weights,
+			items.EffectiveLuckCoef(t.LuckCoef, eff.LuckBP), int(p.Level))
 
 		// The very first soldier has a tier floor. A player whose free recruit
 		// rolls the worst possible outcome learns the wrong lesson about the
@@ -453,10 +461,6 @@ func (d Deps) Recruit(ctx context.Context, playerID uuid.UUID, slotIndex int, ty
 		}
 
 		res.Paid = cost
-		eff, err := d.loadEffects(ctx, q, p)
-		if err != nil {
-			return err
-		}
 		res.Soldier = d.soldierUnit(p, s, map[string]*ItemView{"weapon": nil, "armor": nil, "horse": nil}, eff)
 		return nil
 	})

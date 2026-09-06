@@ -65,7 +65,21 @@ const (
 	BucketShopDiscount  = "shop_discount_bp"
 	BucketStealCap      = "steal_cap_bp"
 	BucketRansom        = "ransom_bp"
+	BucketLuck          = "luck_bp"
 )
 
 func (b *Bundle) Upgrade(id string) *Upgrade { return b.upgradeByID[id] }
 func (b *Bundle) Holding(id string) *Holding { return b.holdingByID[id] }
+
+// MaxLuckBP is the ceiling on a luck bonus, in basis points on the tier ladder's
+// LEVEL coefficient. +10000 doubles that coefficient.
+//
+// It lives here rather than next to the item helpers because Validate has to
+// reject an over-cap config node at PUBLISH time, and gameconfig cannot import
+// items -- items imports gameconfig. It is no less unavoidable for that: both
+// places luck is consumed go through items.ClampLuckBP.
+//
+// Doubling the coefficient is strictly less than doubling a player's effective
+// level in the ladder, so luck can never produce a tier distribution the game
+// does not already hand its own high-level players.
+const MaxLuckBP = 10000

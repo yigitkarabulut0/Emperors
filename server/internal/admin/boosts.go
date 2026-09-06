@@ -42,7 +42,6 @@ func BoostableBuckets() []Boostable {
 	return []Boostable{
 		{"collect_income_bp", "Job payout", "Gold from every collect. Shares its cap with job mastery and the Granary.", 15000},
 		{"xp_bp", "Experience", "Experience from every source.", 20000},
-		{"tax_income_bp", "Estate income", "What estates pay per hour.", 0},
 		{"luck_bp", "Fortune", "Shifts the tier ladder for shop stock and recruits. +10000 doubles the level coefficient.", 10000},
 	}
 }

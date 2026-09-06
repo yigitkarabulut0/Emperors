@@ -72,8 +72,6 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 			eff.Bonuses.Add(economy.BucketCollectIncome, bp)
 		case gameconfig.BucketXP:
 			eff.Bonuses.Add(economy.BucketXPGain, bp)
-		case gameconfig.BucketTaxIncome:
-			eff.TaxMilliPerHour = eff.TaxMilliPerHour * (10000 + bp) / 10000
 		case gameconfig.BucketLuck:
 			eff.LuckBP += bp
 		}

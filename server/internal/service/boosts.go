@@ -87,10 +87,17 @@ func (b *Boosts) Poll(ctx context.Context, every time.Duration) {
 // regen decides how much you can earn in a day -- so a "double energy weekend"
 // is not a generous event, it is an uncapped mint. If that is ever wanted it
 // should be a balance publish, which is reviewed, versioned and rollback-able.
+// Estate income is absent for a subtler reason than energy regen, and one worth
+// writing down because it was shipped before it was caught: tax_milli_per_hour
+// is a CACHED rate on the player row. CreditTax pays from that cache without
+// recomputing effects, and the cache is only rewritten when the player next
+// reads their state -- so a boost persisted into it, and once the event ended
+// nothing refreshed it for anyone who was offline. Somebody who logged in during
+// a boosted hour and returned a week later would have been paid the boosted rate
+// for the whole week.
 var BoostableBuckets = []string{
 	gameconfig.BucketCollectIncome,
 	gameconfig.BucketXP,
-	gameconfig.BucketTaxIncome,
 	gameconfig.BucketLuck,
 }
 

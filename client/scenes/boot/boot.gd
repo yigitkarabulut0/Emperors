@@ -39,12 +39,15 @@ var _attempt := 0
 
 func _ready() -> void:
 	var bg := ColorRect.new()
-	# The imperial red, not the parchment. The wordmark over it is gold, and gold
-	# on parchment measures 2.39:1 -- the logo would have been a rumour. Red also
-	# keeps the launch chain honest: this colour, boot_splash/bg_color,
-	# default_clear_color and the iOS storyboard colour are all the same, and any
-	# mismatch between them is a visible flash on every single launch.
-	bg.color = Palette.BANNER
+	# Parchment, the same ground the game itself is on -- so the launch runs
+	# splash, sign-in and shell without a single change of surface.
+	#
+	# This was briefly the imperial red instead, on the argument that the gold
+	# wordmark needs a dark field. It does, and the answer is not to darken the
+	# whole screen: every other line here is ink, and ink on red is unreadable.
+	# The wordmark is set in red on parchment now, which is what the reference
+	# does with a title and measures 6.57:1.
+	bg.color = Palette.BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
@@ -74,7 +77,7 @@ func _ready() -> void:
 	centre.add_child(_mark)
 
 	centre.add_child(UI.spacer(UI.GAP_XL))
-	centre.add_child(UI.label("EMPERORS", UI.F_DISPLAY, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
+	centre.add_child(UI.caps("EMPERORS", UI.F_DISPLAY, Palette.BANNER, HORIZONTAL_ALIGNMENT_CENTER))
 
 	# The motto comes from the server, so its presence is itself the proof that
 	# the realm answered. Worth keeping: it is the first flavour anyone reads.

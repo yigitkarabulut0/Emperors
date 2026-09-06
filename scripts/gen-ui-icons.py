@@ -740,16 +740,20 @@ def _branch(flip: bool = False) -> tuple[str, str]:
     parts: list[str] = []
     # the stem, thick at the root and tapering to the tip
     parts.append(
-        f"M{fx(2):.3g},13.4Q{fx(30):.3g},10.6 {fx(60):.3g},10.6"
-        f"L{fx(60):.3g},13.0Q{fx(30):.3g},13.0 {fx(2):.3g},15.6Z")
-    for i in range(6):
-        t_ = i / 5.0
-        x = 8 + t_ * 46
-        y = 13.6 - t_ * 2.4
-        length = 8.4 - t_ * 2.6
-        width = 3.0 - t_ * 0.9
-        parts.append(_leaf(fx(x), y, length, width, fa(-58 + t_ * 16)))
-        parts.append(_leaf(fx(x + 2.5), y, length * 0.86, width * 0.9, fa(52 - t_ * 14)))
+        f"M{fx(2):.3g},13.2Q{fx(30):.3g},10.4 {fx(58):.3g},10.4"
+        f"L{fx(58):.3g},13.4Q{fx(30):.3g},13.4 {fx(2):.3g},16.2Z")
+    # FOUR pairs, not six. Six was drawn first and each leaf came out about seven
+    # pixels wide beside a title on a phone -- the branch read as a row of
+    # chevrons. Fewer, fatter leaves survive the size, which is the same lesson
+    # docs/ART.md records for the wheat and the crossed swords.
+    for i in range(4):
+        t_ = i / 3.0
+        x = 9 + t_ * 42
+        y = 13.6 - t_ * 2.6
+        length = 10.6 - t_ * 2.4
+        width = 4.2 - t_ * 0.9
+        parts.append(_leaf(fx(x), y, length, width, fa(-56 + t_ * 14)))
+        parts.append(_leaf(fx(x + 3.5), y, length * 0.88, width * 0.92, fa(50 - t_ * 12)))
     return " ".join(parts), "nonzero"
 
 

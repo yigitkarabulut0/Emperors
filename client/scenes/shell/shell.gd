@@ -30,6 +30,15 @@ const SECTIONS := [
 
 const RAIL_WIDTH := 96
 
+## The rail's own tap height, separate from UI.TAP_MIN so that shrinking the
+## rail does not shrink every button in the game.
+##
+## 72 units is 44.0 pt on a 16 Pro Max at the 0.611 pt/unit this file's type
+## scale is calibrated to -- exactly Apple's minimum -- and 37.9 pt on an SE,
+## which is the trade ui.gd already documents and takes. It is what pays for the
+## portrait and the settings gear the rail now carries.
+const RAIL_TAP := 72
+
 ## How often the client says it is still here.
 ##
 ## The server treats silence past 90 seconds as gone, so thirty is three beats
@@ -40,13 +49,22 @@ const ICON_SIZE := UI.ICON_MD
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
 const GOLD_ROLL_SECONDS := 0.30
-const AVATAR_SIZE := UI.TAP_MIN
+## Smaller than UI.TAP_MIN, because the rail's vertical budget is the tightest
+## thing in this file and eight units here is eight units the House button does
+## not lose off the bottom of an iPad. 68 is still a 41 pt target on a 16 Pro
+## Max, and the ring drawn inside it is decoration, not margin.
+const AVATAR_SIZE := 68
 
 ## Floors, not fixed heights. The top bar sizes to its own content and the action
 ## host to the tallest bar any section mounts; these only stop them collapsing.
 ## The safe-area inset is added on top of both at runtime, so the numbers here
 ## stay device-independent.
-const TOPBAR_MIN_H := 140
+##
+## 96, down from 140: the bar was two stacked rows -- a portrait, a name and an
+## experience bar over a full-width energy meter. It is one banner now, and the
+## 44 units it gave back are most of what the rail's portrait costs.
+const TOPBAR_MIN_H := 96
+
 ## 116 for the button, a line of caption under it, and margins. Measured on an
 ## iPhone SE, which is the tightest device: at 164 the caption grazed the edge.
 const ACTION_H := 150
@@ -54,7 +72,6 @@ const ACTION_H := 150
 
 var _avatar_btn: Button
 var _avatar_img: TextureRect
-var _name: Label
 var _diamonds: Label
 
 ## Section id -> the tab node, and -> its action bar. Both are kept alive for
@@ -78,9 +95,11 @@ var _dev_act := false
 var _level: Label
 var _gold: Label
 var _energy: Label
-var _energy_bar: ProgressBar
-var _xp: Label
 var _xp_bar: ProgressBar
+
+## The screen's own title, retitled on every section change. The tabs never had
+## one: the shell knew which section was open and the screen never said so.
+var _title: Control
 
 # Chrome that has to be re-inset whenever the safe area changes.
 var _topbar_panel: PanelContainer
@@ -89,9 +108,18 @@ var _rail_pad: MarginContainer
 
 
 func _ready() -> void:
-	var bg := ColorRect.new()
-	bg.color = Palette.BG
+	# Parchment, tiled, running to every edge -- including behind the toast and
+	# the action strip, so the ground is continuous rather than a panel floating
+	# on a colour.
+	var bg := TextureRect.new()
+	bg.texture = ArtRegistry.ui_icon("tile/parchment")
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_TILE
+	# Godot 4 carries repeat on the node rather than the import; without it the
+	# tile is stretched once over the whole screen, silently.
+	bg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
 	var root := VBoxContainer.new()
@@ -108,12 +136,24 @@ func _ready() -> void:
 
 	middle.add_child(_build_rail())
 
+	# The title belongs to the shell, not to the nine tabs. It is one node here
+	# against nine near-identical edits there, and the wording then has a single
+	# source -- SECTIONS, which is the same table the rail is built from.
+	var content_col := VBoxContainer.new()
+	content_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content_col.add_theme_constant_override("separation", UI.GAP_S)
+	middle.add_child(content_col)
+
+	_title = UI.screen_title("")
+	content_col.add_child(_title)
+
 	_content = MarginContainer.new()
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for side in ["left", "right", "top", "bottom"]:
 		(_content as MarginContainer).add_theme_constant_override("margin_" + side, 10)
-	middle.add_child(_content)
+	content_col.add_child(_content)
 
 	_toast = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
 	_toast.custom_minimum_size = Vector2(0, 30)
@@ -261,139 +301,50 @@ func _build_top_bar() -> Control:
 	# The panel bleeds all the way to y=0 on purpose. Insetting the chrome itself
 	# would leave a strip of background under the Dynamic Island, which is the
 	# most obvious "this is a port" tell there is; only the PADDING moves.
-	_topbar_panel.add_theme_stylebox_override(
-		"panel", UI.panel_box(Palette.RAIL, Color.TRANSPARENT, 0))
+	_topbar_panel.add_theme_stylebox_override("panel", UI.skin("banner", Palette.BANNER, 0, 0))
 	_topbar_panel.custom_minimum_size = Vector2(0, TOPBAR_MIN_H)
 
 	_topbar_pad = MarginContainer.new()
 	_topbar_panel.add_child(_topbar_pad)
 
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 10)
+	col.add_theme_constant_override("separation", UI.GAP_S)
 	_topbar_pad.add_child(col)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", UI.GAP_M)
 	col.add_child(row)
 
-	# Your face, top left, and it opens the picker. In asynchronous PvP you never
-	# meet an opponent -- they are a row on a list -- so the portrait is most of
-	# the identity either side has.
-	var face := Control.new()
-	face.custom_minimum_size = Vector2(AVATAR_SIZE, AVATAR_SIZE)
-	face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(face)
+	# The crest, then the purse. One row, where it used to be two: a portrait,
+	# a name and an experience bar over a full-width energy meter. The portrait
+	# moved to the rail, the name to the portrait's tooltip and the Hero card
+	# that already printed it, and the energy meter became the third coin.
+	row.add_child(_ornament("orn/laurel_l", 64, 24))
+	row.add_child(UI.caps("SPQR", UI.F_H2, Palette.BANNER_INK))
 
-	_avatar_btn = Button.new()
-	_avatar_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_avatar_btn.focus_mode = Control.FOCUS_NONE
-	_avatar_btn.tooltip_text = "Change your portrait"
-	_avatar_btn.add_theme_stylebox_override(
-		"normal", UI.panel_box(Color.TRANSPARENT, Color.TRANSPARENT, 0))
-	_avatar_btn.add_theme_stylebox_override(
-		"hover", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, AVATAR_SIZE / 2))
-	_avatar_btn.add_theme_stylebox_override(
-		"pressed", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, AVATAR_SIZE / 2))
-	_avatar_btn.pressed.connect(_open_avatar_picker)
-	face.add_child(_avatar_btn)
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(gap)
 
-	# The art is inset inside the button rather than drawn at the button's size:
-	# the whole 88 units stay tappable while the portrait keeps its old weight.
-	_avatar_img = TextureRect.new()
-	_avatar_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_avatar_img.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_avatar_img.offset_left = 8
-	_avatar_img.offset_top = 8
-	_avatar_img.offset_right = -8
-	_avatar_img.offset_bottom = -8
-	_avatar_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_avatar_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_avatar_btn.add_child(_avatar_img)
+	_gold = _purse_chip(row, "coin", Palette.GOLD)
+	_diamonds = _purse_chip(row, "gem", Palette.DIAMOND)
+	_energy = _purse_chip(row, "bolt", Palette.ENERGY)
 
-	# The level rides on the portrait as a badge. That is one row of the top bar
-	# reclaimed for the experience bar, and it puts the number where a player
-	# already looks for it in this genre.
-	var badge := PanelContainer.new()
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.add_theme_stylebox_override(
-		"panel", UI.chip_box(Palette.GOLD_DEEP, Palette.BG, 16))
-	badge.anchor_left = 1.0
-	badge.anchor_top = 1.0
-	badge.anchor_right = 1.0
-	badge.anchor_bottom = 1.0
-	badge.offset_left = -34
-	badge.offset_top = -30
-	badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	badge.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	face.add_child(badge)
-	_level = UI.label("1", UI.F_CAPTION, Palette.BG, HORIZONTAL_ALIGNMENT_CENTER)
-	badge.add_child(_level)
+	row.add_child(_ornament("orn/laurel_r", 64, 24))
 
-	var who := VBoxContainer.new()
-	who.alignment = BoxContainer.ALIGNMENT_CENTER
-	who.add_theme_constant_override("separation", UI.GAP_XS)
-	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_name = UI.label("", UI.F_H2, Palette.TEXT)
-	# A long username used to push the purse off the right edge.
-	_name.clip_text = true
-	_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	who.add_child(_name)
-
-	# Experience, always on screen. It used to live only inside the Hero screen,
-	# so the one number that says "you are getting somewhere" was two taps away.
-	var xrow := HBoxContainer.new()
-	xrow.add_theme_constant_override("separation", UI.GAP_S)
-	who.add_child(xrow)
-
+	# Experience as a thread along the foot of the banner rather than a bar with
+	# a number beside it. It is here at all because it is the one figure that
+	# says "you are getting somewhere", and it was two taps away before; the
+	# exact count lives on the Hero card, which is where you go to read it.
 	_xp_bar = ProgressBar.new()
 	_xp_bar.show_percentage = false
-	_xp_bar.custom_minimum_size = Vector2(0, 14)
+	_xp_bar.custom_minimum_size = Vector2(0, 8)
 	_xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_xp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	# PANEL on RAIL is a 1.2:1 difference -- an empty bar was invisible, which is
-	# exactly the state a new player is in. PANEL_HIGH with an edge reads as an
-	# empty groove waiting to be filled.
 	_xp_bar.add_theme_stylebox_override(
-		"background", UI.panel_box(Palette.PANEL_HIGH, Palette.LINE, 7))
+		"background", UI.panel_box(Palette.BANNER.darkened(0.35), Color.TRANSPARENT, 4))
 	_xp_bar.add_theme_stylebox_override(
-		"fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 7))
-	xrow.add_child(_xp_bar)
-
-	_xp = UI.label("0 / 0", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_RIGHT)
-	_xp.custom_minimum_size = Vector2(150, 0)
-	xrow.add_child(_xp)
-	row.add_child(who)
-
-	# Currency reads as a pair of stamped coins rather than a bare number in the
-	# corner. Stacked rather than side by side: side by side they ate 260 of the
-	# 672 usable units and left the experience bar too narrow to read, and gold
-	# on top is the right priority anyway.
-	var purse := VBoxContainer.new()
-	purse.add_theme_constant_override("separation", UI.GAP_S)
-	purse.alignment = BoxContainer.ALIGNMENT_CENTER
-	_gold = _purse_chip(purse, "coin", Palette.GOLD)
-	_diamonds = _purse_chip(purse, "gem", Palette.DIAMOND)
-	row.add_child(purse)
-
-	var erow := HBoxContainer.new()
-	erow.add_theme_constant_override("separation", 12)
-	col.add_child(erow)
-	erow.add_child(_glyph("currency/bolt", UI.ICON_SM, Palette.ENERGY))
-
-	_energy_bar = ProgressBar.new()
-	_energy_bar.show_percentage = false
-	_energy_bar.custom_minimum_size = Vector2(0, 18)
-	_energy_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_energy_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_energy_bar.add_theme_stylebox_override(
-		"background", UI.panel_box(Palette.PANEL_HIGH, Palette.LINE, 9))
-	_energy_bar.add_theme_stylebox_override(
-		"fill", UI.panel_box(Palette.ENERGY, Color.TRANSPARENT, 9))
-	erow.add_child(_energy_bar)
-
-	_energy = UI.label("0/0", UI.F_BODY, Palette.ENERGY, HORIZONTAL_ALIGNMENT_RIGHT)
-	_energy.custom_minimum_size = Vector2(220, 0)
-	erow.add_child(_energy)
+		"fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 4))
+	col.add_child(_xp_bar)
 
 	return _topbar_panel
 
@@ -441,23 +392,44 @@ func _notification(what: int) -> void:
 			Api.beacon("/v1/presence", {"state": "leaving"})
 
 
-## One currency readout: its glyph, then its number. Returns the number's label
-## so the caller can keep hold of it.
+## One currency readout: its glyph, then its number, stamped into stone.
+##
+## chip_box, not panel_box: panel_box carries 10 units of padding above and
+## below for a card, and two of these stacked came to 142 units, which is what
+## pushed the shell's column past the viewport on an iPhone SE. They are side by
+## side now, which is what the single-row banner bought.
 func _purse_chip(host: Control, icon: String, tint: Color) -> Label:
-	# chip_box, not panel_box: panel_box carries 10 units of padding above and
-	# below for a card, and a MarginContainer inside it was adding 4 more. Two of
-	# these stacked came to 142 units, which is what pushed the shell's column 40
-	# units past the viewport on an iPhone SE and clipped the action caption.
 	var box := PanelContainer.new()
-	box.add_theme_stylebox_override("panel", UI.chip_box(Palette.PANEL, Color.TRANSPARENT, 14))
+	# The small nine-slice family. The standard one slices at 42 units a side,
+	# and a chip is about 36 tall -- two 42s do not fit inside 36 and Godot
+	# resolves that by squashing both into mush.
+	box.add_theme_stylebox_override("panel", UI.skin("chip", Palette.RAIL, 10, 2))
+	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var line := HBoxContainer.new()
 	line.add_theme_constant_override("separation", 6)
 	box.add_child(line)
 	line.add_child(_glyph("currency/" + icon, UI.ICON_SM, tint))
-	var value := UI.label("0", UI.F_BODY, tint, HORIZONTAL_ALIGNMENT_RIGHT)
+	# Tabular figures. Without them this reflows horizontally every time it
+	# rolls 1,199 -> 1,200, and it is redrawn four times a second.
+	var value := UI.number_label("0", UI.F_BODY, Palette.TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
 	line.add_child(value)
 	host.add_child(box)
 	return value
+
+
+## A gold ornament that never takes a tap and never forces a row taller.
+func _ornament(key: String, w: int, h: int) -> TextureRect:
+	var t := TextureRect.new()
+	t.texture = ArtRegistry.ui_icon(key)
+	# expand_mode first: without it a TextureRect reports the SOURCE texture's
+	# size as its minimum, and a 288 px branch would set the banner's height.
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.custom_minimum_size = Vector2(w, h)
+	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	t.modulate = Palette.GOLD
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
 
 
 func _glyph(name: String, size: int, tint: Color) -> TextureRect:
@@ -473,8 +445,36 @@ func _glyph(name: String, size: int, tint: Color) -> TextureRect:
 
 func _build_rail() -> Control:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UI.panel_box(Palette.RAIL, Color.TRANSPARENT, 0))
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	panel.custom_minimum_size = Vector2(RAIL_WIDTH, 0)
+
+	# The marble, and the eagle at its foot, are ANCHORED SIBLINGS of the padding
+	# rather than rows in the column. A PanelContainer sizes to the largest
+	# minimum among its children, and a TextureRect with EXPAND_IGNORE_SIZE
+	# reports only its own custom_minimum_size -- so both of these cost the
+	# column no height at all. That is what pays for the portrait above.
+	var marble := TextureRect.new()
+	marble.texture = ArtRegistry.ui_icon("tile/marble")
+	marble.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	marble.stretch_mode = TextureRect.STRETCH_TILE
+	# Godot 4 carries repeat on the node, not on the import. Without this the
+	# tile is stretched once across the whole rail, silently and with no error.
+	marble.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	marble.set_anchors_preset(Control.PRESET_FULL_RECT)
+	marble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(marble)
+
+	var eagle := _ornament("orn/eagle", UI.ICON_MD, UI.ICON_MD)
+	eagle.anchor_left = 0.5
+	eagle.anchor_right = 0.5
+	eagle.anchor_top = 1.0
+	eagle.anchor_bottom = 1.0
+	eagle.offset_left = -UI.ICON_MD / 2
+	eagle.offset_right = UI.ICON_MD / 2
+	eagle.offset_top = -UI.ICON_MD - 6
+	eagle.offset_bottom = -6
+	eagle.modulate = Palette.STONE_EDGE
+	panel.add_child(eagle)
 
 	# The rail panel bleeds to x=0; only its buttons move in from a left inset,
 	# which is zero in portrait but not on an Android cutout or in landscape.
@@ -488,19 +488,25 @@ func _build_rail() -> Control:
 	# running the full height of the left edge captures vertical drags, so every
 	# swipe that starts anywhere near it scrolls a rail that does not need
 	# scrolling instead of the list the player is trying to move. The cure was
-	# worse than the disease, and shell_fits.gd already guarantees all nine
-	# sections fit on every device we ship to.
+	# worse than the disease, and shell_fits.gd already guarantees the whole rail
+	# fits on every device we ship to.
 	var col := VBoxContainer.new()
+	col.name = "RailColumn"    # shell_fits.gd measures this node by name
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# No gap between rail buttons. Nine 2-unit gaps cost 16 units of a budget with
-	# six to spare on an iPad, and they buy nothing: the selected section already
-	# has its own background, which is what separates the buttons visually.
 	col.add_theme_constant_override("separation", 0)
 	_rail_pad.add_child(col)
 
+	col.add_child(_build_crest())
+
+	var nav := VBoxContainer.new()
+	# No gap between rail buttons: the selected section has its own lit slab,
+	# which is what separates them.
+	nav.add_theme_constant_override("separation", 0)
+	col.add_child(nav)
+
 	for s in SECTIONS:
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
+		b.custom_minimum_size = Vector2(0, RAIL_TAP)
 		b.focus_mode = Control.FOCUS_NONE
 		b.tooltip_text = str(s["label"])
 		b.pressed.connect(_open.bind(str(s["id"])))
@@ -512,7 +518,7 @@ func _build_rail() -> Control:
 		inner.add_theme_constant_override("separation", 2)
 		# EXPAND_IGNORE_SIZE matters: without it a TextureRect reports the source
 		# texture's own size as its minimum, and a 96 px icon would force the
-		# 74 px rail button to grow.
+		# 72 px rail button to grow.
 		var tex := ArtRegistry.ui_icon(str(s["icon"]))
 		if tex != null:
 			var icon := TextureRect.new()
@@ -529,10 +535,11 @@ func _build_rail() -> Control:
 			glyph.modulate = Palette.TEXT_DIM
 			glyph.custom_minimum_size = Vector2(0, ICON_SIZE)
 			inner.add_child(glyph)
-		inner.add_child(UI.label(str(s["label"]), UI.F_MICRO, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		inner.add_child(UI.caps(str(s["label"]), UI.F_MICRO, Palette.TEXT_FAINT,
+			HORIZONTAL_ALIGNMENT_CENTER))
 		b.add_child(inner)
 
-		col.add_child(b)
+		nav.add_child(b)
 		_rail_buttons[str(s["id"])] = b
 
 		# The unlock level rides in the corner rather than as a third line. Icon
@@ -541,21 +548,88 @@ func _build_rail() -> Control:
 		# is worth keeping -- it just cannot cost vertical space.
 		var lock := PanelContainer.new()
 		lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var lock_style := UI.chip_box(Palette.BG, Palette.LINE, 10)
-		lock_style.content_margin_left = 6
-		lock_style.content_margin_right = 6
-		lock.add_theme_stylebox_override("panel", lock_style)
+		lock.add_theme_stylebox_override("panel", UI.skin("plaque", Palette.RAIL, 6, 1))
 		lock.anchor_left = 1.0
 		lock.anchor_right = 1.0
 		lock.offset_left = -40
 		lock.offset_top = 0
 		lock.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 		b.add_child(lock)
-		var lock_text := UI.label("", UI.F_MICRO, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+		var lock_text := UI.number_label("", UI.F_MICRO, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
 		lock.add_child(lock_text)
 		_rail_locks[str(s["id"])] = lock
 
+	# Settings, at the foot. It is a rail entry rather than a tenth SECTION so
+	# that lint check 4 -- which reads SECTIONS and demands an icon at
+	# assets/ui/<name>.png -- is not asked about an ornament.
+	var gear := Button.new()
+	gear.custom_minimum_size = Vector2(0, RAIL_TAP)
+	gear.focus_mode = Control.FOCUS_NONE
+	gear.tooltip_text = "Settings"
+	gear.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	gear.add_theme_stylebox_override("hover", UI.skin("plaque", Palette.RAIL, 4, 4))
+	gear.add_theme_stylebox_override("pressed", UI.skin("plaque", Palette.RAIL, 4, 4))
+	var gear_icon := _ornament("orn/gear", UI.ICON_MD, UI.ICON_MD)
+	gear_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	gear_icon.modulate = Palette.TEXT_FAINT
+	gear.add_child(gear_icon)
+	col.add_child(gear)
+
 	return panel
+
+
+## The player, at the head of their own rail: portrait in a gold ring, with the
+## level stamped on a stone plate under it.
+##
+## It was in the top bar, which is where this genre usually puts it, and which
+## cost the bar a whole row. In asynchronous PvP you never meet an opponent --
+## they are a row on a list -- so the portrait is most of the identity either
+## side has, and the rail is where it is seen on every screen rather than
+## competing with the purse.
+func _build_crest() -> Control:
+	var crest := VBoxContainer.new()
+	crest.add_theme_constant_override("separation", 2)
+
+	var face := Control.new()
+	face.custom_minimum_size = Vector2(AVATAR_SIZE, AVATAR_SIZE)
+	face.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	crest.add_child(face)
+
+	_avatar_btn = Button.new()
+	_avatar_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_avatar_btn.focus_mode = Control.FOCUS_NONE
+	_avatar_btn.tooltip_text = "Change your portrait"
+	_avatar_btn.add_theme_stylebox_override(
+		"normal", UI.panel_box(Color.TRANSPARENT, Color.TRANSPARENT, 0))
+	_avatar_btn.add_theme_stylebox_override(
+		"hover", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT, AVATAR_SIZE / 2))
+	_avatar_btn.add_theme_stylebox_override(
+		"pressed", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, AVATAR_SIZE / 2))
+	_avatar_btn.pressed.connect(_open_avatar_picker)
+	face.add_child(_avatar_btn)
+
+	# The art is inset inside the button rather than drawn at the button's size:
+	# the whole tap target stays tappable while the portrait keeps its weight.
+	_avatar_img = TextureRect.new()
+	_avatar_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_avatar_img.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_avatar_img.offset_left = 7
+	_avatar_img.offset_top = 7
+	_avatar_img.offset_right = -7
+	_avatar_img.offset_bottom = -7
+	_avatar_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_avatar_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_avatar_btn.add_child(_avatar_img)
+
+	var plate := PanelContainer.new()
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.add_theme_stylebox_override("panel", UI.skin("plaque", Palette.RAIL, 8, 1))
+	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	crest.add_child(plate)
+	_level = UI.number_label("1", UI.F_MICRO, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
+	plate.add_child(_level)
+
+	return crest
 
 
 const TABS := {
@@ -583,6 +657,7 @@ const TABS := {
 func _open(id: String) -> void:
 	_current = id
 	_style_rail()
+	_retitle(id)
 
 	_show_only(id)
 
@@ -598,6 +673,16 @@ func _open(id: String) -> void:
 
 	_build_tab(id)
 	_show_only(id)
+
+
+## Puts the open section's name over it, in the shell's own words.
+func _retitle(id: String) -> void:
+	if _title == null:
+		return
+	for sec in SECTIONS:
+		if str(sec["id"]) == id:
+			UI.set_screen_title(_title, str(sec["label"]))
+			return
 
 
 ## Shows one section and hides every other, including the ones built ahead of
@@ -688,24 +773,33 @@ func _style_rail() -> void:
 			(lock.get_child(0) as Label).text = "" if open else str(_unlock_level(str(id)))
 			lock.visible = not open
 		var active: bool = id == _current
-		var bg := Palette.PANEL if active else Color.TRANSPARENT
-		b.add_theme_stylebox_override("normal", UI.panel_box(bg, Color.TRANSPARENT, 0))
-		b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT, 0))
-		b.add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, Color.TRANSPARENT, 0))
+		# The open section is a lit slab set into the marble; the others are the
+		# marble itself. A colour swap would say "different thing"; a change of
+		# surface says "same thing, in a different state".
+		if active:
+			b.add_theme_stylebox_override("normal", UI.skin("rail_active", Palette.PANEL, 4, 4))
+		else:
+			b.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+		b.add_theme_stylebox_override("hover", UI.skin("plaque", Palette.RAIL, 4, 4))
+		b.add_theme_stylebox_override("pressed", UI.skin("rail_active", Palette.PANEL, 4, 4))
+		b.add_theme_stylebox_override("disabled", StyleBoxEmpty.new())
 		var inner := b.get_child(0)
-		var tint := Palette.GOLD if active else Palette.TEXT_DIM
+		var tint := Palette.GOLD_DEEP if active else Palette.TEXT_DIM
 		if not open:
 			tint = Palette.EMPTY_SLOT
 		inner.get_child(0).modulate = tint
-		inner.get_child(1).add_theme_color_override("font_color", Palette.TEXT_DIM if active else Palette.TEXT_FAINT)
+		inner.get_child(1).add_theme_color_override("font_color",
+			Palette.TEXT if active else (Palette.TEXT_FAINT if open else Palette.EMPTY_SLOT))
 
 
 func _on_state_changed() -> void:
 	if not GameState.has_state():
 		return
 	var p := GameState.player()
-	_name.text = str(p.get("username", ""))
-	_level.text = str(int(p.get("level", 1)))
+	# The username is the portrait's tooltip now rather than a line of chrome.
+	# The Hero card prints it in full, which is where you go to read it.
+	_avatar_btn.tooltip_text = str(p.get("username", ""))
+	_level.text = "Lv %d" % int(p.get("level", 1))
 	_update_xp()
 	_diamonds.text = UI.number(int(p.get("diamonds", 0)))
 	_avatar_img.texture = ArtRegistry.portrait(str(p.get("avatar", "knight")))
@@ -759,14 +853,12 @@ func _update_xp() -> void:
 	var need := GameState.xp_to_next()
 	var have := GameState.display_xp()
 	if need <= 0:
-		# The level cap. A full bar and a word, rather than a division by nothing.
+		# The level cap. A full bar, rather than a division by nothing.
 		_xp_bar.max_value = 1.0
 		_xp_bar.value = 1.0
-		_xp.text = "MAX"
 		return
 	_xp_bar.max_value = float(need)
 	_xp_bar.value = float(have)
-	_xp.text = "%s / %s" % [UI.number(have), UI.number(need)]
 
 
 func _update_energy() -> void:
@@ -774,14 +866,15 @@ func _update_energy() -> void:
 		return
 	var cur := GameState.display_energy()
 	var mx := GameState.max_energy()
-	_energy_bar.max_value = maxf(float(mx), 1.0)
-	_energy_bar.value = float(cur)
 	if cur >= mx:
-		_energy.text = "%d/%d  full" % [cur, mx]
+		_energy.text = "%d/%d" % [cur, mx]
 		return
 	# The next point, not the full pool. "1h 04m" is the answer to a question
-	# nobody asked; "+1 in 0:23" is the one that decides whether you wait.
-	_energy.text = "%d/%d  +1 in %s" % [
+	# nobody asked; the countdown is the one that decides whether you wait.
+	#
+	# It has to fit a coin now rather than a full-width bar, so the words are
+	# gone and the separator carries them: "42/60 · 0:23".
+	_energy.text = "%d/%d \u00b7 %s" % [
 		cur, mx, UI.short_duration(GameState.display_seconds_to_next())]
 
 

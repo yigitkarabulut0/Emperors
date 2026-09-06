@@ -359,7 +359,10 @@ static func _laurel(key: String) -> Control:
 	# size as its minimum and a 192 px branch forces the title row to 192 tall.
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.custom_minimum_size = Vector2(ICON_XL, ICON_MD)
+	# 112 x 42 matches the branch's own 64:24, so it is drawn at its aspect and
+	# large enough for a leaf to be a leaf. At ICON_XL x ICON_MD it came out 45 px
+	# wide on a phone and the branch read as a row of chevrons.
+	t.custom_minimum_size = Vector2(112, 42)
 	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	t.modulate = Palette.GOLD
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -381,16 +384,6 @@ static func rule() -> Control:
 	t.modulate = Palette.GOLD
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return t
-
-
-## A small carved plaque bearing one word. Pure decoration: it never takes a tap
-## and it is anchored rather than laid out, so it costs no height.
-static func plaque(word: String) -> Control:
-	var box := PanelContainer.new()
-	box.add_theme_stylebox_override("panel", skin("plaque", Palette.RAIL, 10, 6))
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(caps(word, F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
-	return box
 
 
 ## Formats a number the way a game should: thousands separated below 100k, then

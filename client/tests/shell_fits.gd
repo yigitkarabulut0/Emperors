@@ -38,8 +38,30 @@ func _initialize() -> void:
 	_run()
 
 
-## The rail's button column: the VBox whose children are the section buttons.
+## The rail's whole column, by name.
+##
+## This used to find "a VBoxContainer with at least nine children, all Buttons",
+## which was true of the rail when the rail was nothing but nine buttons. It is
+## not any more: the column now carries a portrait crest above the nav and a
+## settings gear below it, and the nav is a VBox of its own inside it. The old
+## heuristic still matches -- it matches the INNER one -- so it would have
+## measured 648 units of buttons, ignored 170 units of crest and gear, and
+## passed while the House button sat off the bottom of an iPad.
+##
+## A false pass is worse than no test. So the shell names the node it wants
+## measured, and the heuristic stays only as a fallback for a tree that does not
+## carry the name.
 func _rail_content(node: Node) -> Control:
+	if node is VBoxContainer and node.name == "RailColumn":
+		return node
+	for c in node.get_children():
+		var hit := _rail_content(c)
+		if hit != null:
+			return hit
+	return _rail_content_by_shape(node)
+
+
+func _rail_content_by_shape(node: Node) -> Control:
 	if node is VBoxContainer and node.get_child_count() >= 9:
 		var all_buttons := true
 		for c in node.get_children():
@@ -48,7 +70,7 @@ func _rail_content(node: Node) -> Control:
 		if all_buttons:
 			return node
 	for c in node.get_children():
-		var hit := _rail_content(c)
+		var hit := _rail_content_by_shape(c)
 		if hit != null:
 			return hit
 	return null
@@ -90,7 +112,7 @@ func _run() -> void:
 			var rail := _rail_content(c)
 			if rail != null:
 				h = rail.get_combined_minimum_size().y
-				what = "rail (%d sections)" % rail.get_child_count()
+				what = "rail column"
 			needed += h
 			parts += "\n      %-22s %6.0f" % [what, h]
 

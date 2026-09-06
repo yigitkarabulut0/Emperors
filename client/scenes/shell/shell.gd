@@ -28,23 +28,35 @@ const SECTIONS := [
 	{"id": "house", "icon": "house", "glyph": "K", "label": "House"},
 ]
 
-const RAIL_WIDTH := 96
+## Wider than it was. At 96 the nine entries were a column of small capitals on
+## a strip of stone; the reference sets each one as a carved plate with the icon
+## as the loudest thing on it, and that needs room.
+##
+## tabs_fit.gd derives every tab's width budget from this (720 - RAIL - 20), so
+## it cannot grow freely: the widest tab wants 439 and the budget at 120 is 580.
+const RAIL_WIDTH := 120
 
 ## The rail's own tap height, separate from UI.TAP_MIN so that shrinking the
 ## rail does not shrink every button in the game.
 ##
-## 72 units is 44.0 pt on a 16 Pro Max at the 0.611 pt/unit this file's type
-## scale is calibrated to -- exactly Apple's minimum -- and 37.9 pt on an SE,
-## which is the trade ui.gd already documents and takes. It is what pays for the
-## portrait and the settings gear the rail now carries.
-const RAIL_TAP := 72
+## 80 units is 48.9 pt on a 16 Pro Max at the 0.611 pt/unit this file's type
+## scale is calibrated to, and 42.1 pt on an SE -- comfortably over Apple's
+## minimum on the device this is played on, and within the tolerance ui.gd
+## already documents on the smallest one.
+const RAIL_TAP := 80
 
 ## How often the client says it is still here.
 ##
 ## The server treats silence past 90 seconds as gone, so thirty is three beats
 ## of headroom -- one lost request on a train must not read as leaving.
 const BEAT_SECONDS := 30.0
-const ICON_SIZE := UI.ICON_MD
+## The icon is the entry, and the word underneath it is the caption. At ICON_MD
+## it was the other way round.
+const ICON_SIZE := 44
+
+## The gap between two carved plates. Three units of marble is what makes them
+## nine stones set into a column rather than one strip with lines on it.
+const RAIL_GAP := 3
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
@@ -444,8 +456,17 @@ func _glyph(name: String, size: int, tint: Color) -> TextureRect:
 
 
 func _build_rail() -> Control:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	# A plain Control, NOT a PanelContainer.
+	#
+	# A Container lays its children out itself and ignores their anchors, so the
+	# marble, the carved edge and the eagle were all stretched to the full rail
+	# whatever anchors they carried. The eagle in particular was being drawn a
+	# hundred and twenty units wide down the middle of the column, faint enough
+	# to read as a stone panel with a gear sitting on it rather than as a bug.
+	#
+	# A plain Control positions nothing, so anchors mean what they say -- which
+	# is also what keeps these three decorations out of the vertical budget.
+	var panel := Control.new()
 	panel.custom_minimum_size = Vector2(RAIL_WIDTH, 0)
 
 	# The marble, and the eagle at its foot, are ANCHORED SIBLINGS of the padding
@@ -464,21 +485,32 @@ func _build_rail() -> Control:
 	marble.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(marble)
 
-	var eagle := _ornament("orn/eagle", UI.ICON_MD, UI.ICON_MD)
+	# The carved edge. Its centre is transparent, so the marble tiles through it
+	# and the frame stretches to any height without smearing the stone.
+	var frame := NinePatchRect.new()
+	frame.texture = ArtRegistry.ui_icon("chrome/rail_frame")
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	for side in ["left", "top", "right", "bottom"]:
+		frame.set("patch_margin_" + side, 14)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(frame)
+
+	var eagle := _ornament("orn/eagle", UI.ICON_LG, UI.ICON_LG)
 	eagle.anchor_left = 0.5
 	eagle.anchor_right = 0.5
 	eagle.anchor_top = 1.0
 	eagle.anchor_bottom = 1.0
-	eagle.offset_left = -UI.ICON_MD / 2
-	eagle.offset_right = UI.ICON_MD / 2
-	eagle.offset_top = -UI.ICON_MD - 6
-	eagle.offset_bottom = -6
-	eagle.modulate = Palette.STONE_EDGE
+	eagle.offset_left = -UI.ICON_LG / 2
+	eagle.offset_right = UI.ICON_LG / 2
+	eagle.offset_top = -UI.ICON_LG - 8
+	eagle.offset_bottom = -8
+	eagle.modulate = Palette.TEXT_FAINT
 	panel.add_child(eagle)
 
 	# The rail panel bleeds to x=0; only its buttons move in from a left inset,
 	# which is zero in portrait but not on an Android cutout or in landscape.
 	_rail_pad = MarginContainer.new()
+	_rail_pad.set_anchors_preset(Control.PRESET_FULL_RECT)
 	panel.add_child(_rail_pad)
 
 	# NOT a ScrollContainer.
@@ -493,15 +525,17 @@ func _build_rail() -> Control:
 	var col := VBoxContainer.new()
 	col.name = "RailColumn"    # shell_fits.gd measures this node by name
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_theme_constant_override("separation", 0)
+	# The crest, the nine plates and the foot are three groups, not one list.
+	col.add_theme_constant_override("separation", UI.GAP_S)
 	_rail_pad.add_child(col)
 
 	col.add_child(_build_crest())
 
 	var nav := VBoxContainer.new()
-	# No gap between rail buttons: the selected section has its own lit slab,
-	# which is what separates them.
-	nav.add_theme_constant_override("separation", 0)
+	# A gap now, where there was none. Nine plates with marble between them read
+	# as stones set into a column; nine flush buttons read as one strip with
+	# lines drawn on it, which is what this was.
+	nav.add_theme_constant_override("separation", RAIL_GAP)
 	col.add_child(nav)
 
 	for s in SECTIONS:
@@ -535,7 +569,10 @@ func _build_rail() -> Control:
 			glyph.modulate = Palette.TEXT_DIM
 			glyph.custom_minimum_size = Vector2(0, ICON_SIZE)
 			inner.add_child(glyph)
-		inner.add_child(UI.caps(str(s["label"]), UI.F_MICRO, Palette.TEXT_FAINT,
+		# Mixed case, and the body serif rather than the display face. Small
+		# capitals at F_MICRO read as a legend under a diagram; the reference
+		# labels these the way it labels everything else.
+		inner.add_child(UI.label(str(s["label"]), UI.F_CAPTION, Palette.TEXT_DIM,
 			HORIZONTAL_ALIGNMENT_CENTER))
 		b.add_child(inner)
 
@@ -563,7 +600,9 @@ func _build_rail() -> Control:
 	# that lint check 4 -- which reads SECTIONS and demands an icon at
 	# assets/ui/<name>.png -- is not asked about an ornament.
 	var gear := Button.new()
-	gear.custom_minimum_size = Vector2(0, RAIL_TAP)
+	# Shorter than a nav plate: it carries an icon and no word, and the rail's
+	# vertical budget is the tightest thing in this file.
+	gear.custom_minimum_size = Vector2(0, 48)
 	gear.focus_mode = Control.FOCUS_NONE
 	gear.tooltip_text = "Settings"
 	gear.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
@@ -588,7 +627,7 @@ func _build_rail() -> Control:
 ## competing with the purse.
 func _build_crest() -> Control:
 	var crest := VBoxContainer.new()
-	crest.add_theme_constant_override("separation", 2)
+	crest.add_theme_constant_override("separation", UI.GAP_XS)
 
 	var face := Control.new()
 	face.custom_minimum_size = Vector2(AVATAR_SIZE, AVATAR_SIZE)
@@ -620,6 +659,17 @@ func _build_crest() -> Control:
 	_avatar_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_avatar_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_avatar_btn.add_child(_avatar_img)
+
+	# The collar sits OVER the portrait rather than behind it, and its middle is
+	# transparent -- so the face shows through the hole instead of being clipped
+	# to it. Added after the image so it draws on top.
+	var ring := TextureRect.new()
+	ring.texture = ArtRegistry.ui_icon("chrome/portrait_ring")
+	ring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ring.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ring.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_avatar_btn.add_child(ring)
 
 	var plate := PanelContainer.new()
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -773,23 +823,23 @@ func _style_rail() -> void:
 			(lock.get_child(0) as Label).text = "" if open else str(_unlock_level(str(id)))
 			lock.visible = not open
 		var active: bool = id == _current
-		# The open section is a lit slab set into the marble; the others are the
-		# marble itself. A colour swap would say "different thing"; a change of
-		# surface says "same thing, in a different state".
-		if active:
-			b.add_theme_stylebox_override("normal", UI.skin("rail_active", Palette.PANEL, 4, 4))
-		else:
-			b.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
-		b.add_theme_stylebox_override("hover", UI.skin("plaque", Palette.RAIL, 4, 4))
-		b.add_theme_stylebox_override("pressed", UI.skin("rail_active", Palette.PANEL, 4, 4))
-		b.add_theme_stylebox_override("disabled", StyleBoxEmpty.new())
+		# Every entry is a carved plate; the OPEN one is an imperial plate -- deep
+		# red, gold-framed, gold icon, light ink. It was a lit parchment slab
+		# among flat buttons, which said "highlighted" where this says "this is
+		# the room you are standing in".
+		var face := "nav_active" if active else "nav"
+		b.add_theme_stylebox_override(
+			"normal", UI.skin(face, Palette.BANNER if active else Palette.RAIL, 4, 4))
+		b.add_theme_stylebox_override("hover", UI.skin(face, Palette.RAIL, 4, 4))
+		b.add_theme_stylebox_override("pressed", UI.skin("nav_active", Palette.BANNER, 4, 4))
+		b.add_theme_stylebox_override("disabled", UI.skin("nav", Palette.RAIL, 4, 4))
 		var inner := b.get_child(0)
-		var tint := Palette.GOLD_DEEP if active else Palette.TEXT_DIM
+		var tint := Palette.GOLD if active else Palette.TEXT_DIM
 		if not open:
 			tint = Palette.EMPTY_SLOT
 		inner.get_child(0).modulate = tint
 		inner.get_child(1).add_theme_color_override("font_color",
-			Palette.TEXT if active else (Palette.TEXT_FAINT if open else Palette.EMPTY_SLOT))
+			Palette.BANNER_INK if active else (Palette.TEXT_DIM if open else Palette.EMPTY_SLOT))
 
 
 func _on_state_changed() -> void:

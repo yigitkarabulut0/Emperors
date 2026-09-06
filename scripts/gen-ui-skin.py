@@ -113,7 +113,7 @@ def parchment_tile(size: int, base: str, dest: pathlib.Path) -> None:
         "-define", "compose:args=4", "-composite", dest)
 
 
-def marble_tile(size: int, dest: pathlib.Path) -> None:
+def marble_tile(size: int, dest: pathlib.Path, base: str = RAIL) -> None:
     """Marble: random noise blurred into veins, then lit as a relief.
 
     -virtual-pixel tile before the blur is the whole trick for seamlessness --
@@ -122,7 +122,7 @@ def marble_tile(size: int, dest: pathlib.Path) -> None:
     run("-size", f"{size}x{size}", "xc:", "+noise", "Random",
         "-virtual-pixel", "tile", "-blur", "0x3",
         "-shade", "118x22", "-normalize", t("veins"))
-    run("-size", f"{size}x{size}", f"xc:{RAIL}", t("flat"))
+    run("-size", f"{size}x{size}", f"xc:{base}", t("flat"))
     # Blended at 14%, not composited at full strength. Stone in a UI has to be
     # legible as a SURFACE and invisible as a pattern -- at full strength the
     # veining competes with the labels sitting on it.
@@ -160,7 +160,8 @@ def plate(name: str, geom: dict, body: str, *, texture: pathlib.Path | None = No
           gradient: tuple[str, str] | None = None,
           frame: str = GOLD, frame_px: int = 3,
           double_rule: bool = True, carve: bool = True, sunk: bool = False,
-          shadow: bool = True, dest: pathlib.Path | None = None) -> None:
+          shadow: bool = True, carve_strength: int = 72,
+          dest: pathlib.Path | None = None) -> None:
     """One nine-slice surface: shadow, material, carved frame, rules.
 
     Ornament goes in the CORNERS and nowhere else. A nine-slice never stretches
@@ -199,7 +200,7 @@ def plate(name: str, geom: dict, body: str, *, texture: pathlib.Path | None = No
                       "-fill", "none", "-draw", shape],
                t("rel"), blur=2.6, azimuth=315 if sunk else 135)
         run(str(t("b")), str(t("rel")), "-compose", "Overlay",
-            "-define", "compose:args=72", "-composite",
+            "-define", f"compose:args={carve_strength}", "-composite",
             str(t("mask")), "-alpha", "off", "-compose", "CopyOpacity", "-composite", t("b"))
 
     # 4. the frame, and the thin second rule inside it that says "made"
@@ -222,6 +223,84 @@ def plate(name: str, geom: dict, body: str, *, texture: pathlib.Path | None = No
     print("  %-16s %s" % (name, out.relative_to(ROOT)))
 
 
+def _disc(cx: float, cy: float, r: float) -> str:
+    """ImageMagick's `circle` takes a CENTRE and a point ON the perimeter, not a
+    radius. Passing the radius as that second coordinate draws a circle of
+    radius |cy - r| -- which for a ring of radius 95 in a 192 box came out as a
+    dot two pixels across. This is the conversion, written once."""
+    return f"circle {cx:.2f},{cy:.2f} {cx:.2f},{cy - r:.2f}"
+
+
+def _cut_alpha(size: int, keep: list[str], drop: list[str], dest: pathlib.Path) -> None:
+    """An alpha channel drawn as greyscale: white is kept, black is cut away.
+
+    -fill none -draw simply draws nothing, which is why the first attempt at a
+    hollow frame came out solid. Building the mask as a grey image and copying
+    it into the alpha is the operation that actually removes pixels.
+    """
+    run("-size", f"{size}x{size}", "xc:black", "-fill", "white", *keep,
+        "-fill", "black", *drop, dest)
+
+
+def portrait_ring(size: int, dest: pathlib.Path) -> None:
+    """The carved stone collar around the player's portrait, with a gold bead.
+
+    A circle cannot be nine-sliced, so this is a plain texture drawn at 2x the
+    slot it fills and laid over the avatar button. The hole is genuinely
+    transparent -- the portrait shows through it rather than being masked by it,
+    so a face is never clipped by its own frame.
+    """
+    c = size / 2.0
+    outer = c - 2
+    inner = c * 0.68
+    mid = (outer + inner) / 2.0
+
+    _cut_alpha(size, ["-draw", _disc(c, c, outer)], ["-draw", _disc(c, c, inner)], t("ring_a"))
+    # lit as a relief, so it reads as a collar rather than a printed circle
+    relief(size, ["-stroke", "white", "-strokewidth", str(int(outer - inner)),
+                  "-fill", "none", "-draw", _disc(c, c, mid)],
+           t("ring_rel"), blur=size * 0.030)
+    run("-size", f"{size}x{size}", f"xc:{RAIL}", str(t("ring_rel")),
+        "-compose", "Overlay", "-composite", t("ring_body"))
+    run(str(t("ring_body")), str(t("ring_a")), "-alpha", "off",
+        "-compose", "CopyOpacity", "-composite", t("ring_cut"))
+    # a gold bead on the inner lip and a stone one outside
+    run(str(t("ring_cut")), "-fill", "none",
+        "-stroke", GOLD, "-strokewidth", str(max(2, int(size * 0.028))),
+        "-draw", _disc(c, c, inner + size * 0.016),
+        "-stroke", STONE_EDGE, "-strokewidth", str(max(2, int(size * 0.020))),
+        "-draw", _disc(c, c, outer - size * 0.012),
+        str(dest))
+    print("  %-16s %s" % ("portrait_ring", dest.relative_to(ROOT)))
+
+
+def rail_frame(dest: pathlib.Path) -> None:
+    """The rail's carved edge: a nine-slice whose centre is genuinely empty.
+
+    Only the border is drawn, so the marble tiling underneath shows through the
+    middle and the frame stretches to any height without smearing the stone.
+    """
+    size = 128
+    lo, hi = 1, size - 2
+    band = 11
+    _cut_alpha(size,
+               ["-draw", f"rectangle {lo},{lo} {hi},{hi}"],
+               ["-draw", f"rectangle {lo + band},{lo + band} {hi - band},{hi - band}"],
+               t("rf_a"))
+    relief(size, ["-stroke", "white", "-strokewidth", str(band),
+                  "-fill", "none",
+                  "-draw", f"rectangle {lo + band // 2},{lo + band // 2} "
+                           f"{hi - band // 2},{hi - band // 2}"],
+           t("rf_rel"), blur=3.0)
+    run("-size", f"{size}x{size}", f"xc:{shade_hex(RAIL, 0.86)}", str(t("rf_rel")),
+        "-compose", "Overlay", "-define", "compose:args=85", "-composite", t("rf_body"))
+    run(str(t("rf_body")), str(t("rf_a")), "-alpha", "off",
+        "-compose", "CopyOpacity", "-composite",
+        "-fill", "none", "-stroke", STONE_EDGE, "-strokewidth", "2",
+        "-draw", f"rectangle {lo},{lo} {hi},{hi}", str(dest))
+    print("  %-16s %s" % ("rail_frame", dest.relative_to(ROOT)))
+
+
 def main() -> int:
     if shutil.which("magick") is None:
         print("ImageMagick is not on PATH", file=sys.stderr)
@@ -234,6 +313,11 @@ def main() -> int:
     parchment_tile(256, PANEL_HIGH, t("parch_high"))
     parchment_tile(256, BG, t("parch_bg"))
     marble_tile(256, t("marble"))
+    # Two more stones: the column the rail is cut from, and the plates set into
+    # it. They differ by value rather than by outline, because a plate that has
+    # to be found by its border is a plate you cannot see at a glance.
+    marble_tile(256, t("marble_deep"), shade_hex(RAIL, 0.86))
+    marble_tile(256, t("marble_plate"), shade_hex(RAIL, 1.07))
     fabric(128, shade_hex(BANNER, 1.30), shade_hex(BANNER, 0.72), t("cloth"))
     fabric(128, shade_hex(BANNER, 1.45), shade_hex(BANNER, 0.85), t("cloth_hi"))
     fabric(128, shade_hex(BANNER, 0.80), shade_hex(BANNER, 0.55), t("cloth_lo"))
@@ -243,7 +327,7 @@ def main() -> int:
     # The two grounds, tiled behind everything.
     print("tiles ->", TILE.relative_to(ROOT))
     parchment_tile(256, BG, TILE / "parchment.png")
-    marble_tile(256, TILE / "marble.png")
+    marble_tile(256, TILE / "marble.png", shade_hex(RAIL, 0.86))
     print("  parchment.png, marble.png")
 
     print("surfaces ->", OUT.relative_to(ROOT))
@@ -284,8 +368,19 @@ def main() -> int:
           sunk=True, shadow=False, double_rule=False)
     plate("plaque", SMALL, RAIL, texture=t("marble"), frame=STONE_EDGE, frame_px=2,
           double_rule=False)
+    # A nav entry is its own carved plate, and the open one is an imperial plate.
+    # They were a flat strip and a lit slab; on a marble column that read as a
+    # list of words rather than as nine stones set into it.
+    plate("nav", SMALL, RAIL, texture=t("marble_plate"), frame=STONE_EDGE, frame_px=3,
+          double_rule=False, carve_strength=100)
+    plate("nav_active", SMALL, BANNER, texture=t("cloth"), frame=GOLD, frame_px=3,
+          double_rule=False, carve_strength=100)
     plate("rail_active", SMALL, PANEL, texture=t("parch_panel"), frame=GOLD, frame_px=2,
           double_rule=False)
+
+    print("chrome ->", CHROME.relative_to(ROOT))
+    portrait_ring(192, CHROME / "portrait_ring.png")
+    rail_frame(CHROME / "rail_frame.png")
 
     print("done")
     return 0

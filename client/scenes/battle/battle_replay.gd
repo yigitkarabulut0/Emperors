@@ -123,7 +123,7 @@ func _ready() -> void:
 
 	var skip := UI.ghost_button("SKIP", UI.F_BODY)
 	skip.custom_minimum_size = Vector2(0, UI.TAP_MIN)
-	skip.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL, Palette.LINE))
+	skip.add_theme_stylebox_override("normal", UI.skin("ghost", Palette.PANEL, 14, 10))
 	skip.pressed.connect(func() -> void: _skip = true)
 	col.add_child(skip)
 
@@ -136,7 +136,7 @@ func _side_block(army: Dictionary, side: String, accent: Color) -> Control:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(148, 0)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, accent))
+	card.add_theme_stylebox_override("panel", UI.skin("panel_gold", Palette.PANEL, 16, 14))
 
 	var pad := MarginContainer.new()
 	for edge in ["left", "right"]:
@@ -340,7 +340,7 @@ func _show_outcome() -> void:
 	var won := bool(_result.get("won", false))
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel",
-		UI.panel_box(Palette.PANEL, Palette.SUCCESS if won else Palette.DANGER))
+		UI.skin("panel_gold", Palette.PANEL, 22, 20))
 	panel.custom_minimum_size = Vector2(300, 0)
 	_root.add_child(panel)
 	panel.position = _root.size / 2.0 - Vector2(150, 90)

@@ -88,7 +88,7 @@ func _rebuild() -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var active: bool = _mode == int(entry[0])
 		b.add_theme_stylebox_override("normal",
-			UI.panel_box(Palette.PANEL_HIGH if active else Palette.PANEL, Color.TRANSPARENT))
+			UI.card_box(active))
 		b.add_theme_color_override("font_color", Palette.GOLD if active else Palette.TEXT_DIM)
 		var m: int = int(entry[0])
 		b.pressed.connect(func() -> void:
@@ -342,7 +342,7 @@ func _describe(bucket: String, amount: int) -> String:
 
 func _card(title: String, sub: String, accent: Color) -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Color.TRANSPARENT))
+	p.add_theme_stylebox_override("panel", UI.card_box())
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	p.add_child(row)

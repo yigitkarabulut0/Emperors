@@ -23,7 +23,7 @@ func _ready() -> void:
 	layer = 20
 
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Color(Palette.BG.r * 0.4, Palette.BG.g * 0.4, Palette.BG.b * 0.4, 0.93)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	# Tapping the backdrop closes, which is the gesture people try first.
 	dim.gui_input.connect(func(e: InputEvent) -> void:
@@ -36,7 +36,7 @@ func _ready() -> void:
 	SafeArea.wrap(self, Vector4(16, 16, 16, 16)).add_child(centre)
 
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))
+	card.add_theme_stylebox_override("panel", UI.skin("panel_gold", Palette.PANEL, 22, 20))
 	centre.add_child(card)
 
 	var pad := MarginContainer.new()
@@ -55,9 +55,8 @@ func _ready() -> void:
 	_grid.add_theme_constant_override("v_separation", 10)
 	col.add_child(_grid)
 
-	var close := Button.new()
-	close.text = "Close"
-	close.focus_mode = Control.FOCUS_NONE
+	var close := UI.ghost_button("Close", UI.F_BODY)
+	close.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
 	close.pressed.connect(_close)
 	col.add_child(close)
 
@@ -80,10 +79,9 @@ func _tile(id: String, selected: bool) -> Control:
 	b.custom_minimum_size = Vector2(TILE, TILE)
 	b.focus_mode = Control.FOCUS_NONE
 	b.tooltip_text = id
-	var border := Palette.GOLD if selected else Color.TRANSPARENT
-	b.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL_HIGH, border))
-	b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.GOLD_DEEP))
-	b.add_theme_stylebox_override("pressed", UI.panel_box(Palette.PANEL, Palette.GOLD))
+	b.add_theme_stylebox_override("normal", UI.card_box(selected))
+	b.add_theme_stylebox_override("hover", UI.card_box(true))
+	b.add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
 	b.pressed.connect(_pick.bind(id))
 
 	var img := TextureRect.new()

@@ -25,6 +25,7 @@ var (
 	ErrDonationCap      = errors.New("you have donated all you can today")
 	ErrLastKing         = errors.New("promote another lord before you leave")
 	ErrSameKingdom      = errors.New("you cannot raid your own kingdom")
+	ErrNotEnoughFavour  = errors.New("not enough favour")
 )
 
 // KingdomView is the Kingdom panel.

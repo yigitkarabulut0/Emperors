@@ -30,33 +30,52 @@ type Gear struct{ Attack, Defense, Speed int64 }
 
 // SoldierBase derives a soldier's stats before equipment.
 //
-// A common Gladiator lands near a rare Peasant. That overlap is the point: the
-// TYPE matters beyond the tier roll, which is what justifies the 40x price gap
-// and stops a lucky cheap roll from making the expensive option pointless.
-func SoldierBase(cfg *gameconfig.Bundle, typeID, tier string, level int64) (attack, defense, hp int64) {
+// Type and tier, and nothing else. A soldier does not have a level: what it is
+// when you recruit it is what it stays.
+//
+// It used to carry (1 + 0.09 * soldier_level), and that single term made the
+// tier ladder meaningless. Adjacent tiers are 1.35x to 1.46x apart, so four to
+// five levels of Training was enough for a tier to overtake the one above it --
+// a trained epic genuinely out-hit an untrained legendary, which is exactly
+// backwards from what the rarity on the card promises. With the level term gone
+// the ladder is strictly ordered: a legendary always beats an epic.
+//
+// A common Gladiator still lands near a rare Peasant. That overlap is the point
+// and it survives: the TYPE matters beyond the tier roll, which is what
+// justifies the 40x price gap and stops a lucky cheap roll from making the
+// expensive option pointless.
+func SoldierBase(cfg *gameconfig.Bundle, typeID, tier string) (attack, defense, hp int64) {
 	t := cfg.SoldierType(typeID)
 	if t == nil {
 		return 0, 0, 0
 	}
 	tierBP := cfg.Items.TierMultBP[tier]
-	levelBP := 10000 + cfg.Soldiers.LevelMultPerLevelBP*level
 
 	scale := func(v int64) int64 {
-		num := v * tierBP * levelBP
-		den := int64(10000) * 10000
-		return (num + den/2) / den
+		return (v*tierBP + 5000) / 10000
 	}
 	return scale(t.Attack), scale(t.Defense), scale(t.HP)
 }
 
 // HeroBase derives the player's own stats before equipment.
 //
-// The 10 + 2*level floor is load-bearing: it guarantees a player with no
-// soldiers is never a zero, so they can still win fights and progress. That was
-// an explicit requirement, not a nicety.
+// The player is the only thing in the game that grows with level, and it grows
+// in STEPS: every fifth level hands over a lump of attack and defense. It used
+// to be a flat per-level trickle, which meant the number went up on its own with
+// no decision attached -- and, alongside soldiers that also grew with level, it
+// made "what level are you" the whole of power. Everything past the step comes
+// from spending stat points, which is a choice the player makes.
+//
+// The floor is load-bearing: it guarantees a player with no soldiers is never a
+// zero, so they can still win fights and progress. That was an explicit
+// requirement, not a nicety.
 func HeroBase(cfg *gameconfig.Bundle, level, ptsAttack, ptsDefense int64) (attack, defense int64) {
 	p := cfg.Soldiers.Player
-	base := p.BaseStat + p.PerLevel*level
+	steps := int64(0)
+	if p.LevelsPerStatStep > 0 {
+		steps = level / p.LevelsPerStatStep
+	}
+	base := p.BaseStat + p.StatStep*steps
 	return base + p.PerStatPoint*ptsAttack, base + p.PerStatPoint*ptsDefense
 }
 

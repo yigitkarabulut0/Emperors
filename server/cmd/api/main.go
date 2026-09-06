@@ -111,10 +111,19 @@ func run() error {
 	go boosts.Poll(ctx, 30*time.Second)
 
 	svc := service.Deps{
-		Pool: pool, Config: bundle, Signer: signer, Now: time.Now,
+		Pool: pool, Config: bundle, Signer: signer, Now: time.Now, Log: log,
 		ShopSecret: cfg.ShopSecret,
 		Boosts:     boosts,
 	}
+
+	// The world's own clock. One job, once a day: decay kingdom reputation, so a
+	// realm that stopped playing stops holding rank. Everything else in this
+	// server settles lazily on read, which is why this is the only loop of its
+	// kind.
+	upkeep := service.Upkeep{Deps: svc, Log: log, Now: time.Now}
+	go upkeep.Run(ctx, time.Hour)
+	// Ranks, often enough to feel live and rarely enough to cost nothing.
+	go upkeep.RunLeaderboards(ctx, 5*time.Minute)
 
 	// Who is in the game right now. Held in memory on purpose: this process
 	// serves both listeners, so a fact written by a player's request on :8080 is

@@ -20,6 +20,8 @@ extends CanvasLayer
 ## two self-freeing overlays await this before they free themselves.
 
 signal answered(yes: bool)
+## A pick from a list, or "" if the player backed out.
+signal chose(option: String)
 
 ## Long enough that a double-tap on the row underneath cannot land on Confirm.
 ## Without it the dialog only moves the accident one frame later.
@@ -27,6 +29,7 @@ const ARM_DELAY := 0.25
 
 var _cfg: Dictionary
 var _confirm_btn: Button
+var _option_buttons: Array[Button] = []
 
 
 func _init(p_cfg: Dictionary) -> void:
@@ -44,6 +47,23 @@ static func ask(host: Node, cfg: Dictionary) -> bool:
 	var yes: bool = await dialog.answered
 	dialog.queue_free()
 	return yes
+
+
+## Asks the player to pick one of several options.
+##
+## Same modal, same arming delay, same reason: this one sits in front of a spend
+## too, and a mis-tap that commits a budget is exactly the accident the delay is
+## there to stop.
+##
+##     var tier := await Confirm.choose(self, {
+##         "title": "What are you hunting?",
+##         "options": ["rare", "epic"], "labels": ["Rare — 1 in 3", "Epic — 1 in 9"]})
+static func choose(host: Node, cfg: Dictionary) -> String:
+	var dialog := Confirm.new(cfg)
+	host.get_tree().root.add_child(dialog)
+	var picked: String = await dialog.chose
+	dialog.queue_free()
+	return picked
 
 
 func _ready() -> void:
@@ -111,6 +131,31 @@ func _ready() -> void:
 		line.add_child(glyph)
 		line.add_child(UI.label(UI.number(int(cost.get("amount", 0))), UI.F_NUMBER, tint))
 		col.add_child(line)
+
+	var options: Array = _cfg.get("options", [])
+	if not options.is_empty():
+		var labels: Array = _cfg.get("labels", options)
+		var picks := VBoxContainer.new()
+		picks.add_theme_constant_override("separation", UI.GAP_S)
+		col.add_child(picks)
+		for i in options.size():
+			var opt := str(options[i])
+			var btn := UI.ghost_button(str(labels[i]) if i < labels.size() else opt, UI.F_BODY)
+			btn.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
+			btn.disabled = true
+			btn.pressed.connect(func() -> void: chose.emit(opt))
+			picks.add_child(btn)
+			_option_buttons.append(btn)
+		var back := UI.ghost_button(str(_cfg.get("cancel_text", "Never mind")), UI.F_BODY)
+		back.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
+		back.pressed.connect(func() -> void: chose.emit(""))
+		col.add_child(back)
+
+		await get_tree().create_timer(ARM_DELAY).timeout
+		for b in _option_buttons:
+			if is_instance_valid(b):
+				b.disabled = false
+		return
 
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", UI.GAP_M)

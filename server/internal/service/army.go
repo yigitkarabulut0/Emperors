@@ -41,20 +41,20 @@ type SlotView struct {
 }
 
 type UnitView struct {
-	ID        string               `json:"id"`
-	Name      string               `json:"name"`
-	IsHero    bool                 `json:"is_hero"`
-	Type      string               `json:"type,omitempty"`
-	Tier      string               `json:"tier,omitempty"`
-	Level     int64                `json:"level"`
-	Attack    int64                `json:"attack"`
-	Defense   int64                `json:"defense"`
-	Speed     int64                `json:"speed"`
-	HP        int64                `json:"hp"`
-	EHP       int64                `json:"ehp"`
-	Equipped  map[string]*ItemView `json:"equipped"`
-	TrainCost int64                `json:"train_cost,omitempty"`
-	CanTrain  bool                 `json:"can_train"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	IsHero bool   `json:"is_hero"`
+	Type   string `json:"type,omitempty"`
+	Tier   string `json:"tier,omitempty"`
+	// Only the hero has one. Omitted for soldiers rather than sent as zero, so a
+	// client cannot render "level 0" next to a unit that has no level at all.
+	Level    int64                `json:"level,omitempty"`
+	Attack   int64                `json:"attack"`
+	Defense  int64                `json:"defense"`
+	Speed    int64                `json:"speed"`
+	HP       int64                `json:"hp"`
+	EHP      int64                `json:"ehp"`
+	Equipped map[string]*ItemView `json:"equipped"`
 }
 
 type NextSlot struct {
@@ -168,6 +168,23 @@ func (d Deps) GetArmy(ctx context.Context, playerID uuid.UUID) (*ArmyView, error
 	}
 
 	view.Totals = army.Sum(units)
+
+	// Cache Might on the player row, the same way GetState caches the tax rate.
+	//
+	// It is derived from the whole roster and its gear, so ranking on it any
+	// other way would mean assembling every player's army — which is why there
+	// has never been a player leaderboard. Written only when it moved, so an
+	// idle Army tab is still a pure read.
+	//
+	// A failure here is deliberately not fatal: it costs a leaderboard refresh,
+	// not the screen the player asked for.
+	if view.Totals.Might != p.Might {
+		if err := q.SetMight(ctx, sqlcdb.SetMightParams{
+			ID: playerID, Might: view.Totals.Might,
+		}); err != nil && d.Log != nil {
+			d.Log.Warn("might not cached", "err", err)
+		}
+	}
 	return view, nil
 }
 
@@ -192,7 +209,7 @@ func (d Deps) heroUnit(p sqlcdb.AppPlayer, gear map[string]*ItemView) UnitView {
 }
 
 func (d Deps) soldierUnit(p sqlcdb.AppPlayer, s sqlcdb.AppSoldier, gear map[string]*ItemView, eff estates.Effects) UnitView {
-	atk, def, baseHP := army.SoldierBase(d.Config, s.TypeID, s.Tier, int64(s.Level))
+	atk, def, baseHP := army.SoldierBase(d.Config, s.TypeID, s.Tier)
 	var spd int64
 	for _, iv := range gear {
 		if iv == nil {
@@ -210,17 +227,13 @@ func (d Deps) soldierUnit(p sqlcdb.AppPlayer, s sqlcdb.AppSoldier, gear map[stri
 	spd = spd * (10000 + eff.SoldierSpdBP) / 10000
 	hp := army.UnitHP(d.Config, baseHP, def, int64(p.Level))
 
-	uv := UnitView{
-		ID: s.ID.String(), Name: s.Name, Type: s.TypeID, Tier: s.Tier, Level: int64(s.Level),
+	// No Level. A soldier's tier IS its rank, and it does not move.
+	return UnitView{
+		ID: s.ID.String(), Name: s.Name, Type: s.TypeID, Tier: s.Tier,
 		Attack: atk, Defense: def, Speed: spd, HP: hp,
 		EHP:      army.EffectiveHP(d.Config, hp, def, int64(p.Level)),
 		Equipped: gear,
 	}
-	if s.Level < p.Level {
-		uv.CanTrain = true
-		uv.TrainCost = trainCost(d.Config, int64(s.Level), s.Tier)
-	}
-	return uv
 }
 
 func toArmyUnit(u UnitView) army.Unit {
@@ -228,22 +241,6 @@ func toArmyUnit(u UnitView) army.Unit {
 		ID: u.ID, Name: u.Name, IsHero: u.IsHero, Type: u.Type, Tier: u.Tier, Level: u.Level,
 		Attack: u.Attack, Defense: u.Defense, Speed: u.Speed, HP: u.HP, EHP: u.EHP,
 	}
-}
-
-// trainCost grows as 1.09^level, which makes it an effectively unbounded gold
-// sink — the thing a long-lived economy needs most.
-func trainCost(cfg *gameconfig.Bundle, fromLevel int64, tier string) int64 {
-	t := cfg.Soldiers.Train
-	cost := t.Base * 10000
-	for i := int64(0); i < fromLevel; i++ {
-		cost = cost * t.GrowthBP / 10000
-	}
-	cost = cost * cfg.Items.TierMultBP[tier] / 10000
-	cost = (cost + 5000) / 10000
-	if cost < 1 {
-		return 1
-	}
-	return cost
 }
 
 func (d Deps) recruitOptions(level int64, freeRecruit bool) []RecruitOpt {
@@ -471,59 +468,6 @@ func (d Deps) Recruit(ctx context.Context, playerID uuid.UUID, slotIndex int, ty
 	return &res, err
 }
 
-// Train raises a soldier one level toward the player's.
-func (d Deps) Train(ctx context.Context, playerID, soldierID uuid.UUID, wantSeq int64) (*ArmyView, error) {
-	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
-		q := sqlcdb.New(tx)
-
-		p, err := q.LockPlayer(ctx, playerID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return ErrNotFound
-			}
-			return fmt.Errorf("lock player: %w", err)
-		}
-		if err := checkSeq(p, wantSeq); err != nil {
-			return err
-		}
-
-		s, err := q.LockSoldier(ctx, sqlcdb.LockSoldierParams{ID: soldierID, PlayerID: playerID})
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return ErrNotFound
-			}
-			return fmt.Errorf("lock soldier: %w", err)
-		}
-		if s.Level >= p.Level {
-			return ErrAlreadyMaxed
-		}
-
-		cost := trainCost(d.Config, int64(s.Level), s.Tier)
-		after, err := q.SpendGold(ctx, sqlcdb.SpendGoldParams{
-			ID: playerID, Gold: cost, ActionSeq: wantSeq,
-		})
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return ErrNotEnoughGold
-			}
-			return fmt.Errorf("spend gold: %w", err)
-		}
-		if _, err := q.SetSoldierLevel(ctx, sqlcdb.SetSoldierLevelParams{
-			ID: soldierID, PlayerID: playerID, Level: s.Level + 1,
-		}); err != nil {
-			return fmt.Errorf("set level: %w", err)
-		}
-		return q.RecordGold(ctx, sqlcdb.RecordGoldParams{
-			PlayerID: playerID, Delta: -cost, BalanceAfter: after.Gold,
-			Reason: "train", RefID: strPtr(soldierID.String()),
-		})
-	})
-	if err != nil {
-		return nil, err
-	}
-	return d.GetArmy(ctx, playerID)
-}
-
 // EquipSoldier moves an item onto a soldier.
 func (d Deps) EquipSoldier(ctx context.Context, playerID, soldierID, itemID uuid.UUID) (*ArmyView, error) {
 	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
@@ -658,4 +602,50 @@ func (d Deps) Dismiss(ctx context.Context, playerID, soldierID uuid.UUID, wantSe
 	}
 	res.Army, err = d.GetArmy(ctx, playerID)
 	return &res, err
+}
+
+// TierOddsView is one soldier type's real tier distribution.
+//
+// Computed with the same TierOdds the roll itself uses, so the screen cannot
+// drift from the game — and App Store guideline 3.1.1 requires a title with
+// randomised paid items to publish exactly this.
+type TierOddsView struct {
+	TypeID string          `json:"type_id"`
+	Name   string          `json:"name"`
+	Cost   int64           `json:"cost"`
+	Odds   []items.TierOdd `json:"odds"`
+}
+
+// OddsView is the disclosure screen.
+type OddsView struct {
+	Level int64          `json:"level"`
+	Types []TierOddsView `json:"types"`
+}
+
+// GetOdds publishes the recruit tier chances at this player's level and luck.
+func (d Deps) GetOdds(ctx context.Context, playerID uuid.UUID) (*OddsView, error) {
+	q := sqlcdb.New(d.Pool)
+	p, err := q.GetPlayerByID(ctx, playerID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("odds: %w", err)
+	}
+	eff, err := d.loadEffects(ctx, q, p)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &OddsView{Level: int64(p.Level)}
+	for i := range d.Config.Soldiers.Types {
+		t := &d.Config.Soldiers.Types[i]
+		out.Types = append(out.Types, TierOddsView{
+			TypeID: t.ID, Name: t.Name,
+			Cost: recruitCost(d.Config, t, int64(p.Level)),
+			Odds: items.TierOdds(d.Config, t.Weights,
+				items.EffectiveLuckCoef(t.LuckCoef, eff.LuckBP), int(p.Level)),
+		})
+	}
+	return out, nil
 }

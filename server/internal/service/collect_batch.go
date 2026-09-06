@@ -27,13 +27,16 @@ const BatchMax = 32
 // out of energy, hit a locked job -- is a normal outcome, not an error, and the
 // client must not resend what already applied.
 type CollectBatchResult struct {
-	Applied        int       `json:"applied"`
-	AppliedThrough int64     `json:"applied_through"`
-	GoldGained     int64     `json:"gold_gained"`
-	XPGained       int64     `json:"xp_gained"`
-	LevelsGained   int       `json:"levels_gained"`
-	DiamondsGained int64     `json:"diamonds_gained,omitempty"`
-	MilestoneHit   int64     `json:"milestone_hit,omitempty"`
+	Applied        int   `json:"applied"`
+	AppliedThrough int64 `json:"applied_through"`
+	GoldGained     int64 `json:"gold_gained"`
+	XPGained       int64 `json:"xp_gained"`
+	LevelsGained   int   `json:"levels_gained"`
+	DiamondsGained int64 `json:"diamonds_gained,omitempty"`
+	MilestoneHit   int64 `json:"milestone_hit,omitempty"`
+	// Which job crossed it. Without this the client knows a milestone happened
+	// but not what it was for, and a batch can span more than one job.
+	MilestoneJob   string    `json:"milestone_job,omitempty"`
 	StoppedBecause string    `json:"stopped_because,omitempty"`
 	Snapshot       *Snapshot `json:"snapshot"`
 }
@@ -98,8 +101,12 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 		applied := map[string]int64{}
 
 		level, xp := int(p.Level), p.Xp
-		statPoints, diamonds := int64(p.StatPointsUnspent), int64(p.Diamonds)
-		var goldGained, xpGained int64
+		// DELTAS, starting at zero -- ApplyCollect adds them to the row rather
+		// than replacing it. Seeding these with the player's current totals and
+		// then handing them to a query that adds would have doubled the balance
+		// on every batch.
+		var statPoints, diamonds int64
+		var goldGained, xpGained, spentEnergy int64
 		var levelsGained int
 
 		for i, jobID := range jobIDs {
@@ -131,6 +138,7 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 
 			up := economy.AwardXP(d.Config, level, xp, reward.XP, eff.Bonuses)
 			energy = spent
+			spentEnergy += job.EnergyCost
 			// Levelling refills, and it must happen AFTER the spend or the
 			// level-up silently refunds the collect that caused it.
 			if up.Refilled {
@@ -139,13 +147,19 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 			}
 
 			level, xp = up.Level, up.XP
-			statPoints, diamonds = up.StatPoints, up.Diamonds
+			// Accumulated, not assigned. AwardXP reports what THIS collect
+			// earned, so assigning kept only the last one in the batch: a run
+			// that levelled on its first tap and not on its thirty-second
+			// credited nothing at all for that level.
+			statPoints += up.StatPoints
+			diamonds += up.Diamonds
 			levelsGained += up.LevelsGained
 			goldGained += reward.Gold
 			// The awarded figure, matching what AwardXP actually credited.
 			xpGained += economy.ApplyBucket(reward.XP, eff.Bonuses, economy.BucketXPGain)
 			if reward.MilestoneHit != nil {
 				res.MilestoneHit = reward.MilestoneHit.Collects
+				res.MilestoneJob = jobID
 			}
 
 			res.Applied = i + 1
@@ -196,10 +210,17 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 			}
 		}
 
+		// One bump for the whole batch rather than one per tap: the run is the
+		// action the player took. A failure here is deliberately not fatal —
+		// losing a quest tick is not worth failing the collect that earned it.
+		if err := d.bumpQuests(ctx, q, p, int64(res.Applied), 0, 0, spentEnergy); err != nil {
+			d.logQuestBump(err)
+		}
+
 		res.GoldGained = goldGained
 		res.XPGained = xpGained
 		res.LevelsGained = levelsGained
-		res.DiamondsGained = diamonds - int64(p.Diamonds)
+		res.DiamondsGained = diamonds
 		return nil
 	})
 	if err != nil {

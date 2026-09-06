@@ -13,9 +13,29 @@ var _list: VBoxContainer
 var _action: Button
 var _action_sub: Label
 
+## Today's three tasks.
+##
+## They live here rather than on a tenth rail entry: most of them are about
+## collecting, this is the screen a player already has open while doing it, and
+## shell_fits.gd measures the rail's column against an iPad that has no room.
+##
+## Kept OUTSIDE the job list's container because that list rebuilds by diffing
+## row counts, and quests appearing would look like the job set changed.
+var _quests: VBoxContainer
+var _quest_busy := false
+## Throttles the quest refresh. `changed` fires on every settled batch, and a
+## request per tap would be a storm; three seconds is fast enough that a counter
+## looks live and slow enough to cost nothing.
+var _quests_at_ms := 0
+const QUEST_REFRESH_MS := 3000
+
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
+
+	_quests = VBoxContainer.new()
+	_quests.add_theme_constant_override("separation", 4)
+	add_child(_quests)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -34,6 +54,8 @@ func _ready() -> void:
 	scroll.add_child(_list)
 
 	GameState.changed.connect(_rebuild)
+	GameState.changed.connect(_maybe_reload_quests)
+	_reload_quests.call_deferred()
 	# Energy regenerates without the snapshot changing, so the button has to be
 	# re-armed from its own signal or it stays disabled until something else
 	# happens to redraw it.
@@ -245,3 +267,85 @@ func _refresh_action() -> void:
 	else:
 		_action_sub.text = "+%s gold   +%d xp" % [
 			UI.number(int(job.get("gold_payout", 0))), int(job.get("xp_payout", 0))]
+
+
+## Draws today's tasks, and refreshes them after anything that could advance one.
+func _reload_quests() -> void:
+	var res: Api.Response = await Api.get_json("/v1/quests")
+	if not res.ok:
+		return
+	for c in _quests.get_children():
+		c.queue_free()
+
+	var list: Array = res.data.get("quests", [])
+	if list.is_empty():
+		return
+	_quests.add_child(UI.label("TODAY", UI.F_MICRO, Palette.TEXT_FAINT))
+	for qv in list:
+		_quests.add_child(_quest_row(qv))
+
+
+func _quest_row(qv: Dictionary) -> Control:
+	var done := bool(qv.get("done", false))
+	var claimed := bool(qv.get("claimed", false))
+
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(0, 44)
+	b.focus_mode = Control.FOCUS_NONE
+	b.disabled = claimed or not done
+	b.add_theme_stylebox_override("normal", UI.panel_box(
+		Palette.PANEL_HIGH if (done and not claimed) else Palette.PANEL,
+		Palette.GOLD_DEEP if (done and not claimed) else Palette.LINE))
+	b.add_theme_stylebox_override("disabled", UI.panel_box(Palette.PANEL, Palette.LINE))
+	b.pressed.connect(_claim_quest.bind(int(qv.get("slot", 0))))
+
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right"]:
+		margin.add_theme_constant_override("margin_" + side, 10)
+	b.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	margin.add_child(row)
+
+	var name_col := VBoxContainer.new()
+	name_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	name_col.add_theme_constant_override("separation", 0)
+	row.add_child(name_col)
+	name_col.add_child(UI.label(str(qv.get("name", "")), UI.F_CAPTION,
+		Palette.TEXT_DIM if claimed else Palette.TEXT))
+	name_col.add_child(UI.label("%d / %d" % [int(qv.get("progress", 0)), int(qv.get("target", 0))],
+		UI.F_MICRO, Palette.TEXT_FAINT))
+
+	var right := "TAKEN"
+	var tint := Palette.TEXT_FAINT
+	if not claimed:
+		right = "CLAIM" if done else "%s g  ·  %s xp" % [
+			UI.number(int(qv.get("gold", 0))), UI.number(int(qv.get("xp", 0)))]
+		tint = Palette.GOLD_INK if done else Palette.TEXT_DIM
+	row.add_child(UI.label(right, UI.F_CAPTION, tint))
+	return b
+
+
+func _claim_quest(slot: int) -> void:
+	if _quest_busy:
+		return
+	_quest_busy = true
+	var seq := int(GameState.player().get("action_seq", 0)) + 1
+	var res: Api.Response = await Api.post_json("/v1/quests/claim",
+		{"slot": slot, "action_seq": seq})
+	_quest_busy = false
+	if not res.ok:
+		GameState.action_failed.emit(res.error)
+	await GameState.refresh()
+	await _reload_quests()
+
+
+func _maybe_reload_quests() -> void:
+	var now := Time.get_ticks_msec()
+	if now - _quests_at_ms < QUEST_REFRESH_MS:
+		return
+	_quests_at_ms = now
+	await _reload_quests()

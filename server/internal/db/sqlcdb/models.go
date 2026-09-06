@@ -143,6 +143,13 @@ type AppKingdomUpgrade struct {
 	Level     int32
 }
 
+type AppLeaderboardEntry struct {
+	Board    string
+	Rank     int32
+	PlayerID uuid.UUID
+	Value    int64
+}
+
 type AppPlayer struct {
 	ID                  uuid.UUID
 	Username            string
@@ -183,6 +190,11 @@ type AppPlayer struct {
 	TaxUnlogged         int64
 	LuckBp              int32
 	LuckExpiresAt       *time.Time
+	XpBoostBp           int32
+	XpBoostExpiresAt    *time.Time
+	DailyStreak         int32
+	DailyClaimedOn      pgtype.Date
+	Might               int64
 }
 
 type AppPlayerHolding struct {
@@ -216,10 +228,31 @@ type AppPlayerJobProgress struct {
 	Collects int64
 }
 
+type AppPlayerQuest struct {
+	PlayerID  uuid.UUID
+	Day       pgtype.Date
+	Collects  int32
+	Wins      int32
+	Buys      int32
+	Energy    int32
+	Claimed   int32
+	UpdatedAt time.Time
+	QuestIds  []string
+}
+
 type AppPlayerUpgrade struct {
 	PlayerID  uuid.UUID
 	UpgradeID string
 	Level     int32
+}
+
+type AppRevengeToken struct {
+	BattleID  uuid.UUID
+	PlayerID  uuid.UUID
+	TargetID  uuid.UUID
+	ExpiresAt time.Time
+	UsedAt    *time.Time
+	CreatedAt time.Time
 }
 
 type AppServerInfo struct {

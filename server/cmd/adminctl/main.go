@@ -1,5 +1,5 @@
 // Command adminctl bootstraps the admin surface: create the first user, and
-// publish the embedded seed as balance version 1.
+// publish the embedded seed as a balance version.
 //
 // Creating admins is a local command rather than an endpoint on purpose. An
 // account that can grant currency and ban players should not be creatable by
@@ -22,19 +22,20 @@ import (
 )
 
 func main() {
-	cmd := flag.String("cmd", "", "create-admin | seed-balance")
+	cmd := flag.String("cmd", "", "create-admin | seed-balance | publish-balance")
 	user := flag.String("user", "", "admin username")
 	pass := flag.String("pass", "", "admin password")
 	role := flag.String("role", "owner", "owner | designer | moderator | analyst")
+	note := flag.String("note", "", "why this balance is being published")
 	flag.Parse()
 
-	if err := run(*cmd, *user, *pass, *role); err != nil {
+	if err := run(*cmd, *user, *pass, *role, *note); err != nil {
 		fmt.Fprintf(os.Stderr, "adminctl: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(cmd, user, pass, role string) error {
+func run(cmd, user, pass, role, note string) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -92,6 +93,33 @@ func run(cmd, user, pass, role string) error {
 			return err
 		}
 		fmt.Printf("published balance version %d (%d bytes)\n", v.ID, v.Bytes)
+		return nil
+
+	case "publish-balance":
+		// seed-balance deliberately refuses once a version exists, because its
+		// job is bootstrapping and re-running it must not quietly overwrite what
+		// the panel has published. This is the other case: the balance in the
+		// repo has genuinely moved and the running server should be told.
+		//
+		// Publish validates BEFORE writing, so a document that would not load
+		// never reaches the versions table and never becomes a rollback target
+		// somebody could pick by mistake.
+		if note == "" {
+			return fmt.Errorf("-note is required: say why this balance is being published")
+		}
+		seed, err := gameconfig.LoadSeed()
+		if err != nil {
+			return err
+		}
+		svc := &admin.Service{
+			Pool:   pool,
+			Config: gameconfig.NewStore(seed, admin.BalanceLoader{Pool: pool}, nil),
+		}
+		v, err := svc.Publish(ctx, seed.Doc(), note, "adminctl")
+		if err != nil {
+			return err
+		}
+		fmt.Printf("published and activated balance version %d (%d bytes)\n", v.ID, v.Bytes)
 		return nil
 	}
 	return fmt.Errorf("unknown -cmd %q", cmd)

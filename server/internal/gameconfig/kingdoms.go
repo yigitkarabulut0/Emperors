@@ -11,6 +11,9 @@ type KingdomsConfig struct {
 	Upgrades   []Upgrade        `json:"upgrades"`
 	Donation   DonationConfig   `json:"donation"`
 	Reputation ReputationConfig `json:"reputation"`
+	// What a donor gets back personally. Without it, donating is pure cost to
+	// the individual and pure gain to the collective, and nobody donates.
+	FavourShop []FavourGood `json:"favour_shop"`
 }
 
 type KingdomLevel struct {
@@ -25,6 +28,17 @@ type DonationConfig struct {
 	XPPerGold        int64 `json:"xp_per_gold"`
 	XPPerReputation  int64 `json:"xp_per_reputation"`
 	FavourPerGold    int64 `json:"favour_per_gold"`
+}
+
+// FavourGood is one line of the Kingdom Shop.
+type FavourGood struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Cost  int64  `json:"cost"`
+	Blurb string `json:"blurb"`
+	// Only the timed boost uses these.
+	BP    int64 `json:"bp,omitempty"`
+	Hours int64 `json:"hours,omitempty"`
 }
 
 type ReputationConfig struct {

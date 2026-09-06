@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const bumpActionSeq = `-- name: BumpActionSeq :one
-UPDATE app.players SET action_seq = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+UPDATE app.players SET action_seq = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
 `
 
 type BumpActionSeqParams struct {
@@ -64,6 +65,176 @@ func (q *Queries) BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (A
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
+	)
+	return i, err
+}
+
+const bumpQuestProgress = `-- name: BumpQuestProgress :one
+INSERT INTO app.player_quests (player_id, day, collects, wins, buys, energy, quest_ids)
+VALUES ($1, $2, $3, $4,
+        $5, $6, $7)
+ON CONFLICT (player_id, day) DO UPDATE
+SET collects = app.player_quests.collects + EXCLUDED.collects,
+    wins     = app.player_quests.wins     + EXCLUDED.wins,
+    buys     = app.player_quests.buys     + EXCLUDED.buys,
+    energy   = app.player_quests.energy   + EXCLUDED.energy,
+    updated_at = now()
+RETURNING player_id, day, collects, wins, buys, energy, claimed, updated_at, quest_ids
+`
+
+type BumpQuestProgressParams struct {
+	PlayerID uuid.UUID
+	Day      pgtype.Date
+	Collects int32
+	Wins     int32
+	Buys     int32
+	Energy   int32
+	QuestIds []string
+}
+
+// Bumps today's quest counters, creating the row on first action of the day.
+//
+// One statement so the hot paths (collect, attack, buy) pay a single round trip
+// and never a read-then-write race.
+func (q *Queries) BumpQuestProgress(ctx context.Context, arg BumpQuestProgressParams) (AppPlayerQuest, error) {
+	row := q.db.QueryRow(ctx, bumpQuestProgress,
+		arg.PlayerID,
+		arg.Day,
+		arg.Collects,
+		arg.Wins,
+		arg.Buys,
+		arg.Energy,
+		arg.QuestIds,
+	)
+	var i AppPlayerQuest
+	err := row.Scan(
+		&i.PlayerID,
+		&i.Day,
+		&i.Collects,
+		&i.Wins,
+		&i.Buys,
+		&i.Energy,
+		&i.Claimed,
+		&i.UpdatedAt,
+		&i.QuestIds,
+	)
+	return i, err
+}
+
+const claimDailyLogin = `-- name: ClaimDailyLogin :one
+UPDATE app.players
+SET daily_streak     = $1,
+    daily_claimed_on = $2,
+    diamonds         = diamonds + $3
+WHERE id = $4
+  AND (daily_claimed_on IS NULL OR daily_claimed_on < $2)
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+`
+
+type ClaimDailyLoginParams struct {
+	Streak   int32
+	Today    pgtype.Date
+	Diamonds int64
+	ID       uuid.UUID
+}
+
+// Claims today's calendar square.
+//
+// The whole rule lives in the WHERE: it only lands when the player has not
+// already claimed on this local date. Two taps, two devices, a retried request —
+// the second one gets zero rows and grants nothing. There is no read-then-write
+// window to lose.
+func (q *Queries) ClaimDailyLogin(ctx context.Context, arg ClaimDailyLoginParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, claimDailyLogin,
+		arg.Streak,
+		arg.Today,
+		arg.Diamonds,
+		arg.ID,
+	)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
+	)
+	return i, err
+}
+
+const claimQuest = `-- name: ClaimQuest :one
+UPDATE app.player_quests
+SET claimed = claimed | $1
+WHERE player_id = $2 AND day = $3
+  AND (claimed & $1) = 0
+RETURNING player_id, day, collects, wins, buys, energy, claimed, updated_at, quest_ids
+`
+
+type ClaimQuestParams struct {
+	Bit      int32
+	PlayerID uuid.UUID
+	Day      pgtype.Date
+}
+
+// Claims one quest slot. The bit test is inside the WHERE, so a double tap gets
+// zero rows and is paid once.
+func (q *Queries) ClaimQuest(ctx context.Context, arg ClaimQuestParams) (AppPlayerQuest, error) {
+	row := q.db.QueryRow(ctx, claimQuest, arg.Bit, arg.PlayerID, arg.Day)
+	var i AppPlayerQuest
+	err := row.Scan(
+		&i.PlayerID,
+		&i.Day,
+		&i.Collects,
+		&i.Wins,
+		&i.Buys,
+		&i.Energy,
+		&i.Claimed,
+		&i.UpdatedAt,
+		&i.QuestIds,
 	)
 	return i, err
 }
@@ -71,7 +242,7 @@ func (q *Queries) BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (A
 const createPlayer = `-- name: CreatePlayer :one
 INSERT INTO app.players (username, display_name, energy_milli, reset_offset_minutes)
 VALUES ($1, $2, $3, $4)
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
 `
 
 type CreatePlayerParams struct {
@@ -129,6 +300,48 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (App
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
+	)
+	return i, err
+}
+
+const ensureQuestDay = `-- name: EnsureQuestDay :one
+INSERT INTO app.player_quests (player_id, day, quest_ids)
+VALUES ($1, $2, $3)
+ON CONFLICT (player_id, day) DO UPDATE
+SET updated_at = app.player_quests.updated_at
+RETURNING player_id, day, collects, wins, buys, energy, claimed, updated_at, quest_ids
+`
+
+type EnsureQuestDayParams struct {
+	PlayerID uuid.UUID
+	Day      pgtype.Date
+	QuestIds []string
+}
+
+// Creates the day's row with its three quests if it is not there yet, and
+// returns whatever the row holds either way.
+//
+// The DO UPDATE is a no-op touch purely so RETURNING gives a row on conflict:
+// the quest_ids of an existing day are never rewritten, which is the whole
+// point — the board is frozen once it exists.
+func (q *Queries) EnsureQuestDay(ctx context.Context, arg EnsureQuestDayParams) (AppPlayerQuest, error) {
+	row := q.db.QueryRow(ctx, ensureQuestDay, arg.PlayerID, arg.Day, arg.QuestIds)
+	var i AppPlayerQuest
+	err := row.Scan(
+		&i.PlayerID,
+		&i.Day,
+		&i.Collects,
+		&i.Wins,
+		&i.Buys,
+		&i.Energy,
+		&i.Claimed,
+		&i.UpdatedAt,
+		&i.QuestIds,
 	)
 	return i, err
 }
@@ -190,7 +403,7 @@ func (q *Queries) FindInvitablePlayers(ctx context.Context, arg FindInvitablePla
 }
 
 const getPlayerByID = `-- name: GetPlayerByID :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at FROM app.players WHERE id = $1
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might FROM app.players WHERE id = $1
 `
 
 func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error) {
@@ -236,12 +449,17 @@ func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, e
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
 	)
 	return i, err
 }
 
 const getPlayerByUsername = `-- name: GetPlayerByUsername :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at FROM app.players WHERE lower(username) = lower($1)
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might FROM app.players WHERE lower(username) = lower($1)
 `
 
 func (q *Queries) GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error) {
@@ -287,12 +505,43 @@ func (q *Queries) GetPlayerByUsername(ctx context.Context, lower string) (AppPla
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
+	)
+	return i, err
+}
+
+const getQuestProgress = `-- name: GetQuestProgress :one
+SELECT player_id, day, collects, wins, buys, energy, claimed, updated_at, quest_ids FROM app.player_quests WHERE player_id = $1 AND day = $2
+`
+
+type GetQuestProgressParams struct {
+	PlayerID uuid.UUID
+	Day      pgtype.Date
+}
+
+func (q *Queries) GetQuestProgress(ctx context.Context, arg GetQuestProgressParams) (AppPlayerQuest, error) {
+	row := q.db.QueryRow(ctx, getQuestProgress, arg.PlayerID, arg.Day)
+	var i AppPlayerQuest
+	err := row.Scan(
+		&i.PlayerID,
+		&i.Day,
+		&i.Collects,
+		&i.Wins,
+		&i.Buys,
+		&i.Energy,
+		&i.Claimed,
+		&i.UpdatedAt,
+		&i.QuestIds,
 	)
 	return i, err
 }
 
 const lockPlayer = `-- name: LockPlayer :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at FROM app.players WHERE id = $1 FOR UPDATE
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might FROM app.players WHERE id = $1 FOR UPDATE
 `
 
 // Locks the row for the duration of the transaction. Every mutating action
@@ -341,6 +590,11 @@ func (q *Queries) LockPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, erro
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
 	)
 	return i, err
 }
@@ -379,7 +633,7 @@ func (q *Queries) RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time)
 
 const setAvatar = `-- name: SetAvatar :one
 UPDATE app.players SET avatar = $2, action_seq = $3
-WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
 `
 
 type SetAvatarParams struct {
@@ -431,6 +685,11 @@ func (q *Queries) SetAvatar(ctx context.Context, arg SetAvatarParams) (AppPlayer
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
 	)
 	return i, err
 }
@@ -443,7 +702,7 @@ SET stat_energy  = stat_energy  + $2,
     stat_points_unspent = stat_points_unspent - $5,
     action_seq   = $6
 WHERE id = $1 AND stat_points_unspent >= $5
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
 `
 
 type SpendStatPointsParams struct {
@@ -507,6 +766,11 @@ func (q *Queries) SpendStatPoints(ctx context.Context, arg SpendStatPointsParams
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
 	)
 	return i, err
 }

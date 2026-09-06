@@ -9,8 +9,8 @@ import (
 // access token, and a local restart happens constantly. It was signing the
 // player out mid-play every time the server came back.
 func TestDevSecretsAreStableAcrossBoots(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())    // honoured on Linux
-	t.Setenv("HOME", t.TempDir())              // and this is what darwin uses
+	t.Setenv("XDG_CACHE_HOME", t.TempDir()) // honoured on Linux
+	t.Setenv("HOME", t.TempDir())           // and this is what darwin uses
 
 	first, err := devSecret("token_seed")
 	if err != nil {

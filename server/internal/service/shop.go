@@ -251,6 +251,10 @@ func (d Deps) Buy(ctx context.Context, playerID uuid.UUID, slot int, wantSeq int
 			return fmt.Errorf("ledger: %w", err)
 		}
 
+		if err := d.bumpQuests(ctx, q, p, 0, 0, 1, 0); err != nil {
+			d.logQuestBump(err)
+		}
+
 		res = BuyResult{Item: it, Paid: offer.Price, GoldLeft: itoa(after.Gold)}
 		return nil
 	})

@@ -29,13 +29,21 @@ SLUGS = ["grapes","strawberries","wheat","orchard","timber","fish","stone","iron
 ENERGY = [1,2,3,4,6,8,10,13,16,20,25,31,38,46,55]
 UNLOCK = [1,3,5,8,11,14,18,22,26,30,35,40,45,52,60]
 GPE_BASE, GPE_STEP = 2.00, 1.22
-# Experience per energy ramps the way gold does, one step per rung. It used to be
-# (1.40 + 0.02 * unlock_level), which rises 1.3x across the whole ladder while the
-# experience a level costs rises about 400x -- so every rung earned gold faster
-# and levels slower, and the curve flattened into a wall. This rises 5.5x.
-# Deliberately shallower than gold's 13.3x: the gold ladder has to stay the
-# steeper one, or "use the best job you can afford" stops being a gold decision.
-XPE_BASE, XPE_STEP = 2.00, 1.14
+# Experience per energy ramps the way gold does, one step per rung, but far more
+# gently: 2.1x across the ladder against gold's 13.3x.
+#
+# The step is what sets the length of the game, and it is easy to get wrong in
+# both directions. At (1.40 + 0.02 * unlock_level) it rose 1.3x while a level's
+# cost rises about 400x, so the curve flattened into a wall. The correction
+# overshot to 1.14 -- a 5.5x rise -- which, landing on top of a doubled energy
+# budget, put level 60 at 22 days for a five-sessions-a-day player against a
+# design target of 91. At 1.06 the same player reaches the cap around day 49 and
+# a three-a-day player around day 82; measure it with scripts/pace.py before
+# touching this number.
+#
+# It must stay shallower than gold's ladder, or "use the best job you can
+# afford" stops being a gold decision and becomes an experience one.
+XPE_BASE, XPE_STEP = 2.00, 1.06
 
 jobs = []
 for i, (name, slug, e, u) in enumerate(zip(NAMES, SLUGS, ENERGY, UNLOCK), start=1):
@@ -59,7 +67,7 @@ MILESTONES = [
 
 emit("jobs.json", json.dumps({
     "_comment": "Collect ladder. gold = round(energy * 2.00 * 1.22^max(0,n-2)); "
-                "xp = max(2, round(energy * 2.00 * 1.14^max(0,n-2))). "
+                "xp = max(2, round(energy * 2.00 * 1.06^max(0,n-2))). "
                 "Gold-per-energy rises 13.3x across the ladder so the best affordable "
                 "job is always correct, while leftover energy still earns something. "
                 "Milestone bonuses REPLACE (max +30%), they do not stack.",
@@ -82,6 +90,25 @@ for L in range(1, LEVEL_CAP + 1):
 AVATARS = ["knight", "king", "queen", "archer", "monk", "berserk",
            "knave", "herald", "templar", "witch", "captain", "princess"]
 
+# Named rather than inlined below, because the estates self-check has to compute
+# what active collecting earns per day, and it must do that from the same numbers
+# the server will run. Hardcoding a second copy is how the old check came to be
+# dividing by a figure four rebalances out of date.
+ENERGY = {
+    "base_max": 120,
+    # The ceiling grows on its own, no stat point required. Without this the
+    # pool fills during any gap longer than it takes to fill, and every
+    # further minute of regeneration is thrown away -- which made the regen
+    # rate a number that only mattered to somebody checking in every half
+    # hour. See scripts/pace.py for the measurement.
+    "per_level": 4,
+    "per_stat_point": 5,
+    "regen_base_seconds": 30,
+    "overflow": False,
+    "levelup_refill": True,
+    "regen_bonus_cap_bp": 6000,
+}
+
 emit("progression.json", json.dumps({
     "_comment": "xp_to_next(L) = floor(1.7*L^2.2 + 10L + 5). Energy regen is FLAT: "
                 "Max Energy is a 'how long can I be away' stat, regen speed is a "
@@ -89,20 +116,7 @@ emit("progression.json", json.dumps({
                 "max, buying Max Energy cannot inflate daily income — this is what "
                 "bounds the entire gold supply.",
     "level_cap": LEVEL_CAP,
-    "energy": {
-        "base_max": 120,
-        # The ceiling grows on its own, no stat point required. Without this the
-        # pool fills during any gap longer than it takes to fill, and every
-        # further minute of regeneration is thrown away -- which made the regen
-        # rate a number that only mattered to somebody checking in every half
-        # hour. See scripts/pace.py for the measurement.
-        "per_level": 4,
-        "per_stat_point": 5,
-        "regen_base_seconds": 30,
-        "overflow": False,
-        "levelup_refill": True,
-        "regen_bonus_cap_bp": 6000,
-    },
+    "energy": ENERGY,
     # The design specifies 3. It shipped as 1, so every level-up delivered a
     # third of the intended reward.
     "stat_points_per_level": 3,
@@ -115,6 +129,61 @@ emit("progression.json", json.dumps({
     # it is the one reward that cannot be farmed faster by playing more, since
     # the XP curve already bounds it.
     "levelup_diamonds": 5,
+    # Daily quests: three a day, drawn from this list.
+    #
+    # The design specified the REWARD formula and nothing else — its own review
+    # says "entirely unspecified: no quest list, no reset time, no reroll rule,
+    # no claim idempotency, no schema". This is that list.
+    #
+    # Every kind watches an action the player already takes, and the targets are
+    # sized so all three fall out of one ordinary session rather than demanding
+    # an extra one. A daily that cannot be finished on a normal day is a daily
+    # that teaches players to ignore dailies.
+    #
+    # tier is the reward multiplier: reward = 4*level*tier xp, 12*level*tier gold.
+    "quests": {
+        "per_day": 3,
+        "xp_per_level_per_tier": 4,
+        "gold_per_level_per_tier": 12,
+        "pool": [
+            {"id": "collect_20", "kind": "collects", "target": 20, "tier": 1,
+             "name": "An Honest Day", "blurb": "Work twenty jobs."},
+            {"id": "collect_60", "kind": "collects", "target": 60, "tier": 2,
+             "name": "The Long Shift", "blurb": "Work sixty jobs."},
+            {"id": "energy_150", "kind": "energy", "target": 150, "tier": 2,
+             "name": "Nothing Wasted", "blurb": "Spend 150 energy."},
+            {"id": "energy_300", "kind": "energy", "target": 300, "tier": 3,
+             "name": "To the Last Drop", "blurb": "Spend 300 energy."},
+            # Gated behind the Fight tab's own unlock level, so it is never
+            # offered to somebody who cannot open the screen.
+            {"id": "win_1", "kind": "wins", "target": 1, "tier": 1,
+             "name": "First Blood", "blurb": "Win a raid.", "min_level": 10},
+            {"id": "win_3", "kind": "wins", "target": 3, "tier": 3,
+             "name": "A Good Week's Work", "blurb": "Win three raids.", "min_level": 10},
+            {"id": "buy_1", "kind": "buys", "target": 1, "tier": 1,
+             "name": "Well Equipped", "blurb": "Buy something from the market.",
+             "min_level": 2},
+            {"id": "buy_3", "kind": "buys", "target": 3, "tier": 2,
+             "name": "The Armourer's Friend", "blurb": "Buy three things.",
+             "min_level": 2},
+        ],
+    },
+    # The daily login calendar: seven squares, then it starts again.
+    #
+    # Levelling was the only diamond faucet — 295 across the whole climb to the
+    # cap — which is roughly nine a day at the start and nothing at all once a
+    # player slows down. This is the other half the design always specified, and
+    # it is the half that pays a player for COMING BACK rather than for grinding.
+    #
+    # Rising within the week, and the seventh square worth as much as the first
+    # three together, because the point is the return trip on day six, not the
+    # reward on day one.
+    "daily_login": {
+        "rewards": [5, 5, 10, 10, 15, 15, 25],
+        # Miss a day and the calendar starts over. Without this the streak is
+        # just a counter and the seventh square arrives whenever it arrives.
+        "reset_on_miss": True,
+    },
     # What diamonds buy.
     #
     # Never gold and never power -- that rule is what keeps the premium currency
@@ -164,6 +233,50 @@ print("progression.json:", LEVEL_CAP, "levels, total xp to cap =", f"{cum:,}")
 TIER_IDS = ["common", "uncommon", "rare", "epic", "legendary", "mystic", "special"]
 TIER_MULT = [1.00, 1.35, 1.85, 2.55, 3.60, 5.20, 7.60]
 TIER_PRICE_MULT = [1.0, 1.4, 2.2, 3.6, 6.0, 10.0, 17.0]
+
+# The roll band, and why it is this narrow.
+#
+# A tier has to MEAN something: a legendary must beat an epic, every time, or the
+# ladder the whole game is sorted by is decoration. That is a constraint between
+# two numbers, and it was violated. The widest a roll could swing was
+# 1.15 quality x 1.15 masterwork / 0.85 = 1.556, while the CLOSEST two tiers sit
+# is 1.35 (common to uncommon) -- so every adjacent pair could invert, and a
+# masterwork epic really did out-hit a poorly rolled legendary.
+#
+# 1.05 x 1.08 / 0.95 = 1.194, comfortably inside 1.35 with room for integer
+# rounding at small base stats. Validate enforces the relationship, so widening
+# the band or narrowing the ladder fails the publish rather than the player.
+QUALITY_MIN_PCT, QUALITY_MAX_PCT = 95, 105
+MASTERWORK_MULT_PCT = 108
+
+# The rarity ladder, emitted rather than hand-kept.
+#
+# stat_mult used to live only in a hand-edited tiers.json and had drifted to a
+# completely different curve from the one the game runs on -- it said a special
+# was 13.86x a common while the actual multiplier, tier_mult_bp, said 7.60x.
+# Nothing read it, so nothing caught it, and anyone reasoning about power from
+# that file was reasoning about a ladder that does not exist. It is derived from
+# TIER_MULT here so the two cannot disagree again.
+#
+# Colours stay in balance rather than client code so they can be retuned from
+# the panel. Tier is never signalled by colour ALONE: every card also carries the
+# tier name and a 1-7 pip count, because a gray/green/blue/violet/gold/magenta/
+# red ladder is not reliably separable under deuteranopia.
+TIER_NAMES = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mystic", "Special"]
+TIER_COLORS = ["#9BA1A6", "#4ADE80", "#38BDF8", "#A855F7", "#F5C518", "#E040FB", "#EF4444"]
+
+emit("tiers.json", json.dumps({
+    "_comment": "The rarity ladder. stat_mult is DERIVED from the same TIER_MULT that items.json's "
+                "tier_mult_bp comes from, so the two can never drift apart again. The ladder is "
+                "strictly ordered in power and the roll band is narrower than the closest two rungs, "
+                "so a higher tier always out-hits a lower one. Tier is NEVER signalled by colour alone: "
+                "every card also shows the tier name and a 1-7 pip count.",
+    "tiers": [
+        {"id": TIER_IDS[i], "rank": i + 1, "name": TIER_NAMES[i],
+         "color": TIER_COLORS[i], "pips": i + 1, "stat_mult": TIER_MULT[i]}
+        for i in range(7)
+    ],
+}, indent=2) + "\n")
 
 SLOT_BASE = {
     #            atk def spd
@@ -270,8 +383,8 @@ emit("items.json", json.dumps({
     "tier_price_mult_bp": {TIER_IDS[i]: int(round(TIER_PRICE_MULT[i] * 10000)) for i in range(7)},
     "slot_base": SLOT_BASE,
     "level_mult_per_ilvl_bp": 900,
-    "quality": {"min_pct": 85, "max_pct": 115},
-    "masterwork": {"chance_bp": 300, "mult_pct": 115},
+    "quality": {"min_pct": QUALITY_MIN_PCT, "max_pct": QUALITY_MAX_PCT},
+    "masterwork": {"chance_bp": 300, "mult_pct": MASTERWORK_MULT_PCT},
     "price": {"coef": 1.6, "exponent": 1.35, "sell_ratio_bp": 2500},
     "speed_power_weight_bp": 5000,
     "shop": {
@@ -336,16 +449,14 @@ slots = [{
 
 emit("soldiers.json", json.dumps({
     "_comment": "Soldiers. slot_cost(n) = 500 * 2.05^(n-1); recruit_cost = base * (1 + 0.11*level); "
-                "stats = type_stat * tier_mult * (1 + 0.09*soldier_level). A common Gladiator is about "
-                "as strong as a rare Peasant, which is what justifies the 40x price gap: the TYPE matters "
-                "beyond the tier roll. Train raises a soldier's level toward the player's for "
-                "60 * 1.09^level * tier_mult, turning 'your veteran is obsolete' into 'invest in your "
-                "veteran' — and, because 1.09^L grows without limit, an unbounded late-game gold sink.",
+                "stats = type_stat * tier_mult. A soldier has NO level: its tier is its rank, it is "
+                "fixed at recruitment and it never grows. A common Gladiator is about as strong as a "
+                "rare Peasant, which is what justifies the 40x price gap: the TYPE matters beyond the "
+                "tier roll. Because nothing but the tier scales a soldier, the tier ladder is strictly "
+                "ordered in power: a legendary always beats an epic.",
     "max_slots": MAX_SLOTS,
     "slots": slots,
     "recruit_cost_per_level_bp": 1100,
-    "level_mult_per_level_bp": 900,
-    "train": {"base": 60, "growth_bp": 10900},
     # Onboarding grants (economy.md 16). Without these a new player grinds their
     # whole first session — through every level-up refill — and still finishes
     # about 180 gold short of their first barracks slot, so the tab unlocks
@@ -358,16 +469,31 @@ emit("soldiers.json", json.dumps({
     },
     "types": SOLDIER_TYPES,
     # economy.md 7.1-7.3
+    #
+    # The player is the ONLY thing in the game that grows with level, and it
+    # grows in steps rather than continuously: a flat per-level trickle made the
+    # number go up without a decision attached to it. Every fifth level hands
+    # over a visible lump of attack and defense; everything beyond that comes
+    # from spending stat points, which is a choice.
     "player": {
         "base_stat": 10,
-        "per_level": 2,
+        "levels_per_stat_step": 5,
+        "stat_step": 5,
         "per_stat_point": 4,
         "base_hp": 100,
-        "hp_per_level": 12,
+        # The player's HP grows through DEFENSE, not through a per-level
+        # trickle: defense buys HP at 3.0x below, and defense comes from the
+        # every-fifth-level step and from spent stat points. A flat per-level
+        # term on top of that was power handed over for nothing.
+        "hp_per_level": 0,
     },
     "combat": {
         "hp_per_defense_bp": 30000,      # 3.0x — Defense buys HP as well as mitigation
-        "hp_level_bonus_bp": 200,        # +2% per owner level
+        # Was +2% per owner level, applied to soldiers as well as the player.
+        # That is army power bought with nothing but time, which is exactly what
+        # a fixed roster is not allowed to have -- and with attack no longer
+        # scaling, HP outrunning it dragged fights into the round cap.
+        "hp_level_bonus_bp": 0,
         "dr_level_coef": 40,             # DR = def / (def + 40*level + 60)
         "dr_base": 60,
         "dr_cap_bp": 6000,               # hard 60% ceiling, or tanks become unkillable
@@ -377,7 +503,15 @@ emit("soldiers.json", json.dumps({
         # cannot move the win curve at all. The ONLY knob that can is a per-side,
         # per-battle roll — Fortune of War. A per-unit roll fails too, because its
         # effect shrinks as 1/sqrt(N) and the curve would drift as players buy slots.
-        "dmg_k_bp": 1600,
+        # Damage per point of attack. Raised from 0.16 because removing the
+        # soldier level term changed what this is measured against: attack, HP
+        # and defense used to scale together, so the ratio held at every level
+        # by construction. With soldiers fixed, the ratio is whatever the base
+        # numbers say, and at 0.16 that was ~30-round fights with one in ten
+        # hitting the 60-round cap and being decided on health fraction.
+        # Measured with TestRoundCountByLevel; 0.20 is the gentlest value that
+        # clears the cap entirely.
+        "dmg_k_bp": 2000,
         # 0.25, not the design's 0.15. Measured on symmetric level-60 10v10
         # fights, 0.15 left 3.8% of battles hitting the round cap and resolving on
         # health fraction instead of a kill — which makes MAX_ROUNDS a design
@@ -434,7 +568,7 @@ for t in SOLDIER_TYPES:
 UPGRADES = [
     # id, name, bucket, max_lv, per_level, base cost, growth, blurb
     ("granary",    "Granary",             "collect_income_bp", 20,  300, 400,   1.36, "Every collect pays more."),
-    ("tithe_barn", "Tithe Barn",          "tax_income_bp",     20,  500, 500,   1.36, "Your estates earn more, and hold it longer while you are away."),
+    ("tithe_barn", "Tithe Barn",          "tax_income_bp",     20,  150, 500,   1.36, "Your estates earn more."),
     ("scriptorium","Scriptorium",         "xp_bp",             15,  200, 900,   1.42, "Learn faster from everything you do."),
     ("beacons",    "Watchtower Beacons",  "energy_regen_bp",   10,  400, 4000,  1.55, "Energy returns faster."),
     ("larder",     "Larder",              "max_energy_flat",   25,    4, 300,   1.28, "Hold more energy, so a long absence wastes less."),
@@ -469,23 +603,35 @@ HOLDINGS = [
     ("river_port",  "River Port",    45, 7),
     ("mint",        "Ducal Mint",    55, 8),
 ]
-HOLDING_MAX_LEVEL = 10
+# Five levels, not ten. The totals below are unchanged by this -- each level is
+# simply twice as thick -- but a purchase you can SEE is the whole point of the
+# tab. At ten levels the first one bought a tenth of the smallest estate: +1
+# gold/hour against a base of 28, a 3% move that read as nothing happening, and
+# players correctly left every holding at 0.
+HOLDING_MAX_LEVEL = 5
 
 holdings = []
 for i, (hid, name, unlock, _tier) in enumerate(HOLDINGS):
-    # Yield per level grows 1.5x per holding, so later estates matter without
-    # making the first ones worthless.
-    per_hour = round(1.0 * 1.5 ** i, 2)
-    # Priced from PAYBACK, not from the Family tree. Yields are pinned by the
-    # target that passive income stays around 20-50% of active collecting, so the
-    # only lever is cost. At roughly 300 gold per gold-per-hour, a holding pays
-    # for itself in about twelve days of real time — a real investment in an idle
-    # game, where the first pass (a thousand-hour payback) made Territory
-    # something no rational player would ever build.
+    # Yield per level grows 1.65x per holding, so later estates are the ones
+    # worth chasing, and the first ones still carry the early game.
+    #
+    # The coefficient is 2.4x what it was. At the old value a fully built estate
+    # took four to ten days of its own income to pay for itself, which is a long
+    # time to wait for a building in an idle game; it is now two to four, and
+    # estates are the gold engine rather than a rounding error next to tapping.
+    per_hour = round(4.08 * 1.65 ** i, 2)
+    # Priced from PAYBACK, and the growth rate here is the load-bearing part:
+    # cost must grow SLOWER than yield (1.51 against 1.65) so that payback
+    # SHORTENS as you climb, 254 hours down to 137.
+    #
+    # It used to be the other way around -- cost 1.72 against yield 1.5 -- which
+    # meant the Ducal Mint, the estate a level-55 player finally unlocks, took
+    # 737 hours to pay for itself against the Wheat Farm's 283. The capstone was
+    # the worst investment on the board, which is exactly backwards.
     #
     # The Family tree remains the bottomless sink at 6.8M; Territory is the income
     # engine and is deliberately cheap by comparison.
-    base_cost = half_up(round(85 * 1.72 ** i), 1)
+    base_cost = half_up(round(263 * 1.51 ** i), 1)
     costs = [half_up(base_cost * round(1.25 ** (lv - 1) * 10000), 10000)
              for lv in range(1, HOLDING_MAX_LEVEL + 1)]
     holdings.append({
@@ -495,6 +641,31 @@ for i, (hid, name, unlock, _tier) in enumerate(HOLDINGS):
         "tax_milli_per_hour_per_level": int(round(per_hour * 1000)),
         "costs": costs,
     })
+
+TAX = {
+    # Idle income, and why both of these moved a long way.
+    #
+    # The rate is a function of LEVEL, and the level curve was slowed by
+    # about 4x when the xp ramp came down to 1.06. Nothing else changed, but
+    # a player at day 21 went from level 59 to level 42 — and their passive
+    # income fell 61% with them, because it was pegged to a level they now
+    # reach months later. Idle income has to be paced against the CLOCK, not
+    # against a curve that moved underneath it.
+    #
+    # 40 x 1.055^L rather than 24 x 1.045^L, and holding yields 2.4x on top.
+    # That is a deliberate change of what the game IS: estates are the gold
+    # engine now and collecting is what buys levels. Tapping stays compulsory
+    # because it is the only meaningful source of XP, and XP gates sections,
+    # slots and every holding unlock -- but a player who has built their estates
+    # out-earns one who only taps, at every archetype. See the self-check below.
+    "base_per_hour_milli": 40000,
+    "growth_bp": 10550,              # 1.055^level
+    # DEAD, both of them. Estate income is credited by middleware on every
+    # request and is deliberately uncapped; nothing on that path reads these.
+    # Emitted so an older published balance document still parses.
+    "offline_cap_seconds": 28800,
+    "offline_cap_per_tithe_level": 720,
+}
 
 emit("estates.json", json.dumps({
     "_comment": "Family upgrades and Territory holdings. Every percentage is ADDITIVE within its "
@@ -506,21 +677,65 @@ emit("estates.json", json.dumps({
                 "a function of Might or gear, so PvP power cannot buy income which buys PvP power.",
     "upgrades": upgrades,
     "holdings": holdings,
-    "tax": {
-        "base_per_hour_milli": 24000,
-        "growth_bp": 10450,              # 1.045^level
-        "offline_cap_seconds": 28800,    # 8h, +720s per Tithe Barn level
-        "offline_cap_per_tithe_level": 720,
-    },
+    "tax": TAX,
 }, indent=2) + "\n")
 
 print(f"estates.json   : {len(upgrades)} family upgrades, {len(holdings)} holdings")
 print(f"  family tree total cost : {sum(sum(u['costs']) for u in upgrades):>12,} gold")
 print(f"  holdings total cost    : {sum(sum(h['costs']) for h in holdings):>12,} gold")
-tax60 = 24 * 1.045 ** 60
+# What passive income is actually WORTH, measured against what the same player
+# earns by playing. Compared per DAY, not per hour: estate income accrues
+# continuously and uncapped (see service/tax.go), while collecting is bounded by
+# how often somebody opens the app and how much pool they have when they do.
+#
+# The old line divided by a hardcoded 12725 -- the active income of a build four
+# rebalances ago -- so it went on printing a passing number while the real ratio
+# halved underneath it. Anything derived from the balance has to be COMPUTED from
+# the balance.
+def _active_gold_per_day(level, gaps):
+    pool_cap = ENERGY["base_max"] + ENERGY["per_level"] * (level - 1)
+    energy = sum(min(pool_cap, int(g * 3600 / ENERGY["regen_base_seconds"])) for g in gaps)
+    job = [j for j in jobs if j["unlock_level"] <= level][-1]
+    return energy * job["base_gold"] / job["energy_cost"]
+
+
+def _tax_base_per_hour(level):
+    """The level term of the tax, from the config rather than a copy of it."""
+    milli = TAX["base_per_hour_milli"]
+    for _ in range(level):
+        milli = milli * TAX["growth_bp"] // 10000
+    return milli / 1000
+
+
+def _passive_gold_per_day(level, bucket_mult):
+    per_hour = _tax_base_per_hour(level)
+    per_hour += sum(h["tax_milli_per_hour_per_level"] / 1000 * HOLDING_MAX_LEVEL
+                    for h in holdings if h["unlock_level"] <= level)
+    return per_hour * 24 * bucket_mult
+
+
+# Tithe Barn at max (+30%) plus a maxed Royal Treasury (+10%). Both feed the one
+# additive tax_income_bp bucket, so this is its real ceiling.
+TAX_BUCKET_MAX = 1.40
+SESSIONS = {"casual 3/day": [5, 8, 11], "regular 5/day": [3, 3, 4, 6, 8],
+            "committed 8/day": [1, 1, 2, 2, 2, 3, 5, 8]}
+
+tax60 = _tax_base_per_hour(60)
 hold60 = sum(h["tax_milli_per_hour_per_level"] / 1000 * HOLDING_MAX_LEVEL for h in holdings)
 print(f"  tax/hr at lv60         : base {tax60:>8.0f} + holdings {hold60:>7.0f} = {tax60 + hold60:>8.0f}")
-print(f"  8h offline vs 8h active: {(tax60 + hold60) * 8 / 12725 * 100:>5.1f}%  (design target ~51% at max)")
+print("  passive vs active gold per day, holdings maxed, tax bucket at its ceiling:")
+print("    %-18s %s" % ("", "".join("%9s" % f"L{L}" for L in (10, 20, 30, 40, 50, 60))))
+for who, gaps in SESSIONS.items():
+    cells = "".join("%8.0f%%" % (100 * _passive_gold_per_day(L, TAX_BUCKET_MAX)
+                                 / _active_gold_per_day(L, gaps))
+                    for L in (10, 20, 30, 40, 50, 60))
+    print(f"    {who:<18}{cells}")
+print("    Estates are the GOLD engine and collecting is the XP engine, so these")
+print("    are meant to exceed 100%: a player who builds out-earns one who only")
+print("    taps. Tapping stays compulsory anyway -- it is the only real source of")
+print("    XP, and XP gates sections, barracks slots and every holding unlock.")
+print("    What to watch: if the committed row climbs far past the casual one,")
+print("    the idle build has stopped being a CHOICE and just become correct.")
 print("  holding                 unlock   max yield/hr      total cost   payback")
 for h in holdings:
     y = h["tax_milli_per_hour_per_level"] / 1000 * HOLDING_MAX_LEVEL
@@ -532,7 +747,7 @@ for h in holdings:
 KINGDOM_UPGRADES = [
     ("royal_granaries", "Royal Granaries", "collect_income_bp", 10, 200,  50000,  1.55, "Every member collects more."),
     ("royal_archives",  "Royal Archives",  "xp_bp",             10, 150,  60000,  1.55, "Every member learns faster."),
-    ("royal_treasury",  "Royal Treasury",  "tax_income_bp",     10, 400,  50000,  1.52, "Every member's estates earn more."),
+    ("royal_treasury",  "Royal Treasury",  "tax_income_bp",     10, 100,  50000,  1.52, "Every member's estates earn more."),
     ("royal_armoury",   "Royal Armoury",   "soldier_atk_bp",     8, 200,  80000,  1.60, "Every member's soldiers strike harder."),
     ("royal_bulwark",   "Royal Bulwark",   "soldier_def_bp",     8, 200,  80000,  1.60, "Every member's soldiers endure more."),
     ("royal_couriers",  "Royal Couriers",  "energy_regen_bp",    6, 200, 150000,  1.70, "Every member's energy returns faster."),
@@ -576,6 +791,28 @@ emit("kingdoms.json", json.dumps({
         "xp_per_reputation": 100,
         "favour_per_gold": 100,
     },
+    # What Favour is actually for.
+    #
+    # It has been granted on every donation since kingdoms shipped, shown on the
+    # Realm card, and been spendable on nothing — so donating cost the donor gold
+    # and gave them back a number. The design's own line on this: "Donating must
+    # reward the donor personally, or nobody donates."
+    #
+    # Priced against the daily donation cap rather than against gold directly: a
+    # level-1 kingdom's cap is 20,800 gold a day, which is 208 favour, so the
+    # energy potion is roughly a fifth of a day's donating and the XP boost about
+    # half of one.
+    "favour_shop": [
+        {"id": "energy_potion", "name": "Energy Potion", "cost": 40,
+         "blurb": "Fills your energy to the brim."},
+        {"id": "shop_refresh", "name": "Fresh Wares", "cost": 25,
+         "blurb": "The market restocks at once."},
+        # Feeds the same xp_bp bucket as the Scriptorium and any server event,
+        # so it shares that bucket's cap and cannot stack past it.
+        {"id": "xp_boost", "name": "Scholar's Draught", "cost": 120,
+         "bp": 1000, "hours": 2,
+         "blurb": "+10% experience for two hours."},
+    ],
     "reputation": {
         "daily_cap_per_member": 150,
         "decay_bp_per_day": 200,

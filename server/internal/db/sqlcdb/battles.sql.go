@@ -19,7 +19,7 @@ SET gold = gold + $2, xp = $3, level = $4,
     energy_milli = $6, energy_updated_at = $7,
     action_seq = $8
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
 `
 
 type ApplyBattleAttackerParams struct {
@@ -85,6 +85,11 @@ func (q *Queries) ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttack
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
 	)
 	return i, err
 }
@@ -93,7 +98,7 @@ const applyBattleDefender = `-- name: ApplyBattleDefender :one
 UPDATE app.players
 SET gold = gold + $2, shield_until = $3
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
 `
 
 type ApplyBattleDefenderParams struct {
@@ -145,6 +150,11 @@ func (q *Queries) ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefend
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
 	)
 	return i, err
 }
@@ -160,11 +170,40 @@ func (q *Queries) CountBots(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countRaidsSince = `-- name: CountRaidsSince :one
+SELECT count(*) AS raids,
+       coalesce(sum(b.gold_stolen), 0)::bigint AS gold_lost,
+       coalesce(sum(b.ransom_paid), 0)::bigint AS ransom_earned
+FROM app.battles b
+WHERE b.defender_id = $1
+  AND b.created_at > $2::timestamptz
+`
+
+type CountRaidsSinceParams struct {
+	PlayerID uuid.UUID
+	Since    time.Time
+}
+
+type CountRaidsSinceRow struct {
+	Raids        int64
+	GoldLost     int64
+	RansomEarned int64
+}
+
+// How many raids landed on this player since a given moment, for the
+// "while you were away" summary. Counts only fights they did not start.
+func (q *Queries) CountRaidsSince(ctx context.Context, arg CountRaidsSinceParams) (CountRaidsSinceRow, error) {
+	row := q.db.QueryRow(ctx, countRaidsSince, arg.PlayerID, arg.Since)
+	var i CountRaidsSinceRow
+	err := row.Scan(&i.Raids, &i.GoldLost, &i.RansomEarned)
+	return i, err
+}
+
 const createBot = `-- name: CreateBot :one
 INSERT INTO app.players (username, display_name, level, gold, is_bot, soldier_slots,
                          stat_attack, stat_defense, energy_milli, avatar)
 VALUES ($1,$2,$3,$4,true,$5,$6,$7,0,$8)
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
 `
 
 type CreateBotParams struct {
@@ -230,6 +269,11 @@ func (q *Queries) CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer
 		&i.TaxUnlogged,
 		&i.LuckBp,
 		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
 	)
 	return i, err
 }
@@ -350,16 +394,40 @@ func (q *Queries) GetCooldown(ctx context.Context, arg GetCooldownParams) (AppAt
 	return i, err
 }
 
+const grantRevenge = `-- name: GrantRevenge :exec
+INSERT INTO app.revenge_tokens (battle_id, player_id, target_id, expires_at)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (battle_id) DO NOTHING
+`
+
+type GrantRevengeParams struct {
+	BattleID  uuid.UUID
+	PlayerID  uuid.UUID
+	TargetID  uuid.UUID
+	ExpiresAt time.Time
+}
+
+func (q *Queries) GrantRevenge(ctx context.Context, arg GrantRevengeParams) error {
+	_, err := q.db.Exec(ctx, grantRevenge,
+		arg.BattleID,
+		arg.PlayerID,
+		arg.TargetID,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
 const insertBattle = `-- name: InsertBattle :one
 INSERT INTO app.battles (
-    attacker_id, defender_id, seed, config_version, attacker_won, rounds,
+    id, attacker_id, defender_id, seed, config_version, attacker_won, rounds,
     attacker_might, defender_might, gold_stolen, ransom_paid, xp_awarded,
     energy_spent, replay
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
 RETURNING id, attacker_id, defender_id, seed, config_version, attacker_won, rounds, attacker_might, defender_might, gold_stolen, ransom_paid, xp_awarded, energy_spent, replay, created_at
 `
 
 type InsertBattleParams struct {
+	ID            uuid.UUID
 	AttackerID    uuid.UUID
 	DefenderID    uuid.UUID
 	Seed          int64
@@ -375,8 +443,16 @@ type InsertBattleParams struct {
 	Replay        []byte
 }
 
+// The id is supplied, not defaulted.
+//
+// It is minted in Go before the fight because the combat seed is derived from
+// it, and it is what the attack response hands the client. Letting the database
+// default a different one meant the id the player was given did not name any
+// stored row: every replay link was dead, and nothing could reference the battle
+// afterwards.
 func (q *Queries) InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error) {
 	row := q.db.QueryRow(ctx, insertBattle,
+		arg.ID,
 		arg.AttackerID,
 		arg.DefenderID,
 		arg.Seed,
@@ -410,6 +486,88 @@ func (q *Queries) InsertBattle(ctx context.Context, arg InsertBattleParams) (App
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listBattleLog = `-- name: ListBattleLog :many
+SELECT b.id, b.attacker_id, b.defender_id, b.attacker_won, b.rounds,
+       b.attacker_might, b.defender_might, b.gold_stolen, b.ransom_paid,
+       b.xp_awarded, b.created_at,
+       o.display_name AS opponent_name,
+       o.avatar       AS opponent_avatar,
+       o.level        AS opponent_level,
+       o.is_bot       AS opponent_is_bot
+FROM app.battles b
+JOIN app.players o
+  ON o.id = CASE WHEN b.attacker_id = $1 THEN b.defender_id
+                 ELSE b.attacker_id END
+WHERE b.attacker_id = $1 OR b.defender_id = $1
+ORDER BY b.created_at DESC
+LIMIT $2
+`
+
+type ListBattleLogParams struct {
+	PlayerID uuid.UUID
+	Lim      int32
+}
+
+type ListBattleLogRow struct {
+	ID             uuid.UUID
+	AttackerID     uuid.UUID
+	DefenderID     uuid.UUID
+	AttackerWon    bool
+	Rounds         int32
+	AttackerMight  int64
+	DefenderMight  int64
+	GoldStolen     int64
+	RansomPaid     int64
+	XpAwarded      int64
+	CreatedAt      time.Time
+	OpponentName   string
+	OpponentAvatar string
+	OpponentLevel  int32
+	OpponentIsBot  bool
+}
+
+// Battle history with the OTHER party's identity resolved in the same round
+// trip. A log that says "you lost 4,120 gold" without saying to whom is not a
+// log, and fetching the names separately would be one query per row.
+//
+// The join key flips on which side the player was: their opponent is the
+// defender when they attacked, and the attacker when they were raided.
+func (q *Queries) ListBattleLog(ctx context.Context, arg ListBattleLogParams) ([]ListBattleLogRow, error) {
+	rows, err := q.db.Query(ctx, listBattleLog, arg.PlayerID, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBattleLogRow{}
+	for rows.Next() {
+		var i ListBattleLogRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AttackerID,
+			&i.DefenderID,
+			&i.AttackerWon,
+			&i.Rounds,
+			&i.AttackerMight,
+			&i.DefenderMight,
+			&i.GoldStolen,
+			&i.RansomPaid,
+			&i.XpAwarded,
+			&i.CreatedAt,
+			&i.OpponentName,
+			&i.OpponentAvatar,
+			&i.OpponentLevel,
+			&i.OpponentIsBot,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listBattles = `-- name: ListBattles :many
@@ -460,8 +618,59 @@ func (q *Queries) ListBattles(ctx context.Context, arg ListBattlesParams) ([]App
 	return items, nil
 }
 
+const listRevenge = `-- name: ListRevenge :many
+SELECT r.battle_id, r.target_id, r.expires_at,
+       t.display_name AS target_name,
+       t.avatar       AS target_avatar,
+       t.level        AS target_level
+FROM app.revenge_tokens r
+JOIN app.players t ON t.id = r.target_id
+WHERE r.player_id = $1
+  AND r.used_at IS NULL
+  AND r.expires_at > now()
+ORDER BY r.expires_at ASC
+`
+
+type ListRevengeRow struct {
+	BattleID     uuid.UUID
+	TargetID     uuid.UUID
+	ExpiresAt    time.Time
+	TargetName   string
+	TargetAvatar string
+	TargetLevel  int32
+}
+
+// Live, unspent tokens with the person to be avenged upon resolved in the same
+// round trip.
+func (q *Queries) ListRevenge(ctx context.Context, playerID uuid.UUID) ([]ListRevengeRow, error) {
+	rows, err := q.db.Query(ctx, listRevenge, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRevengeRow{}
+	for rows.Next() {
+		var i ListRevengeRow
+		if err := rows.Scan(
+			&i.BattleID,
+			&i.TargetID,
+			&i.ExpiresAt,
+			&i.TargetName,
+			&i.TargetAvatar,
+			&i.TargetLevel,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockTwoPlayers = `-- name: LockTwoPlayers :many
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
 `
 
 func (q *Queries) LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]AppPlayer, error) {
@@ -513,6 +722,11 @@ func (q *Queries) LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]A
 			&i.TaxUnlogged,
 			&i.LuckBp,
 			&i.LuckExpiresAt,
+			&i.XpBoostBp,
+			&i.XpBoostExpiresAt,
+			&i.DailyStreak,
+			&i.DailyClaimedOn,
+			&i.Might,
 		); err != nil {
 			return nil, err
 		}
@@ -541,4 +755,26 @@ type TouchCooldownParams struct {
 func (q *Queries) TouchCooldown(ctx context.Context, arg TouchCooldownParams) error {
 	_, err := q.db.Exec(ctx, touchCooldown, arg.AttackerID, arg.DefenderID)
 	return err
+}
+
+const useRevenge = `-- name: UseRevenge :one
+UPDATE app.revenge_tokens
+SET used_at = now()
+WHERE player_id = $1 AND target_id = $2
+  AND used_at IS NULL AND expires_at > now()
+RETURNING battle_id
+`
+
+type UseRevengeParams struct {
+	PlayerID uuid.UUID
+	TargetID uuid.UUID
+}
+
+// Spends a token, and only if it is still live and still theirs. Zero rows means
+// it was already used or has expired, so the check and the spend cannot race.
+func (q *Queries) UseRevenge(ctx context.Context, arg UseRevengeParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, useRevenge, arg.PlayerID, arg.TargetID)
+	var battle_id uuid.UUID
+	err := row.Scan(&battle_id)
+	return battle_id, err
 }

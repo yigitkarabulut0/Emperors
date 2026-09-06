@@ -37,12 +37,12 @@
   },
   "level_mult_per_ilvl_bp": 900,
   "quality": {
-    "min_pct": 85,
-    "max_pct": 115
+    "min_pct": 95,
+    "max_pct": 105
   },
   "masterwork": {
     "chance_bp": 300,
-    "mult_pct": 115
+    "mult_pct": 108
   },
   "price": {
     "coef": 1.6,

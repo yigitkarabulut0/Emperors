@@ -15,6 +15,93 @@
     "deposit_fee_bp": 1000
   },
   "levelup_diamonds": 5,
+  "quests": {
+    "per_day": 3,
+    "xp_per_level_per_tier": 4,
+    "gold_per_level_per_tier": 12,
+    "pool": [
+      {
+        "id": "collect_20",
+        "kind": "collects",
+        "target": 20,
+        "tier": 1,
+        "name": "An Honest Day",
+        "blurb": "Work twenty jobs."
+      },
+      {
+        "id": "collect_60",
+        "kind": "collects",
+        "target": 60,
+        "tier": 2,
+        "name": "The Long Shift",
+        "blurb": "Work sixty jobs."
+      },
+      {
+        "id": "energy_150",
+        "kind": "energy",
+        "target": 150,
+        "tier": 2,
+        "name": "Nothing Wasted",
+        "blurb": "Spend 150 energy."
+      },
+      {
+        "id": "energy_300",
+        "kind": "energy",
+        "target": 300,
+        "tier": 3,
+        "name": "To the Last Drop",
+        "blurb": "Spend 300 energy."
+      },
+      {
+        "id": "win_1",
+        "kind": "wins",
+        "target": 1,
+        "tier": 1,
+        "name": "First Blood",
+        "blurb": "Win a raid.",
+        "min_level": 10
+      },
+      {
+        "id": "win_3",
+        "kind": "wins",
+        "target": 3,
+        "tier": 3,
+        "name": "A Good Week's Work",
+        "blurb": "Win three raids.",
+        "min_level": 10
+      },
+      {
+        "id": "buy_1",
+        "kind": "buys",
+        "target": 1,
+        "tier": 1,
+        "name": "Well Equipped",
+        "blurb": "Buy something from the market.",
+        "min_level": 2
+      },
+      {
+        "id": "buy_3",
+        "kind": "buys",
+        "target": 3,
+        "tier": 2,
+        "name": "The Armourer's Friend",
+        "blurb": "Buy three things.",
+        "min_level": 2
+      }
+    ]
+  },
+  "daily_login": {
+    "rewards": [
+      5,
+      5,
+      10,
+      10,
+      15,
+      15,
+      25
+    ],
+    "reset_on_miss": true
+  },
   "store": {
     "energy_refill_diamonds": 12,
     "shield_diamonds": 20,

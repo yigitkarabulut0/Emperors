@@ -110,11 +110,14 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/inventory/equip", a.equip)
 			r.Post("/inventory/unequip", a.unequip)
 			r.Post("/inventory/sell", a.sell)
+			r.Post("/inventory/sell/batch", a.sellBatch)
 
 			r.Get("/army", a.army)
 			r.Post("/army/slot", a.buySlot)
 			r.Post("/army/recruit", a.recruit)
-			r.Post("/army/train", a.train)
+			r.Post("/army/autoroll", a.autoRoll)
+			r.Get("/army/odds", a.recruitOdds)
+			r.Post("/army/train", a.trainGone)
 			r.Post("/army/dismiss", a.dismissSoldier)
 			r.Post("/army/equip", a.equipSoldier)
 			r.Post("/army/autoequip", a.autoEquip)
@@ -137,8 +140,19 @@ func NewRouter(d Deps) http.Handler {
 				})
 			}
 
+			r.Get("/leaderboards/{board}", a.leaderboard)
+			r.Get("/quests", a.quests)
+			r.Post("/quests/claim", a.questClaim)
+			r.Get("/daily", a.daily)
+			r.Post("/daily/claim", a.dailyClaim)
+
+			r.Get("/kingdom/shop", a.favourShop)
+			r.Post("/kingdom/shop/buy", a.favourBuy)
+
 			r.Get("/attack/targets", a.targets)
 			r.Post("/attack", a.attack)
+			r.Get("/attack/history", a.battleLog)
+			r.Get("/battles/{id}", a.battleReplay)
 		})
 
 		r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {

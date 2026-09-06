@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/auth"
@@ -107,6 +108,8 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusForbidden, "level_too_low", err.Error())
 	case errors.Is(err, service.ErrAlreadyMaxed):
 		WriteProblem(w, r, http.StatusConflict, "already_maxed", "already at your level")
+	case errors.Is(err, service.ErrNoRevenge):
+		WriteProblem(w, r, http.StatusConflict, "no_revenge", err.Error())
 	case errors.Is(err, service.ErrShielded):
 		WriteProblem(w, r, http.StatusConflict, "shielded", "that lord is under protection")
 	case errors.Is(err, service.ErrOnCooldown):
@@ -133,6 +136,12 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusForbidden, "not_permitted", "your rank does not allow that")
 	case errors.Is(err, service.ErrKingdomNameTaken):
 		WriteProblem(w, r, http.StatusConflict, "name_taken", "that name or tag is taken")
+	case errors.Is(err, service.ErrQuestUnfinished):
+		WriteProblem(w, r, http.StatusConflict, "quest_unfinished", err.Error())
+	case errors.Is(err, service.ErrAlreadyClaimed):
+		WriteProblem(w, r, http.StatusConflict, "already_claimed", err.Error())
+	case errors.Is(err, service.ErrNotEnoughFavour):
+		WriteProblem(w, r, http.StatusConflict, "not_enough_favour", "not enough favour")
 	case errors.Is(err, service.ErrDonationCap):
 		WriteProblem(w, r, http.StatusConflict, "donation_cap", "you have donated all you can today")
 	case errors.Is(err, service.ErrLastKing):
@@ -464,27 +473,255 @@ type soldierReq struct {
 	ActionSeq int64  `json:"action_seq"`
 }
 
-func (a *api) train(w http.ResponseWriter, r *http.Request) {
+type autoRollReq struct {
+	Slot       int    `json:"slot"`
+	TypeID     string `json:"type_id"`
+	TargetTier string `json:"target_tier"`
+	MaxGold    int64  `json:"max_gold"`
+	ActionSeq  int64  `json:"action_seq"`
+}
+
+// autoRoll chases a tier for a budget, instead of sixty-seven round trips.
+func (a *api) autoRoll(w http.ResponseWriter, r *http.Request) {
 	pid, ok := PlayerID(r.Context())
 	if !ok {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	var req soldierReq
+	var req autoRollReq
 	if !decode(w, r, &req) {
 		return
 	}
-	sid, err := uuid.Parse(req.SoldierID)
-	if err != nil {
-		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "soldier_id must be a uuid")
-		return
-	}
-	v, err := a.s().Train(r.Context(), pid, sid, req.ActionSeq)
+	v, err := a.s().AutoRoll(r.Context(), pid, req.Slot, req.TypeID, req.TargetTier, req.MaxGold, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return
 	}
 	WriteJSON(w, http.StatusOK, v)
+}
+
+// recruitOdds publishes the real tier chances. Required disclosure, and also
+// the thing that makes a budget an informed decision rather than a guess.
+func (a *api) recruitOdds(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetOdds(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type sellBatchReq struct {
+	ItemIDs   []string `json:"item_ids"`
+	ActionSeq int64    `json:"action_seq"`
+}
+
+// sellBatch clears several items in one action.
+func (a *api) sellBatch(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req sellBatchReq
+	if !decode(w, r, &req) {
+		return
+	}
+	ids := make([]uuid.UUID, 0, len(req.ItemIDs))
+	for _, raw := range req.ItemIDs {
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_ids must be uuids")
+			return
+		}
+		ids = append(ids, id)
+	}
+	v, err := a.s().SellMany(r.Context(), pid, ids, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// leaderboard serves one ranked snapshot.
+func (a *api) leaderboard(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetLeaderboard(r.Context(), pid, chi.URLParam(r, "board"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// quests is today's board.
+func (a *api) quests(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetQuests(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type questClaimReq struct {
+	Slot      int   `json:"slot"`
+	ActionSeq int64 `json:"action_seq"`
+}
+
+func (a *api) questClaim(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req questClaimReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().ClaimQuest(r.Context(), pid, req.Slot, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// daily is the login calendar.
+func (a *api) daily(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetDaily(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// dailyClaim takes today's square.
+//
+// No action_seq: claiming is idempotent per local day in the UPDATE itself, so
+// a retry is already safe and a sequence would only add a way to fail.
+func (a *api) dailyClaim(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().ClaimDaily(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// favourShop is what donating to your kingdom buys you personally.
+func (a *api) favourShop(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetFavourShop(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type favourBuyReq struct {
+	GoodID    string `json:"good_id"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) favourBuy(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req favourBuyReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().BuyFavourGood(r.Context(), pid, req.GoodID, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// battleLog is the raid history, attacking and defending.
+//
+// The defending half is the point: every fight was already stored, and without
+// this a player who was raided overnight logged in with less gold and nothing
+// telling them why.
+func (a *api) battleLog(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetBattleLog(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// battleReplay re-serves a stored fight so it can be watched again.
+func (a *api) battleReplay(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	bid, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "battle id must be a uuid")
+		return
+	}
+	rep, err := a.s().GetBattleReplay(r.Context(), pid, bid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, rep)
+}
+
+// trainGone answers builds that still think a soldier can be levelled.
+//
+// Soldiers are fixed now: the tier they are recruited at is the rank they keep,
+// which is what makes the tier ladder mean something — while training existed,
+// four levels of it was enough for an epic to overtake a legendary. 410 rather
+// than 404 so an older .ipa reports something true rather than "that route does
+// not exist".
+func (a *api) trainGone(w http.ResponseWriter, r *http.Request) {
+	WriteProblem(w, r, http.StatusGone, "gone",
+		"Soldiers no longer train — a soldier's tier is its rank, and it is fixed.")
 }
 
 // dismissSoldier releases a soldier and frees the slot for another roll.
@@ -558,6 +795,9 @@ func (a *api) targets(w http.ResponseWriter, r *http.Request) {
 type attackReq struct {
 	TargetID  string `json:"target_id"`
 	ActionSeq int64  `json:"action_seq"`
+	// Spends a revenge token instead of raiding normally: half energy, ignores
+	// their shield and the per-pair cooldown, pays more.
+	Revenge bool `json:"revenge,omitempty"`
 }
 
 func (a *api) attack(w http.ResponseWriter, r *http.Request) {
@@ -575,7 +815,7 @@ func (a *api) attack(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "target_id must be a uuid")
 		return
 	}
-	res, err := a.s().Attack(r.Context(), pid, tid, req.ActionSeq)
+	res, err := a.s().Attack(r.Context(), pid, tid, req.ActionSeq, req.Revenge)
 	if err != nil {
 		a.fail(w, r, err)
 		return

@@ -69,15 +69,43 @@ type Milestone struct {
 }
 
 type ProgressionConfig struct {
-	LevelCap           int            `json:"level_cap"`
-	Energy             EnergyConfig   `json:"energy"`
-	StatPointsPerLevel int            `json:"stat_points_per_level"`
-	Treasury           TreasuryConfig `json:"treasury"`
-	LevelupDiamonds    int64          `json:"levelup_diamonds"`
-	Sections           []SectionGate  `json:"sections"`
-	Store              StoreConfig    `json:"store"`
-	Avatars            []string       `json:"avatars"`
-	Levels             []Level        `json:"levels"`
+	LevelCap           int              `json:"level_cap"`
+	Energy             EnergyConfig     `json:"energy"`
+	StatPointsPerLevel int              `json:"stat_points_per_level"`
+	Treasury           TreasuryConfig   `json:"treasury"`
+	LevelupDiamonds    int64            `json:"levelup_diamonds"`
+	DailyLogin         DailyLoginConfig `json:"daily_login"`
+	Quests             QuestsConfig     `json:"quests"`
+	Sections           []SectionGate    `json:"sections"`
+	Store              StoreConfig      `json:"store"`
+	Avatars            []string         `json:"avatars"`
+	Levels             []Level          `json:"levels"`
+}
+
+// QuestsConfig is the daily quest pool and its reward formula.
+type QuestsConfig struct {
+	PerDay              int     `json:"per_day"`
+	XPPerLevelPerTier   int64   `json:"xp_per_level_per_tier"`
+	GoldPerLevelPerTier int64   `json:"gold_per_level_per_tier"`
+	Pool                []Quest `json:"pool"`
+}
+
+// Quest is one template. What a player actually has today is drawn from the
+// pool by a pure function of (secret, player, day) — nothing is stored.
+type Quest struct {
+	ID       string `json:"id"`
+	Kind     string `json:"kind"`
+	Target   int64  `json:"target"`
+	Tier     int64  `json:"tier"`
+	Name     string `json:"name"`
+	Blurb    string `json:"blurb"`
+	MinLevel int    `json:"min_level,omitempty"`
+}
+
+// DailyLoginConfig is the seven-square calendar.
+type DailyLoginConfig struct {
+	Rewards     []int64 `json:"rewards"`
+	ResetOnMiss bool    `json:"reset_on_miss"`
 }
 
 // HasAvatar reports whether a portrait id is one a player may choose.

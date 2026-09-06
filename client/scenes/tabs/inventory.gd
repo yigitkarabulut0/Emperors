@@ -8,12 +8,44 @@ var _inv: Dictionary = {}
 var _action: Button
 var _sell: Button
 
+## Which tiers are on screen. "" is everything.
+##
+## A hundred-and-fifty-slot bag with no filter and no bulk action meant clearing
+## a run of commons was a hundred tap-confirm-tap cycles, which is the kind of
+## chore that makes a player stop opening the screen.
+var _filter := ""
+var _shown: Array = []
+var _chips: HBoxContainer
+var _chip_buttons: Array[Button] = []
+
+const FILTERS := [
+	["", "All"],
+	["common", "Common"],
+	["uncommon", "Uncommon"],
+	["rare", "Rare"],
+]
+
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
 
 	_header = UI.label("Loading the armory…", UI.F_CAPTION, Palette.TEXT_DIM)
 	add_child(_header)
+
+	_chips = HBoxContainer.new()
+	_chips.add_theme_constant_override("separation", 4)
+	add_child(_chips)
+	for f in FILTERS:
+		var b := UI.ghost_button(str(f[1]), UI.F_CAPTION)
+		b.custom_minimum_size = Vector2(0, 36)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var key: String = str(f[0])
+		b.pressed.connect(func() -> void:
+			_filter = key
+			_selected = ""
+			_rebuild())
+		_chips.add_child(b)
+		_chip_buttons.append(b)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -78,6 +110,15 @@ func _rebuild() -> void:
 			int(hero.get("attack", 0)), int(hero.get("defense", 0)),
 			int(hero.get("speed", 0)), int(hero.get("power", 0))]
 
+	if _filter != "":
+		var kept: Array = []
+		for it in items:
+			if str(it.get("tier", "")) == _filter:
+				kept.append(it)
+		items = kept
+		_header.text = "%d %s   ·   %d/%d held" % [items.size(), _filter,
+			int(_inv.get("used", 0)), int(_inv.get("cap", 0))]
+
 	# Equipped first, then by power: the thing you are wearing should never be
 	# something you have to scroll for.
 	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -88,6 +129,7 @@ func _rebuild() -> void:
 	if _selected == "" and not items.is_empty():
 		_selected = str(items[0].get("id", ""))
 
+	_shown = items
 	for it in items:
 		var card := ItemCard.new(it)
 		card.pressed.connect(_select.bind(str(it.get("id", ""))))
@@ -101,7 +143,18 @@ func _rebuild() -> void:
 		if str(it.get("id", "")) == _selected:
 			card.modulate = Color(1.15, 1.15, 1.15)
 
+	_style_chips()
 	_refresh_actions()
+
+
+func _style_chips() -> void:
+	for i in _chip_buttons.size():
+		var b: Button = _chip_buttons[i]
+		var active: bool = str(FILTERS[i][0]) == _filter
+		b.add_theme_stylebox_override("normal",
+			UI.panel_box(Palette.PANEL_HIGH if active else Palette.PANEL,
+				Palette.GOLD_DEEP if active else Palette.LINE))
+		b.add_theme_color_override("font_color", Palette.GOLD_INK if active else Palette.TEXT_DIM)
 
 
 func _select(id: String) -> void:
@@ -133,6 +186,18 @@ func _refresh_actions() -> void:
 	_sell.disabled = equipped
 	_sell.text = "SELL %s" % UI.number(int(it.get("sell_price", 0)))
 
+	# With a tier filter on, the useful verb is "clear this pile", not "sell the
+	# one I happen to have highlighted".
+	if _filter != "":
+		var n := 0
+		var worth := 0
+		for x in _shown:
+			if not bool(x.get("equipped", false)):
+				n += 1
+				worth += int(x.get("sell_price", 0))
+		_sell.disabled = n == 0
+		_sell.text = "SELL %d — %s" % [n, UI.number(worth)]
+
 
 func _toggle_equip() -> void:
 	var it := _selected_item()
@@ -148,6 +213,9 @@ func _toggle_equip() -> void:
 
 
 func _sell_selected() -> void:
+	if _filter != "":
+		await _sell_shown()
+		return
 	var it := _selected_item()
 	if it.is_empty():
 		return
@@ -167,6 +235,45 @@ func _sell_selected() -> void:
 		await _reload()
 		return
 	GameState.action_failed.emit("Sold for %s gold" % UI.number(int(res.data.get("gained", 0))))
+	_selected = ""
+	await GameState.refresh()
+	await _reload()
+
+
+## Clears every unequipped item currently on screen.
+##
+## One request and one confirmation for one decision the player made — which is
+## also why the server credits it as a single gold movement and a single ledger
+## row rather than fifty.
+func _sell_shown() -> void:
+	var ids: Array[String] = []
+	var worth := 0
+	for it in _shown:
+		if bool(it.get("equipped", false)):
+			continue
+		ids.append(str(it.get("id", "")))
+		worth += int(it.get("sell_price", 0))
+	if ids.is_empty():
+		return
+
+	if not await Confirm.ask(self, {
+			"title": "Sell %d %s items?" % [ids.size(), _filter],
+			"body": "They are gone for good. Anything you are wearing is left alone.",
+			"cost": {"amount": worth, "currency": "gold"},
+			"confirm_text": "Sell them", "danger": true}):
+		return
+
+	var seq := int(GameState.player().get("action_seq", 0)) + 1
+	var res: Api.Response = await Api.post_json("/v1/inventory/sell/batch",
+		{"item_ids": ids, "action_seq": seq})
+	if not res.ok:
+		GameState.action_failed.emit(res.error)
+		await GameState.refresh()
+		await _reload()
+		return
+
+	GameState.action_failed.emit("Sold %d for %s gold" % [
+		int(res.data.get("sold", 0)), UI.number(int(res.data.get("gained", 0)))])
 	_selected = ""
 	await GameState.refresh()
 	await _reload()

@@ -96,11 +96,16 @@ func _render() -> void:
 	who.add_theme_constant_override("separation", UI.GAP_XS)
 	head.add_child(who)
 	who.add_child(UI.label(title, UI.F_H1, Palette.TEXT))
-	var sub := "Level %d" % int(_unit.get("level", 1))
-	if tier != "":
-		sub = "%s   ·   %s" % [tier.capitalize(), sub]
-	who.add_child(UI.label(sub, UI.F_CAPTION,
-		Palette.tier(tier) if tier != "" else Palette.TEXT_DIM))
+	# A soldier's tier IS its rank, so the tier is the whole subtitle. Only the
+	# hero has a level, because the hero is the only thing that grows.
+	var sub := ""
+	if bool(_unit.get("is_hero", false)):
+		sub = "Level %d" % int(_unit.get("level", 1))
+	elif tier != "":
+		sub = tier.capitalize()
+	if sub != "":
+		who.add_child(UI.label(sub, UI.F_CAPTION,
+			Palette.tier(tier) if tier != "" else Palette.TEXT_DIM))
 
 	# --- what it is worth ----------------------------------------------------
 	#
@@ -244,7 +249,7 @@ func _dismiss() -> void:
 		return
 	if not await Confirm.ask(self, {
 			"title": "Dismiss %s?" % str(_unit.get("name", "this soldier")),
-			"body": "Their levels and their gear go with them. The slot stays yours.",
+			"body": "Their gear goes with them. The slot stays yours.",
 			"confirm_text": "Dismiss", "danger": true}):
 		return
 	_busy = true

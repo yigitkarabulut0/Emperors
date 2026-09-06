@@ -36,8 +36,8 @@
       "name": "Tithe Barn",
       "bucket": "tax_income_bp",
       "max_level": 20,
-      "per_level": 500,
-      "blurb": "Your estates earn more, and hold it longer while you are away.",
+      "per_level": 150,
+      "blurb": "Your estates earn more.",
       "costs": [
         500,
         680,
@@ -285,158 +285,118 @@
       "id": "wheat_farm",
       "name": "Wheat Farm",
       "unlock_level": 1,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 1000,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 4080,
       "costs": [
-        85,
-        106,
-        133,
-        166,
-        208,
-        259,
-        324,
-        405,
-        507,
-        633
+        263,
+        329,
+        411,
+        514,
+        642
       ]
     },
     {
       "id": "watermill",
       "name": "Watermill",
       "unlock_level": 8,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 1500,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 6730,
       "costs": [
-        146,
-        183,
-        228,
-        285,
-        356,
-        446,
-        557,
-        696,
-        870,
-        1088
+        397,
+        496,
+        620,
+        775,
+        969
       ]
     },
     {
       "id": "quarry",
       "name": "Stone Quarry",
       "unlock_level": 14,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 2250,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 11110,
       "costs": [
-        251,
-        314,
-        392,
-        490,
-        613,
-        766,
-        957,
-        1197,
-        1496,
-        1870
+        600,
+        750,
+        938,
+        1172,
+        1465
       ]
     },
     {
       "id": "vineyard",
       "name": "Vineyard",
       "unlock_level": 20,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 3380,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 18330,
       "costs": [
-        433,
-        541,
-        677,
-        846,
-        1057,
-        1321,
-        1652,
-        2065,
-        2581,
-        3226
+        905,
+        1131,
+        1414,
+        1768,
+        2209
       ]
     },
     {
       "id": "iron_mine",
       "name": "Iron Mine",
       "unlock_level": 28,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 5060,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 30240,
       "costs": [
-        744,
-        930,
-        1163,
-        1453,
-        1816,
-        2271,
-        2838,
-        3548,
-        4435,
-        5543
+        1367,
+        1709,
+        2136,
+        2670,
+        3337
       ]
     },
     {
       "id": "market",
       "name": "Market Square",
       "unlock_level": 36,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 7590,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 49900,
       "costs": [
-        1280,
-        1600,
-        2000,
-        2500,
-        3125,
-        3906,
-        4883,
-        6104,
-        7629,
-        9537
+        2065,
+        2581,
+        3227,
+        4033,
+        5041
       ]
     },
     {
       "id": "river_port",
       "name": "River Port",
       "unlock_level": 45,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 11390,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 82330,
       "costs": [
-        2201,
-        2751,
-        3439,
-        4299,
-        5374,
-        6717,
-        8396,
-        10495,
-        13119,
-        16399
+        3118,
+        3898,
+        4872,
+        6090,
+        7612
       ]
     },
     {
       "id": "mint",
       "name": "Ducal Mint",
       "unlock_level": 55,
-      "max_level": 10,
-      "tax_milli_per_hour_per_level": 17090,
+      "max_level": 5,
+      "tax_milli_per_hour_per_level": 135850,
       "costs": [
-        3785,
-        4731,
-        5914,
-        7392,
-        9241,
-        11551,
-        14439,
-        18048,
-        22560,
-        28201
+        4708,
+        5885,
+        7356,
+        9195,
+        11494
       ]
     }
   ],
   "tax": {
-    "base_per_hour_milli": 24000,
-    "growth_bp": 10450,
+    "base_per_hour_milli": 40000,
+    "growth_bp": 10550,
     "offline_cap_seconds": 28800,
     "offline_cap_per_tithe_level": 720
   }

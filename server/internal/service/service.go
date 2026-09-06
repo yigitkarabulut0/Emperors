@@ -6,6 +6,7 @@ package service
 
 import (
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,6 +37,11 @@ type Deps struct {
 	Config *gameconfig.Bundle
 	Signer *auth.Signer
 	Now    Clock
+
+	// For the few things that are worth noticing but not worth failing an
+	// action over -- a dropped quest tick, say. Nil is legal: tools and tests
+	// that build a Deps by hand stay untouched, and the helpers check.
+	Log *slog.Logger
 
 	// ShopSecret seeds the deterministic shop roll. Never leaves the server:
 	// anyone holding it could predict which window contains a legendary.

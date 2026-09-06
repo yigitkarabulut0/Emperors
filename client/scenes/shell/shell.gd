@@ -265,7 +265,10 @@ func _ready() -> void:
 
 	GameState.changed.connect(_on_state_changed)
 	GameState.action_failed.connect(_on_action_failed)
-	GameState.level_up.connect(func(lv: int) -> void: _flash("Level %d!" % lv, Palette.GOLD_INK))
+	GameState.level_up.connect(_celebrate_level)
+	# Once on entry too: most sessions start cold rather than by resuming.
+	_show_daily_if_due.call_deferred()
+	GameState.mastery_reached.connect(_celebrate_mastery)
 
 	# Dev-only: fire the section's primary action once the tab is open, so a
 	# capture run (which disables input) can reach a screen that only exists
@@ -497,6 +500,9 @@ func _notification(what: int) -> void:
 		# Back in the player's hands. Say so now rather than up to thirty
 		# seconds from now.
 		_beat()
+		# And it may be a new day where they are. The panel asks the server and
+		# shows nothing if today's square is already taken.
+		_show_daily_if_due()
 	elif what == NOTIFICATION_APPLICATION_PAUSED:
 		# Best effort, and it has to be: iOS stops the display link as this
 		# fires, so an awaited request would never resume. Api.beacon writes and
@@ -650,12 +656,14 @@ func _build_rail() -> Control:
 	# banner's lower edge.
 	_rail_pad.add_theme_constant_override("margin_right", RAIL_PAD)
 	# The top gets the same margin as the sides, and for the same reason: the
-	# frame's band is fourteen units deep there too, so at eight the crest plate
-	# was overlapping it and reading as if it had slid up out of the column.
-	# The same gap the plates keep from each other, so the crest is part of the
-	# stack rather than a thing sitting above it. It was GAP_M, which read as a
-	# band of empty stone under the banner.
-	_rail_pad.add_theme_constant_override("margin_top", RAIL_GAP)
+	# frame's carved band is eight units deep there too -- see patch_margin_top
+	# above -- and RAIL_PAD is the number that clears it with a little air left.
+	#
+	# It was RAIL_GAP, the two units the plates keep from EACH OTHER, which is a
+	# different measurement doing a different job. At two the crest plate started
+	# inside the frame's top lip, so its own stone edge was drawn over the rail's
+	# border and the portrait read as having slid up out of the column.
+	_rail_pad.add_theme_constant_override("margin_top", RAIL_PAD)
 	_rail_pad.add_theme_constant_override("margin_bottom", UI.GAP_S)
 	panel.add_child(_rail_pad)
 
@@ -1135,6 +1143,94 @@ func _tick() -> void:
 
 func _on_action_failed(message: String) -> void:
 	_flash(message, Palette.DANGER)
+
+
+## Levelling is the biggest thing that happens to a player, and it used to be a
+## two-second line of text.
+##
+## It quietly hands over stat points, diamonds and a full energy bar. None of
+## those were mentioned, so a player could reach level twenty without ever
+## learning they had diamonds to spend -- and the stat points, which are the
+## only permanent choice in the game, sat unspent behind a screen nobody had a
+## reason to open.
+func _celebrate_level(level: int, levels: int, points: int, gems: int) -> void:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL_HIGH, Palette.GOLD_DEEP))
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var margin := MarginContainer.new()
+	for side in ["left", "right"]:
+		margin.add_theme_constant_override("margin_" + side, 28)
+	for side in ["top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 18)
+	panel.add_child(margin)
+
+	var col := VBoxContainer.new()
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 4)
+	margin.add_child(col)
+
+	var title := "LEVEL %d" % level
+	if levels > 1:
+		title = "LEVEL %d   (+%d)" % [level, levels]
+	col.add_child(UI.label(title, UI.F_H1, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_CENTER))
+
+	# Only what actually arrived. A line promising diamonds on a build where the
+	# reward was zero would be worse than saying nothing.
+	var gains: Array[String] = []
+	if points > 0:
+		gains.append("%d stat point%s" % [points, "" if points == 1 else "s"])
+	if gems > 0:
+		gains.append("%d diamond%s" % [gems, "" if gems == 1 else "s"])
+	gains.append("energy restored")
+	col.add_child(UI.label("  ·  ".join(gains), UI.F_CAPTION, Palette.TEXT,
+		HORIZONTAL_ALIGNMENT_CENTER))
+	if points > 0:
+		col.add_child(UI.label("spend them on the Hero screen", UI.F_MICRO,
+			Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+
+	add_child(panel)
+	panel.modulate.a = 0.0
+	panel.scale = Vector2(0.92, 0.92)
+	panel.pivot_offset = panel.size / 2.0
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.18)
+	tween.tween_property(panel, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.set_parallel(false)
+	tween.tween_interval(2.0)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(panel.queue_free)
+
+
+## A job crossing a mastery threshold. Smaller than a level-up on purpose -- it
+## happens more often -- but it is a PERMANENT payout increase and it used to
+## produce nothing at all on screen.
+func _celebrate_mastery(job_id: String, collects: int, bonus_bp: int) -> void:
+	var name := job_id.capitalize()
+	for j in GameState.snapshot.get("jobs", []):
+		if str(j.get("id", "")) == job_id:
+			name = str(j.get("name", name))
+			break
+	_flash("%s mastery — %d done, +%d%% forever" % [name, collects, bonus_bp / 100],
+		Palette.SUCCESS)
+
+
+## Shows the login calendar if today's square is still there.
+##
+## Preloaded rather than reached through a class_name, which is how the other
+## overlays in this shell are opened.
+func _show_daily_if_due() -> void:
+	var res: Api.Response = await Api.get_json("/v1/daily")
+	if not res.ok or not bool(res.data.get("claimable", false)):
+		return
+	var panel: CanvasLayer = preload("res://scenes/shell/daily_reward.gd").new()
+	panel.setup(res.data)
+	get_tree().root.add_child(panel)
 
 
 func _flash(message: String, color: Color) -> void:

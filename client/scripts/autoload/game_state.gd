@@ -17,7 +17,11 @@ signal changed                      ## snapshot or pending queue moved
 ## thing that re-ran the check.
 signal energy_changed(current: int)
 signal action_failed(message: String)
-signal level_up(new_level: int)
+signal level_up(new_level: int, levels: int, stat_points: int, diamonds: int)
+## A job crossed a mastery threshold. The server has been reporting this since
+## the milestones existed and nothing read it, so a permanent +20% payout landed
+## with no more ceremony than the row's counter ticking over.
+signal mastery_reached(job_id: String, collects: int, bonus_bp: int)
 
 var snapshot: Dictionary = {}
 var loading := false
@@ -48,9 +52,32 @@ var _gold_at_ms: int = 0
 ## projections carry the elapsed time forward twice and the bar and the purse run
 ## ahead of the server -- which then looks like the server taking things away.
 func adopt(snap: Dictionary) -> void:
+	# Every snapshot replacement passes through here -- a collect batch, a raid,
+	# a purchase -- so this is the one place that can notice a level-up without
+	# each caller having to remember to look. It used to be checked in the
+	# collect batch only, which is why levelling from a raid celebrated nothing.
+	var before: Dictionary = snapshot.get("player", {})
+	var after: Dictionary = snap.get("player", {})
+	var levelled := not before.is_empty() \
+		and int(after.get("level", 1)) > int(before.get("level", 1))
+
+	# The deltas, taken from the snapshot rather than from a copy of the balance
+	# rules. A level-up quietly hands over stat points, diamonds and a full
+	# energy bar, and the player was told about none of it.
+	var levels := 0
+	var points := 0
+	var gems := 0
+	if levelled:
+		levels = int(after.get("level", 1)) - int(before.get("level", 1))
+		points = int(after.get("stat_points_unspent", 0)) - int(before.get("stat_points_unspent", 0))
+		gems = int(after.get("diamonds", 0)) - int(before.get("diamonds", 0))
+
 	snapshot = snap
 	_energy_at_ms = Time.get_ticks_msec()
 	_gold_at_ms = _energy_at_ms
+
+	if levelled:
+		level_up.emit(int(after.get("level", 1)), levels, points, gems)
 
 
 func _ready() -> void:
@@ -270,13 +297,14 @@ func _pump() -> void:
 			# energy ran out because regeneration was slower than predicted -- is
 			# a normal outcome, and only the applied ones leave the queue.
 			var applied: int = mini(int(res.data.get("applied", 0)), _pending.size())
-			var before := int(player().get("level", 1))
+			# adopt() notices the level-up and announces it, for every path.
 			adopt(res.data.get("snapshot", snapshot))
 			for i in applied:
 				_pending.pop_front()
-			var after := int(player().get("level", 1))
-			if after > before:
-				level_up.emit(after)
+			var hit := int(res.data.get("milestone_hit", 0))
+			if hit > 0:
+				var job_id := str(res.data.get("milestone_job", ""))
+				mastery_reached.emit(job_id, hit, _mastery_bonus_bp(job_id))
 			changed.emit()
 			if applied == 0:
 				# Nothing applied and no error: the prediction was ahead of the
@@ -297,3 +325,12 @@ func _pump() -> void:
 		break
 
 	_sending = false
+
+
+## The job's mastery bonus AFTER the milestone, read from the snapshot the same
+## response carried rather than from a client-side copy of the milestone table.
+func _mastery_bonus_bp(job_id: String) -> int:
+	for j in snapshot.get("jobs", []):
+		if str(j.get("id", "")) == job_id:
+			return int(j.get("mastery_bonus_bp", 0))
+	return 0

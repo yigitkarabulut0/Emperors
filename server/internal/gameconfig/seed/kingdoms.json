@@ -91,7 +91,7 @@
       "name": "Royal Treasury",
       "bucket": "tax_income_bp",
       "max_level": 10,
-      "per_level": 400,
+      "per_level": 100,
       "blurb": "Every member's estates earn more.",
       "costs": [
         50000,
@@ -197,6 +197,28 @@
     "xp_per_reputation": 100,
     "favour_per_gold": 100
   },
+  "favour_shop": [
+    {
+      "id": "energy_potion",
+      "name": "Energy Potion",
+      "cost": 40,
+      "blurb": "Fills your energy to the brim."
+    },
+    {
+      "id": "shop_refresh",
+      "name": "Fresh Wares",
+      "cost": 25,
+      "blurb": "The market restocks at once."
+    },
+    {
+      "id": "xp_boost",
+      "name": "Scholar's Draught",
+      "cost": 120,
+      "bp": 1000,
+      "hours": 2,
+      "blurb": "+10% experience for two hours."
+    }
+  ],
   "reputation": {
     "daily_cap_per_member": 150,
     "decay_bp_per_day": 200

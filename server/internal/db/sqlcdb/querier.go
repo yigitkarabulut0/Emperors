@@ -79,6 +79,11 @@ type Querier interface {
 	// caller can do in a loop from the returned total.
 	BumpJobProgressBy(ctx context.Context, arg BumpJobProgressByParams) (AppPlayerJobProgress, error)
 	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
+	// Bumps today's quest counters, creating the row on first action of the day.
+	//
+	// One statement so the hot paths (collect, attack, buy) pay a single round trip
+	// and never a read-then-write race.
+	BumpQuestProgress(ctx context.Context, arg BumpQuestProgressParams) (AppPlayerQuest, error)
 	BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error)
 	// Spends diamonds and refills the energy pool in one statement. The WHERE is the
 	// guard: no row comes back if the player cannot afford it.
@@ -90,9 +95,29 @@ type Querier interface {
 	// Buys one level. The current level is in the WHERE clause, so two concurrent
 	// taps cannot both see the same level and both succeed.
 	BuyUpgradeLevel(ctx context.Context, arg BuyUpgradeLevelParams) (AppPlayerUpgrade, error)
+	// Claims today's calendar square.
+	//
+	// The whole rule lives in the WHERE: it only lands when the player has not
+	// already claimed on this local date. Two taps, two devices, a retried request —
+	// the second one gets zero rows and grants nothing. There is no read-then-write
+	// window to lose.
+	ClaimDailyLogin(ctx context.Context, arg ClaimDailyLoginParams) (AppPlayer, error)
+	// Claims one calendar day's reputation decay, atomically.
+	//
+	// The whole point is the WHERE: two API replicas, or one that restarted twice in
+	// an evening, must not both decay the same day. The insert only lands when the
+	// stored marker is behind the day being claimed, so whoever gets there first
+	// does the work and everyone else gets zero rows back.
+	ClaimDecayDay(ctx context.Context, day string) (string, error)
 	ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitParams) (AppPlayer, error)
 	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
+	// Claims one quest slot. The bit test is inside the WHERE, so a double tap gets
+	// zero rows and is paid once.
+	ClaimQuest(ctx context.Context, arg ClaimQuestParams) (AppPlayerQuest, error)
 	ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, error)
+	// Rebuilds one board. Called inside a transaction with the delete below, so
+	// readers never see a half-filled board.
+	ClearBoard(ctx context.Context, board string) error
 	// Clears the unlogged counter once its total has been written to the ledger.
 	ClearTaxUnlogged(ctx context.Context, id uuid.UUID) error
 	CountAdmins(ctx context.Context) (int64, error)
@@ -100,6 +125,9 @@ type Querier interface {
 	CountBots(ctx context.Context) (int64, error)
 	CountKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) (int64, error)
 	CountPlayerItems(ctx context.Context, playerID uuid.UUID) (int64, error)
+	// How many raids landed on this player since a given moment, for the
+	// "while you were away" summary. Counts only fights they did not start.
+	CountRaidsSince(ctx context.Context, arg CountRaidsSinceParams) (CountRaidsSinceRow, error)
 	CreateAdminSession(ctx context.Context, arg CreateAdminSessionParams) (AdminSession, error)
 	CreateAdminUser(ctx context.Context, arg CreateAdminUserParams) (AdminUser, error)
 	CreateBalanceVersion(ctx context.Context, arg CreateBalanceVersionParams) (AdminBalanceVersion, error)
@@ -136,6 +164,21 @@ type Querier interface {
 	// Donating: take the gold, credit the treasury, and record the daily total in
 	// one place so the cap cannot be bypassed by racing two requests.
 	DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlayer, error)
+	// Creates the day's row with its three quests if it is not there yet, and
+	// returns whatever the row holds either way.
+	//
+	// The DO UPDATE is a no-op touch purely so RETURNING gives a row on conflict:
+	// the quest_ids of an existing day are never rewritten, which is the whole
+	// point — the board is frozen once it exists.
+	EnsureQuestDay(ctx context.Context, arg EnsureQuestDayParams) (AppPlayerQuest, error)
+	FillBoardLevel(ctx context.Context, lim int32) error
+	// The ranking itself, done in the database rather than in Go: sorting every
+	// player in application memory is the thing this table exists to avoid.
+	// Bots are excluded — a board topped by the filler opponents would be a lie.
+	FillBoardMight(ctx context.Context, lim int32) error
+	// Net worth: what they are carrying plus what they have banked. Treasury alone
+	// would reward hoarding and purse alone would reward being about to be robbed.
+	FillBoardWealth(ctx context.Context, lim int32) error
 	// Finds someone to invite. Prefix match rather than substring, so a search is
 	// index-friendly and a player cannot enumerate the roster by typing one letter.
 	//
@@ -158,11 +201,21 @@ type Querier interface {
 	GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error)
 	GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error)
 	GetPlayerItem(ctx context.Context, arg GetPlayerItemParams) (AppPlayerItem, error)
+	GetQuestProgress(ctx context.Context, arg GetQuestProgressParams) (AppPlayerQuest, error)
 	GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (AppSession, error)
 	GetShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
 	GetSoldier(ctx context.Context, arg GetSoldierParams) (AppSoldier, error)
 	// Economy health: what created gold and what destroyed it, by reason.
 	GoldFlows(ctx context.Context, dollar_1 int32) ([]GoldFlowsRow, error)
+	GrantRevenge(ctx context.Context, arg GrantRevengeParams) error
+	GrantXPBoost(ctx context.Context, arg GrantXPBoostParams) error
+	// The id is supplied, not defaulted.
+	//
+	// It is minted in Go before the fight because the combat seed is derived from
+	// it, and it is what the attack response hands the client. Letting the database
+	// default a different one meant the id the player was given did not name any
+	// stored row: every replay link was dead, and nothing could reference the battle
+	// afterwards.
 	InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
 	LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, error)
@@ -170,6 +223,13 @@ type Querier interface {
 	LevelBands(ctx context.Context) ([]LevelBandsRow, error)
 	ListAudit(ctx context.Context, limit int32) ([]AdminAuditLog, error)
 	ListBalanceVersions(ctx context.Context, limit int32) ([]ListBalanceVersionsRow, error)
+	// Battle history with the OTHER party's identity resolved in the same round
+	// trip. A log that says "you lost 4,120 gold" without saying to whom is not a
+	// log, and fetching the names separately would be one query per row.
+	//
+	// The join key flips on which side the player was: their opponent is the
+	// defender when they attacked, and the attacker when they were raided.
+	ListBattleLog(ctx context.Context, arg ListBattleLogParams) ([]ListBattleLogRow, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
 	ListBoosts(ctx context.Context, limit int32) ([]AdminServerBoost, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
@@ -182,6 +242,9 @@ type Querier interface {
 	ListKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) ([]ListKingdomMembersRow, error)
 	ListKingdomUpgrades(ctx context.Context, kingdomID uuid.UUID) ([]AppKingdomUpgrade, error)
 	ListPlayerItems(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
+	// Live, unspent tokens with the person to be avenged upon resolved in the same
+	// round trip.
+	ListRevenge(ctx context.Context, playerID uuid.UUID) ([]ListRevengeRow, error)
 	ListSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppSoldier, error)
 	ListUpgrades(ctx context.Context, playerID uuid.UUID) ([]AppPlayerUpgrade, error)
 	LockKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error)
@@ -201,6 +264,7 @@ type Querier interface {
 	// never be seen half-applied. The guards are in the WHERE: no row comes back if
 	// the player cannot cover it, and the CHECK constraints refuse a negative side.
 	MoveToTreasury(ctx context.Context, arg MoveToTreasuryParams) (AppPlayer, error)
+	MyRank(ctx context.Context, arg MyRankParams) (MyRankRow, error)
 	// Who is here right now.
 	OnlineNow(ctx context.Context, since time.Time) ([]OnlineNowRow, error)
 	// Founding: pay, and join in the same statement so a crash cannot leave a
@@ -216,10 +280,12 @@ type Querier interface {
 	// The live board is held in memory and knows only player ids, so rendering it
 	// needs one lookup for the whole set rather than one per row.
 	PlayersByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]PlayersByIDsRow, error)
+	ReadBoard(ctx context.Context, arg ReadBoardParams) ([]ReadBoardRow, error)
 	// The players seen recently, to repopulate the presence registry after a
 	// restart. Without it a deploy shows every player leaving at once.
 	RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time) ([]RecentlySeenPlayersRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
+	RefillEnergy(ctx context.Context, arg RefillEnergyParams) error
 	// Registrations per day. generate_series so a day with no signups is a zero in
 	// the chart rather than a missing bar that silently narrows the axis.
 	RegistrationsDaily(ctx context.Context, arg RegistrationsDailyParams) ([]RegistrationsDailyRow, error)
@@ -244,6 +310,7 @@ type Querier interface {
 	SetAvatar(ctx context.Context, arg SetAvatarParams) (AppPlayer, error)
 	SetHeroEquipped(ctx context.Context, arg SetHeroEquippedParams) error
 	SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) (AppPlayer, error)
+	SetMight(ctx context.Context, arg SetMightParams) error
 	SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error)
 	SetSoldierEquipped(ctx context.Context, arg SetSoldierEquippedParams) error
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
@@ -252,6 +319,9 @@ type Querier interface {
 	SetTaxRate(ctx context.Context, arg SetTaxRateParams) error
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
 	SettleTax(ctx context.Context, arg SettleTaxParams) error
+	// Spends favour. Zero rows means they could not afford it, so the check and the
+	// deduction are the same statement and a double-tap cannot overdraw.
+	SpendFavour(ctx context.Context, arg SpendFavourParams) (AppPlayer, error)
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)
 	SpendKingdomTreasury(ctx context.Context, arg SpendKingdomTreasuryParams) (AppKingdom, error)
 	// Spends level-up points. The WHERE clause carries the affordability check, so
@@ -290,6 +360,9 @@ type Querier interface {
 	// Recruiting into an occupied slot replaces the occupant, so this is an upsert
 	// rather than an insert.
 	UpsertSoldier(ctx context.Context, arg UpsertSoldierParams) (AppSoldier, error)
+	// Spends a token, and only if it is still live and still theirs. Zero rows means
+	// it was already used or has expired, so the check and the spend cannot race.
+	UseRevenge(ctx context.Context, arg UseRevengeParams) (uuid.UUID, error)
 	WriteAudit(ctx context.Context, arg WriteAuditParams) error
 }
 

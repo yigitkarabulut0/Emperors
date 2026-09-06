@@ -1,13 +1,16 @@
 package gameconfig
 
-// SoldiersConfig covers recruitment, slot costs, training and the derived
-// combat values that turn a roster into a single Might number.
+// SoldiersConfig covers recruitment, slot costs and the derived combat values
+// that turn a roster into a single Might number.
+//
+// There is no training and no soldier level: a soldier's tier is its rank, set
+// at recruitment and fixed for life. That is what keeps the tier ladder strictly
+// ordered — while soldiers levelled, four levels of Training was enough for a
+// tier to overtake the one above it.
 type SoldiersConfig struct {
 	MaxSlots              int              `json:"max_slots"`
 	Slots                 []SoldierSlot    `json:"slots"`
 	RecruitCostPerLevelBP int64            `json:"recruit_cost_per_level_bp"`
-	LevelMultPerLevelBP   int64            `json:"level_mult_per_level_bp"`
-	Train                 TrainConfig      `json:"train"`
 	Onboarding            OnboardingConfig `json:"onboarding"`
 	Types                 []SoldierType    `json:"types"`
 	Player                PlayerBaseStats  `json:"player"`
@@ -18,11 +21,6 @@ type SoldierSlot struct {
 	Index     int   `json:"index"`
 	Cost      int64 `json:"cost"`
 	LevelGate int   `json:"level_gate"`
-}
-
-type TrainConfig struct {
-	Base     int64 `json:"base"`
-	GrowthBP int64 `json:"growth_bp"`
 }
 
 // OnboardingConfig covers the one-time grants that make the Barracks reachable
@@ -45,12 +43,19 @@ type SoldierType struct {
 	LuckCoef float64            `json:"luck_coef"`
 }
 
+// PlayerBaseStats is the one thing in the game that grows with level.
+//
+// It grows in steps: every LevelsPerStatStep levels adds StatStep to attack and
+// defense. A flat per-level trickle used to do this, which made the number climb
+// on its own with no decision attached; everything past the step now comes from
+// spending stat points.
 type PlayerBaseStats struct {
-	BaseStat     int64 `json:"base_stat"`
-	PerLevel     int64 `json:"per_level"`
-	PerStatPoint int64 `json:"per_stat_point"`
-	BaseHP       int64 `json:"base_hp"`
-	HPPerLevel   int64 `json:"hp_per_level"`
+	BaseStat          int64 `json:"base_stat"`
+	LevelsPerStatStep int64 `json:"levels_per_stat_step"`
+	StatStep          int64 `json:"stat_step"`
+	PerStatPoint      int64 `json:"per_stat_point"`
+	BaseHP            int64 `json:"base_hp"`
+	HPPerLevel        int64 `json:"hp_per_level"`
 }
 
 type CombatConfig struct {

@@ -1,5 +1,5 @@
 {
-  "_comment": "Soldiers. slot_cost(n) = 500 * 2.05^(n-1); recruit_cost = base * (1 + 0.11*level); stats = type_stat * tier_mult * (1 + 0.09*soldier_level). A common Gladiator is about as strong as a rare Peasant, which is what justifies the 40x price gap: the TYPE matters beyond the tier roll. Train raises a soldier's level toward the player's for 60 * 1.09^level * tier_mult, turning 'your veteran is obsolete' into 'invest in your veteran' \u2014 and, because 1.09^L grows without limit, an unbounded late-game gold sink.",
+  "_comment": "Soldiers. slot_cost(n) = 500 * 2.05^(n-1); recruit_cost = base * (1 + 0.11*level); stats = type_stat * tier_mult. A soldier has NO level: its tier is its rank, it is fixed at recruitment and it never grows. A common Gladiator is about as strong as a rare Peasant, which is what justifies the 40x price gap: the TYPE matters beyond the tier roll. Because nothing but the tier scales a soldier, the tier ladder is strictly ordered in power: a legendary always beats an epic.",
   "max_slots": 10,
   "slots": [
     {
@@ -54,11 +54,6 @@
     }
   ],
   "recruit_cost_per_level_bp": 1100,
-  "level_mult_per_level_bp": 900,
-  "train": {
-    "base": 60,
-    "growth_bp": 10900
-  },
   "onboarding": {
     "free_slot_at_level": 5,
     "free_first_recruit": true,
@@ -122,18 +117,19 @@
   ],
   "player": {
     "base_stat": 10,
-    "per_level": 2,
+    "levels_per_stat_step": 5,
+    "stat_step": 5,
     "per_stat_point": 4,
     "base_hp": 100,
-    "hp_per_level": 12
+    "hp_per_level": 0
   },
   "combat": {
     "hp_per_defense_bp": 30000,
-    "hp_level_bonus_bp": 200,
+    "hp_level_bonus_bp": 0,
     "dr_level_coef": 40,
     "dr_base": 60,
     "dr_cap_bp": 6000,
-    "dmg_k_bp": 1600,
+    "dmg_k_bp": 2000,
     "rage_step_bp": 2500,
     "max_rounds": 60,
     "variance_min_bp": 8500,

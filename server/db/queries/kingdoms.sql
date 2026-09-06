@@ -125,3 +125,35 @@ LIMIT 20;
 -- squatting at rank 1 forever.
 -- name: DecayReputation :exec
 UPDATE app.kingdoms SET reputation = reputation * (10000 - $1) / 10000 WHERE reputation > 0;
+
+-- Claims one calendar day's reputation decay, atomically.
+--
+-- The whole point is the WHERE: two API replicas, or one that restarted twice in
+-- an evening, must not both decay the same day. The insert only lands when the
+-- stored marker is behind the day being claimed, so whoever gets there first
+-- does the work and everyone else gets zero rows back.
+-- name: ClaimDecayDay :one
+INSERT INTO app.server_info (key, value, updated_at)
+VALUES ('reputation_decay_day', sqlc.arg(day), now())
+ON CONFLICT (key) DO UPDATE
+SET value = EXCLUDED.value, updated_at = now()
+WHERE app.server_info.value < EXCLUDED.value
+RETURNING value;
+
+-- Spends favour. Zero rows means they could not afford it, so the check and the
+-- deduction are the same statement and a double-tap cannot overdraw.
+-- name: SpendFavour :one
+UPDATE app.players
+SET kingdom_favour = kingdom_favour - sqlc.arg(cost), action_seq = sqlc.arg(action_seq)
+WHERE id = sqlc.arg(id) AND kingdom_favour >= sqlc.arg(cost)
+RETURNING *;
+
+-- name: GrantXPBoost :exec
+UPDATE app.players
+SET xp_boost_bp = sqlc.arg(bp), xp_boost_expires_at = sqlc.arg(expires_at)
+WHERE id = sqlc.arg(id);
+
+-- name: RefillEnergy :exec
+UPDATE app.players
+SET energy_milli = sqlc.arg(energy_milli), energy_updated_at = sqlc.arg(now)
+WHERE id = sqlc.arg(id);

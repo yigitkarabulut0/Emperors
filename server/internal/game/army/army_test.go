@@ -15,31 +15,50 @@ func cfg(t *testing.T) *gameconfig.Bundle {
 	return b
 }
 
-func TestSoldierBaseMatchesTheDesignTable(t *testing.T) {
-	// Values from docs/design/economy.md 6.3 at soldier level 30.
+func TestSoldierBaseIsTypeTimesTierAndNothingElse(t *testing.T) {
+	// A soldier has no level. Its stats are its type's base scaled by its tier,
+	// full stop -- which is what makes the tier ladder strictly ordered.
 	//
-	// One deliberate divergence: the doc lists Mercenary legendary as 187 attack,
-	// but its own formula gives 14 * 3.60 * 3.7 = 186.48 -> 186. The doc cell is a
-	// rounding artefact; the formula is the source of truth.
+	// The old table was measured "at soldier level 30" and carried a
+	// (1 + 0.09 * level) term that let four levels of Training push a tier past
+	// the one above it.
 	c := cfg(t)
 	cases := []struct {
 		typeID, tier         string
 		wantA, wantD, wantHP int64
 	}{
-		{"peasant", "common", 30, 30, 148},
-		{"peasant", "legendary", 107, 107, 533},
-		{"peasant", "special", 225, 225, 1125},
-		{"mercenary", "common", 52, 44, 204},
-		{"mercenary", "legendary", 186, 160, 733},
-		{"gladiator", "common", 81, 67, 278},
-		{"gladiator", "legendary", 293, 240, 999},
-		{"gladiator", "special", 619, 506, 2109},
+		{"peasant", "common", 8, 8, 40},
+		{"peasant", "legendary", 29, 29, 144},
+		{"peasant", "special", 61, 61, 304},
+		{"mercenary", "common", 14, 12, 55},
+		{"mercenary", "legendary", 50, 43, 198},
+		{"gladiator", "common", 22, 18, 75},
+		{"gladiator", "legendary", 79, 65, 270},
+		{"gladiator", "special", 167, 137, 570},
 	}
 	for _, k := range cases {
-		a, d, hp := SoldierBase(c, k.typeID, k.tier, 30)
+		a, d, hp := SoldierBase(c, k.typeID, k.tier)
 		if a != k.wantA || d != k.wantD || hp != k.wantHP {
-			t.Errorf("%s %s lv30 = %d/%d/%d, want %d/%d/%d",
+			t.Errorf("%s %s = %d/%d/%d, want %d/%d/%d",
 				k.typeID, k.tier, a, d, hp, k.wantA, k.wantD, k.wantHP)
+		}
+	}
+}
+
+// TestEveryTierBeatsTheOneBelowIt is the guarantee the whole rarity ladder rests
+// on, checked on the real config rather than argued about.
+func TestEveryTierBeatsTheOneBelowIt(t *testing.T) {
+	c := cfg(t)
+	for _, typeID := range []string{"peasant", "mercenary", "gladiator"} {
+		var prevA, prevD, prevHP int64
+		prev := ""
+		for _, tier := range c.Tiers.Tiers {
+			a, d, hp := SoldierBase(c, typeID, tier.ID)
+			if prev != "" && (a <= prevA || d <= prevD || hp <= prevHP) {
+				t.Errorf("%s: %s (%d/%d/%d) does not beat %s (%d/%d/%d)",
+					typeID, tier.ID, a, d, hp, prev, prevA, prevD, prevHP)
+			}
+			prevA, prevD, prevHP, prev = a, d, hp, tier.ID
 		}
 	}
 }
@@ -48,8 +67,8 @@ func TestACommonGladiatorRivalsARarePeasant(t *testing.T) {
 	// The overlap that justifies the 40x price gap: type matters beyond the roll.
 	// Without it, a lucky cheap recruit would make the expensive option pointless.
 	c := cfg(t)
-	ga, gd, ghp := SoldierBase(c, "gladiator", "common", 30)
-	pa, pd, php := SoldierBase(c, "peasant", "rare", 30)
+	ga, gd, ghp := SoldierBase(c, "gladiator", "common")
+	pa, pd, php := SoldierBase(c, "peasant", "rare")
 	if ga+gd+ghp < (pa+pd+php)*85/100 {
 		t.Errorf("a common Gladiator (%d/%d/%d) is far weaker than a rare Peasant (%d/%d/%d)",
 			ga, gd, ghp, pa, pd, php)
@@ -80,6 +99,12 @@ func TestDamageReductionIsCappedAndLevelNormalised(t *testing.T) {
 		t.Errorf("huge defense gave %d bp, want the %d bp cap", got, c.Soldiers.Combat.DRCapBP)
 	}
 	// The same armour is worth less against a higher-level attacker.
+	//
+	// This survives soldiers losing their level term, and it has to: most of a
+	// unit's defense is its GEAR, which is rolled at the owner's level and still
+	// grows with it. Flattening this to a constant was tried and saturated the
+	// cap -- at k=60 anything above about 90 defense sat at the 60%% ceiling, so
+	// armour stopped meaning anything for most of the game.
 	lo := DamageReductionBP(c, 200, 5)
 	hi := DamageReductionBP(c, 200, 50)
 	if hi >= lo {

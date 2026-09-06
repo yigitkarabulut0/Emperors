@@ -6,7 +6,12 @@ extends VBoxContainer
 ## empty for the first twelve levels teaches the wrong thing about the game.
 
 
-enum Mode { OVERVIEW, MEMBERS, UPGRADES }
+enum Mode { OVERVIEW, MEMBERS, UPGRADES, RANKS }
+
+## Which board is showing under Ranks.
+const BOARDS := [["might", "Might"], ["level", "Level"], ["wealth", "Wealth"]]
+var _board := "might"
+var _ranks: Dictionary = {}
 
 var _kv: Dictionary = {}
 var _mode: int = Mode.OVERVIEW
@@ -75,14 +80,30 @@ func _rebuild() -> void:
 		c.queue_free()
 
 	_refresh_hint()
+
+	# Ranks is the one sub-tab a landless player can use, and the one that gives
+	# them something to want. Built before the in_kingdom check so it is reachable
+	# from the forty levels somebody may spend without a banner.
+	var entries: Array = []
+	if bool(_kv.get("in_kingdom", false)):
+		entries = [[Mode.OVERVIEW, "Realm"], [Mode.MEMBERS, "Lords"],
+			[Mode.UPGRADES, "Works"], [Mode.RANKS, "Ranks"]]
+	else:
+		entries = [[Mode.RANKS, "Ranks"]]
+		if _mode != Mode.RANKS:
+			_build_tabs(entries)
+			_build_landless()
+			return
+
 	if not bool(_kv.get("in_kingdom", false)):
-		_build_landless()
+		_build_tabs(entries)
+		_build_ranks()
 		return
 
 	var k: Dictionary = _kv.get("kingdom", {})
 	_header.text = "%s  [%s]" % [str(k.get("name", "")), str(k.get("tag", ""))]
 
-	for entry in [[Mode.OVERVIEW, "Realm"], [Mode.MEMBERS, "Lords"], [Mode.UPGRADES, "Works"]]:
+	for entry in entries:
 		var b := UI.ghost_button(str(entry[1]), UI.F_BODY)
 		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -97,6 +118,7 @@ func _rebuild() -> void:
 		_tabs.add_child(b)
 
 	match _mode:
+		Mode.RANKS: _build_ranks()
 		Mode.MEMBERS: _build_members()
 		Mode.UPGRADES: _build_upgrades()
 		_: _build_overview()
@@ -435,3 +457,118 @@ func _refresh_hint() -> void:
 		_action_hint.text = "Found a house, or wait to be invited to one"
 	else:
 		_action_hint.text = "Realm · Lords · Works"
+
+
+## The sub-tab strip, extracted so the landless path can draw it too.
+func _build_tabs(entries: Array) -> void:
+	for entry in entries:
+		var b := UI.ghost_button(str(entry[1]), UI.F_BODY)
+		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var active: bool = _mode == int(entry[0])
+		b.add_theme_stylebox_override("normal", UI.card_box(active))
+		b.add_theme_color_override("font_color",
+			Palette.GOLD_INK if active else Palette.TEXT_DIM)
+		var m: int = int(entry[0])
+		b.pressed.connect(func() -> void:
+			_mode = m
+			_rebuild())
+		_tabs.add_child(b)
+
+
+## Three boards, because one board makes one build correct.
+##
+## Might rewards investing in the army, Level rewards playing, Wealth rewards not
+## being robbed — and the three top tens are rarely the same people.
+func _build_ranks() -> void:
+	_header.text = "THE REALM'S RECKONING"
+
+	var picker := HBoxContainer.new()
+	picker.add_theme_constant_override("separation", 4)
+	_list.add_child(picker)
+	for entry in BOARDS:
+		var b := UI.ghost_button(str(entry[1]), UI.F_CAPTION)
+		b.custom_minimum_size = Vector2(0, 36)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var active: bool = _board == str(entry[0])
+		b.add_theme_stylebox_override("normal",
+			UI.panel_box(Palette.PANEL_HIGH if active else Palette.PANEL,
+				Palette.GOLD_DEEP if active else Palette.LINE))
+		b.add_theme_color_override("font_color",
+			Palette.GOLD_INK if active else Palette.TEXT_DIM)
+		var key: String = str(entry[0])
+		b.pressed.connect(func() -> void:
+			_board = key
+			_load_board())
+		picker.add_child(b)
+
+	var rows: Array = _ranks.get("rows", [])
+	if rows.is_empty():
+		_list.add_child(UI.label("The heralds are still counting.",
+			UI.F_BODY, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+		_load_board()
+		return
+
+	var mine := int(_ranks.get("my_rank", 0))
+	if mine > 0:
+		_list.add_child(UI.label("You stand %d%s with %s" % [
+			mine, _ordinal(mine), UI.number(int(_ranks.get("my_value", 0)))],
+			UI.F_CAPTION, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_CENTER))
+	else:
+		_list.add_child(UI.label("You are not on this roll yet.",
+			UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+
+	for r in rows:
+		_list.add_child(_rank_row(r, int(r.get("rank", 0)) == mine))
+
+
+func _rank_row(r: Dictionary, is_me: bool) -> Control:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UI.card_box(is_me))
+
+	var margin := MarginContainer.new()
+	for side in ["left", "right"]:
+		margin.add_theme_constant_override("margin_" + side, 10)
+	for side in ["top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 6)
+	p.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	margin.add_child(row)
+
+	var rank := int(r.get("rank", 0))
+	row.add_child(UI.label("%d" % rank, UI.F_BODY,
+		Palette.GOLD_INK if rank <= 3 else Palette.TEXT_DIM))
+
+	var face := TextureRect.new()
+	face.custom_minimum_size = Vector2(32, 32)
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	face.texture = ArtRegistry.portrait(str(r.get("avatar", "")))
+	row.add_child(face)
+
+	var name_label := UI.label(str(r.get("name", "")), UI.F_CAPTION, Palette.TEXT)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_label)
+
+	row.add_child(UI.label(UI.number(int(r.get("value", 0))), UI.F_CAPTION, Palette.GOLD_INK))
+	return p
+
+
+func _ordinal(n: int) -> String:
+	if n % 100 in [11, 12, 13]:
+		return "th"
+	match n % 10:
+		1: return "st"
+		2: return "nd"
+		3: return "rd"
+	return "th"
+
+
+func _load_board() -> void:
+	var res: Api.Response = await Api.get_json("/v1/leaderboards/%s" % _board)
+	if not res.ok:
+		return
+	_ranks = res.data
+	_rebuild()

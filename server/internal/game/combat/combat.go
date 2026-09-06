@@ -126,6 +126,9 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 	rep.FortuneABP = rollFortune(rng, c)
 	rep.FortuneDBP = rollFortune(rng, c)
 
+	// Speed no longer decides WHO opens -- the attacker always does, because the
+	// player who chose to raid should see their own blow land first. What speed
+	// decides is the order every unit acts in WITHIN a round, and the charge.
 	var aSpeed, dSpeed int64
 	for _, u := range aUnits {
 		aSpeed += u.Speed
@@ -134,10 +137,12 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 		dSpeed += u.Speed
 	}
 	rep.FirstSide = SideAttacker
+	// The charge still belongs to the genuinely faster army, which is a separate
+	// question from who is raiding whom.
+	fastSide := SideAttacker
 	if dSpeed > aSpeed {
-		rep.FirstSide = SideDefender
+		fastSide = SideDefender
 	}
-	fastSide := rep.FirstSide
 
 	aFront, dFront := 0, 0
 
@@ -145,14 +150,31 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 		rep.Rounds = round
 		rageBP := 10000 + c.RageStepBP*int64(round-1)
 
-		order := []Side{rep.FirstSide, other(rep.FirstSide)}
-		for _, side := range order {
-			var src, dst []*unit
+		// One unit at a time, in speed order, damage landing as it is dealt.
+		//
+		// This used to be a volley: every living unit on a side struck at once,
+		// their damage was SUMMED, and the total was applied in one go. Two
+		// things came out of that. The replay showed ten numbers appearing
+		// together and read as a burst of noise rather than a fight. And overkill
+		// was wasted per volley rather than per blow, so a side could pour ten
+		// units' damage into a target with two hit points left and throw the rest
+		// away.
+		//
+		// Acting one at a time fixes both: each blow is a discrete, readable
+		// event, and the front rank advances the moment it falls, so the next
+		// unit in the order strikes whoever is actually standing there.
+		for _, u := range initiative(aUnits, dUnits) {
+			if !u.alive() {
+				continue // fell earlier in this same round
+			}
+			side := u.side
+
+			var dst []*unit
 			var frontIx *int
 			if side == SideAttacker {
-				src, dst, frontIx = aUnits, dUnits, &dFront
+				dst, frontIx = dUnits, &dFront
 			} else {
-				src, dst, frontIx = dUnits, aUnits, &aFront
+				dst, frontIx = aUnits, &aFront
 			}
 
 			fortune := rep.FortuneABP
@@ -165,26 +187,18 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 				continue
 			}
 
-			var total int64
-			for _, u := range src {
-				if !u.alive() {
-					continue
-				}
-				dmg, crit, dodged := strike(cfg, rng, u, target, fortune, rageBP, round, side == fastSide)
-				if dodged {
-					rep.Events = append(rep.Events, Event{Round: round, Kind: "dodge", Side: side, Src: u.ID, Dst: target.ID})
-					continue
-				}
-				total += dmg
-				rep.Events = append(rep.Events, Event{
-					Round: round, Kind: "hit", Side: side, Src: u.ID, Dst: target.ID,
-					Damage: dmg, Crit: crit,
-				})
+			dmg, crit, dodged := strike(cfg, rng, u, target, fortune, rageBP, round, side == fastSide)
+			if dodged {
+				rep.Events = append(rep.Events, Event{Round: round, Kind: "dodge", Side: side, Src: u.ID, Dst: target.ID})
+				continue
 			}
 
-			// Excess damage is wasted rather than carrying to the next unit. That
-			// is what makes a deep line worth having.
-			target.hp -= total
+			rep.Events = append(rep.Events, Event{
+				Round: round, Kind: "hit", Side: side, Src: u.ID, Dst: target.ID,
+				Damage: dmg, Crit: crit,
+			})
+
+			target.hp -= dmg
 			if target.hp <= 0 {
 				target.hp = 0
 				rep.Events = append(rep.Events, Event{Round: round, Kind: "death", Side: other(side), Dst: target.ID})
@@ -210,6 +224,53 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 		rep.Winner = SideAttacker
 	}
 	return rep
+}
+
+// initiative orders every living unit for one round of blows.
+//
+// Speed is what this is FOR. It buys you the right to swing earlier, which in a
+// system where the front rank can fall mid-round is worth real damage: a fast
+// unit lands its blow before a slower one that might have killed its target
+// first, and a fast defender can drop the attacker's champion before it acts.
+//
+// The attacker always opens, whatever the speeds. Raiding is a deliberate act
+// and the player who chose it should see their own blow land first; speed
+// arranges everyone after that.
+func initiative(aUnits, dUnits []*unit) []*unit {
+	out := make([]*unit, 0, len(aUnits)+len(dUnits))
+	for _, u := range aUnits {
+		if u.alive() {
+			out = append(out, u)
+		}
+	}
+	for _, u := range dUnits {
+		if u.alive() {
+			out = append(out, u)
+		}
+	}
+	// Fastest first; the attacker takes ties, and id breaks the rest, so an audit
+	// re-run of the same battle cannot disagree about who swung when.
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Speed != out[j].Speed {
+			return out[i].Speed > out[j].Speed
+		}
+		if out[i].side != out[j].side {
+			return out[i].side == SideAttacker
+		}
+		return out[i].ID < out[j].ID
+	})
+	// Pull the attacker's fastest to the very front. Everyone else keeps their
+	// speed order behind it.
+	for i, u := range out {
+		if u.side == SideAttacker {
+			if i > 0 {
+				copy(out[1:i+1], out[:i])
+				out[0] = u
+			}
+			break
+		}
+	}
+	return out
 }
 
 func buildSide(a Army, side Side, defScaleBP int64) []*unit {

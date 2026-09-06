@@ -20,7 +20,7 @@ func realArmy(c *gameconfig.Bundle, id string, level int64, soldiers int, tier s
 		Attack: atk, Defense: def, HP: army.HeroHP(c, level, def),
 	})
 	for i := 0; i < soldiers; i++ {
-		sa, sd, shp := army.SoldierBase(c, "peasant", tier, level)
+		sa, sd, shp := army.SoldierBase(c, "peasant", tier)
 		a.Units = append(a.Units, Combatant{
 			ID: fmt.Sprintf("%s-s%d", id, i), Name: "peasant", Tier: tier,
 			Attack: sa, Defense: sd, HP: army.UnitHP(c, shp, sd, level),

@@ -278,3 +278,115 @@ func (d Deps) Sell(ctx context.Context, playerID, itemID uuid.UUID, wantSeq int6
 	}
 	return &res, nil
 }
+
+// SellBatchMax caps one bulk sale.
+//
+// The same reasoning as CollectBatch's limit: the whole run happens inside one
+// transaction holding the player's row lock, so an unbounded list would let a
+// broken or malicious client park a lock for as long as it liked. Fifty covers
+// clearing a full bag of commons in three taps.
+const SellBatchMax = 50
+
+// SellBatchResult reports what a bulk sale actually did.
+//
+// Partial success is a normal outcome, not an error: an item that vanished
+// between the client listing it and the sale landing — equipped on another
+// device, already sold — should not cost the player the other forty-nine.
+type SellBatchResult struct {
+	Sold     int      `json:"sold"`
+	Gained   int64    `json:"gained"`
+	GoldLeft string   `json:"gold_left"`
+	Skipped  []string `json:"skipped"`
+}
+
+// SellMany clears out several items at once.
+//
+// A hundred-slot bag emptied one confirm dialog at a time is the kind of chore
+// that makes a player stop opening the screen, and the armory caps at 150.
+func (d Deps) SellMany(ctx context.Context, playerID uuid.UUID, itemIDs []uuid.UUID, wantSeq int64) (*SellBatchResult, error) {
+	if len(itemIDs) == 0 {
+		return nil, ErrNothingToSpend
+	}
+	if len(itemIDs) > SellBatchMax {
+		itemIDs = itemIDs[:SellBatchMax]
+	}
+
+	res := &SellBatchResult{Skipped: []string{}}
+	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
+		q := sqlcdb.New(tx)
+
+		p, err := q.LockPlayer(ctx, playerID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("lock player: %w", err)
+		}
+		if err := checkSeq(p, wantSeq); err != nil {
+			return err
+		}
+
+		// Sum first, credit once. One gold movement and one ledger row for one
+		// action the player took, which is also what keeps the economy dashboard
+		// reading the way the game was played.
+		var total int64
+		seen := make(map[uuid.UUID]bool, len(itemIDs))
+		for _, id := range itemIDs {
+			if seen[id] {
+				continue // a duplicate in the request must not sell twice
+			}
+			seen[id] = true
+
+			it, err := q.LockPlayerItem(ctx, sqlcdb.LockPlayerItemParams{ID: id, PlayerID: playerID})
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					res.Skipped = append(res.Skipped, id.String())
+					continue
+				}
+				return fmt.Errorf("lock item: %w", err)
+			}
+			if it.EquippedOnHero || it.EquippedSoldierID != nil {
+				res.Skipped = append(res.Skipped, id.String())
+				continue
+			}
+
+			total += items.SellPrice(d.Config, items.Instance{
+				Slot: it.Slot, Tier: it.Tier,
+				Attack: it.Attack, Defense: it.Defense, Speed: it.Speed,
+			})
+			if err := q.DeletePlayerItem(ctx, sqlcdb.DeletePlayerItemParams{
+				ID: id, PlayerID: playerID,
+			}); err != nil {
+				return fmt.Errorf("delete item: %w", err)
+			}
+			res.Sold++
+		}
+
+		if res.Sold == 0 {
+			// Nothing could be sold at all — the same refusal the single-item
+			// endpoint gives, so the client sees no new case.
+			return ErrNotFound
+		}
+
+		after, err := q.CreditGold(ctx, sqlcdb.CreditGoldParams{
+			ID: playerID, Gold: total, ActionSeq: wantSeq,
+		})
+		if err != nil {
+			return fmt.Errorf("credit gold: %w", err)
+		}
+		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+			PlayerID: playerID, Delta: total, BalanceAfter: after.Gold,
+			Reason: "item_sell", RefID: nil,
+		}); err != nil {
+			return fmt.Errorf("ledger: %w", err)
+		}
+
+		res.Gained = total
+		res.GoldLeft = itoa(after.Gold)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}

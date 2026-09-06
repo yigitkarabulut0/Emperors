@@ -87,6 +87,34 @@ print("\n== energy really was spent ==")
 check("the pool went down by the batch, not by one",
       after["energy"]["current"] < left, (left, after["energy"]["current"]))
 
+print("\n== a batch pays for EVERY level it gains, not just the last ==")
+# The bug this guards: CollectBatch seeded its running stat-point and diamond
+# totals with the player's current balance and then ASSIGNED each award's delta
+# over the previous one. A batch that levelled on its first collect and not on
+# its last credited nothing at all for that level, and reported a negative
+# diamond gain. A fresh account levels several times inside one batch, which is
+# exactly the case that was broken.
+st, before = call("GET", "/v1/state", token=token)
+seq = before["player"]["action_seq"] + 1
+gems0 = before["player"]["diamonds"]
+pts0 = before["player"]["stat_points_unspent"]
+st, run = call("POST", "/v1/collect/batch",
+               {"job_ids": ["grapes"] * 32, "action_seq": seq}, token=token)
+check("the batch ran", st == 200, (st, run))
+st, done = call("GET", "/v1/state", token=token)
+levels = run.get("levels_gained", 0)
+if levels == 0:
+    print("        no level gained in this batch; nothing to check")
+else:
+    check("diamonds gained is never negative", run.get("diamonds_gained", 0) >= 0,
+          run.get("diamonds_gained"))
+    check(f"diamonds paid for all {levels} levels",
+          done["player"]["diamonds"] - gems0 == run["diamonds_gained"] > 0,
+          (gems0, done["player"]["diamonds"], run.get("diamonds_gained")))
+    check(f"stat points paid for all {levels} levels",
+          done["player"]["stat_points_unspent"] - pts0 >= levels,
+          (pts0, done["player"]["stat_points_unspent"], levels))
+
 print()
 if failures:
     print(f"{len(failures)} FAILED: " + ", ".join(failures))

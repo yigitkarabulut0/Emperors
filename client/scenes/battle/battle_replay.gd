@@ -12,14 +12,22 @@ extends CanvasLayer
 
 signal finished
 
-## Playback is paced to a TARGET DURATION, not a fixed per-event delay. A level-60
-## fight produces several hundred events and a fixed interval would run past
-## fifteen seconds — far too long for something a player does dozens of times a
-## session. Short fights still get room to breathe because the interval is clamped.
-const TARGET_SECONDS := 6.0
-const MIN_INTERVAL := 0.012
-const MAX_INTERVAL := 0.09
-const ROUND_PAUSE := 0.15
+## Playback is paced PER BLOW, at a fixed interval, because the fight itself is
+## turn-based now: one unit swings, its damage lands, the next one swings.
+##
+## It used to divide a target duration by the event count, which meant a level-60
+## fight — several hundred blows — collapsed onto the 0.012s floor and threw
+## eighty-three damage numbers a second at the screen. That is not a fast replay,
+## it is an unreadable one, and it hid the thing the player is there to watch.
+##
+## A fixed interval makes a long fight genuinely longer: about four seconds at
+## level 10 and fifteen at level 60, against six for everything before. That is
+## the trade, and it is why Skip exists.
+const BLOW_SECONDS := 0.05
+## An hp or death event is the consequence of the blow just drawn, not a beat of
+## its own, so it rides along with it rather than costing another interval.
+const SETTLE_SECONDS := 0.0
+const ROUND_PAUSE := 0.22
 
 var _result: Dictionary = {}
 var _target: Dictionary = {}
@@ -39,7 +47,7 @@ var _tokens: Dictionary = {}    # unit id -> its pip under the portrait
 var _standing: Dictionary = {}  # side -> Label, "4 of 5 still standing"
 
 var _skip := false
-var _interval := MAX_INTERVAL
+var _interval := BLOW_SECONDS
 var _fortune: Label
 var _round_label: Label
 var _floaters: Control
@@ -248,7 +256,7 @@ func _refresh_standing(side: String) -> void:
 
 func _play() -> void:
 	var events: Array = _replay.get("events", [])
-	_interval = clampf(TARGET_SECONDS / maxf(float(events.size()), 1.0), MIN_INTERVAL, MAX_INTERVAL)
+	_interval = BLOW_SECONDS
 
 	var fa := float(int(_replay.get("fortune_a_bp", 10000))) / 100.0
 	var fd := float(int(_replay.get("fortune_d_bp", 10000))) / 100.0
@@ -263,16 +271,25 @@ func _play() -> void:
 			_round_label.text = "Round %d" % r
 			await _wait(ROUND_PAUSE)
 
+		# Only a BLOW costs time. The hp bar and the death that follow it are the
+		# same moment, so pausing for them again would put a stutter between a hit
+		# and its own consequence.
+		var beat := 0.0
 		match str(e.get("k", "")):
 			"hit":
 				_show_damage(str(e.get("dst", "")), int(e.get("dmg", 0)), bool(e.get("crit", false)))
+				beat = _interval
 			"dodge":
 				_show_text(str(e.get("dst", "")), "miss", Palette.TEXT_FAINT)
+				beat = _interval
 			"hp":
 				_set_hp(str(e.get("dst", "")), int(e.get("hp", 0)))
+				beat = SETTLE_SECONDS
 			"death":
 				_kill(str(e.get("dst", "")))
-		await _wait(_interval)
+				beat = SETTLE_SECONDS
+		if beat > 0.0:
+			await _wait(beat)
 
 	await _wait(0.4)
 	_show_outcome()
@@ -304,7 +321,9 @@ func _set_hp(id: String, hp: int) -> void:
 		bar.value = pool
 		return
 	var tw := create_tween()
-	tw.tween_property(bar, "value", float(pool), minf(0.12, _interval * 2.0))
+	# The bar has to settle within the blow that caused it, or at one blow every
+	# 0.05s the tweens pile up and the health shown lags the damage being dealt.
+	tw.tween_property(bar, "value", float(pool), _interval)
 
 
 func _kill(id: String) -> void:

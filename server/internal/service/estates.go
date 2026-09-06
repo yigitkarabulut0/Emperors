@@ -87,6 +87,14 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 	if p.LuckBp != 0 && (p.LuckExpiresAt == nil || p.LuckExpiresAt.After(d.Now())) {
 		eff.LuckBP += int64(p.LuckBp)
 	}
+
+	// A Kingdom Shop draught, on the same terms: it ADDS into the xp bucket
+	// alongside the Scriptorium, the Royal Archives and any live event, and that
+	// bucket's cap is applied once by ApplyBucket. Buying one can lift a player
+	// toward the ceiling, never past it.
+	if p.XpBoostBp != 0 && (p.XpBoostExpiresAt == nil || p.XpBoostExpiresAt.After(d.Now())) {
+		eff.Bonuses.Add(economy.BucketXPGain, int64(p.XpBoostBp))
+	}
 	eff.LuckBP = items.ClampLuckBP(eff.LuckBP)
 	return eff, nil
 }
@@ -121,6 +129,11 @@ type HoldingView struct {
 	NextCost     int64  `json:"next_cost"`
 	Maxed        bool   `json:"maxed"`
 	YieldPerHour int64  `json:"yield_per_hour_milli"`
+	// What ONE more level is worth, which is the number the player is actually
+	// deciding on. YieldPerHour is the holding's current total, so at level 0 --
+	// the state every holding starts in and most stayed in -- it is zero, and the
+	// row could only offer a price with nothing to weigh it against.
+	YieldPerLevel int64 `json:"yield_per_level_milli"`
 }
 
 // TaxView is what the Family tab shows about idle income.
@@ -184,7 +197,8 @@ func (d Deps) GetEstates(ctx context.Context, playerID uuid.UUID) (*EstatesView,
 			ID: h.ID, Name: h.Name, Level: lv, MaxLevel: h.MaxLevel,
 			UnlockLevel: h.UnlockLevel, Unlocked: int(p.Level) >= h.UnlockLevel,
 			NextCost: cost, Maxed: !ok,
-			YieldPerHour: h.TaxMilliPerHourPerLevel * int64(lv),
+			YieldPerHour:  h.TaxMilliPerHourPerLevel * int64(lv),
+			YieldPerLevel: h.TaxMilliPerHourPerLevel,
 		})
 	}
 

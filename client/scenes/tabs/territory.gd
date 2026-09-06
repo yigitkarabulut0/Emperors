@@ -129,7 +129,17 @@ func _rebuild() -> void:
 		i += 1
 		var lv := int(h.get("level", 0))
 		var yield_hr := float(int(h.get("yield_per_hour_milli", 0))) / 1000.0
-		var effect := "" if lv == 0 else "earning %.1f gold/hour" % yield_hr
+		var per_level := float(int(h.get("yield_per_level_milli", 0))) / 1000.0
+		# What the next level BUYS, always -- including at level zero, which is
+		# where every holding starts and where the row used to show a price with
+		# nothing to weigh it against. A player cannot decide to buy income they
+		# have never been shown.
+		var effect := ""
+		if lv > 0:
+			effect = "earning %.1f gold/hour" % yield_hr
+		if not bool(h.get("maxed", false)) and per_level > 0.0:
+			var next_up := "next level +%.1f gold/hour" % per_level
+			effect = next_up if effect == "" else "%s  ·  %s" % [effect, next_up]
 		var locked := not bool(h.get("unlocked", false))
 		row.refresh(str(h.get("name", "")),
 			"An estate that pays while you are away.",

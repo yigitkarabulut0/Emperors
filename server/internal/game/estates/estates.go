@@ -37,6 +37,12 @@ type Effects struct {
 	// the end, so the precision survives.
 	ReputationBP int64
 
+	// The tax bonus in basis points, kept so ApplyKingdom can ADD a kingdom's
+	// Royal Treasury to it and recompute the rate once. Without it the kingdom
+	// node had nothing to add to and multiplied the finished rate a second time,
+	// which is the compounding the additive-bucket rule exists to forbid.
+	TaxIncomeBP int64
+
 	TaxMilliPerHour   int64
 	OfflineCapSeconds int64
 }
@@ -91,6 +97,7 @@ func Derive(cfg *gameconfig.Bundle, level int64, upgradeLevels, holdingLevels ma
 		}
 	}
 
+	e.TaxIncomeBP = taxIncomeBP
 	e.TaxMilliPerHour = TaxRate(cfg, level, holdingLevels, taxIncomeBP)
 
 	t := cfg.Estates.Tax
@@ -123,6 +130,12 @@ func TaxRate(cfg *gameconfig.Bundle, level int64, holdingLevels map[string]int, 
 		perHour += h.TaxMilliPerHourPerLevel * lv
 	}
 
+	// The ceiling. Validate refuses a config that could reach past it, so this
+	// is defence in depth rather than the only guard -- but tax never passes
+	// through economy.ApplyBucket, so without it this bucket has no cap at all.
+	if taxIncomeBP > gameconfig.MaxTaxIncomeBP {
+		taxIncomeBP = gameconfig.MaxTaxIncomeBP
+	}
 	if taxIncomeBP > 0 {
 		perHour = perHour * (10000 + taxIncomeBP) / 10000
 	}
@@ -197,9 +210,15 @@ func ApplyKingdom(cfg *gameconfig.Bundle, e *Effects, level int64, kingdomLevels
 		}
 	}
 
-	// The tax rate is not a bucket, so a kingdom's Royal Treasury has to be
-	// folded back into the rate rather than added to a total afterwards.
+	// Recomputed from the SUM, not multiplied onto the finished rate.
+	//
+	// Multiplying again made the family tree and the kingdom compound: +30% and
+	// +10% came out as x1.43 instead of x1.40, and a Royal Treasury could push
+	// the total past MaxTaxIncomeBP because the clamp inside TaxRate had already
+	// been applied and passed. Tax is one additive bucket like every other, and
+	// it has to be resolved in one place.
 	if taxIncomeBP > 0 {
-		e.TaxMilliPerHour = e.TaxMilliPerHour * (10000 + taxIncomeBP) / 10000
+		e.TaxIncomeBP += taxIncomeBP
+		e.TaxMilliPerHour = TaxRate(cfg, level, holdingLevels, e.TaxIncomeBP)
 	}
 }

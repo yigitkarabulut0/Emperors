@@ -265,3 +265,43 @@ func TestCollectNeverPaysZero(t *testing.T) {
 		}
 	}
 }
+
+func TestAwardXPReportsDeltasNotTotals(t *testing.T) {
+	// The contract a caller has to know: StatPoints and Diamonds are what THIS
+	// award earned, counted from zero, because ApplyCollect adds them to the row.
+	//
+	// CollectBatch got this wrong in both directions at once -- it seeded its
+	// running totals with the player's current balance and then ASSIGNED each
+	// award's delta over the last -- so a batch that levelled on its first tap
+	// and not on its last credited nothing for the level, and reported a negative
+	// diamond gain to the client.
+	c := cfg(t)
+
+	// An award far too small to level: no level, so no reward.
+	none := AwardXP(c, 1, 0, 1, Bonuses{})
+	if none.LevelsGained != 0 || none.StatPoints != 0 || none.Diamonds != 0 {
+		t.Fatalf("an award that did not level still paid out: %+v", none)
+	}
+
+	// One that levels several times pays for every level, not just the last.
+	big := AwardXP(c, 1, 0, 100_000, Bonuses{})
+	if big.LevelsGained < 2 {
+		t.Fatalf("expected several levels from a large award, got %d", big.LevelsGained)
+	}
+	wantStat := int64(big.LevelsGained) * int64(c.Progression.StatPointsPerLevel)
+	if big.StatPoints != wantStat {
+		t.Errorf("stat points = %d, want %d (one grant per level gained)", big.StatPoints, wantStat)
+	}
+	wantGems := int64(big.LevelsGained) * c.Progression.LevelupDiamonds
+	if big.Diamonds != wantGems {
+		t.Errorf("diamonds = %d, want %d", big.Diamonds, wantGems)
+	}
+
+	// And the deltas do not carry the player's existing balance: the same award
+	// pays the same whatever the caller already holds, because the caller is the
+	// one that has to accumulate.
+	again := AwardXP(c, 1, 0, 100_000, Bonuses{})
+	if again.StatPoints != big.StatPoints || again.Diamonds != big.Diamonds {
+		t.Error("AwardXP is not a pure function of its arguments")
+	}
+}

@@ -146,3 +146,15 @@ WHERE id = sqlc.arg(id)
   AND level = sqlc.arg(level_cap)
   AND legacy < sqlc.arg(max_stacks)
 RETURNING *;
+
+-- Registers a device, or re-points one that moved to another account.
+-- name: RegisterDevice :exec
+INSERT INTO app.device_tokens (token, player_id, platform, seen_at)
+VALUES (sqlc.arg(token), sqlc.arg(player_id), sqlc.arg(platform), now())
+ON CONFLICT (token) DO UPDATE
+SET player_id = EXCLUDED.player_id, platform = EXCLUDED.platform,
+    seen_at = now(), revoked_at = NULL;
+
+-- name: ListDevices :many
+SELECT token, platform FROM app.device_tokens
+WHERE player_id = $1 AND revoked_at IS NULL;

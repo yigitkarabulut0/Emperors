@@ -520,6 +520,32 @@ func (a *api) recruitOdds(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
+type deviceReq struct {
+	Token    string `json:"token"`
+	Platform string `json:"platform"`
+}
+
+// registerDevice records where a player can be reached when they are away.
+//
+// No action_seq: registering a token changes nothing a player owns, and it is
+// naturally idempotent — the same token twice is the same row.
+func (a *api) registerDevice(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req deviceReq
+	if !decode(w, r, &req) {
+		return
+	}
+	if err := a.s().RegisterDevice(r.Context(), pid, req.Token, req.Platform); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+
 // legacy is the offer to start again.
 func (a *api) legacy(w http.ResponseWriter, r *http.Request) {
 	pid, ok := PlayerID(r.Context())

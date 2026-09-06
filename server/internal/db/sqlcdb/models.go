@@ -98,6 +98,15 @@ type AppBattle struct {
 	CreatedAt     time.Time
 }
 
+type AppDeviceToken struct {
+	Token     string
+	PlayerID  uuid.UUID
+	Platform  string
+	RevokedAt *time.Time
+	SeenAt    time.Time
+	CreatedAt time.Time
+}
+
 type AppGoldLedger struct {
 	ID           int64
 	PlayerID     uuid.UUID

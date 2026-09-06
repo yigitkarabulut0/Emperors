@@ -632,6 +632,36 @@ func (q *Queries) GetQuestProgress(ctx context.Context, arg GetQuestProgressPara
 	return i, err
 }
 
+const listDevices = `-- name: ListDevices :many
+SELECT token, platform FROM app.device_tokens
+WHERE player_id = $1 AND revoked_at IS NULL
+`
+
+type ListDevicesRow struct {
+	Token    string
+	Platform string
+}
+
+func (q *Queries) ListDevices(ctx context.Context, playerID uuid.UUID) ([]ListDevicesRow, error) {
+	rows, err := q.db.Query(ctx, listDevices, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDevicesRow{}
+	for rows.Next() {
+		var i ListDevicesRow
+		if err := rows.Scan(&i.Token, &i.Platform); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockPlayer = `-- name: LockPlayer :one
 SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy FROM app.players WHERE id = $1 FOR UPDATE
 `
@@ -722,6 +752,26 @@ func (q *Queries) RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time)
 		return nil, err
 	}
 	return items, nil
+}
+
+const registerDevice = `-- name: RegisterDevice :exec
+INSERT INTO app.device_tokens (token, player_id, platform, seen_at)
+VALUES ($1, $2, $3, now())
+ON CONFLICT (token) DO UPDATE
+SET player_id = EXCLUDED.player_id, platform = EXCLUDED.platform,
+    seen_at = now(), revoked_at = NULL
+`
+
+type RegisterDeviceParams struct {
+	Token    string
+	PlayerID uuid.UUID
+	Platform string
+}
+
+// Registers a device, or re-points one that moved to another account.
+func (q *Queries) RegisterDevice(ctx context.Context, arg RegisterDeviceParams) error {
+	_, err := q.db.Exec(ctx, registerDevice, arg.Token, arg.PlayerID, arg.Platform)
+	return err
 }
 
 const setAvatar = `-- name: SetAvatar :one

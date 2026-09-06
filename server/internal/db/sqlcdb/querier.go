@@ -243,6 +243,7 @@ type Querier interface {
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
 	ListBoosts(ctx context.Context, limit int32) ([]AdminServerBoost, error)
 	ListCollection(ctx context.Context, playerID uuid.UUID) ([]string, error)
+	ListDevices(ctx context.Context, playerID uuid.UUID) ([]ListDevicesRow, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
 	ListInvitesForPlayer(ctx context.Context, playerID uuid.UUID) ([]ListInvitesForPlayerRow, error)
@@ -300,6 +301,8 @@ type Querier interface {
 	// Rewrites the rolled half of an item: quality, the masterwork flag, and the
 	// stats they produce. Identity -- what it IS -- never moves.
 	ReforgePlayerItem(ctx context.Context, arg ReforgePlayerItemParams) (AppPlayerItem, error)
+	// Registers a device, or re-points one that moved to another account.
+	RegisterDevice(ctx context.Context, arg RegisterDeviceParams) error
 	// Registrations per day. generate_series so a day with no signups is a zero in
 	// the chart rather than a missing bar that silently narrows the axis.
 	RegistrationsDaily(ctx context.Context, arg RegistrationsDailyParams) ([]RegistrationsDailyRow, error)

@@ -67,3 +67,26 @@ func (d Deps) SetAvatar(ctx context.Context, playerID uuid.UUID, avatar string, 
 	}
 	return d.GetState(ctx, playerID)
 }
+
+// RegisterDevice records where a player can be reached.
+//
+// Stored now, sent to later. The store is the half of push notifications that
+// does not depend on Apple: a token can be collected, kept and re-pointed with
+// no APNs key, no Push Notifications capability on the App ID, and no native
+// plugin — and collecting it from day one means the first send does not have to
+// wait for a round of installs.
+func (d Deps) RegisterDevice(ctx context.Context, playerID uuid.UUID, token, platform string) error {
+	if token == "" {
+		return ErrInvalidAmount
+	}
+	if platform != "ios" && platform != "android" {
+		return ErrNotFound
+	}
+	q := sqlcdb.New(d.Pool)
+	if err := q.RegisterDevice(ctx, sqlcdb.RegisterDeviceParams{
+		Token: token, PlayerID: playerID, Platform: platform,
+	}); err != nil {
+		return fmt.Errorf("register device: %w", err)
+	}
+	return nil
+}

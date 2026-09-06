@@ -73,4 +73,13 @@ gen war_gate  "Two crossed Roman gladius short swords with bronze pommels and le
 gen keep      "A marble bust of a Roman emperor wearing a golden laurel crown, head and shoulders, carved white stone."
 gen territory "A Roman country villa with terracotta roof tiles, cream stucco walls and a colonnade, seen in three quarter view."
 gen bank      "A Roman strongbox of dark wood bound in iron, lid open, gold coins spilling over the rim."
+
+
+# Two more for the Hero screen's quartered stat panel. The other two figures it
+# needs -- crossed swords for Might and a galea for the field -- are already
+# above, so only these are missing.
+mkdir -p "$OUT/stat"
+OUT="$OUT/stat"
+gen sword  "A single Roman gladius short sword standing point down, bronze pommel, leather grip, polished steel blade."
+gen shield "A Roman legionary scutum shield, curved rectangular, painted crimson with a golden winged thunderbolt device and bronze boss, three quarter view."
 echo "done"

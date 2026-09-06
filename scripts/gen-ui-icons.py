@@ -893,9 +893,13 @@ def main() -> int:
                 ("orn/", ORNAMENTS, args.px, square),
                 ("orn/", ORNAMENTS_WIDE, args.px * 3, LAUREL_VIEW),
                 ("orn/", ORNAMENTS_RULE, args.px * 5, RULE_VIEW)]
-    # art/ui only: the shipped copies are painted.
+    # The nine subjects twice over. The rail ships PAINTED copies of these -- see
+    # scripts/gen-rail-painted.sh -- but a painted icon cannot be tinted, and a
+    # stat panel wants them engraved and monochrome the way the reference draws
+    # them. So the flat paths ship too, under glyph/, and the two never collide.
     (out).mkdir(parents=True, exist_ok=True)
-    render(ICONS, out, out, args.px, root, square)
+    (promote / "glyph").mkdir(parents=True, exist_ok=True)
+    render(ICONS, out, promote / "glyph", args.px, root, square)
 
     total = 0
     for prefix, table, px, view in families:

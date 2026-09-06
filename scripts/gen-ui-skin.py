@@ -373,7 +373,10 @@ def main() -> int:
     # list of words rather than as nine stones set into it.
     plate("nav", SMALL, RAIL, texture=t("marble_plate"), frame=STONE_EDGE, frame_px=3,
           double_rule=False, carve_strength=125)
-    plate("nav_active", SMALL, BANNER, texture=t("cloth"), frame=GOLD, frame_px=4,
+    # frame_px matches nav's exactly. At 4 the gold border reached a unit further
+    # out than the stone plates' and the open section looked misaligned with the
+    # column rather than lit within it.
+    plate("nav_active", SMALL, BANNER, texture=t("cloth"), frame=GOLD, frame_px=3,
           double_rule=False, carve_strength=125)
     plate("rail_active", SMALL, PANEL, texture=t("parch_panel"), frame=GOLD, frame_px=2,
           double_rule=False)

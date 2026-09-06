@@ -375,6 +375,164 @@ static func _laurel(key: String) -> Control:
 	return t
 
 
+## A section header: the name in Roman capitals, a laurel sprig, a gold rule
+## running out to the right, and optionally a button on the end of it.
+##
+## The reference uses this shape for every band on a screen -- YOUR SOLDIERS with
+## MANAGE beside it, HOUSE UPGRADE without. It is the thing that makes a page
+## read as a set of named parts rather than as a stack of cards.
+static func section_header(text: String, action: Button = null) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", GAP_S)
+
+	row.add_child(caps(text, F_H2, Palette.TEXT))
+
+	var sprig := TextureRect.new()
+	var reg := _registry()
+	if reg != null:
+		sprig.texture = reg.call("ui_icon", "orn/sprig")
+	sprig.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sprig.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sprig.custom_minimum_size = Vector2(ICON_MD, ICON_SM)
+	sprig.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sprig.modulate = Palette.GOLD
+	sprig.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(sprig)
+
+	# The rule takes whatever width is left, which is what carries the eye across
+	# to the button when there is one.
+	# A ColorRect, not a PanelContainer. panel_box carries fourteen units of
+	# content margin because it is built for cards, and a two-unit rule asked
+	# through it comes out as a thirty-unit slab.
+	var line := ColorRect.new()
+	# STONE_EDGE rather than LINE: a rule has to be seen from across the screen,
+	# and LINE on parchment is 1.9:1 -- right for a card's own border, invisible
+	# as the thing that carries the eye from a heading to its button.
+	line.color = Palette.STONE_EDGE
+	line.custom_minimum_size = Vector2(0, 2)
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(line)
+
+	if action != null:
+		action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(action)
+	return row
+
+
+## The reference's 2x2 panel: four figures, each an icon beside a label over a
+## number, quartered by gold rules with a lozenge where they cross.
+##
+## `entries` is four [icon_key, label, value] triples, with an optional fourth
+## element giving a tint. Painted icons carry their own colour and take none;
+## the flat one-path glyphs MUST be given one, because white on parchment is not
+## a faint icon, it is no icon. Fewer than four entries leaves the grid short;
+## more are ignored, because the crossing rule only makes sense on a quarter.
+static func stat_grid(entries: Array) -> Control:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", card_box())
+
+	# A plain Control so the rules can be anchored across the whole panel rather
+	# than laid out as cells of it.
+	var host := Control.new()
+	host.custom_minimum_size = Vector2(0, 236)
+	card.add_child(host)
+
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.set_anchors_preset(Control.PRESET_FULL_RECT)
+	grid.add_theme_constant_override("h_separation", GAP_L)
+	grid.add_theme_constant_override("v_separation", GAP_S)
+	host.add_child(grid)
+
+	for e in entries.slice(0, 4):
+		var tint: Variant = e[3] if e.size() > 3 else null
+		grid.add_child(_stat_cell(str(e[0]), str(e[1]), str(e[2]), tint))
+
+	# The quartering rules, and the lozenge at their crossing. Anchored and
+	# mouse-transparent, so they cost the cells nothing and never take a tap.
+	var v := ColorRect.new()
+	v.color = Palette.LINE
+	v.anchor_left = 0.5
+	v.anchor_right = 0.5
+	v.anchor_bottom = 1.0
+	v.offset_left = -1
+	v.offset_right = 1
+	v.offset_top = 6
+	v.offset_bottom = -6
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.add_child(v)
+
+	var h := ColorRect.new()
+	h.color = Palette.LINE
+	h.anchor_top = 0.5
+	h.anchor_bottom = 0.5
+	h.anchor_right = 1.0
+	h.offset_top = -1
+	h.offset_bottom = 1
+	h.offset_left = 6
+	h.offset_right = -6
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.add_child(h)
+
+	var pip := TextureRect.new()
+	var reg2 := _registry()
+	if reg2 != null:
+		pip.texture = reg2.call("ui_icon", "orn/diamond")
+	pip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pip.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pip.anchor_left = 0.5
+	pip.anchor_top = 0.5
+	pip.anchor_right = 0.5
+	pip.anchor_bottom = 0.5
+	pip.offset_left = -9
+	pip.offset_top = -9
+	pip.offset_right = 9
+	pip.offset_bottom = 9
+	pip.modulate = Palette.GOLD
+	pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.add_child(pip)
+
+	return card
+
+
+static func _stat_cell(icon_key: String, label_text: String, value: String,
+		tint: Variant = null) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", GAP_M)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# The icon and its figure are one group, centred in the quarter. Left-packed
+	# with the text expanding, the number ends up hard against the icon with the
+	# rest of the cell empty beside it.
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var icon := TextureRect.new()
+	var reg := _registry()
+	if reg != null:
+		icon.texture = reg.call("ui_icon", icon_key)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(ICON_XL, ICON_XL)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if tint != null:
+		icon.modulate = tint
+	row.add_child(icon)
+
+	var col := VBoxContainer.new()
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 0)
+	col.add_child(caps(label_text, F_CAPTION, Palette.TEXT_DIM))
+	# The figure is the point of the cell and the word above it is the caption --
+	# which is the proportion the reference draws, where the number is nearly
+	# twice the label.
+	col.add_child(number_label(value, F_DISPLAY, Palette.TEXT))
+	row.add_child(col)
+	return row
+
+
 ## A gold rule with a diamond at its centre, for dividing a card.
 ##
 ## A plain TextureRect and NOT a nine-slice: the diamond has to stay in the

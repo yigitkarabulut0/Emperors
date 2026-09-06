@@ -17,13 +17,17 @@ var _body: Control
 var _army: Dictionary = {}
 var _hero_card: Control
 
+## The portrait on the identity card, and the three equipment plates.
+const PORTRAIT := 132
+const GEAR_SLOT := 96
+
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
 
-	# The Keep is the character sheet before it is an upgrade list: who you are,
-	# what you are carrying, and what is safe. The upgrade rows used to open the
-	# screen, which made it indistinguishable from Territory.
+	# The Hero is the character sheet before it is an upgrade list: who you are,
+	# what you are carrying, and what you are worth in a fight. The upgrade rows
+	# used to open the screen, which made it indistinguishable from Estates.
 	var scroll_all := ScrollContainer.new()
 	scroll_all.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_all.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -33,20 +37,21 @@ func _ready() -> void:
 	add_child(scroll_all)
 	var stack := VBoxContainer.new()
 	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stack.add_theme_constant_override("separation", 8)
+	stack.add_theme_constant_override("separation", UI.GAP_M)
 	scroll_all.add_child(stack)
 
-	_hero_card = PanelContainer.new()
-	(_hero_card as PanelContainer).add_theme_stylebox_override(
-		"panel", UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP))
+	# Everything above the upgrade list is rebuilt as one piece, because all of
+	# it comes from the same two fetches and none of it is worth diffing.
+	_hero_card = VBoxContainer.new()
+	(_hero_card as VBoxContainer).add_theme_constant_override("separation", UI.GAP_M)
+	_hero_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(_hero_card)
 
-	_stats = UI.label("", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	_stats = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
 	_stats.visible = false
 	stack.add_child(_stats)
 
-
-	stack.add_child(UI.label("PERMANENT UPGRADES", UI.F_MICRO, Palette.TEXT_FAINT))
+	stack.add_child(UI.section_header("Permanent Upgrades"))
 	_body = scroll_all
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -55,7 +60,6 @@ func _ready() -> void:
 
 	GameState.changed.connect(_rebuild)
 	_reload()
-
 
 
 func mount_action_bar(host: Control) -> void:
@@ -91,12 +95,6 @@ func _rebuild() -> void:
 
 	_render_hero()
 
-	var p := GameState.player()
-	_stats.text = "Level %d     %s / %s xp     %d unspent points" % [
-		int(p.get("level", 1)), UI.number(int(p.get("xp", 0))),
-		UI.number(int(p.get("xp_to_next", 0))), int(p.get("stat_points_unspent", 0))]
-
-
 	var gold := GameState.display_gold()
 	var upgrades: Array = _estates.get("upgrades", [])
 	if _list.get_child_count() != upgrades.size():
@@ -124,7 +122,11 @@ func _rebuild() -> void:
 
 
 ## Turns a bucket and a raw amount into something a player can read.
-## Who you are: portrait, level, experience, might, and what you are carrying.
+## Who you are: portrait, name, level, what you are worth, and what you carry.
+##
+## Laid out the way the reference lays out a screen -- an identity card, a
+## quartered panel of figures, then named bands with their own actions -- rather
+## than as one card with everything crammed into it, which is what this was.
 func _render_hero() -> void:
 	for c in _hero_card.get_children():
 		c.queue_free()
@@ -132,99 +134,43 @@ func _render_hero() -> void:
 		return
 	var p := GameState.player()
 	var hero: Dictionary = _army.get("hero", {})
-
-	var pad := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
-		pad.add_theme_constant_override("margin_" + side, 12)
-	_hero_card.add_child(pad)
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 8)
-	pad.add_child(col)
-
-	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 12)
-	col.add_child(head)
-
-	var face := Button.new()
-	face.custom_minimum_size = Vector2(64, 64)
-	face.focus_mode = Control.FOCUS_NONE
-	face.tooltip_text = "Change your portrait"
-	face.add_theme_stylebox_override("normal", UI.panel_box(Color.TRANSPARENT, Color.TRANSPARENT, 0))
-	face.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT, 32))
-	face.pressed.connect(func() -> void:
-		add_child(load("res://scenes/shell/avatar_picker.gd").new(str(p.get("avatar", "knight")))))
-	var img := TextureRect.new()
-	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	img.set_anchors_preset(Control.PRESET_FULL_RECT)
-	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	img.texture = ArtRegistry.portrait(str(p.get("avatar", "knight")))
-	face.add_child(img)
-	head.add_child(face)
-
-	var who := VBoxContainer.new()
-	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	who.alignment = BoxContainer.ALIGNMENT_CENTER
-	who.add_theme_constant_override("separation", 3)
-	who.add_child(UI.label(str(p.get("username", "")), UI.F_H2, Palette.TEXT))
-
-	var xp := int(p.get("xp", 0))
-	var need := int(p.get("xp_to_next", 1))
-	var bar := ProgressBar.new()
-	bar.show_percentage = false
-	bar.custom_minimum_size = Vector2(0, 8)
-	bar.max_value = maxf(float(need), 1.0)
-	bar.value = float(xp)
-	bar.add_theme_stylebox_override("background", UI.panel_box(Palette.PANEL_HIGH, Palette.LINE, 4))
-	bar.add_theme_stylebox_override("fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 4))
-	who.add_child(bar)
-	who.add_child(UI.label("Level %d   ·   %s / %s xp" % [
-		int(p.get("level", 1)), UI.number(xp), UI.number(need)], UI.F_MICRO, Palette.TEXT_DIM))
-	head.add_child(who)
-
-	var might := VBoxContainer.new()
-	might.alignment = BoxContainer.ALIGNMENT_CENTER
-	might.add_theme_constant_override("separation", 0)
 	var totals: Dictionary = _army.get("totals", {})
-	might.add_child(UI.label(UI.number(int(totals.get("might", 0))), UI.F_H1, Palette.GOLD_INK,
-		HORIZONTAL_ALIGNMENT_RIGHT))
-	might.add_child(UI.label("MIGHT", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
-	head.add_child(might)
 
-	col.add_child(UI.label("ATK %d      DEF %d      HP %d      %d in the field" % [
-		int(totals.get("attack", 0)), int(hero.get("defense", 0)),
-		int(hero.get("hp", 0)), int(totals.get("units", 1))],
-		UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
-
-	# Your own three slots, gear-able here rather than only in the Barracks.
-	var gear := HBoxContainer.new()
-	gear.add_theme_constant_override("separation", 8)
-	gear.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_child(gear)
-	var worn: Dictionary = hero.get("equipped", {})
-	for slot in ["weapon", "armor", "horse"]:
-		gear.add_child(_gear_button(slot, worn.get(slot)))
+	_hero_card.add_child(_identity_card(p))
+	_hero_card.add_child(UI.stat_grid([
+		["stat/sword", "Attack", UI.number(int(totals.get("attack", 0)))],
+		["stat/shield", "Defence", UI.number(int(hero.get("defense", 0)))],
+		["war_gate", "Might", UI.number(int(totals.get("might", 0)))],
+		["barracks", "In the field", str(int(totals.get("units", 1)))],
+	]))
 
 	# Picking the best of three slots out of a bag of 150 by hand is busywork, and
 	# the server already knows what "best" means -- it is the Power number on
 	# every card.
-	var auto := UI.ghost_button("EQUIP MY BEST GEAR", UI.F_CAPTION)
+	var auto := UI.button("EQUIP BEST", UI.F_CAPTION)
 	auto.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 	auto.disabled = _busy
 	auto.pressed.connect(_auto_equip.bind("hero"))
-	col.add_child(auto)
+	_hero_card.add_child(UI.section_header("Your Gear", auto))
 
-	# Stat points were displayed with nowhere to spend them. They are the whole
-	# reason a player with no soldiers still gets stronger every level.
+	var gear := HBoxContainer.new()
+	gear.add_theme_constant_override("separation", UI.GAP_M)
+	gear.alignment = BoxContainer.ALIGNMENT_CENTER
+	_hero_card.add_child(gear)
+	var worn: Dictionary = hero.get("equipped", {})
+	for slot in ["weapon", "armor", "horse"]:
+		gear.add_child(_gear_button(slot, worn.get(slot)))
+
+	# Stat points were once displayed with nowhere to spend them. They are the
+	# whole reason a player with no soldiers still gets stronger every level.
 	var unspent := int(p.get("stat_points_unspent", 0))
 	if unspent > 0:
-		col.add_child(UI.label("%d point%s to spend" % [unspent, "" if unspent == 1 else "s"],
-			UI.F_CAPTION, Palette.SUCCESS, HORIZONTAL_ALIGNMENT_CENTER))
+		_hero_card.add_child(UI.section_header(
+			"%d Point%s To Spend" % [unspent, "" if unspent == 1 else "s"]))
 		var spend := HBoxContainer.new()
-		spend.add_theme_constant_override("separation", 6)
-		spend.alignment = BoxContainer.ALIGNMENT_CENTER
-		col.add_child(spend)
-		for pair in [["Max Energy", "energy"], ["Attack", "attack"], ["Defense", "defense"]]:
+		spend.add_theme_constant_override("separation", UI.GAP_S)
+		_hero_card.add_child(spend)
+		for pair in [["Max Energy", "energy"], ["Attack", "attack"], ["Defence", "defense"]]:
 			var b := UI.ghost_button("+ " + str(pair[0]), UI.F_CAPTION)
 			b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -233,15 +179,93 @@ func _render_hero() -> void:
 			spend.add_child(b)
 
 
+## The card at the head of the screen: a large portrait beside the name, the
+## level and the experience under it.
+##
+## The reference puts an illustration hard against the card's edge and sets the
+## name against it in large serif. The portrait IS the illustration here, so it
+## takes the same place rather than being shrunk to a chip in the corner.
+func _identity_card(p: Dictionary) -> Control:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UI.card_box())
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", UI.GAP_M)
+	card.add_child(row)
+
+	var face := Button.new()
+	face.custom_minimum_size = Vector2(PORTRAIT, PORTRAIT)
+	face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	face.focus_mode = Control.FOCUS_NONE
+	face.tooltip_text = "Change your portrait"
+	face.add_theme_stylebox_override("normal", UI.panel_box(Color.TRANSPARENT, Color.TRANSPARENT, 0))
+	face.add_theme_stylebox_override(
+		"hover", UI.panel_box(Palette.PANEL_HIGH, Color.TRANSPARENT, PORTRAIT / 2))
+	face.pressed.connect(func() -> void:
+		add_child(load("res://scenes/shell/avatar_picker.gd").new(str(p.get("avatar", "knight")))))
+	var img := TextureRect.new()
+	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	img.set_anchors_preset(Control.PRESET_FULL_RECT)
+	img.offset_left = 6
+	img.offset_top = 6
+	img.offset_right = -6
+	img.offset_bottom = -6
+	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	img.texture = ArtRegistry.portrait(str(p.get("avatar", "knight")))
+	face.add_child(img)
+	# The same carved collar the rail's crest wears, so the two read as the same
+	# person rather than as two different treatments of one portrait.
+	var ring := TextureRect.new()
+	ring.texture = ArtRegistry.ui_icon("chrome/portrait_ring")
+	ring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ring.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ring.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	face.add_child(ring)
+	row.add_child(face)
+
+	var who := VBoxContainer.new()
+	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	who.alignment = BoxContainer.ALIGNMENT_CENTER
+	who.add_theme_constant_override("separation", UI.GAP_XS)
+	row.add_child(who)
+
+	var word := UI.label(str(p.get("username", "")), UI.F_H1, Palette.TEXT)
+	word.clip_text = true
+	word.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	who.add_child(word)
+	who.add_child(UI.rule())
+
+	var xp := int(p.get("xp", 0))
+	var need := int(p.get("xp_to_next", 1))
+	who.add_child(UI.label("Level %d" % int(p.get("level", 1)), UI.F_BODY, Palette.TEXT_DIM))
+
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(0, 10)
+	bar.max_value = maxf(float(need), 1.0)
+	bar.value = float(xp)
+	bar.add_theme_stylebox_override("background", UI.panel_box(Palette.RAIL, Palette.LINE, 5))
+	bar.add_theme_stylebox_override("fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 5))
+	who.add_child(bar)
+	who.add_child(UI.number_label("%s / %s xp" % [UI.number(xp), UI.number(need)],
+		UI.F_CAPTION, Palette.TEXT_FAINT))
+	return card
+
+
 func _gear_button(slot: String, item: Variant) -> Control:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(72, 72)
+	b.custom_minimum_size = Vector2(GEAR_SLOT, GEAR_SLOT)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.focus_mode = Control.FOCUS_NONE
 	var tier := str(item.get("tier", "")) if item is Dictionary else ""
 	b.tooltip_text = str(item.get("name", "")) if item is Dictionary else ("no " + slot)
-	b.add_theme_stylebox_override("normal", UI.panel_box(Palette.PANEL_HIGH,
-		Palette.tier(tier) if tier != "" else Palette.LINE))
-	b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.GOLD))
+	# A filled slot is a raised plate and an empty one is cut into the stone,
+	# which is the same pair the job list uses for available and locked.
+	b.add_theme_stylebox_override("normal",
+		UI.skin("nav" if item is Dictionary else "panel_sunk", Palette.RAIL, 8, 8))
+	b.add_theme_stylebox_override("hover", UI.skin("panel_gold", Palette.PANEL_HIGH, 8, 8))
 	b.pressed.connect(func() -> void:
 		var chooser: CanvasLayer = load("res://scenes/shell/item_chooser.gd").new(
 			slot, str(_army.get("hero", {}).get("id", "")), true)

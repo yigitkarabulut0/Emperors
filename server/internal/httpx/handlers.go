@@ -136,6 +136,8 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusForbidden, "not_permitted", "your rank does not allow that")
 	case errors.Is(err, service.ErrKingdomNameTaken):
 		WriteProblem(w, r, http.StatusConflict, "name_taken", "that name or tag is taken")
+	case errors.Is(err, service.ErrAlreadyCollected):
+		WriteProblem(w, r, http.StatusConflict, "already_collected", err.Error())
 	case errors.Is(err, service.ErrQuestUnfinished):
 		WriteProblem(w, r, http.StatusConflict, "quest_unfinished", err.Error())
 	case errors.Is(err, service.ErrAlreadyClaimed):
@@ -509,6 +511,74 @@ func (a *api) recruitOdds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v, err := a.s().GetOdds(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// collection is the wall of one-of-each.
+func (a *api) collection(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetCollection(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// donateItem gives a piece of gear to the collection, permanently.
+func (a *api) donateItem(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req reforgeReq // same shape: an item id and a sequence
+	if !decode(w, r, &req) {
+		return
+	}
+	id, err := uuid.Parse(req.ItemID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
+		return
+	}
+	v, err := a.s().DonateToCollection(r.Context(), pid, id, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type reforgeReq struct {
+	ItemID    string `json:"item_id"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+// reforge re-rolls an item's quality for gold. It can make it worse.
+func (a *api) reforge(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req reforgeReq
+	if !decode(w, r, &req) {
+		return
+	}
+	id, err := uuid.Parse(req.ItemID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
+		return
+	}
+	v, err := a.s().Reforge(r.Context(), pid, id, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return

@@ -44,3 +44,26 @@ SELECT * FROM app.player_items WHERE player_id = $1 AND equipped_on_hero;
 UPDATE app.player_items
 SET equipped_on_hero = false, equipped_soldier_id = NULL
 WHERE id = $1 AND player_id = $2;
+
+-- Rewrites the rolled half of an item: quality, the masterwork flag, and the
+-- stats they produce. Identity -- what it IS -- never moves.
+-- name: ReforgePlayerItem :one
+UPDATE app.player_items
+SET quality_pct = sqlc.arg(quality_pct),
+    masterwork  = sqlc.arg(masterwork),
+    attack      = sqlc.arg(attack),
+    defense     = sqlc.arg(defense),
+    speed       = sqlc.arg(speed)
+WHERE id = sqlc.arg(id) AND player_id = sqlc.arg(player_id)
+RETURNING *;
+
+-- name: ListCollection :many
+SELECT def_id FROM app.player_collection WHERE player_id = $1;
+
+-- Records a donation. Zero rows means they already had that one, which the
+-- caller turns into a refusal BEFORE the item is destroyed.
+-- name: DonateToCollection :one
+INSERT INTO app.player_collection (player_id, def_id)
+VALUES ($1, $2)
+ON CONFLICT (player_id, def_id) DO NOTHING
+RETURNING def_id;

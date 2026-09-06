@@ -14,6 +14,7 @@ type ItemsConfig struct {
 	SpeedPowerWeightBP int64                `json:"speed_power_weight_bp"`
 	Shop               ShopConfig           `json:"shop"`
 	Definitions        []ItemDef            `json:"definitions"`
+	Collection         CollectionConfig     `json:"collection"`
 }
 
 type SlotStats struct {
@@ -32,10 +33,20 @@ type MasterworkConfig struct {
 	MultPct  int64 `json:"mult_pct"`
 }
 
+// CollectionConfig is what donating gear is worth.
+type CollectionConfig struct {
+	LuckBPPerPiece int64 `json:"luck_bp_per_piece"`
+	LuckBPPerSet   int64 `json:"luck_bp_per_set"`
+}
+
 type PriceConfig struct {
 	Coef        float64 `json:"coef"`
 	Exponent    float64 `json:"exponent"`
 	SellRatioBP int64   `json:"sell_ratio_bp"`
+	// What re-rolling an item's quality costs, as a share of its own
+	// undiscounted shop price. See the note in gen-balance.py for why this
+	// cannot be arbitraged against SellRatioBP.
+	ReforgeRatioBP int64 `json:"reforge_ratio_bp"`
 }
 
 type ShopConfig struct {

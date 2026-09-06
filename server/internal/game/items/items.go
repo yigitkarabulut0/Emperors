@@ -254,3 +254,46 @@ func SellPrice(cfg *gameconfig.Bundle, item Instance) int64 {
 	}
 	return v
 }
+
+// Reforge re-rolls the QUALITY half of an item, leaving its identity alone.
+//
+// Deliberately not Roll: that picks a definition from the pool, and a reforge
+// must give back the same sword with different numbers. What is re-rolled is
+// exactly what was random at acquisition — the quality draw and the masterwork
+// flag — so an item can get worse, which is what makes spending on it a bet
+// rather than a purchase.
+func Reforge(cfg *gameconfig.Bundle, rng *rand.Rand, it Instance, luckBP int64) Instance {
+	luckBP = ClampLuckBP(luckBP)
+
+	q := cfg.Items.Quality
+	quality := q.MinPct
+	if span := q.MaxPct - q.MinPct; span > 0 {
+		quality += rng.Int64N(span + 1)
+	}
+	switch {
+	case luckBP > 0:
+		quality += (q.MaxPct - quality) * luckBP / (10000 + luckBP)
+	case luckBP < 0:
+		quality -= (quality - q.MinPct) * -luckBP / (10000 - luckBP)
+	}
+	masterwork := rng.Int64N(10000) < cfg.Items.Masterwork.ChanceBP*(10000+luckBP)/10000
+
+	out := it
+	out.QualityPct = quality
+	out.Masterwork = masterwork
+	out.Attack, out.Defense, out.Speed = Stat(cfg, it.Slot, it.Tier, it.Ilvl, quality, masterwork)
+	return out
+}
+
+// ReforgePrice is what one attempt costs.
+//
+// Priced off the item's own UNDISCOUNTED shop price, so a maxed Merchant Ties
+// makes buying cheaper without also making the gamble cheaper.
+func ReforgePrice(cfg *gameconfig.Bundle, it Instance) int64 {
+	base := BuyPrice(cfg, it, 0)
+	cost := base * cfg.Items.Price.ReforgeRatioBP / 10000
+	if cost < 1 {
+		return 1
+	}
+	return cost
+}

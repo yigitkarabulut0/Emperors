@@ -36,6 +36,27 @@ func (q *Queries) DeletePlayerItem(ctx context.Context, arg DeletePlayerItemPara
 	return err
 }
 
+const donateToCollection = `-- name: DonateToCollection :one
+INSERT INTO app.player_collection (player_id, def_id)
+VALUES ($1, $2)
+ON CONFLICT (player_id, def_id) DO NOTHING
+RETURNING def_id
+`
+
+type DonateToCollectionParams struct {
+	PlayerID uuid.UUID
+	DefID    string
+}
+
+// Records a donation. Zero rows means they already had that one, which the
+// caller turns into a refusal BEFORE the item is destroyed.
+func (q *Queries) DonateToCollection(ctx context.Context, arg DonateToCollectionParams) (string, error) {
+	row := q.db.QueryRow(ctx, donateToCollection, arg.PlayerID, arg.DefID)
+	var def_id string
+	err := row.Scan(&def_id)
+	return def_id, err
+}
+
 const getPlayerItem = `-- name: GetPlayerItem :one
 SELECT id, player_id, def_id, slot, tier, ilvl, quality_pct, masterwork, attack, defense, speed, equipped_on_hero, equipped_soldier_id, acquired_at, acquired_from, rolled_config_version FROM app.player_items WHERE id = $1 AND player_id = $2
 `
@@ -127,6 +148,30 @@ func (q *Queries) InsertPlayerItem(ctx context.Context, arg InsertPlayerItemPara
 		&i.RolledConfigVersion,
 	)
 	return i, err
+}
+
+const listCollection = `-- name: ListCollection :many
+SELECT def_id FROM app.player_collection WHERE player_id = $1
+`
+
+func (q *Queries) ListCollection(ctx context.Context, playerID uuid.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, listCollection, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var def_id string
+		if err := rows.Scan(&def_id); err != nil {
+			return nil, err
+		}
+		items = append(items, def_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listHeroEquipped = `-- name: ListHeroEquipped :many
@@ -222,6 +267,61 @@ type LockPlayerItemParams struct {
 
 func (q *Queries) LockPlayerItem(ctx context.Context, arg LockPlayerItemParams) (AppPlayerItem, error) {
 	row := q.db.QueryRow(ctx, lockPlayerItem, arg.ID, arg.PlayerID)
+	var i AppPlayerItem
+	err := row.Scan(
+		&i.ID,
+		&i.PlayerID,
+		&i.DefID,
+		&i.Slot,
+		&i.Tier,
+		&i.Ilvl,
+		&i.QualityPct,
+		&i.Masterwork,
+		&i.Attack,
+		&i.Defense,
+		&i.Speed,
+		&i.EquippedOnHero,
+		&i.EquippedSoldierID,
+		&i.AcquiredAt,
+		&i.AcquiredFrom,
+		&i.RolledConfigVersion,
+	)
+	return i, err
+}
+
+const reforgePlayerItem = `-- name: ReforgePlayerItem :one
+UPDATE app.player_items
+SET quality_pct = $1,
+    masterwork  = $2,
+    attack      = $3,
+    defense     = $4,
+    speed       = $5
+WHERE id = $6 AND player_id = $7
+RETURNING id, player_id, def_id, slot, tier, ilvl, quality_pct, masterwork, attack, defense, speed, equipped_on_hero, equipped_soldier_id, acquired_at, acquired_from, rolled_config_version
+`
+
+type ReforgePlayerItemParams struct {
+	QualityPct int32
+	Masterwork bool
+	Attack     int64
+	Defense    int64
+	Speed      int64
+	ID         uuid.UUID
+	PlayerID   uuid.UUID
+}
+
+// Rewrites the rolled half of an item: quality, the masterwork flag, and the
+// stats they produce. Identity -- what it IS -- never moves.
+func (q *Queries) ReforgePlayerItem(ctx context.Context, arg ReforgePlayerItemParams) (AppPlayerItem, error) {
+	row := q.db.QueryRow(ctx, reforgePlayerItem,
+		arg.QualityPct,
+		arg.Masterwork,
+		arg.Attack,
+		arg.Defense,
+		arg.Speed,
+		arg.ID,
+		arg.PlayerID,
+	)
 	var i AppPlayerItem
 	err := row.Scan(
 		&i.ID,

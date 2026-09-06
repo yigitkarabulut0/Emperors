@@ -95,6 +95,18 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 	if p.XpBoostBp != 0 && (p.XpBoostExpiresAt == nil || p.XpBoostExpiresAt.After(d.Now())) {
 		eff.Bonuses.Add(economy.BucketXPGain, int64(p.XpBoostBp))
 	}
+	// The Collection tilts rolls, which is what loops the reward back into the
+	// thing being rewarded: a broader wall makes better drops, which makes more
+	// to collect. It ADDS into the same luck total as everything else and is
+	// clamped once, below, so the whole board cannot push past a ceiling the
+	// game's own upgrades could already reach.
+	if ids, err := q.ListCollection(ctx, p.ID); err == nil && len(ids) > 0 {
+		held := make(map[string]bool, len(ids))
+		for _, id := range ids {
+			held[id] = true
+		}
+		eff.LuckBP += collectionLuck(d.Config, held)
+	}
 	eff.LuckBP = items.ClampLuckBP(eff.LuckBP)
 	return eff, nil
 }

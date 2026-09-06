@@ -197,6 +197,12 @@ type AppPlayer struct {
 	Might               int64
 }
 
+type AppPlayerCollection struct {
+	PlayerID  uuid.UUID
+	DefID     string
+	DonatedAt time.Time
+}
+
 type AppPlayerHolding struct {
 	PlayerID  uuid.UUID
 	HoldingID string

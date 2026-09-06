@@ -47,9 +47,14 @@
   "price": {
     "coef": 1.6,
     "exponent": 1.35,
-    "sell_ratio_bp": 2500
+    "sell_ratio_bp": 2500,
+    "reforge_ratio_bp": 6000
   },
   "speed_power_weight_bp": 5000,
+  "collection": {
+    "luck_bp_per_piece": 60,
+    "luck_bp_per_set": 200
+  },
   "shop": {
     "slots": 6,
     "window_seconds": 300,

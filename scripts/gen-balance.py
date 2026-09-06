@@ -385,8 +385,37 @@ emit("items.json", json.dumps({
     "level_mult_per_ilvl_bp": 900,
     "quality": {"min_pct": QUALITY_MIN_PCT, "max_pct": QUALITY_MAX_PCT},
     "masterwork": {"chance_bp": 300, "mult_pct": MASTERWORK_MULT_PCT},
-    "price": {"coef": 1.6, "exponent": 1.35, "sell_ratio_bp": 2500},
+    # reforge_ratio_bp is what re-rolling an item's quality costs, as a share of
+    # its own undiscounted shop price.
+    #
+    # The design flagged this as invalidating its arbitrage proof, because that
+    # proof assumed an item's stats never change after acquisition. It no longer
+    # does, and the reason is the narrowed quality band: the best possible roll
+    # is 1.194x the worst, which at the 1.35 price exponent is 1.270x the price,
+    # so the most a reforge can ever add to the SELL value is 0.25 x 1.270 =
+    # 0.317 of the original price -- against a 0.60 cost. Reforging to sell loses
+    # money by construction, at every tier and every level.
+    "price": {"coef": 1.6, "exponent": 1.35, "sell_ratio_bp": 2500,
+              "reforge_ratio_bp": 6000},
     "speed_power_weight_bp": 5000,
+    # The Collection: what donating a piece of gear is worth.
+    #
+    # It pays in LUCK, which is the one bucket that makes the reward loop back
+    # into the thing being rewarded — a broader collection tilts future rolls,
+    # which produces more things to collect. Luck is capped in code
+    # (ClampLuckBP), so the whole board can never push past the ceiling the
+    # game's own upgrades could already reach.
+    #
+    # 63 definitions: 3 slots x 7 tiers x 3 designs. At 60 bp each a complete
+    # collection is +3780 bp before the set bonuses, which sits under the 10000
+    # cap with room for the luck nodes a player may also own.
+    "collection": {
+        "luck_bp_per_piece": 60,
+        # Completing every design of one slot at one tier. Nine of these exist
+        # per slot, and they are what turn "sell the spares" into "hold the
+        # third falchion".
+        "luck_bp_per_set": 200,
+    },
     "shop": {
         "slots": 6,
         "window_seconds": 300,

@@ -10,6 +10,7 @@ import (
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	gameSeed "github.com/yigitkarabulut0/emperors/server/internal/game"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
 )
 
@@ -31,7 +32,10 @@ type ItemView struct {
 	Speed      int64  `json:"speed"`
 	Power      int64  `json:"power"`
 	SellPrice  int64  `json:"sell_price"`
-	Equipped   bool   `json:"equipped"`
+	// What one re-roll of its quality would cost. Sent with the item so the
+	// button can price itself without a second request.
+	ReforgePrice int64 `json:"reforge_price"`
+	Equipped     bool  `json:"equipped"`
 	// Who is wearing it: "hero", a soldier's uuid, or empty. `Equipped` alone
 	// only ever meant "on the hero", so a client could not tell a free item from
 	// one already on a soldier -- and offering the latter would silently strip
@@ -104,10 +108,11 @@ func (d Deps) itemView(r sqlcdb.AppPlayerItem) ItemView {
 		ID: r.ID.String(), DefID: r.DefID, Name: name, Slot: r.Slot, Tier: r.Tier, Art: art,
 		Ilvl: int64(r.Ilvl), QualityPct: int64(r.QualityPct), Masterwork: r.Masterwork,
 		Attack: r.Attack, Defense: r.Defense, Speed: r.Speed,
-		Power:      inst.Power(d.Config),
-		SellPrice:  items.SellPrice(d.Config, inst),
-		Equipped:   r.EquippedOnHero,
-		EquippedOn: equippedOn(r),
+		Power:        inst.Power(d.Config),
+		SellPrice:    items.SellPrice(d.Config, inst),
+		ReforgePrice: items.ReforgePrice(d.Config, inst),
+		Equipped:     r.EquippedOnHero,
+		EquippedOn:   equippedOn(r),
 	}
 }
 
@@ -389,4 +394,104 @@ func (d Deps) SellMany(ctx context.Context, playerID uuid.UUID, itemIDs []uuid.U
 		return nil, err
 	}
 	return res, nil
+}
+
+// ReforgeResult is what one gamble produced.
+type ReforgeResult struct {
+	Item     *ItemView `json:"item"`
+	Paid     int64     `json:"paid"`
+	GoldLeft string    `json:"gold_left"`
+	// Whether the numbers went up. The client needs this to know which way to
+	// celebrate, and a reforge that got worse must still say so plainly.
+	Improved bool `json:"improved"`
+}
+
+// Reforge re-rolls an item's quality for gold.
+//
+// The endless sink the economy needs. Training soldiers used to be it — cost
+// grew as 1.09^level and never stopped — and removing soldier levels took it
+// away, leaving a level-60 player with income and nothing to spend it on.
+//
+// It can make an item worse. That is the point: a purchase with a guaranteed
+// outcome is not a sink, it is a price list.
+func (d Deps) Reforge(ctx context.Context, playerID, itemID uuid.UUID, wantSeq int64) (*ReforgeResult, error) {
+	var res ReforgeResult
+
+	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
+		q := sqlcdb.New(tx)
+
+		p, err := q.LockPlayer(ctx, playerID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("lock player: %w", err)
+		}
+		if err := checkSeq(p, wantSeq); err != nil {
+			return err
+		}
+
+		row, err := q.LockPlayerItem(ctx, sqlcdb.LockPlayerItemParams{ID: itemID, PlayerID: playerID})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("lock item: %w", err)
+		}
+
+		// Only the rolled half matters here: Reforge keeps the identity and
+		// rewrites the numbers, so the definition never has to be looked up.
+		before := items.Instance{
+			DefID: row.DefID, Slot: row.Slot, Tier: row.Tier,
+			Ilvl: int64(row.Ilvl), QualityPct: int64(row.QualityPct), Masterwork: row.Masterwork,
+			Attack: row.Attack, Defense: row.Defense, Speed: row.Speed,
+		}
+		cost := items.ReforgePrice(d.Config, before)
+
+		after, err := q.SpendGold(ctx, sqlcdb.SpendGoldParams{
+			ID: playerID, Gold: cost, ActionSeq: wantSeq,
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotEnoughGold
+			}
+			return fmt.Errorf("spend gold: %w", err)
+		}
+
+		eff, err := d.loadEffects(ctx, q, p)
+		if err != nil {
+			return err
+		}
+		// Seeded from the counter that already moved, so a retried request
+		// cannot re-roll for a better result.
+		rng := gameSeed.SeedForString(d.ShopSecret, playerID.String(),
+			uint64(wantSeq), 0xEF06E)
+		rolled := items.Reforge(d.Config, rng, before, eff.LuckBP)
+
+		updated, err := q.ReforgePlayerItem(ctx, sqlcdb.ReforgePlayerItemParams{
+			ID: itemID, PlayerID: playerID,
+			QualityPct: int32(rolled.QualityPct), Masterwork: rolled.Masterwork,
+			Attack: rolled.Attack, Defense: rolled.Defense, Speed: rolled.Speed,
+		})
+		if err != nil {
+			return fmt.Errorf("reforge: %w", err)
+		}
+		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+			PlayerID: playerID, Delta: -cost, BalanceAfter: after.Gold,
+			Reason: "reforge", RefID: strPtr(itemID.String()),
+		}); err != nil {
+			return fmt.Errorf("ledger: %w", err)
+		}
+
+		iv := d.itemView(updated)
+		res = ReforgeResult{
+			Item: &iv, Paid: cost, GoldLeft: itoa(after.Gold),
+			Improved: rolled.Power(d.Config) > before.Power(d.Config),
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }

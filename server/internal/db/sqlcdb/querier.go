@@ -164,6 +164,9 @@ type Querier interface {
 	// Donating: take the gold, credit the treasury, and record the daily total in
 	// one place so the cap cannot be bypassed by racing two requests.
 	DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlayer, error)
+	// Records a donation. Zero rows means they already had that one, which the
+	// caller turns into a refusal BEFORE the item is destroyed.
+	DonateToCollection(ctx context.Context, arg DonateToCollectionParams) (string, error)
 	// Creates the day's row with its three quests if it is not there yet, and
 	// returns whatever the row holds either way.
 	//
@@ -232,6 +235,7 @@ type Querier interface {
 	ListBattleLog(ctx context.Context, arg ListBattleLogParams) ([]ListBattleLogRow, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
 	ListBoosts(ctx context.Context, limit int32) ([]AdminServerBoost, error)
+	ListCollection(ctx context.Context, playerID uuid.UUID) ([]string, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
 	ListInvitesForPlayer(ctx context.Context, playerID uuid.UUID) ([]ListInvitesForPlayerRow, error)
@@ -286,6 +290,9 @@ type Querier interface {
 	RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time) ([]RecentlySeenPlayersRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
 	RefillEnergy(ctx context.Context, arg RefillEnergyParams) error
+	// Rewrites the rolled half of an item: quality, the masterwork flag, and the
+	// stats they produce. Identity -- what it IS -- never moves.
+	ReforgePlayerItem(ctx context.Context, arg ReforgePlayerItemParams) (AppPlayerItem, error)
 	// Registrations per day. generate_series so a day with no signups is a zero in
 	// the chart rather than a missing bar that silently narrows the axis.
 	RegistrationsDaily(ctx context.Context, arg RegistrationsDailyParams) ([]RegistrationsDailyRow, error)

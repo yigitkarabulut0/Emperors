@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"time"
+
 	"errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +23,20 @@ type Service struct {
 	Pool   *pgxpool.Pool
 	Config *gameconfig.Store
 	Now    func() int64
+}
+
+// now is the clock, and it never panics.
+//
+// Now is an injection point for tests and is legitimately nil in production,
+// where the wall clock is what you want. Calling s.Now() directly meant a nil
+// field took down whichever endpoint happened to touch it -- which is how
+// setting a player's energy returned a 500 while the same code path was fine
+// for anyone whose luck happened to be zero.
+func (s *Service) now() time.Time {
+	if s.Now == nil {
+		return time.Now().UTC()
+	}
+	return time.Unix(s.Now(), 0).UTC()
 }
 
 // Role ranking, so permission checks are comparisons rather than a growing

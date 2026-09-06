@@ -80,7 +80,7 @@ func (s *Service) AdjustCurrency(ctx context.Context, who *Identity, playerID uu
 		return nil, ErrForbidden
 	}
 	if gold == 0 && diamonds == 0 {
-		return nil, fmt.Errorf("nothing to adjust")
+		return nil, fmt.Errorf("%w", ErrNothingToDo)
 	}
 
 	q := sqlcdb.New(s.Pool)
@@ -89,7 +89,7 @@ func (s *Service) AdjustCurrency(ctx context.Context, who *Identity, playerID uu
 		return nil, ErrNotFound
 	}
 	if before.Gold+gold < 0 {
-		return nil, fmt.Errorf("that would leave a negative balance")
+		return nil, fmt.Errorf("%w: that would leave a negative balance", ErrOutOfRange)
 	}
 
 	after, err := q.AdminAdjustCurrency(ctx, sqlcdb.AdminAdjustCurrencyParams{

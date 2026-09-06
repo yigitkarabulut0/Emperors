@@ -21,12 +21,33 @@ type Querier interface {
 	AddKingdomReputation(ctx context.Context, arg AddKingdomReputationParams) error
 	AddKingdomTreasury(ctx context.Context, arg AddKingdomTreasuryParams) (AppKingdom, error)
 	AdminAdjustCurrency(ctx context.Context, arg AdminAdjustCurrencyParams) (AppPlayer, error)
+	// Adjusts the four stock quantities in one statement, so a grant of several at
+	// once is a single row change and a single audit entry rather than four that
+	// could half-apply.
+	//
+	// XP is a delta into the CURRENT level's bar. It deliberately does not level
+	// anyone up: crossing a boundary grants stat points, diamonds and an energy
+	// refill, and a panel that silently did all that would be a very surprising
+	// "+500 xp". Levels are their own control.
+	AdminAdjustPlayer(ctx context.Context, arg AdminAdjustPlayerParams) (AppPlayer, error)
+	// Everything the detail page shows about one player.
+	AdminGetPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, error)
+	// Energy is (value, anchor): writing the value without moving the anchor would
+	// have the next settle immediately undo it, so both move together.
+	AdminSetEnergy(ctx context.Context, arg AdminSetEnergyParams) (AppPlayer, error)
+	// Sets the level outright, and refills energy the way a real level-up does.
+	// The XP bar is reset to the bottom of the new level rather than carried, since
+	// an xp value from another level means nothing.
+	AdminSetLevel(ctx context.Context, arg AdminSetLevelParams) (AppPlayer, error)
+	AdminSetLuck(ctx context.Context, arg AdminSetLuckParams) (AppPlayer, error)
 	AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerStateParams) (AppPlayer, error)
 	ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttackerParams) (AppPlayer, error)
 	ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefenderParams) (AppPlayer, error)
 	// Applies one collect: spends energy, credits gold and XP, and advances the
 	// action sequence. Energy is written back already settled by the caller.
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
+	// That player's own history, newest first, rather than the whole trail.
+	AuditForSubject(ctx context.Context, arg AuditForSubjectParams) ([]AdminAuditLog, error)
 	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
 	BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (AppPlayer, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)

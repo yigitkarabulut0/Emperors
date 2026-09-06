@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { callAdmin, here } from "@/lib/api";
@@ -98,7 +99,9 @@ export default async function PlayersPage({
               {res.data.players.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <div>{p.name}</div>
+                    {/* The list stays the quick surface -- gold and a ban. The
+                        name opens everything else. */}
+                    <div><Link href={`/players/${p.id}`}>{p.name}</Link></div>
                     <div className="muted" style={{ fontSize: 11 }}>
                       {p.username}{p.is_bot ? " · bot" : ""}
                     </div>

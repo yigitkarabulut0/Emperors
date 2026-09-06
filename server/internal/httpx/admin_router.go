@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -48,6 +49,14 @@ func AdminRouter(svc *admin.Service, log *slog.Logger) http.Handler {
 		r.Get("/players", a.searchPlayers)
 		r.Post("/players/state", a.setState)
 		r.Post("/players/currency", a.adjustCurrency)
+		// Reads take query params, writes take a body -- the rule the rest of
+		// this router already follows, so the panel's URL shape and the API's
+		// stay independent of each other.
+		r.Get("/players/detail", a.playerDetail)
+		r.Post("/players/adjust", a.adjustPlayer)
+		r.Post("/players/level", a.setLevel)
+		r.Post("/players/energy", a.setEnergy)
+		r.Post("/players/luck", a.setLuck)
 
 		r.Get("/balance", a.getBalance)
 		r.Get("/balance/versions", a.listVersions)
@@ -95,6 +104,12 @@ func (a *adminAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusNotFound, CodeNotFound, "not found")
 	case errors.Is(err, admin.ErrInvalidBalance):
 		WriteProblem(w, r, http.StatusBadRequest, "invalid_balance", err.Error())
+	// A form the operator can fix is a 400 with the reason, not a 500. Without
+	// these the panel would show "internal error" for "you typed nothing".
+	case errors.Is(err, admin.ErrNothingToDo):
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, err.Error())
+	case errors.Is(err, admin.ErrOutOfRange):
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, err.Error())
 	default:
 		a.log.Error("admin error", "err", err, "path", r.URL.Path)
 		WriteProblem(w, r, http.StatusInternalServerError, CodeInternal, err.Error())
@@ -284,4 +299,125 @@ func (a *adminAPI) audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"entries": rows})
+}
+
+// --- the per-player control surface ---
+//
+// Reads take a query param, writes take a body, matching the rest of this
+// router. Each handler is a thin shell: the role check, the invariants and the
+// audit row all live in admin.Service, so a new route cannot accidentally skip
+// one of them.
+
+func (a *adminAPI) playerDetail(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.URL.Query().Get("id"))
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "id must be a uuid")
+		return
+	}
+	// The luck the operator is considering, so the response can price it.
+	preview, _ := strconv.ParseInt(r.URL.Query().Get("preview"), 10, 32)
+	v, err := a.svc.GetPlayerDetail(r.Context(), id, int32(preview))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) adjustPlayer(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlayerID   string `json:"player_id"`
+		Gold       int64  `json:"gold"`
+		Diamonds   int64  `json:"diamonds"`
+		XP         int64  `json:"xp"`
+		StatPoints int32  `json:"stat_points"`
+		Note       string `json:"note"`
+	}
+	id, ok := decodePlayer(w, r, &req, &req.PlayerID)
+	if !ok {
+		return
+	}
+	row, err := a.svc.AdjustPlayer(r.Context(), who(r), id,
+		req.Gold, req.Diamonds, req.XP, req.StatPoints, req.Note)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, row)
+}
+
+func (a *adminAPI) setLevel(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlayerID string `json:"player_id"`
+		Level    int32  `json:"level"`
+		Note     string `json:"note"`
+	}
+	id, ok := decodePlayer(w, r, &req, &req.PlayerID)
+	if !ok {
+		return
+	}
+	row, err := a.svc.SetLevel(r.Context(), who(r), id, req.Level, req.Note)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, row)
+}
+
+func (a *adminAPI) setEnergy(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlayerID string `json:"player_id"`
+		Energy   int64  `json:"energy"`
+		Note     string `json:"note"`
+	}
+	id, ok := decodePlayer(w, r, &req, &req.PlayerID)
+	if !ok {
+		return
+	}
+	row, err := a.svc.SetEnergy(r.Context(), who(r), id, req.Energy, req.Note)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, row)
+}
+
+func (a *adminAPI) setLuck(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlayerID string `json:"player_id"`
+		LuckBP   int32  `json:"luck_bp"`
+		// Days from now. 0 means permanent, which SetLuck gates behind a
+		// designer role -- an override nobody remembers is the failure mode.
+		Days int    `json:"days"`
+		Note string `json:"note"`
+	}
+	id, ok := decodePlayer(w, r, &req, &req.PlayerID)
+	if !ok {
+		return
+	}
+	var expires *time.Time
+	if req.Days > 0 {
+		t := time.Now().UTC().AddDate(0, 0, req.Days)
+		expires = &t
+	}
+	row, err := a.svc.SetLuck(r.Context(), who(r), id, req.LuckBP, expires, req.Note)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, row)
+}
+
+// decodePlayer reads a body and pulls the player id out of it, so five handlers
+// do not each repeat the same two failure modes.
+func decodePlayer(w http.ResponseWriter, r *http.Request, req any, field *string) (uuid.UUID, bool) {
+	if !decode(w, r, req) {
+		return uuid.Nil, false
+	}
+	id, err := uuid.Parse(*field)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "player_id must be a uuid")
+		return uuid.Nil, false
+	}
+	return id, true
 }

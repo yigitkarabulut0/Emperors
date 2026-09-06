@@ -76,3 +76,57 @@ SELECT
   coalesce(avg(rounds), 0)::float AS avg_rounds
 FROM app.battles
 WHERE created_at > now() - ($1::int * interval '1 day');
+
+-- Adjusts the four stock quantities in one statement, so a grant of several at
+-- once is a single row change and a single audit entry rather than four that
+-- could half-apply.
+--
+-- XP is a delta into the CURRENT level's bar. It deliberately does not level
+-- anyone up: crossing a boundary grants stat points, diamonds and an energy
+-- refill, and a panel that silently did all that would be a very surprising
+-- "+500 xp". Levels are their own control.
+-- name: AdminAdjustPlayer :one
+UPDATE app.players
+SET gold                = gold + sqlc.arg(gold)::bigint,
+    diamonds            = diamonds + sqlc.arg(diamonds)::bigint,
+    xp                  = GREATEST(0, xp + sqlc.arg(xp)::bigint),
+    stat_points_unspent = GREATEST(0, stat_points_unspent + sqlc.arg(stat_points)::int)
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
+-- Sets the level outright, and refills energy the way a real level-up does.
+-- The XP bar is reset to the bottom of the new level rather than carried, since
+-- an xp value from another level means nothing.
+-- name: AdminSetLevel :one
+UPDATE app.players
+SET level = sqlc.arg(level)::int,
+    xp    = 0
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
+-- Energy is (value, anchor): writing the value without moving the anchor would
+-- have the next settle immediately undo it, so both move together.
+-- name: AdminSetEnergy :one
+UPDATE app.players
+SET energy_milli      = sqlc.arg(energy_milli)::bigint,
+    energy_updated_at = sqlc.arg(now)::timestamptz
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
+-- name: AdminSetLuck :one
+UPDATE app.players
+SET luck_bp         = sqlc.arg(luck_bp)::int,
+    luck_expires_at = sqlc.arg(expires_at)
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
+-- Everything the detail page shows about one player.
+-- name: AdminGetPlayer :one
+SELECT * FROM app.players WHERE id = $1;
+
+-- That player's own history, newest first, rather than the whole trail.
+-- name: AuditForSubject :many
+SELECT * FROM admin.audit_log
+WHERE subject = $1
+ORDER BY created_at DESC
+LIMIT $2;

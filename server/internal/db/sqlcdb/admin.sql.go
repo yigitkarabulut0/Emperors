@@ -69,6 +69,324 @@ func (q *Queries) AdminAdjustCurrency(ctx context.Context, arg AdminAdjustCurren
 	return i, err
 }
 
+const adminAdjustPlayer = `-- name: AdminAdjustPlayer :one
+UPDATE app.players
+SET gold                = gold + $1::bigint,
+    diamonds            = diamonds + $2::bigint,
+    xp                  = GREATEST(0, xp + $3::bigint),
+    stat_points_unspent = GREATEST(0, stat_points_unspent + $4::int)
+WHERE id = $5
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+`
+
+type AdminAdjustPlayerParams struct {
+	Gold       int64
+	Diamonds   int64
+	Xp         int64
+	StatPoints int32
+	ID         uuid.UUID
+}
+
+// Adjusts the four stock quantities in one statement, so a grant of several at
+// once is a single row change and a single audit entry rather than four that
+// could half-apply.
+//
+// XP is a delta into the CURRENT level's bar. It deliberately does not level
+// anyone up: crossing a boundary grants stat points, diamonds and an energy
+// refill, and a panel that silently did all that would be a very surprising
+// "+500 xp". Levels are their own control.
+func (q *Queries) AdminAdjustPlayer(ctx context.Context, arg AdminAdjustPlayerParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, adminAdjustPlayer,
+		arg.Gold,
+		arg.Diamonds,
+		arg.Xp,
+		arg.StatPoints,
+		arg.ID,
+	)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+	)
+	return i, err
+}
+
+const adminGetPlayer = `-- name: AdminGetPlayer :one
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at FROM app.players WHERE id = $1
+`
+
+// Everything the detail page shows about one player.
+func (q *Queries) AdminGetPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, adminGetPlayer, id)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+	)
+	return i, err
+}
+
+const adminSetEnergy = `-- name: AdminSetEnergy :one
+UPDATE app.players
+SET energy_milli      = $1::bigint,
+    energy_updated_at = $2::timestamptz
+WHERE id = $3
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+`
+
+type AdminSetEnergyParams struct {
+	EnergyMilli int64
+	Now         time.Time
+	ID          uuid.UUID
+}
+
+// Energy is (value, anchor): writing the value without moving the anchor would
+// have the next settle immediately undo it, so both move together.
+func (q *Queries) AdminSetEnergy(ctx context.Context, arg AdminSetEnergyParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, adminSetEnergy, arg.EnergyMilli, arg.Now, arg.ID)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+	)
+	return i, err
+}
+
+const adminSetLevel = `-- name: AdminSetLevel :one
+UPDATE app.players
+SET level = $1::int,
+    xp    = 0
+WHERE id = $2
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+`
+
+type AdminSetLevelParams struct {
+	Level int32
+	ID    uuid.UUID
+}
+
+// Sets the level outright, and refills energy the way a real level-up does.
+// The XP bar is reset to the bottom of the new level rather than carried, since
+// an xp value from another level means nothing.
+func (q *Queries) AdminSetLevel(ctx context.Context, arg AdminSetLevelParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, adminSetLevel, arg.Level, arg.ID)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+	)
+	return i, err
+}
+
+const adminSetLuck = `-- name: AdminSetLuck :one
+UPDATE app.players
+SET luck_bp         = $1::int,
+    luck_expires_at = $2
+WHERE id = $3
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+`
+
+type AdminSetLuckParams struct {
+	LuckBp    int32
+	ExpiresAt *time.Time
+	ID        uuid.UUID
+}
+
+func (q *Queries) AdminSetLuck(ctx context.Context, arg AdminSetLuckParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, adminSetLuck, arg.LuckBp, arg.ExpiresAt, arg.ID)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+	)
+	return i, err
+}
+
 const adminSetPlayerState = `-- name: AdminSetPlayerState :one
 UPDATE app.players SET state = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
 `
@@ -123,6 +441,49 @@ func (q *Queries) AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerSta
 		&i.LuckExpiresAt,
 	)
 	return i, err
+}
+
+const auditForSubject = `-- name: AuditForSubject :many
+SELECT id, admin_id, admin_name, action, subject, before, after, note, created_at FROM admin.audit_log
+WHERE subject = $1
+ORDER BY created_at DESC
+LIMIT $2
+`
+
+type AuditForSubjectParams struct {
+	Subject *string
+	Limit   int32
+}
+
+// That player's own history, newest first, rather than the whole trail.
+func (q *Queries) AuditForSubject(ctx context.Context, arg AuditForSubjectParams) ([]AdminAuditLog, error) {
+	rows, err := q.db.Query(ctx, auditForSubject, arg.Subject, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminAuditLog{}
+	for rows.Next() {
+		var i AdminAuditLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.AdminID,
+			&i.AdminName,
+			&i.Action,
+			&i.Subject,
+			&i.Before,
+			&i.After,
+			&i.Note,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const battleStats = `-- name: BattleStats :one

@@ -92,3 +92,13 @@ button.danger:hover {
 .pill.live { border-color: var(--success); color: var(--success); }
 .bar { height: 8px; background: var(--panel-high); border-radius: 4px; overflow: hidden; }
 .bar > i { display: block; height: 100%; background: var(--gold); }
+
+/* The per-player stat strip: one row of boxed figures, so six numbers read as
+   six numbers rather than a paragraph. */
+.stats { display: flex; flex-wrap: wrap; gap: 12px; }
+.stat {
+  flex: 1 1 150px; padding: 12px 14px; border-radius: 10px;
+  background: var(--panel-high); border: 1px solid var(--line);
+}
+.stat .k { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+.stat .v { font-size: 26px; color: var(--gold); margin-top: 2px; }

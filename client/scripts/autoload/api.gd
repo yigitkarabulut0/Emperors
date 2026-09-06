@@ -90,6 +90,40 @@ func post_json(path: String, body: Dictionary, authed: bool = true) -> Response:
 	return await _send(HTTPClient.METHOD_POST, path, body, authed, true, TIMEOUT_SECONDS)
 
 
+## Fires a request and does not wait for it.
+##
+## For the one case where waiting is impossible: iOS delivers
+## NOTIFICATION_APPLICATION_PAUSED and then stops the display link, so
+## process_frame never fires again and any coroutine part-way through a request
+## is simply abandoned. Every other call in this file is an await loop over
+## process_frame, which means none of them can complete from inside a pause
+## handler.
+##
+## So this writes the request into the socket and returns immediately. The
+## kernel usually flushes it; nothing here guarantees that, and nothing should
+## depend on it. On the server the leaving beacon only shortens a departure that
+## the presence timeout would have produced anyway, so losing it costs a slightly
+## later "left", not a wrong answer.
+func beacon(path: String, body: Dictionary) -> void:
+	for lane in _lanes:
+		if lane.live and not lane.busy:
+			var headers := PackedStringArray([
+				"Accept: application/json",
+				"Content-Type: application/json",
+				KEEP_ALIVE,
+			])
+			if Session.access_token != "":
+				headers.append("Authorization: Bearer " + Session.access_token)
+			# Deliberately unchecked: there is no one left to tell.
+			lane.http.request(HTTPClient.METHOD_POST, path, headers, JSON.stringify(body))
+			lane.http.poll()
+			# The lane is left dirty rather than reused. Whatever the server
+			# answers arrives with nobody reading, so the next request on this
+			# lane would read the wrong body.
+			lane.live = false
+			return
+
+
 func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry: bool,
 		timeout: float) -> Response:
 	var lane := await _lease()

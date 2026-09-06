@@ -29,6 +29,12 @@ const SECTIONS := [
 ]
 
 const RAIL_WIDTH := 96
+
+## How often the client says it is still here.
+##
+## The server treats silence past 90 seconds as gone, so thirty is three beats
+## of headroom -- one lost request on a train must not read as leaving.
+const BEAT_SECONDS := 30.0
 const ICON_SIZE := UI.ICON_MD
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
@@ -187,6 +193,19 @@ func _ready() -> void:
 	t.autostart = true
 	t.timeout.connect(_tick)
 	add_child(t)
+
+	# And one call home every thirty seconds, which is the ONLY request this
+	# client makes while nobody is touching it.
+	#
+	# That is the point. Everything above redraws from local projections, so a
+	# player who opens the game and puts the phone down was, from the server's
+	# side, indistinguishable from one who closed it -- and the live board had to
+	# guess. This is what turns the guess into a fact.
+	var beat := Timer.new()
+	beat.wait_time = BEAT_SECONDS
+	beat.autostart = true
+	beat.timeout.connect(_beat)
+	add_child(beat)
 
 
 ## Builds the other sections in the background so opening one is instant.
@@ -405,10 +424,21 @@ func _apply_safe_insets() -> void:
 
 
 func _notification(what: int) -> void:
-	# The safe area can change while backgrounded: rotating the phone on the home
-	# screen is the everyday case.
-	if what == NOTIFICATION_APPLICATION_RESUMED and _topbar_pad != null:
-		_apply_safe_insets.call_deferred()
+	if what == NOTIFICATION_APPLICATION_RESUMED:
+		# The safe area can change while backgrounded: rotating the phone on the
+		# home screen is the everyday case.
+		if _topbar_pad != null:
+			_apply_safe_insets.call_deferred()
+		# Back in the player's hands. Say so now rather than up to thirty
+		# seconds from now.
+		_beat()
+	elif what == NOTIFICATION_APPLICATION_PAUSED:
+		# Best effort, and it has to be: iOS stops the display link as this
+		# fires, so an awaited request would never resume. Api.beacon writes and
+		# returns. If it lands, the board shows the departure immediately; if it
+		# does not, the presence timeout catches it a minute later.
+		if Session.is_signed_in():
+			Api.beacon("/v1/presence", {"state": "leaving"})
 
 
 ## One currency readout: its glyph, then its number. Returns the number's label
@@ -790,3 +820,16 @@ func _press_first_button(node: Node) -> bool:
 		if _press_first_button(child):
 			return true
 	return false
+
+
+## Tells the server the app is still open.
+##
+## Costs one request with an empty body and no database work; it exists purely
+## so an idle player is not mistaken for an absent one.
+func _beat() -> void:
+	if not Session.is_signed_in():
+		return
+	# Fire and forget. Nothing on screen depends on the answer, and a failed
+	# heartbeat is not worth telling the player about -- the next one is thirty
+	# seconds away.
+	Api.post_json("/v1/presence", {"state": "foreground"})

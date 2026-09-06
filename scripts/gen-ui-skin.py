@@ -282,7 +282,11 @@ def rail_frame(dest: pathlib.Path) -> None:
     """
     size = 128
     lo, hi = 1, size - 2
-    band = 11
+    # A hairline, not a pilaster. At eleven the frame took fourteen units off
+    # each side of the rail once it was drawn, and the plates -- which have to
+    # clear it AND their own bleed -- ended up covering 70% of the column with
+    # bare stone around them. The reference's plates cover about 87%.
+    band = 6
     _cut_alpha(size,
                ["-draw", f"rectangle {lo},{lo} {hi},{hi}"],
                ["-draw", f"rectangle {lo + band},{lo + band} {hi - band},{hi - band}"],

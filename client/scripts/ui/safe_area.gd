@@ -28,6 +28,20 @@ extends MarginContainer
 ## No real device insets more than this fraction of the screen on any edge.
 const MAX_INSET := 0.2
 
+## Clearance for a rounded display corner.
+##
+## get_display_safe_area() covers the notch and the home indicator and says
+## nothing whatever about the screen's RADIUS, so in portrait it reports zero on
+## both sides while the corners themselves still cut the corner off anything
+## drawn out to the edge. On a real phone that shows up as a card whose top
+## corner is sliced away -- which is exactly what it looks like, a bug in the
+## card rather than in the screen.
+##
+## A device that reports a top inset has a rounded display; that is what the
+## inset is there for. So this applies on precisely those devices and adds
+## nothing on a square screen or a desktop.
+const CORNER := 18.0
+
 ## The most recent computed insets, for the loading screen's debug readout. On a
 ## device this is the only way to see what the platform actually reported.
 static var last := Vector4.ZERO
@@ -41,7 +55,7 @@ static var last := Vector4.ZERO
 ## ours do.
 static func insets() -> Vector4:
 	if Env.fake_safe_area_on:
-		return Env.fake_safe_area
+		return _round_corners(Env.fake_safe_area)
 
 	# get_display_safe_area() is implemented on macOS as well, where it reports
 	# the desktop work area minus the menu bar. Honouring that would push the UI
@@ -91,8 +105,24 @@ static func insets() -> Vector4:
 		push_warning("[safe_area] implausible insets %s for window %s / viewport %s — clamped"
 			% [str(i), str(win), str(vp)])
 		i = Vector4(minf(i.x, cap.x), minf(i.y, cap.y), minf(i.z, cap.z), minf(i.w, cap.w))
+	i = _round_corners(i)
 	last = i
 	return i
+
+
+## Widens the sides to clear the display's own corner radius, on devices that
+## have one.
+##
+## maxf rather than +: a device that genuinely reports a side inset -- a
+## landscape notch, an Android cutout -- already has more than this.
+##
+## Applied to the FAKE insets as well as the real ones. The whole point of
+## --fake-safe-area is that the device's layout can be seen on a desktop, and a
+## preview that skips this would show corners the phone does not.
+static func _round_corners(i: Vector4) -> Vector4:
+	if i.y <= 0.0:
+		return i
+	return Vector4(maxf(i.x, CORNER), i.y, maxf(i.z, CORNER), i.w)
 
 
 ## Writes insets + extra onto a MarginContainer's four margin constants.

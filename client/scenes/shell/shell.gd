@@ -63,7 +63,7 @@ const RAIL_WIDTH := 160
 ## of separation and a 30-unit line of type come to 82, so every plate was
 ## overfull and the word underneath sat hard against the edge. The icon is 46 now
 ## and the plate 88, which leaves ten units of air inside it.
-const RAIL_TAP := 88
+const RAIL_TAP := 96
 
 ## How often the client says it is still here.
 ##
@@ -72,26 +72,35 @@ const RAIL_TAP := 88
 const BEAT_SECONDS := 30.0
 ## The icon is the entry and the word under it is the caption -- which is the
 ## proportion the reference draws, and the one this kept getting backwards.
-const ICON_SIZE := 46
+const ICON_SIZE := 52
 
 ## The gap between two carved plates.
 ##
 ## Small, and deliberately smaller than it was: the room is better spent inside
 ## the plates than between them. Each one still has its own carved edge, which is
 ## what separates them; the gap only has to stop two bevels touching.
-const RAIL_GAP := 3
+const RAIL_GAP := 2
 
 ## The margin of bare stone down either side of a plate.
 ##
-## Three numbers have to clear before a single unit of it is visible: the plate
-## skin's own six-unit nine-slice bleed, and the fourteen units the rail's carved
-## frame occupies down each edge. At seven the plates were jammed against the
-## column; at sixteen they still sat ON the frame rather than inside it.
+## Two numbers have to clear before a single unit of it is visible: the plate
+## skin's own six-unit nine-slice bleed, and the eight the rail's carved frame
+## occupies down each edge.
 ##
-## 24 puts the plate's drawn edge four units clear of the frame's inner lip,
-## which is what makes it read as a button set into the column rather than as a
-## band across it.
-const RAIL_PAD := 24
+## Measured rather than judged: at 16 the plate was drawn from 12 to 147 units of
+## a 160 column, and the frame's inner lips are at 11 and 148 -- so it was
+## touching the frame on both sides rather than sitting inside it. 20 puts five
+## units of stone between the two.
+const RAIL_PAD := 20
+
+## The margin every card and the action button keep from the screen's edge.
+##
+## It has to be at least UI.SKIN_BLEED, because a nine-slice is DRAWN that far
+## outside the rect it is given. At ten and twelve every card in the game was
+## being painted two to four units off-screen, and on a phone -- where the
+## display's own corner radius eats the last few units as well -- that read as
+## cards with their corners sliced off.
+const EDGE := UI.SKIN_BLEED + 6
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
@@ -112,7 +121,7 @@ const TOPBAR_MIN_H := 76
 
 ## 116 for the button, a line of caption under it, and margins. Measured on an
 ## iPhone SE, which is the tightest device: at 164 the caption grazed the edge.
-const ACTION_H := 150
+const ACTION_H := 134
 
 
 var _avatar_btn: Button
@@ -197,7 +206,7 @@ func _ready() -> void:
 	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for side in ["left", "right", "top", "bottom"]:
-		(_content as MarginContainer).add_theme_constant_override("margin_" + side, 10)
+		(_content as MarginContainer).add_theme_constant_override("margin_" + side, EDGE)
 	content_col.add_child(_content)
 
 	_toast = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
@@ -205,8 +214,8 @@ func _ready() -> void:
 	_action_host = MarginContainer.new()
 	_action_host.custom_minimum_size = Vector2(0, ACTION_H)
 	for side in ["left", "right"]:
-		(_action_host as MarginContainer).add_theme_constant_override("margin_" + side, 12)
-	(_action_host as MarginContainer).add_theme_constant_override("margin_bottom", 12)
+		(_action_host as MarginContainer).add_theme_constant_override("margin_" + side, EDGE)
+	(_action_host as MarginContainer).add_theme_constant_override("margin_bottom", EDGE)
 	root.add_child(_action_host)
 
 	# The toast is anchored over the action strip rather than given a row of its
@@ -388,20 +397,27 @@ func _build_top_bar() -> Control:
 		"fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 0))
 	_topbar_panel.add_child(_xp_bar)
 
-	# The crest, then the purse. One row, where it used to be two: a portrait,
-	# a name and an experience bar over a full-width energy meter. The portrait
-	# moved to the rail, the name to the portrait's tooltip and the Hero card
-	# that already printed it, and the energy meter became the third coin.
+	# The purse, centred between two laurels. One row, where it used to be two: a
+	# portrait, a name and an experience bar over a full-width energy meter. The
+	# portrait moved to the rail, the name to the portrait's tooltip and the Hero
+	# card that already printed it, and the energy meter became the third coin.
+	#
+	# The wordmark is gone from here. It said SPQR on every screen of a game
+	# called Emperors, which is the one thing the player never needs telling, and
+	# it pushed the three figures they DO read off to one side.
 	row.add_child(_ornament("orn/laurel_l", 64, 24))
-	row.add_child(UI.caps("SPQR", UI.F_H2, Palette.BANNER_INK))
 
-	var gap := Control.new()
-	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(gap)
+	var lead := Control.new()
+	lead.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(lead)
 
 	_gold = _purse_chip(row, "coin", Palette.GOLD)
 	_diamonds = _purse_chip(row, "gem", Palette.DIAMOND)
 	_energy = _purse_chip(row, "bolt", Palette.ENERGY)
+
+	var trail := Control.new()
+	trail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(trail)
 
 	row.add_child(_ornament("orn/laurel_r", 64, 24))
 
@@ -426,10 +442,13 @@ func _apply_safe_insets() -> void:
 
 	_rail_pad.add_theme_constant_override("margin_left", RAIL_PAD + int(i.x))
 
-	(_content as MarginContainer).add_theme_constant_override("margin_right", 10 + int(i.z))
+	(_content as MarginContainer).add_theme_constant_override("margin_right", EDGE + int(i.z))
+	(_content as MarginContainer).add_theme_constant_override("margin_left", EDGE)
 
 	(_action_host as MarginContainer).add_theme_constant_override(
-		"margin_bottom", 12 + int(i.w))
+		"margin_bottom", EDGE + int(i.w))
+	(_action_host as MarginContainer).add_theme_constant_override("margin_left", EDGE + int(i.x))
+	(_action_host as MarginContainer).add_theme_constant_override("margin_right", EDGE + int(i.z))
 	_action_host.custom_minimum_size.y = ACTION_H + int(i.w)
 
 	var above := ACTION_H + int(i.w)
@@ -572,7 +591,7 @@ func _build_rail() -> Control:
 	frame.texture = ArtRegistry.ui_icon("chrome/rail_frame")
 	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "top", "right", "bottom"]:
-		frame.set("patch_margin_" + side, 14)
+		frame.set("patch_margin_" + side, 8)
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(frame)
 
@@ -606,7 +625,7 @@ func _build_rail() -> Control:
 	# The top gets the same margin as the sides, and for the same reason: the
 	# frame's band is fourteen units deep there too, so at eight the crest plate
 	# was overlapping it and reading as if it had slid up out of the column.
-	_rail_pad.add_theme_constant_override("margin_top", RAIL_PAD)
+	_rail_pad.add_theme_constant_override("margin_top", UI.GAP_M)
 	_rail_pad.add_theme_constant_override("margin_bottom", UI.GAP_S)
 	panel.add_child(_rail_pad)
 
@@ -718,7 +737,7 @@ func _build_crest() -> Control:
 	# Twelve units of vertical padding, not six. The level plate inside is itself
 	# a nine-slice with a six-unit bleed, so at six it sat exactly on the crest
 	# plate's lower edge and hung out of it.
-	plate_bg.add_theme_stylebox_override("panel", UI.skin("nav", Palette.RAIL, 8, 12))
+	plate_bg.add_theme_stylebox_override("panel", UI.skin("nav", Palette.RAIL, 8, 8))
 
 	var crest := VBoxContainer.new()
 	crest.add_theme_constant_override("separation", UI.GAP_S)
@@ -766,11 +785,20 @@ func _build_crest() -> Control:
 	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_avatar_btn.add_child(ring)
 
+	# The level rides on the portrait's lower edge rather than sitting under it.
+	# A row of its own cost thirty-eight units, and those units are worth more
+	# spread across nine plates than spent on a badge.
 	var plate := PanelContainer.new()
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plate.add_theme_stylebox_override("panel", UI.skin("plaque", Palette.RAIL, 8, 1))
-	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	crest.add_child(plate)
+	plate.anchor_left = 0.5
+	plate.anchor_right = 0.5
+	plate.anchor_top = 1.0
+	plate.anchor_bottom = 1.0
+	plate.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	plate.grow_vertical = Control.GROW_DIRECTION_BOTH
+	plate.offset_top = -14
+	face.add_child(plate)
 	_level = UI.number_label("1", UI.F_MICRO, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
 	plate.add_child(_level)
 

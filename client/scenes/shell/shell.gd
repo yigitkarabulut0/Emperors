@@ -16,21 +16,12 @@ extends Control
 ## One entry does one thing. Bank and House used to be buttons buried inside the
 ## Keep, which made the Keep a grab bag of five unrelated things and put the
 ## clan system two taps deep behind a line of text.
-## The six the rail carries, and the three it does not.
+## All nine, in the order SECTIONS declares them, which puts House last.
 ##
-## This is arithmetic, not taste. At the reference's plate height of 119 units,
-## nine plates plus their gaps want 1119; the rail's share of an iPad's 1280 is
-## about 1000 once the banner and the action strip have taken theirs. Six fit.
-## That is also exactly how many the reference draws, which is not a coincidence
-## -- and its six map onto this game's sections one for one: Family/House,
-## Collect/Jobs, Inventory/Items, Shop, Soldiers/Army, Attack/Fight.
-##
-## Nothing is lost. Hero, Estates and Bank live behind the plate at the foot,
-## one tap away, and every one of them is a screen you visit deliberately rather
-## than one you flick between.
-const RAIL_SECTIONS := ["house", "jobs", "items", "shop", "army", "fight"]
-const MORE_SECTIONS := ["hero", "estates", "bank"]
-
+## They were six for a while, at the reference's full plate height of 119 units,
+## with the other three behind a plate at the foot. Six is what fits at that
+## height -- but a section you have to go looking for is worse than a slightly
+## smaller plate, so the plates are 86 and every section is on the column.
 const SECTIONS := [
 	{"id": "hero", "icon": "keep", "glyph": "H", "label": "Hero"},
 	{"id": "jobs", "icon": "fields", "glyph": "J", "label": "Jobs"},
@@ -64,9 +55,10 @@ const RAIL_WIDTH := 152
 ## The rail's own tap height, separate from UI.TAP_MIN so that shrinking the
 ## rail does not shrink every button in the game.
 ##
-## The plate height from the reference, scaled. At 80 the icon was a third of
-## the plate and the whole column read as a list of captions.
-const RAIL_TAP := 112
+## The reference draws its plates at 119 units on this grid, and nine of those
+## do not fit above the fold. 86 is what nine leave room for once the crest has
+## taken its share -- the proportion gives, so that no section has to.
+const RAIL_TAP := 86
 
 ## How often the client says it is still here.
 ##
@@ -75,18 +67,21 @@ const RAIL_TAP := 112
 const BEAT_SECONDS := 30.0
 ## The icon is the entry and the word under it is the caption -- which is the
 ## proportion the reference draws, and the one this kept getting backwards.
-const ICON_SIZE := 62
+const ICON_SIZE := 50
 
 ## The gap between two carved plates. Three units of marble is what makes them
 ## nine stones set into a column rather than one strip with lines on it.
 const RAIL_GAP := 6
+
+## The inset that keeps a plate's nine-slice bleed inside the column.
+const RAIL_PAD := 7
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
 const GOLD_ROLL_SECONDS := 0.30
 ## The portrait from the reference, scaled: 138 px of 941 is 106 units, and
 ## 96 is that less the collar's own bleed.
-const AVATAR_SIZE := 96
+const AVATAR_SIZE := 84
 
 ## Floors, not fixed heights. The top bar sizes to its own content and the action
 ## host to the tallest bar any section mounts; these only stop them collapsing.
@@ -119,7 +114,6 @@ var _gold_tween: Tween
 
 var _current := "jobs"
 var _rail_buttons: Dictionary = {}
-var _more_btn: Button
 var _content: Control
 var _action_host: Control
 var _toast: Label
@@ -413,7 +407,7 @@ func _apply_safe_insets() -> void:
 	_topbar_pad.add_theme_constant_override("margin_bottom", 12)
 	_topbar_panel.custom_minimum_size.y = TOPBAR_MIN_H + int(i.y)
 
-	_rail_pad.add_theme_constant_override("margin_left", int(i.x))
+	_rail_pad.add_theme_constant_override("margin_left", RAIL_PAD + int(i.x))
 
 	(_content as MarginContainer).add_theme_constant_override("margin_right", 10 + int(i.z))
 
@@ -581,6 +575,19 @@ func _build_rail() -> Control:
 	# which is zero in portrait but not on an Android cutout or in landscape.
 	_rail_pad = MarginContainer.new()
 	_rail_pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Room down both sides for the plates' own bleed.
+	#
+	# The plate skin is a nine-slice with a six-unit expand margin, which draws it
+	# SIX UNITS WIDER THAN ITS BUTTON on each side. With the buttons filling the
+	# rail edge to edge, every plate was being drawn 12 units past the column and
+	# over the content beside it -- which is what "the buttons do not sit in their
+	# area" was.
+	#
+	# And a little air at the top, so the portrait is not jammed against the
+	# banner's lower edge.
+	_rail_pad.add_theme_constant_override("margin_right", RAIL_PAD)
+	_rail_pad.add_theme_constant_override("margin_top", UI.GAP_S)
+	_rail_pad.add_theme_constant_override("margin_bottom", UI.GAP_XS)
 	panel.add_child(_rail_pad)
 
 	# NOT a ScrollContainer.
@@ -608,8 +615,7 @@ func _build_rail() -> Control:
 	nav.add_theme_constant_override("separation", RAIL_GAP)
 	col.add_child(nav)
 
-	for rail_id in RAIL_SECTIONS:
-		var s := _section(rail_id)
+	for s in SECTIONS:
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(0, RAIL_TAP)
 		b.focus_mode = Control.FOCUS_NONE
@@ -661,32 +667,6 @@ func _build_rail() -> Control:
 		lock.add_child(lock_text)
 		_rail_locks[str(s["id"])] = lock
 
-	# The foot plate: the three sections the column cannot carry, and settings.
-	# It is a plate like any other, because it is a place you go rather than a
-	# control you operate.
-	_more_btn = Button.new()
-	# Shorter than a section's plate, because it is not a section.
-	_more_btn.custom_minimum_size = Vector2(0, 88)
-	_more_btn.focus_mode = Control.FOCUS_NONE
-	_more_btn.tooltip_text = "Hero, Estates, Bank and settings"
-	_more_btn.pressed.connect(_open_more)
-
-	var more_inner := VBoxContainer.new()
-	more_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	more_inner.set_anchors_preset(Control.PRESET_FULL_RECT)
-	more_inner.alignment = BoxContainer.ALIGNMENT_CENTER
-	more_inner.add_theme_constant_override("separation", 2)
-	var more_icon := TextureRect.new()
-	more_icon.texture = ArtRegistry.ui_icon("orn/gear")
-	more_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	more_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	more_icon.custom_minimum_size = Vector2(UI.ICON_MD, UI.ICON_MD)
-	more_icon.modulate = Palette.TEXT_DIM
-	more_inner.add_child(more_icon)
-	more_inner.add_child(UI.label("More", UI.F_BODY, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
-	_more_btn.add_child(more_inner)
-	col.add_child(_more_btn)
-
 	return panel
 
 
@@ -696,16 +676,6 @@ func _section(id: String) -> Dictionary:
 		if str(sec["id"]) == id:
 			return sec
 	return {}
-
-
-## The overflow sheet: the three sections the rail cannot carry, and settings.
-func _open_more() -> void:
-	var entries: Array = []
-	for id in MORE_SECTIONS:
-		entries.append(_section(str(id)))
-	var sheet: CanvasLayer = load("res://scenes/shell/more_sheet.gd").new(entries)
-	sheet.chose.connect(_open)
-	add_child(sheet)
 
 
 ## The player, at the head of their own rail: portrait in a gold ring, with the
@@ -905,22 +875,6 @@ func _unlock_level(id: String) -> int:
 
 
 func _style_rail() -> void:
-	if _more_btn != null:
-		var in_more: bool = MORE_SECTIONS.has(_current)
-		var more_face := "nav_active" if in_more else "nav"
-		_more_btn.add_theme_stylebox_override(
-			"normal", UI.skin(more_face, Palette.BANNER if in_more else Palette.RAIL, 4, 4))
-		_more_btn.add_theme_stylebox_override("hover", UI.skin(more_face, Palette.RAIL, 4, 4))
-		_more_btn.add_theme_stylebox_override(
-			"pressed", UI.skin("nav_active", Palette.BANNER, 4, 4))
-		var mi := _more_btn.get_child(0)
-		mi.get_child(0).modulate = Palette.GOLD if in_more else Palette.TEXT_DIM
-		(mi.get_child(1) as Label).add_theme_color_override("font_color",
-			Palette.BANNER_INK if in_more else Palette.TEXT_DIM)
-		# The word says where you are when you are behind this plate.
-		(mi.get_child(1) as Label).text = \
-			str(_section(_current).get("label", "More")) if in_more else "More"
-
 	for id in _rail_buttons:
 		var b: Button = _rail_buttons[id]
 		var open := _unlocked(str(id))

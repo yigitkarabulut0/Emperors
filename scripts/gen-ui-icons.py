@@ -832,7 +832,24 @@ def gear():
 # No wreath here on purpose. A closed laurel crown was drawn and cut: at 40 px
 # the leaves merged into the ring they sat on and it read as a bumpy donut. The
 # flanking pair below does the same job and survives the size.
-ORNAMENTS = {"eagle": eagle, "gear": gear}
+def diamond():
+    """The lozenge that sits where two gold rules cross."""
+    return poly((16, 3), (29, 16), (16, 29), (3, 16)), "nonzero"
+
+
+def sprig():
+    """Half a laurel branch, for the end of a section header."""
+    parts = ["M2,17.5Q14,15.5 29,15.5L29,18.2Q14,18.2 2,20.2Z"]
+    for i in range(3):
+        t_ = i / 2.0
+        x = 6 + t_ * 17
+        y = 17.6 - t_ * 1.6
+        parts.append(_leaf(x, y, 8.0 - t_ * 1.8, 3.2 - t_ * 0.6, -56 + t_ * 14))
+        parts.append(_leaf(x + 2.6, y, 7.0 - t_ * 1.6, 2.9 - t_ * 0.6, 50 - t_ * 12))
+    return " ".join(parts), "nonzero"
+
+
+ORNAMENTS = {"eagle": eagle, "gear": gear, "diamond": diamond, "sprig": sprig}
 ORNAMENTS_WIDE = {"laurel_l": laurel_l, "laurel_r": laurel_r}
 ORNAMENTS_RULE = {"rule": rule_bar}
 
@@ -858,7 +875,17 @@ def main() -> int:
     promote.mkdir(parents=True, exist_ok=True)
 
     square = (VIEW, VIEW)
-    families = [("", ICONS, args.px, square), ("jobs/", JOBS, args.px, square),
+    # The nine rail icons are NOT here any more.
+    #
+    # They are painted now -- scripts/gen-rail-painted.sh -- because the rail is
+    # 152 units wide with 50-unit icons rather than the 96 and 40 this file's
+    # "interface is authored" rule was written for. Leaving them in this table
+    # cost an afternoon once: adding two ornaments meant re-running this script,
+    # which promoted the flat glyphs straight over the painted ones and nobody
+    # noticed until the screenshot came back washed out.
+    #
+    # The SVGs are still written to art/ui/ so the geometry is not lost.
+    families = [("jobs/", JOBS, args.px, square),
                 ("upgrades/", UPGRADES, args.px, square),
                 ("holdings/", HOLDINGS, args.px, square),
                 ("slots/", SLOTS, args.px, square),
@@ -866,6 +893,10 @@ def main() -> int:
                 ("orn/", ORNAMENTS, args.px, square),
                 ("orn/", ORNAMENTS_WIDE, args.px * 3, LAUREL_VIEW),
                 ("orn/", ORNAMENTS_RULE, args.px * 5, RULE_VIEW)]
+    # art/ui only: the shipped copies are painted.
+    (out).mkdir(parents=True, exist_ok=True)
+    render(ICONS, out, out, args.px, root, square)
+
     total = 0
     for prefix, table, px, view in families:
         (out / prefix).mkdir(parents=True, exist_ok=True)

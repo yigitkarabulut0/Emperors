@@ -63,6 +63,13 @@ type Querier interface {
 	// That player's own history, newest first, rather than the whole trail.
 	AuditForSubject(ctx context.Context, arg AuditForSubjectParams) ([]AdminAuditLog, error)
 	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
+	// Begins a new Legacy run.
+	//
+	// Level, experience and every stat point go back to nothing; gold, gear,
+	// soldiers and estates are untouched. The WHERE is the whole guard: it only
+	// lands at the cap and below the stack limit, so a double tap cannot burn two
+	// runs and a client cannot ask for one it has not earned.
+	BeginLegacy(ctx context.Context, arg BeginLegacyParams) (AppPlayer, error)
 	// The browsable list: filterable, sortable, paged.
 	//
 	// One query with switched ORDER BY rather than six near-identical ones. The

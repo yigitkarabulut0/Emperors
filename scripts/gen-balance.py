@@ -129,6 +129,18 @@ emit("progression.json", json.dumps({
     # it is the one reward that cannot be farmed faster by playing more, since
     # the XP curve already bounds it.
     "levelup_diamonds": 5,
+    # Legacy: what starting over is worth.
+    #
+    # Reset to level 1 keeping gold, gear, soldiers and estates, and carry a
+    # permanent bonus into the collect and tax buckets — both capped, so ten
+    # stacks lift a player toward a ceiling the game's own upgrades could already
+    # reach rather than past it.
+    #
+    # Only at the cap, because the point is that the cap stops being the end.
+    "legacy": {
+        "max_stacks": 10,
+        "income_bp_per_stack": 500,
+    },
     # Daily quests: three a day, drawn from this list.
     #
     # The design specified the REWARD formula and nothing else — its own review

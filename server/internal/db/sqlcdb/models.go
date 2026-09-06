@@ -195,6 +195,7 @@ type AppPlayer struct {
 	DailyStreak         int32
 	DailyClaimedOn      pgtype.Date
 	Might               int64
+	Legacy              int32
 }
 
 type AppPlayerCollection struct {

@@ -17,7 +17,7 @@ SET soldier_slots = soldier_slots + 1,
     gold = gold - $2,
     action_seq = $3
 WHERE id = $1 AND gold >= $2 AND soldier_slots = $4
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
 `
 
 type BuySoldierSlotParams struct {
@@ -80,6 +80,7 @@ func (q *Queries) BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) 
 		&i.DailyStreak,
 		&i.DailyClaimedOn,
 		&i.Might,
+		&i.Legacy,
 	)
 	return i, err
 }
@@ -88,7 +89,7 @@ const claimFreeRecruit = `-- name: ClaimFreeRecruit :one
 UPDATE app.players
 SET free_recruit_claimed = true, action_seq = $2
 WHERE id = $1 AND free_recruit_claimed = false
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
 `
 
 type ClaimFreeRecruitParams struct {
@@ -144,6 +145,7 @@ func (q *Queries) ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitPara
 		&i.DailyStreak,
 		&i.DailyClaimedOn,
 		&i.Might,
+		&i.Legacy,
 	)
 	return i, err
 }
@@ -154,7 +156,7 @@ SET soldier_slots = soldier_slots + 1,
     free_slot_claimed = true,
     action_seq = $2
 WHERE id = $1 AND free_slot_claimed = false AND soldier_slots = 0
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
 `
 
 type ClaimFreeSlotParams struct {
@@ -210,6 +212,7 @@ func (q *Queries) ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (A
 		&i.DailyStreak,
 		&i.DailyClaimedOn,
 		&i.Might,
+		&i.Legacy,
 	)
 	return i, err
 }

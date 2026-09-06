@@ -99,7 +99,7 @@ const payForReroll = `-- name: PayForReroll :one
 UPDATE app.players
 SET diamonds = diamonds - $2, action_seq = $3
 WHERE id = $1 AND diamonds >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
 `
 
 type PayForRerollParams struct {
@@ -159,6 +159,7 @@ func (q *Queries) PayForReroll(ctx context.Context, arg PayForRerollParams) (App
 		&i.DailyStreak,
 		&i.DailyClaimedOn,
 		&i.Might,
+		&i.Legacy,
 	)
 	return i, err
 }

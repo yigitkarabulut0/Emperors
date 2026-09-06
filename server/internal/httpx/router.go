@@ -112,6 +112,8 @@ func NewRouter(d Deps) http.Handler {
 			r.Post("/inventory/sell", a.sell)
 			r.Post("/inventory/sell/batch", a.sellBatch)
 			r.Post("/inventory/reforge", a.reforge)
+			r.Get("/legacy", a.legacy)
+			r.Post("/legacy/begin", a.legacyBegin)
 			r.Get("/collection", a.collection)
 			r.Post("/collection/donate", a.donateItem)
 

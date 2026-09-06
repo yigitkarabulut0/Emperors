@@ -7,6 +7,13 @@ extends VBoxContainer
 ## estates that earn it.
 
 var _estates: Dictionary = {}
+
+## The Legacy offer.
+##
+## Only ever drawn once a player has something to give up: an offer to start over
+## shown to somebody at level 12 is a threat, not a reward.
+var _legacy: Dictionary = {}
+var _legacy_card: Control
 var _selected := ""
 var _list: VBoxContainer
 var _stats: Label
@@ -47,6 +54,11 @@ func _ready() -> void:
 	_hero_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_child(_hero_card)
 
+	_legacy_card = VBoxContainer.new()
+	(_legacy_card as VBoxContainer).add_theme_constant_override("separation", UI.GAP_S)
+	_legacy_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.add_child(_legacy_card)
+
 	_stats = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
 	_stats.visible = false
 	stack.add_child(_stats)
@@ -86,6 +98,9 @@ func _reload() -> void:
 	var army: Api.Response = await Api.get_json("/v1/army")
 	if army.ok:
 		_army = army.data
+	var leg: Api.Response = await Api.get_json("/v1/legacy")
+	if leg.ok:
+		_legacy = leg.data
 	_rebuild()
 
 
@@ -94,6 +109,7 @@ func _rebuild() -> void:
 		return
 
 	_render_hero()
+	_render_legacy()
 
 	var gold := GameState.display_gold()
 	var upgrades: Array = _estates.get("upgrades", [])
@@ -396,3 +412,70 @@ func _buy() -> void:
 		_estates = res.data
 	await GameState.refresh()
 	_rebuild()
+
+
+## The Legacy offer.
+##
+## Drawn only once there is something to give up. At the cap the job ladder has
+## stopped, the holdings have stopped, the last barracks slot was level 37, and
+## the only verb left is raid-then-bank; this is what comes after.
+##
+## Also drawn once a run has been taken, because a player carrying stacks should
+## be able to see what they bought with the last one.
+func _render_legacy() -> void:
+	for c in _legacy_card.get_children():
+		c.queue_free()
+	if _legacy.is_empty():
+		return
+	var stacks := int(_legacy.get("stacks", 0))
+	var available := bool(_legacy.get("available", false))
+	if stacks == 0 and not available:
+		return
+
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel",
+		UI.panel_box(Palette.PANEL, Palette.GOLD_DEEP if available else Palette.LINE))
+	_legacy_card.add_child(panel)
+
+	var pad := MarginContainer.new()
+	for side in ["left", "right"]:
+		pad.add_theme_constant_override("margin_" + side, UI.GAP_M)
+	for side in ["top", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, UI.GAP_S)
+	panel.add_child(pad)
+
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	pad.add_child(col)
+
+	col.add_child(UI.label("YOUR LINE", UI.F_CAPTION, Palette.GOLD_INK,
+		HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.label("%d of %d generations   ·   +%d%% to everything you earn" % [
+		stacks, int(_legacy.get("max_stacks", 0)), int(_legacy.get("income_bp", 0)) / 100],
+		UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+
+	if not available:
+		return
+	var b := UI.button("BEGIN AGAIN", UI.F_BODY)
+	b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
+	b.pressed.connect(_begin_legacy)
+	col.add_child(b)
+
+
+func _begin_legacy() -> void:
+	if not await Confirm.ask(self, {
+			"title": "Pass the crown?",
+			"body": "You return to level one. Your gold, your gear, your soldiers and your estates all stay — only the levels go, and everything they unlocked with them. Your line keeps +%d%% to all income, forever." % (int(_legacy.get("next_bp", 0)) / 100),
+			"confirm_text": "Begin again", "danger": true}):
+		return
+
+	var seq := int(GameState.player().get("action_seq", 0)) + 1
+	var res: Api.Response = await Api.post_json("/v1/legacy/begin", {"action_seq": seq})
+	if not res.ok:
+		GameState.action_failed.emit(res.error)
+		return
+	_legacy = res.data
+	GameState.action_failed.emit("Generation %d   ·   +%d%% forever" % [
+		int(_legacy.get("stacks", 0)), int(_legacy.get("income_bp", 0)) / 100])
+	await GameState.refresh()
+	await _reload()

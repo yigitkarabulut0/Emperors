@@ -125,3 +125,24 @@ SET claimed = claimed | sqlc.arg(bit)
 WHERE player_id = sqlc.arg(player_id) AND day = sqlc.arg(day)
   AND (claimed & sqlc.arg(bit)) = 0
 RETURNING *;
+
+-- Begins a new Legacy run.
+--
+-- Level, experience and every stat point go back to nothing; gold, gear,
+-- soldiers and estates are untouched. The WHERE is the whole guard: it only
+-- lands at the cap and below the stack limit, so a double tap cannot burn two
+-- runs and a client cannot ask for one it has not earned.
+-- name: BeginLegacy :one
+UPDATE app.players
+SET level               = 1,
+    xp                  = 0,
+    stat_energy         = 0,
+    stat_attack         = 0,
+    stat_defense        = 0,
+    stat_points_unspent = 0,
+    legacy              = legacy + 1,
+    action_seq          = sqlc.arg(action_seq)
+WHERE id = sqlc.arg(id)
+  AND level = sqlc.arg(level_cap)
+  AND legacy < sqlc.arg(max_stacks)
+RETURNING *;

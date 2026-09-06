@@ -15,6 +15,10 @@
     "deposit_fee_bp": 1000
   },
   "levelup_diamonds": 5,
+  "legacy": {
+    "max_stacks": 10,
+    "income_bp_per_stack": 500
+  },
   "quests": {
     "per_day": 3,
     "xp_per_level_per_tier": 4,

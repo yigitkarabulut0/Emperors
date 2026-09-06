@@ -19,7 +19,7 @@ SET gold = gold + $2, xp = $3, level = $4,
     energy_milli = $6, energy_updated_at = $7,
     action_seq = $8
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
 `
 
 type ApplyBattleAttackerParams struct {
@@ -90,6 +90,7 @@ func (q *Queries) ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttack
 		&i.DailyStreak,
 		&i.DailyClaimedOn,
 		&i.Might,
+		&i.Legacy,
 	)
 	return i, err
 }
@@ -98,7 +99,7 @@ const applyBattleDefender = `-- name: ApplyBattleDefender :one
 UPDATE app.players
 SET gold = gold + $2, shield_until = $3
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
 `
 
 type ApplyBattleDefenderParams struct {
@@ -155,6 +156,7 @@ func (q *Queries) ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefend
 		&i.DailyStreak,
 		&i.DailyClaimedOn,
 		&i.Might,
+		&i.Legacy,
 	)
 	return i, err
 }
@@ -203,7 +205,7 @@ const createBot = `-- name: CreateBot :one
 INSERT INTO app.players (username, display_name, level, gold, is_bot, soldier_slots,
                          stat_attack, stat_defense, energy_milli, avatar)
 VALUES ($1,$2,$3,$4,true,$5,$6,$7,0,$8)
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
 `
 
 type CreateBotParams struct {
@@ -274,6 +276,7 @@ func (q *Queries) CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer
 		&i.DailyStreak,
 		&i.DailyClaimedOn,
 		&i.Might,
+		&i.Legacy,
 	)
 	return i, err
 }
@@ -670,7 +673,7 @@ func (q *Queries) ListRevenge(ctx context.Context, playerID uuid.UUID) ([]ListRe
 }
 
 const lockTwoPlayers = `-- name: LockTwoPlayers :many
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
 `
 
 func (q *Queries) LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]AppPlayer, error) {
@@ -727,6 +730,7 @@ func (q *Queries) LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]A
 			&i.DailyStreak,
 			&i.DailyClaimedOn,
 			&i.Might,
+			&i.Legacy,
 		); err != nil {
 			return nil, err
 		}

@@ -136,6 +136,8 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusForbidden, "not_permitted", "your rank does not allow that")
 	case errors.Is(err, service.ErrKingdomNameTaken):
 		WriteProblem(w, r, http.StatusConflict, "name_taken", "that name or tag is taken")
+	case errors.Is(err, service.ErrNotAtCap), errors.Is(err, service.ErrLegacyMaxed):
+		WriteProblem(w, r, http.StatusConflict, "legacy_unavailable", err.Error())
 	case errors.Is(err, service.ErrAlreadyCollected):
 		WriteProblem(w, r, http.StatusConflict, "already_collected", err.Error())
 	case errors.Is(err, service.ErrQuestUnfinished):
@@ -511,6 +513,43 @@ func (a *api) recruitOdds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v, err := a.s().GetOdds(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// legacy is the offer to start again.
+func (a *api) legacy(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	v, err := a.s().GetLegacy(r.Context(), pid)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+type seqOnlyReq struct {
+	ActionSeq int64 `json:"action_seq"`
+}
+
+func (a *api) legacyBegin(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req seqOnlyReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().BeginLegacy(r.Context(), pid, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return

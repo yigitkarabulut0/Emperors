@@ -95,6 +95,17 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 	if p.XpBoostBp != 0 && (p.XpBoostExpiresAt == nil || p.XpBoostExpiresAt.After(d.Now())) {
 		eff.Bonuses.Add(economy.BucketXPGain, int64(p.XpBoostBp))
 	}
+	// Legacy stacks lift income, and they lift it through the SAME capped
+	// buckets as everything else — so ten runs move a player toward a ceiling
+	// the family tree could already reach rather than past it. A terminal sink
+	// that inflated the economy would not be a sink.
+	if p.Legacy > 0 {
+		bp := int64(p.Legacy) * d.Config.Progression.Legacy.IncomeBPPerStack
+		eff.Bonuses.Add(economy.BucketCollectIncome, bp)
+		eff.TaxIncomeBP += bp
+		eff.TaxMilliPerHour = estates.TaxRate(d.Config, int64(p.Level), holdLevels, eff.TaxIncomeBP)
+	}
+
 	// The Collection tilts rolls, which is what loops the reward back into the
 	// thing being rewarded: a broader wall makes better drops, which makes more
 	// to collect. It ADDS into the same luck total as everything else and is
@@ -187,7 +198,19 @@ func (d Deps) GetEstates(ctx context.Context, playerID uuid.UUID) (*EstatesView,
 	for _, h := range holds {
 		holdLevels[h.HoldingID] = int(h.Level)
 	}
-	eff := estates.Derive(d.Config, int64(p.Level), upLevels, holdLevels)
+	// loadEffects, not a bare Derive.
+	//
+	// Derive knows about this player's own upgrades and holdings and nothing
+	// else, so the rate this screen printed silently dropped a kingdom's Royal
+	// Treasury, any live server event, and — once it existed — the Legacy bonus.
+	// The rate a player is actually PAID has always come from loadEffects (see
+	// state.go), so this was the screen disagreeing with the purse rather than
+	// the purse being wrong, which is arguably worse: the number was there to be
+	// trusted.
+	eff, err := d.loadEffects(ctx, q, p)
+	if err != nil {
+		return nil, err
+	}
 
 	view := &EstatesView{
 		Upgrades: make([]UpgradeView, 0, len(d.Config.Estates.Upgrades)),

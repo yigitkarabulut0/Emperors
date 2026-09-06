@@ -76,10 +76,17 @@ type ProgressionConfig struct {
 	LevelupDiamonds    int64            `json:"levelup_diamonds"`
 	DailyLogin         DailyLoginConfig `json:"daily_login"`
 	Quests             QuestsConfig     `json:"quests"`
+	Legacy             LegacyConfig     `json:"legacy"`
 	Sections           []SectionGate    `json:"sections"`
 	Store              StoreConfig      `json:"store"`
 	Avatars            []string         `json:"avatars"`
 	Levels             []Level          `json:"levels"`
+}
+
+// LegacyConfig is the terminal sink: start over, keep what gold bought.
+type LegacyConfig struct {
+	MaxStacks        int   `json:"max_stacks"`
+	IncomeBPPerStack int64 `json:"income_bp_per_stack"`
 }
 
 // QuestsConfig is the daily quest pool and its reward formula.

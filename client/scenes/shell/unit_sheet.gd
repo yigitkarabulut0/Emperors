@@ -149,7 +149,7 @@ func _render() -> void:
 func _stat_chip(name: String, value: int, tint: Color) -> Control:
 	var box := PanelContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	box.add_theme_stylebox_override("panel", UI.skin("panel_sunk", Palette.BG, 8, 8))
+	box.add_theme_stylebox_override("panel", UI.skin("panel_sunk", Palette.RAIL, 8, 8))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 0)
 	box.add_child(col)

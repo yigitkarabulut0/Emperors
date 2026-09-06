@@ -182,7 +182,7 @@ func _side_block(army: Dictionary, side: String, accent: Color) -> Control:
 	bar.max_value = 1.0   # set once both sides are known, in _scale_bars()
 	bar.value = float(total)
 	bar.custom_minimum_size = Vector2(0, 16)
-	bar.add_theme_stylebox_override("background", UI.panel_box(Palette.BG, Palette.LINE, 5))
+	bar.add_theme_stylebox_override("background", UI.panel_box(Palette.RAIL, Palette.LINE, 5))
 	bar.add_theme_stylebox_override("fill", UI.panel_box(accent, Color.TRANSPARENT, 5))
 	box.add_child(bar)
 	_bars[side] = bar

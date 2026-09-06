@@ -162,12 +162,30 @@ else:
     ok(f"all {len(designs)} item designs have art ({painted_n} painted)")
 
 # 7. An unimported asset does not exist as far as an exported build is concerned.
-unimported = [p.relative_to(ROOT) for p in (CLIENT / "assets").rglob("*.png")
-              if not p.with_suffix(".png.import").exists()]
+#
+#    Fonts are in here as well as textures. They were not, and a font with no
+#    .import exports as no font at all -- the game falls back to the engine face
+#    and looks subtly wrong in a way nobody can name.
+unimported = []
+for suffix in (".png", ".ttf"):
+    unimported += [q.relative_to(ROOT) for q in (CLIENT / "assets").rglob("*" + suffix)
+                   if not q.with_suffix(suffix + ".import").exists()]
 if unimported:
     fail(f"{len(unimported)} assets have no .import: {unimported[:3]}")
 else:
     ok("every shipped asset is imported")
+
+# 7b. The palette is a light theme now, and the colours that carry text were
+#     chosen against a ground. Delegated to its own script because it is the one
+#     check here with real arithmetic in it.
+contrast = subprocess.run([sys.executable, str(ROOT / "scripts/check-contrast.py")],
+                          capture_output=True, text=True)
+if contrast.returncode != 0:
+    for ln in contrast.stdout.splitlines():
+        if ln.startswith("FAIL"):
+            fail(ln.removeprefix("FAIL").strip())
+else:
+    ok("every text colour clears WCAG AA on every ground it is drawn on")
 
 # 8. Everything above reads the scripts as text. Only Godot actually parses
 #    GDScript, and a parse error takes a whole screen down at runtime while

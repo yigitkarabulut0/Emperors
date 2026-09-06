@@ -63,7 +63,47 @@ const GUTTER := 24
 const SKIN_SLICE := 42
 const SKIN_BLEED := 14
 
+## Per-skin geometry, because the small stamped things are shorter than two
+## slices. A currency cartouche is about 36 units tall; a 42-unit top slice plus
+## a 42-unit bottom slice is 84, and Godot resolves that overlap by squashing
+## both into mush. The small family is drawn at 64 square with PAD 6 and
+## RADIUS 10, so its slice is 22 and its bleed 6.
+const SKIN_GEOM := {
+	"chip": [22, 6],
+	"plaque": [22, 6],
+	"rail_active": [22, 6],
+}
+
 static var _skins: Dictionary = {}
+static var _fonts: Dictionary = {}
+
+
+## The autoload, fetched through the tree.
+##
+## UI is a static helper and a static function cannot resolve an autoload at
+## compile time -- the same reason skin() does this. Returns null before the
+## tree exists, which is only ever during a --check-only parse.
+static func _registry() -> Node:
+	var loop := Engine.get_main_loop()
+	if loop is SceneTree:
+		return (loop as SceneTree).root.get_node_or_null("/root/ArtRegistry")
+	return null
+
+
+## One of the four type roles. See ArtRegistry.font().
+##
+## Null-safe on purpose: a build with no fonts renders in the engine default
+## rather than crashing, and every caller below already treats null as "leave the
+## inherited font alone".
+static func font(kind: String) -> Font:
+	if _fonts.has(kind):
+		return _fonts[kind]
+	var reg := _registry()
+	if reg == null:
+		return null
+	var f: Font = reg.call("font", kind)
+	_fonts[kind] = f
+	return f
 
 
 ## One of the generated surfaces from scripts/gen-ui-skin.py.
@@ -76,18 +116,19 @@ static var _skins: Dictionary = {}
 ## Falls back to a flat box when the art is missing, so a build without the skin
 ## still renders rather than crashing.
 static func skin(name: String, fallback: Color, pad_h: int = 16, pad_v: int = 12) -> StyleBox:
-	var key := "%s|%d|%d" % [name, pad_h, pad_v]
+	var geom: Array = SKIN_GEOM.get(name, [SKIN_SLICE, SKIN_BLEED])
+	var slice: int = geom[0]
+	var bleed: int = geom[1]
+	var key := "%s|%d|%d|%d" % [name, pad_h, pad_v, slice]
 	if _skins.has(key):
 		return _skins[key]
 
 	# Fetched through the tree rather than by name: UI is a static helper, and a
 	# static function cannot resolve an autoload at compile time.
 	var tex: Texture2D = null
-	var loop := Engine.get_main_loop()
-	if loop is SceneTree:
-		var registry: Node = (loop as SceneTree).root.get_node_or_null("/root/ArtRegistry")
-		if registry != null:
-			tex = registry.call("ui_icon", "skin/" + name)
+	var registry := _registry()
+	if registry != null:
+		tex = registry.call("ui_icon", "skin/" + name)
 	if tex == null:
 		var flat := panel_box(fallback)
 		flat.content_margin_left = pad_h
@@ -100,8 +141,8 @@ static func skin(name: String, fallback: Color, pad_h: int = 16, pad_v: int = 12
 	var s := StyleBoxTexture.new()
 	s.texture = tex
 	for side in ["left", "top", "right", "bottom"]:
-		s.set("texture_margin_" + side, SKIN_SLICE)
-		s.set("expand_margin_" + side, SKIN_BLEED)
+		s.set("texture_margin_" + side, slice)
+		s.set("expand_margin_" + side, bleed)
 	s.content_margin_left = pad_h
 	s.content_margin_right = pad_h
 	s.content_margin_top = pad_v
@@ -110,7 +151,7 @@ static func skin(name: String, fallback: Color, pad_h: int = 16, pad_v: int = 12
 	return s
 
 
-static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 10) -> StyleBoxFlat:
+static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 6) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = bg
 	s.set_corner_radius_all(radius)
@@ -133,7 +174,7 @@ static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int 
 ## in a different state", which a flat colour swap does not.
 static func card_box(selected: bool = false, locked: bool = false) -> StyleBox:
 	if locked:
-		return skin("panel_sunk", Palette.BG, 14, 10)
+		return skin("panel_sunk", Palette.RAIL, 14, 10)
 	return skin("panel_gold" if selected else "panel", Palette.PANEL, 14, 10)
 
 
@@ -163,20 +204,31 @@ static func button(text: String, size: int = F_H2) -> Button:
 	# below Apple's 44 pt minimum on every device we ship to.
 	b.custom_minimum_size.y = TAP_MIN
 	b.add_theme_font_size_override("font_size", size)
-	b.add_theme_color_override("font_color", Palette.BG)
-	b.add_theme_color_override("font_hover_color", Palette.BG)
-	b.add_theme_color_override("font_pressed_color", Palette.BG)
+	# Roman capitals on the one button a screen is about.
+	var display := font("display")
+	if display != null:
+		b.add_theme_font_override("font", display)
+	# Light ink, because the primary button is now a deep red field rather than
+	# the pale gold one these three lines were written for -- they set
+	# Palette.BG, which on this palette is parchment, and the caption vanished.
+	b.add_theme_color_override("font_color", Palette.BANNER_INK)
+	b.add_theme_color_override("font_hover_color", Palette.BANNER_INK)
+	b.add_theme_color_override("font_pressed_color", Palette.BANNER_INK)
 	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
-	# A dark rim on light text and a light one on dark: at a glance it is what
-	# stops a caption dissolving into the gradient underneath it.
+	# A dark rim under light text. The comment here used to promise "a dark rim on
+	# light text and a light one on dark" and only ever wrote the light one, which
+	# was invisible on gold and would have been a white halo on red.
 	b.add_theme_constant_override("outline_size", 0)
-	b.add_theme_color_override("font_shadow_color", Color(1, 1, 1, 0.35))
+	b.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.42))
 	b.add_theme_constant_override("shadow_offset_x", 0)
 	b.add_theme_constant_override("shadow_offset_y", 1)
-	b.add_theme_stylebox_override("normal", skin("gold", Palette.GOLD))
-	b.add_theme_stylebox_override("hover", skin("gold_hover", Color("#F0D793")))
-	b.add_theme_stylebox_override("pressed", skin("gold_press", Palette.GOLD_DEEP))
-	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.PANEL_HIGH))
+	# Named for the ROLE, not the colour. These were gold/gold_hover/gold_press
+	# back when the primary button was gold; a file called gold.png that draws a
+	# red button is the kind of lie that costs someone an afternoon.
+	b.add_theme_stylebox_override("normal", skin("primary", Palette.BANNER))
+	b.add_theme_stylebox_override("hover", skin("primary_hover", Color("#9C2626")))
+	b.add_theme_stylebox_override("pressed", skin("primary_press", Color("#5E1414")))
+	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.RAIL))
 	b.focus_mode = Control.FOCUS_NONE
 	return b
 
@@ -186,11 +238,13 @@ static func button(text: String, size: int = F_H2) -> Button:
 static func danger_button(text: String, size: int = F_H2) -> Button:
 	var b := button(text, size)
 	b.add_theme_stylebox_override("normal", skin("danger", Palette.DANGER))
-	b.add_theme_stylebox_override("hover", skin("danger", Color("#E4726A")))
-	b.add_theme_stylebox_override("pressed", skin("danger_press", Color("#B2483E")))
-	b.add_theme_color_override("font_color", Palette.TEXT)
-	b.add_theme_color_override("font_hover_color", Palette.TEXT)
-	b.add_theme_color_override("font_pressed_color", Palette.TEXT)
+	b.add_theme_stylebox_override("hover", skin("danger", Color("#A33A32")))
+	b.add_theme_stylebox_override("pressed", skin("danger_press", Color("#6B1A1A")))
+	# Light ink again: Palette.TEXT is now near-black, and near-black on a dark
+	# red plate is unreadable.
+	b.add_theme_color_override("font_color", Palette.BANNER_INK)
+	b.add_theme_color_override("font_hover_color", Palette.BANNER_INK)
+	b.add_theme_color_override("font_pressed_color", Palette.BANNER_INK)
 	return b
 
 
@@ -206,7 +260,7 @@ static func ghost_button(text: String, size: int = F_BODY) -> Button:
 	b.add_theme_stylebox_override("normal", skin("ghost", Palette.PANEL_HIGH))
 	b.add_theme_stylebox_override("hover", skin("panel_gold", Palette.PANEL_HIGH))
 	b.add_theme_stylebox_override("pressed", skin("ghost_press", Palette.PANEL))
-	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.BG))
+	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.RAIL))
 	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
 	b.focus_mode = Control.FOCUS_NONE
 	return b
@@ -229,6 +283,114 @@ static func spacer(height: int) -> Control:
 	var c := Control.new()
 	c.custom_minimum_size = Vector2(0, height)
 	return c
+
+
+## Roman capitals: the display face, for a heading or a button caption.
+##
+## Cinzel draws capitals for lowercase input too, so the text does not need to be
+## upper-cased by the caller -- but it IS upper-cased anyway, so the layout is
+## the same width when the font is missing and the engine default steps in.
+static func caps(text: String, size: int, color: Color,
+		align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+	var l := label(text.to_upper(), size, color, align)
+	var f := font("display")
+	if f != null:
+		l.add_theme_font_override("font", f)
+	return l
+
+
+## Anything that counts: tabular, lining figures.
+##
+## Without this the gold counter reflows horizontally every time it rolls
+## 1,199 -> 1,200, and it is re-rendered four times a second.
+static func number_label(text: String, size: int, color: Color,
+		align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+	var l := label(text, size, color, align)
+	var f := font("number")
+	if f != null:
+		l.add_theme_font_override("font", f)
+	return l
+
+
+## Godot has no letter-spacing for Label, and a Roman inscription is mostly
+## letter-spacing. A thin space between the glyphs is what buys it.
+const _THIN_SPACE := "\u2009"
+
+
+static func _spaced(text: String) -> String:
+	var out := ""
+	for i in text.length():
+		if i > 0:
+			out += _THIN_SPACE
+		out += text[i]
+	return out
+
+
+## A screen title in spaced Roman capitals between two laurel branches.
+##
+## The tabs had no title at all before this: the shell knew which section was
+## open and the screen never said so. It is built here rather than in each of the
+## nine tabs so the wording has one source -- the shell's own SECTIONS table.
+static func screen_title(text: String) -> Control:
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", GAP_M)
+	row.add_child(_laurel("orn/laurel_l"))
+	var l := caps(_spaced(text), F_H1, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
+	l.name = "TitleText"
+	row.add_child(l)
+	row.add_child(_laurel("orn/laurel_r"))
+	return row
+
+
+## Retitles a control built by screen_title() without rebuilding it.
+static func set_screen_title(row: Control, text: String) -> void:
+	var l: Label = row.get_node_or_null("TitleText")
+	if l != null:
+		l.text = _spaced(text.to_upper())
+
+
+static func _laurel(key: String) -> Control:
+	var t := TextureRect.new()
+	var reg := _registry()
+	if reg != null:
+		t.texture = reg.call("ui_icon", key)
+	# expand_mode first: without it a TextureRect reports the SOURCE texture's
+	# size as its minimum and a 192 px branch forces the title row to 192 tall.
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.custom_minimum_size = Vector2(ICON_XL, ICON_MD)
+	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	t.modulate = Palette.GOLD
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
+
+
+## A gold rule with a diamond at its centre, for dividing a card.
+##
+## A plain TextureRect and NOT a nine-slice: the diamond has to stay in the
+## middle, and a stretched centre slice would smear it across the whole width.
+static func rule() -> Control:
+	var t := TextureRect.new()
+	var reg := _registry()
+	if reg != null:
+		t.texture = reg.call("ui_icon", "orn/rule")
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.custom_minimum_size = Vector2(0, ICON_SM)
+	t.modulate = Palette.GOLD
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
+
+
+## A small carved plaque bearing one word. Pure decoration: it never takes a tap
+## and it is anchored rather than laid out, so it costs no height.
+static func plaque(word: String) -> Control:
+	var box := PanelContainer.new()
+	box.add_theme_stylebox_override("panel", skin("plaque", Palette.RAIL, 10, 6))
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(caps(word, F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
+	return box
 
 
 ## Formats a number the way a game should: thousands separated below 100k, then

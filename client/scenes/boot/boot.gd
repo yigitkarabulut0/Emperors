@@ -39,7 +39,12 @@ var _attempt := 0
 
 func _ready() -> void:
 	var bg := ColorRect.new()
-	bg.color = Palette.BG
+	# The imperial red, not the parchment. The wordmark over it is gold, and gold
+	# on parchment measures 2.39:1 -- the logo would have been a rumour. Red also
+	# keeps the launch chain honest: this colour, boot_splash/bg_color,
+	# default_clear_color and the iOS storyboard colour are all the same, and any
+	# mismatch between them is a visible flash on every single launch.
+	bg.color = Palette.BANNER
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 

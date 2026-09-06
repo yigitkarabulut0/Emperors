@@ -14,9 +14,50 @@ const ITEM_DIR := "res://assets/items/"
 const UI_DIR := "res://assets/ui/"
 const PORTRAIT_DIR := "res://assets/portraits/"
 const BRANDING_DIR := "res://assets/branding/"
+const FONT_DIR := "res://assets/fonts/"
 
 var _cache: Dictionary = {}
 var _missing: Dictionary = {}
+
+
+## Sets the game's type and the two chrome surfaces the engine draws for us.
+##
+## Written into ThemeDB's DEFAULT theme rather than assigned to the shell's root
+## Control, because six of this game's overlays are CanvasLayers -- Confirm, the
+## portrait picker, the item chooser, the unit sheet, the reconnect curtain and
+## the battle replay -- and a theme on a Control does not cross a CanvasLayer.
+## Eleven roots would each need the assignment, and the next overlay someone adds
+## would be the one that quietly renders in the engine font.
+##
+## This is also why UI.label() needs no font override: every label in the game
+## inherits from here, and only the display face and the tabular figures are set
+## per node.
+##
+## Safe against lint check 3 (autoload ordering): nothing here touches another
+## autoload.
+func _ready() -> void:
+	var t := ThemeDB.get_default_theme()
+	var body := font("body")
+	if body != null:
+		t.default_font = body
+	t.default_font_size = UI.F_BODY
+
+	# The engine draws a dark panel behind a ScrollContainer, which on parchment
+	# is a grey slab down the middle of every list in the game.
+	t.set_stylebox("panel", "ScrollContainer", StyleBoxEmpty.new())
+
+	# And a scrollbar. The default is sized and coloured for a desktop tool; this
+	# is a gold thread in a carved groove.
+	for bar in ["VScrollBar", "HScrollBar"]:
+		var groove := UI.panel_box(Palette.RAIL, Color.TRANSPARENT, 4)
+		groove.content_margin_left = 0
+		groove.content_margin_right = 0
+		groove.content_margin_top = 0
+		groove.content_margin_bottom = 0
+		t.set_stylebox("scroll", bar, groove)
+		t.set_stylebox("grabber", bar, UI.panel_box(Palette.GOLD_DEEP, Color.TRANSPARENT, 4))
+		t.set_stylebox("grabber_highlight", bar, UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 4))
+		t.set_stylebox("grabber_pressed", bar, UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 4))
 
 
 ## Returns a flat white UI glyph, tintable with modulate. Null when absent, so a
@@ -130,3 +171,68 @@ func _placeholder(tier: String) -> Texture2D:
 			elif d <= 1.0:
 				img.set_pixel(x, y, c)
 	return ImageTexture.create_from_image(img)
+
+
+## The two faces the game is set in, resolved by role rather than by filename.
+##
+## Roles, not files, for the same reason art is addressed by logical key: a face
+## can be swapped without touching the call sites that ask for a heading.
+##
+##  display    Cinzel -- Roman engraved capitals, the carved-stone register the
+##             design asks for. It draws capitals for lowercase input too, which
+##             is what titles want and what makes it unusable as body copy.
+##  body       Alegreya -- a literary text serif from the same foundry. High
+##             x-height, holds up small on a phone.
+##  body_bold  Alegreya at 700.
+##  number     Alegreya at 600 with tabular, lining figures. Without tnum the
+##             gold counter reflows horizontally every time it rolls
+##             1,199 -> 1,200, and that counter ticks four times a second;
+##             without lnum Alegreya can serve oldstyle figures, whose varying
+##             heights read as a typo in a row of stats.
+##
+## docs/design/client.md sec 9.3 named Alegreya SANS here. The serif is used
+## instead because the reference the owner is building to is set in a serif
+## throughout -- names, stats and captions alike -- and pairing a sans body with
+## a Roman display face read as two unrelated designs. Alegreya is the sans's
+## own serif sibling, so the pairing is the one its designer intended.
+##
+## Both are variable fonts with a 400-900 wght axis, so four roles come out of
+## two files rather than four.
+##
+## Returns null when a font is absent, like ui_icon() does, so a build with no
+## fonts still renders in the engine default rather than crashing.
+const _FONTS := {
+	"display":   ["Cinzel-Variable.ttf", 600.0, false],
+	"body":      ["Alegreya-Variable.ttf", 400.0, false],
+	"body_bold": ["Alegreya-Variable.ttf", 700.0, false],
+	"number":    ["Alegreya-Variable.ttf", 600.0, true],
+}
+
+
+func font(kind: String) -> Font:
+	var key := "font:" + kind
+	if _cache.has(key):
+		return _cache[key]
+
+	if not _FONTS.has(kind):
+		push_warning("[art] unknown font role " + kind)
+		return null
+	var spec: Array = _FONTS[kind]
+
+	var path: String = FONT_DIR + str(spec[0])
+	if not ResourceLoader.exists(path):
+		if not _missing.has(key):
+			_missing[key] = true
+			print("[art] missing ", path)
+		return null
+
+	# A FontVariation even at the default weight: it is what carries the wght
+	# coordinate, and a bare FontFile would render every role at 400.
+	var fv := FontVariation.new()
+	fv.base_font = load(path)
+	fv.variation_opentype = {"wght": float(spec[1])}
+	if bool(spec[2]):
+		fv.opentype_features = {"tnum": 1, "lnum": 1}
+
+	_cache[key] = fv
+	return fv

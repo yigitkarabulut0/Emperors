@@ -1,0 +1,180 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+  grid-template-rows: var(--top-h) 1fr var(--foot-h);
+  grid-template-areas: "top top" "rail main" "foot foot";
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------- top --- */
+.top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: var(--s6);
+  padding: 0 var(--s6);
+  background: linear-gradient(180deg, var(--ink-3) 0%, var(--ink-1) 100%);
+  border-bottom: 1px solid var(--hair);
+  box-shadow: 0 1px 0 rgb(255 247 230 / 0.03) inset;
+  z-index: 20;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  font-family: var(--f-display);
+  font-size: var(--t-lead);
+  font-variant: small-caps;
+  letter-spacing: 0.16em;
+  color: var(--gold-3);
+  white-space: nowrap;
+}
+.brandMark { color: var(--gold-4); font-size: 15px; }
+
+/* The live counters. Never stale, and the first thing on the page. */
+.counters { display: flex; align-items: center; gap: var(--s6); margin-left: auto; }
+.counter { display: flex; align-items: baseline; gap: var(--s3); }
+.counterValue {
+  font-family: var(--f-num);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: var(--t-lead);
+  color: var(--gold-3);
+}
+.counterLabel { font-size: var(--t-micro); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
+.counterMuted .counterValue { color: var(--text-2); }
+/* A number the panel is no longer sure about must LOOK unsure. */
+.counters[data-stale="true"] .counterValue { filter: saturate(0.35); opacity: 0.6; }
+
+.who { font-size: var(--t-small); color: var(--text-3); white-space: nowrap; }
+.whoName { color: var(--text-2); }
+
+/* An environment badge you cannot fail to notice. You should not be able to ban
+   the wrong population because the tool let you forget which one you were on. */
+.env {
+  font-size: var(--t-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px var(--s4);
+  border-radius: var(--r1);
+  border: 1px solid var(--hair-strong);
+  color: var(--text-2);
+  background: repeating-linear-gradient(
+    -45deg, transparent 0 4px, rgb(255 255 255 / 0.03) 4px 8px);
+}
+
+/* ------------------------------------------------------------ connection --- */
+.conn {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  font-size: var(--t-micro);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 3px var(--s4);
+  border-radius: var(--r-full);
+  border: 1px solid var(--hair);
+  white-space: nowrap;
+}
+.connLive { color: var(--up); border-color: color-mix(in oklab, var(--up) 35%, transparent); }
+.connWait { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 35%, transparent); }
+.connDead { color: var(--down); border-color: color-mix(in oklab, var(--down) 40%, transparent); }
+.connDot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.connLive .connDot { animation: beat 2s var(--ease) infinite; }
+@keyframes beat { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
+
+/* A strip under the top bar while the world is not being kept up to date. */
+.strip { grid-area: top; align-self: end; height: 2px; background: var(--ink-4); overflow: hidden; }
+.strip::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 35%;
+  background: var(--warn);
+  animation: sweep 1.3s var(--ease) infinite;
+}
+@keyframes sweep { from { transform: translateX(-100%) } to { transform: translateX(340%) } }
+
+/* ------------------------------------------------------------------ rail --- */
+.rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s5) var(--s3);
+  background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-0) 100%);
+  border-right: 1px solid var(--hair);
+  overflow: hidden;
+  transition: width var(--d2) var(--ease);
+  z-index: 10;
+}
+.railLink {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  height: 34px;
+  padding: 0 var(--s4);
+  border-radius: var(--r2);
+  color: var(--text-3);
+  position: relative;
+  white-space: nowrap;
+  transition: color var(--d1) var(--ease), background var(--d1) var(--ease);
+}
+.railLink:hover { color: var(--text); background: var(--ink-3); }
+/* The active state is derived from the route segment, so it cannot drift out of
+   sync with where you actually are -- which is what happened when it was an
+   attribute nobody set. */
+.railLink[data-active="true"] {
+  color: var(--gold-3);
+  background: var(--ink-4);
+}
+.railLink[data-active="true"]::before {
+  content: "";
+  position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 2px; border-radius: var(--r-full);
+  background: var(--gold-4);
+}
+.railIcon { width: 18px; text-align: center; flex: none; font-size: 14px; }
+.railLabel { opacity: 0; transition: opacity var(--d2) var(--ease); font-size: var(--t-body); }
+.shell:has(.rail:hover) { grid-template-columns: var(--rail-w-open) 1fr; }
+.rail:hover .railLabel { opacity: 1; }
+.railSpacer { flex: 1; }
+
+/* ------------------------------------------------------------------ main --- */
+.main {
+  grid-area: main;
+  overflow: auto;
+  padding: var(--s7);
+  /* The workspace, not the window, is the query container: the layout has to
+     reflow when the inspector opens, which is not a viewport change. */
+  container-type: inline-size;
+}
+.mainWide { display: grid; grid-template-columns: 1fr var(--inspector-w); gap: 0; overflow: hidden; padding: 0; }
+
+/* ------------------------------------------------------------------ foot --- */
+.foot {
+  grid-area: foot;
+  display: flex;
+  align-items: center;
+  gap: var(--s6);
+  padding: 0 var(--s6);
+  font-size: var(--t-micro);
+  color: var(--text-off);
+  background: var(--ink-0);
+  border-top: 1px solid var(--hair);
+  z-index: 20;
+}
+.footItem { display: flex; gap: var(--s3); align-items: center; white-space: nowrap; }
+.footGrow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ------------------------------------------------------------- degraded --- */
+.degraded {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  padding: var(--s5) var(--s6);
+  background: color-mix(in oklab, var(--down) 14%, var(--ink-2));
+  border-bottom: 1px solid color-mix(in oklab, var(--down) 35%, transparent);
+  color: var(--text);
+}

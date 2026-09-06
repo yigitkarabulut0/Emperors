@@ -1,0 +1,17 @@
+.page { display: grid; gap: var(--s6); }
+.filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s5); }
+.filters input, .filters select { height: 30px; }
+.search { min-width: 200px; }
+.spacer { flex: 1; }
+.pager { display: flex; align-items: center; gap: var(--s5); }
+.range { font-size: var(--t-small); color: var(--text-3); font-family: var(--f-num); }
+
+.name { display: flex; flex-direction: column; line-height: 1.2; }
+.nameSub { font-size: var(--t-micro); color: var(--text-3); }
+.grant { display: flex; align-items: center; gap: var(--s3); }
+.grant input { width: 84px; height: 24px; }
+
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.dotPlaying { background: var(--up); }
+.dotIdle { background: var(--warn); }
+.dotOff { background: none; border: 1.5px solid var(--text-off); }

@@ -1,0 +1,38 @@
+@layer utilities {
+  .u-row { display: flex; align-items: center; gap: var(--s4); }
+  .u-col { display: flex; flex-direction: column; }
+  .u-wrap { flex-wrap: wrap; }
+  .u-grow { flex: 1; min-width: 0; }
+  .u-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .u-dim { color: var(--text-2); }
+  .u-faint { color: var(--text-3); }
+  .u-gold { color: var(--gold-3); }
+  .u-up { color: var(--up); }
+  .u-down { color: var(--down); }
+  .u-mono { font-family: var(--f-num); }
+  .u-micro {
+    font-size: var(--t-micro);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .u-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  /* A section rule with a lozenge at its terminal. One heraldic motif, drawn in
+     CSS, used sparingly -- it is what stops a dark dashboard reading as generic
+     without shipping a webfont or an image. */
+  .u-rule {
+    position: relative;
+    border-top: 1px solid var(--hair);
+    margin: var(--s6) 0;
+  }
+  .u-rule::before {
+    content: "";
+    position: absolute; left: 0; top: -3px;
+    width: 5px; height: 5px;
+    background: var(--gold-5);
+    transform: rotate(45deg);
+  }
+}

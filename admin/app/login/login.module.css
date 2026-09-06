@@ -1,0 +1,43 @@
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--s7);
+}
+.card {
+  width: min(380px, 100%);
+  padding: var(--s8);
+  border-radius: var(--r3);
+  background: linear-gradient(180deg, var(--ink-3) 0%, var(--ink-1) 100%);
+  border: 1px solid var(--hair);
+  box-shadow: var(--e3);
+  position: relative;
+}
+/* Four corner brackets, drawn in CSS. One heraldic motif at 1px, which is what
+   stops a dark form reading as any other dark form. */
+.card::before, .card::after {
+  content: "";
+  position: absolute;
+  width: 12px; height: 12px;
+  border: 1px solid var(--gold-5);
+}
+.card::before { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+.card::after { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+
+.brand {
+  font-family: var(--f-display);
+  font-size: 22px;
+  font-variant: small-caps;
+  letter-spacing: 0.18em;
+  color: var(--gold-3);
+  text-align: center;
+  margin-bottom: var(--s3);
+}
+.sub { text-align: center; color: var(--text-3); font-size: var(--t-small); margin-bottom: var(--s7); }
+.form { display: flex; flex-direction: column; gap: var(--s5); }
+.form input { width: 100%; }
+.err {
+  color: var(--down);
+  font-size: var(--t-small);
+  min-height: 1.4em;
+}

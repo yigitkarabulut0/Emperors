@@ -1,0 +1,93 @@
+@layer base {
+  body {
+    background:
+      radial-gradient(1200px 560px at 18% -12%, #1a1511 0%, transparent 68%),
+      var(--ink-1);
+    color: var(--text);
+    font-family: var(--f-ui);
+    font-size: var(--t-body);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  /* Every number in this tool is content. Tabular figures and a slashed zero
+     are not decoration: a column of gold that does not align cannot be scanned,
+     and an unslashed zero next to an O in an id is a support ticket. */
+  .num, td.num, th.num, input[type="number"] {
+    font-family: var(--f-num);
+    font-variant-numeric: tabular-nums slashed-zero;
+    text-align: right;
+    font-feature-settings: "zero" 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: var(--r1);
+  }
+
+  ::selection { background: color-mix(in oklab, var(--gold-4) 40%, transparent); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--ink-0); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--ink-5);
+    border-radius: var(--r-full);
+    border: 2px solid var(--ink-0);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-6); }
+
+  /* Inputs are sunken wells, so a field reads as a hole and a button reads as
+     a raised surface without either needing a border colour. */
+  input, select, textarea {
+    background: linear-gradient(180deg, var(--ink-0) 0%, var(--ink-3) 100%);
+    border: 1px solid var(--hair);
+    border-radius: var(--r2);
+    color: var(--text);
+    padding: var(--s3) var(--s4);
+    min-width: 0;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.35) inset;
+    transition: border-color var(--d1) var(--ease), box-shadow var(--d1) var(--ease);
+  }
+  /* textarea had NO rule at all in the old sheet, so the balance editor was a
+     white browser-default box on a dark page -- the single worst thing about
+     the panel's appearance. */
+  textarea {
+    font-family: var(--f-num);
+    font-size: var(--t-small);
+    line-height: 1.6;
+    resize: vertical;
+    tab-size: 2;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-off); }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--gold-4);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.35) inset,
+                0 0 0 3px color-mix(in oklab, var(--gold-4) 18%, transparent);
+  }
+  input:disabled, select:disabled, textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+  select {
+    appearance: none;
+    padding-right: var(--s7);
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--text-3) 50%),
+      linear-gradient(135deg, var(--text-3) 50%, transparent 50%),
+      linear-gradient(180deg, var(--ink-0) 0%, var(--ink-3) 100%);
+    background-position: right 13px top 55%, right 8px top 55%, 0 0;
+    background-size: 5px 5px, 5px 5px, 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  code, kbd { font-family: var(--f-num); font-size: var(--t-small); }
+  kbd {
+    background: var(--ink-4);
+    border: 1px solid var(--hair);
+    border-bottom-width: 2px;
+    border-radius: var(--r1);
+    padding: 1px 5px;
+    color: var(--text-2);
+    font-size: var(--t-micro);
+  }
+}

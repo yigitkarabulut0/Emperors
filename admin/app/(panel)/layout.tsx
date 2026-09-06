@@ -1,38 +1,37 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import type { ReactNode } from "react";
-import { callAdmin, isSignedIn, SESSION_COOKIE } from "@/lib/api";
+import { callAdmin } from "@/lib/server/upstream";
+import { readSession } from "@/lib/server/session";
+import { StoreProvider } from "@/store/react";
+import { AppShell } from "@/ui/Shell";
+import { Degraded } from "@/features/Degraded";
 
-export default async function PanelLayout({ children }: { children: ReactNode }) {
-  if (!(await isSignedIn())) redirect("/login");
+export const dynamic = "force-dynamic";
+
+export default async function PanelLayout({ children }: { children: React.ReactNode }) {
+  // Cheap first: no cookie means no round trip.
+  if (!(await readSession())) redirect("/login");
 
   const me = await callAdmin<{ username: string; role: string }>("/me");
   if (!me.ok && me.status === 401) redirect("/login");
 
-  async function signOut() {
-    "use server";
-    await callAdmin("/logout", { method: "POST" });
-    (await cookies()).delete(SESSION_COOKIE);
-    redirect("/login");
+  // The API being down must not produce a blank page. The shell renders, the
+  // failure is named, and the retry is one click -- this is the single most
+  // common local failure and the old panel handled it worst.
+  if (!me.ok) {
+    return (
+      <StoreProvider>
+        <AppShell me={null} env={process.env.EMPERORS_ENV ?? "local"}>
+          <Degraded message={me.message} />
+        </AppShell>
+      </StoreProvider>
+    );
   }
 
   return (
-    <div className="shell">
-      <nav className="rail">
-        <div className="brand">EMPERORS</div>
-        <a href="/">Overview</a>
-        <a href="/players">Players</a>
-        <a href="/events">Events</a>
-        <a href="/balance">Balance</a>
-        <a href="/audit">Audit</a>
-        <form action={signOut}>
-          <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
-            {me.ok ? `${me.data.username} · ${me.data.role}` : "signed in"}
-          </div>
-          <button className="ghost" type="submit" style={{ width: "100%" }}>Sign out</button>
-        </form>
-      </nav>
-      <main className="main">{children}</main>
-    </div>
+    <StoreProvider initial={{ me: me.data as never }}>
+      <AppShell me={me.data} env={process.env.EMPERORS_ENV ?? "local"}>
+        {children}
+      </AppShell>
+    </StoreProvider>
   );
 }

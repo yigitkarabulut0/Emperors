@@ -1,0 +1,198 @@
+/* --------------------------------------------------------------- button --- */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s3);
+  height: 30px;
+  padding: 0 var(--s5);
+  border-radius: var(--r2);
+  border: 1px solid transparent;
+  font-size: var(--t-body);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter var(--d1) var(--ease), transform var(--d1) var(--ease),
+              border-color var(--d1) var(--ease), background var(--d1) var(--ease);
+}
+.button:active:not(:disabled) { transform: translateY(1px); }
+.button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Gold is reserved for the one affirmative action on a panel. If everything is
+   gold, nothing is. */
+.primary {
+  background: linear-gradient(180deg, var(--gold-2) 0%, var(--gold-4) 100%);
+  color: #241e17;
+  box-shadow: 0 1px 0 rgb(255 250 235 / 0.4) inset, 0 2px 6px rgb(0 0 0 / 0.4);
+}
+.primary:hover:not(:disabled) { filter: brightness(1.07); }
+
+.ghost {
+  background: linear-gradient(180deg, var(--ink-5) 0%, var(--ink-3) 100%);
+  color: var(--text-2);
+  border-color: var(--hair);
+  box-shadow: var(--e1);
+}
+.ghost:hover:not(:disabled) { color: var(--text); border-color: var(--hair-strong); }
+
+.quiet { background: transparent; color: var(--text-3); }
+.quiet:hover:not(:disabled) { color: var(--text); background: var(--ink-3); }
+
+/* Outlined until you reach for it. A list of fifty players must not be fifty
+   red blocks with the loudest thing on screen being the action you rarely want. */
+.danger {
+  background: transparent;
+  color: var(--down);
+  border-color: color-mix(in oklab, var(--down) 50%, transparent);
+}
+.danger:hover:not(:disabled) { background: var(--down); color: #fff; border-color: var(--down); }
+
+.small { height: 24px; padding: 0 var(--s4); font-size: var(--t-small); }
+
+/* The label is swapped for dots at the SAME width, so nothing reflows and the
+   row does not jump under the pointer mid-click. */
+.busy { position: relative; color: transparent !important; pointer-events: none; }
+.busy::after {
+  content: "···";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--text-2);
+  letter-spacing: 2px;
+  animation: pulse 1s var(--ease) infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 0.45 } 50% { opacity: 1 } }
+
+/* ----------------------------------------------------------------- pill --- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 1px var(--s4);
+  border-radius: var(--r-full);
+  font-size: var(--t-micro);
+  letter-spacing: 0.04em;
+  border: 1px solid var(--hair);
+  background: var(--ink-4);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.pillOk { color: var(--up); border-color: color-mix(in oklab, var(--up) 35%, transparent); }
+.pillWarn { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 35%, transparent); }
+.pillBad { color: var(--down); border-color: color-mix(in oklab, var(--down) 35%, transparent); }
+.pillGold { color: var(--gold-3); border-color: color-mix(in oklab, var(--gold-3) 35%, transparent); }
+.pillSynthetic { color: var(--synthetic); border-color: color-mix(in oklab, var(--synthetic) 35%, transparent); }
+
+/* State carries a SHAPE as well as a colour, so it survives being printed,
+   screenshotted in greyscale, or read by someone who cannot separate red from
+   green. */
+.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.dotHollow { background: none; border: 1.5px solid currentColor; }
+
+/* ---------------------------------------------------------------- panel --- */
+.panel {
+  background: linear-gradient(180deg, var(--ink-3) 0%, var(--ink-2) 100%);
+  border: 1px solid var(--hair);
+  border-radius: var(--r3);
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s5);
+  padding: var(--s4) var(--s6);
+  border-bottom: 1px solid var(--hair);
+  background: linear-gradient(180deg, var(--ink-4) 0%, transparent 100%);
+}
+.panelTitle {
+  font-family: var(--f-display);
+  font-size: var(--t-lead);
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.panelBody { padding: var(--s6); }
+.panelFlush { padding: 0; }
+
+/* ----------------------------------------------------------------- stat --- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s5);
+}
+.stat {
+  position: relative;
+  padding: var(--s5) var(--s6);
+  border-radius: var(--r3);
+  background: linear-gradient(180deg, var(--ink-4) 0%, var(--ink-2) 100%);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+}
+.statKey { font-size: var(--t-micro); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
+.statValue {
+  font-family: var(--f-num);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-size: var(--t-hero);
+  line-height: 1.1;
+  color: var(--gold-3);
+  margin-top: var(--s2);
+}
+.statSub { font-size: var(--t-small); color: var(--text-3); margin-top: var(--s1); }
+.statAccent { color: var(--up); }
+.statMuted .statValue { color: var(--text-2); }
+
+/* ---------------------------------------------------------------- field --- */
+.field { display: flex; flex-direction: column; gap: var(--s2); }
+.label { font-size: var(--t-micro); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
+.hint { font-size: var(--t-small); color: var(--text-3); }
+.error { font-size: var(--t-small); color: var(--down); }
+
+/* ------------------------------------------------------------- skeleton --- */
+.skeleton {
+  background: var(--ink-4);
+  border-radius: var(--r1);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+/* An opacity pulse, not a travelling gradient: a sweep across forty rows looks
+   cheap and costs a repaint per frame. */
+@keyframes breathe { 0%, 100% { opacity: 0.45 } 50% { opacity: 0.75 } }
+
+/* ----------------------------------------------------------------- misc --- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s9) var(--s6);
+  color: var(--text-3);
+  text-align: center;
+}
+.emptyTitle { color: var(--text-2); font-size: var(--t-lead); font-family: var(--f-display); }
+
+/* --------------------------------------------------------------- toasts --- */
+.toasts {
+  position: fixed;
+  right: var(--s6);
+  bottom: calc(var(--foot-h) + var(--s6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  z-index: 60;
+  max-width: 420px;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s4);
+  padding: var(--s5) var(--s6);
+  border-radius: var(--r3);
+  background: linear-gradient(180deg, var(--ink-5) 0%, var(--ink-2) 100%);
+  border: 1px solid var(--hair-strong);
+  box-shadow: var(--e3);
+  animation: toastIn var(--d3) var(--ease);
+}
+.toastOk { border-left: 3px solid var(--up); }
+.toastErr { border-left: 3px solid var(--down); }
+.toastText { flex: 1; min-width: 0; }
+.toastDetail { font-size: var(--t-small); color: var(--text-3); margin-top: var(--s2); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }

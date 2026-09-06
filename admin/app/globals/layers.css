@@ -1,0 +1,5 @@
+/* Imported first, so the cascade is settled by declaration rather than by
+ * whichever import order a bundler happened to produce. Next's own CSS guidance
+ * warns that ordering can differ between dev and build; with layers that
+ * warning stops applying, and !important never has to appear anywhere. */
+@layer reset, tokens, base, components, utilities, state;

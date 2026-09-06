@@ -1,0 +1,68 @@
+.grid { display: grid; gap: var(--s6); }
+.headline { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s5); }
+
+.boardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  padding: var(--s4) var(--s6);
+  border-bottom: 1px solid var(--hair);
+}
+.count { font-family: var(--f-num); color: var(--gold-3); }
+
+.rows { display: flex; flex-direction: column; }
+.row {
+  display: grid;
+  grid-template-columns: 18px minmax(140px, 1.6fr) 60px minmax(90px, 1fr) 76px 96px 84px;
+  align-items: center;
+  gap: var(--s5);
+  height: var(--row-h);
+  padding: 0 var(--s6);
+  border-bottom: 1px solid var(--hair);
+  font-size: var(--t-body);
+}
+.row:last-child { border-bottom: 0; }
+.row:hover { background: rgb(255 255 255 / 0.022); }
+/* A row that has just appeared marks itself for a moment and then settles. It
+   does not keep pulsing: a board with forty arrivals a minute would strobe. */
+.rowNew { animation: arrive var(--d3) var(--ease); }
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(-4px); background: color-mix(in oklab, var(--up) 16%, transparent) }
+  to { opacity: 1; transform: none }
+}
+
+.head {
+  composes: row;
+  height: 26px;
+  font-size: var(--t-micro);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--ink-2);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.name { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.nameMain { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nameSub { font-size: var(--t-micro); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.n { font-family: var(--f-num); font-variant-numeric: tabular-nums slashed-zero; text-align: right; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dotPlaying { background: var(--up); }
+.dotIdle { background: var(--warn); }
+/* Hollow means the server is inferring presence from ordinary traffic because
+   this client's build predates the heartbeat. The shape says "less certain"
+   without needing a legend. */
+.dotInferred { background: none; border: 1.5px solid currentColor; }
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s4) var(--s6);
+  font-size: var(--t-small);
+  color: var(--warn);
+  background: color-mix(in oklab, var(--warn) 8%, transparent);
+  border-bottom: 1px solid var(--hair);
+}

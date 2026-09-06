@@ -1,0 +1,96 @@
+@layer tokens {
+  :root {
+    color-scheme: dark;
+
+    /* Ground. Seven steps, so depth reads as light falling on a surface rather
+       than as a border colour change. */
+    --ink-0: #0a0908;
+    --ink-1: #100e0c;
+    --ink-2: #17140f;
+    --ink-3: #1d1914;
+    --ink-4: #241f19;
+    --ink-5: #2c261e;
+    --ink-6: #382f25;
+
+    /* Hairlines are gold-tinted transparency, never flat grey. */
+    --hair: color-mix(in oklab, #e8c87a 9%, transparent);
+    --hair-strong: color-mix(in oklab, #e8c87a 18%, transparent);
+
+    /* Parchment. */
+    --text: #f2ead9;
+    --text-2: #c3b8a4;
+    --text-3: #8e8474;
+    --text-off: #635b4f;
+
+    /* Gold is reserved for numbers and the brand. Never for chrome. */
+    --gold-1: #fff2cc;
+    --gold-2: #f0d795;
+    --gold-3: #e2c377;
+    --gold-4: #b9993f;
+    --gold-5: #7d6528;
+    --gold-6: #4a3c17;
+
+    --up: #63c07a;
+    --down: #d9584a;
+    --warn: #eaa53c;
+    --info: #62c9e0;
+    /* Bots must never be mistaken for players. */
+    --synthetic: #a074e0;
+    /* Focus is deliberately NOT gold: gold means data, and a focus ring has to
+       be unambiguous. */
+    --focus: #7fd3ff;
+
+    --tier-common: #9ba1a6;
+    --tier-uncommon: #4ade80;
+    --tier-rare: #38bdf8;
+    --tier-epic: #a855f7;
+    --tier-legendary: #f5c518;
+    --tier-mystic: #e040fb;
+
+    /* 4px grid. The old sheet was on 8 and read as loose for a dense tool. */
+    --s1: 2px;  --s2: 4px;  --s3: 6px;  --s4: 8px;
+    --s5: 12px; --s6: 16px; --s7: 24px; --s8: 32px; --s9: 48px;
+
+    /* Sharp. 14px radii on an ops tool read as marketing. */
+    --r1: 3px; --r2: 5px; --r3: 8px; --r-full: 999px;
+
+    --f-ui: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --f-num: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --f-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+
+    --t-micro: 10px;
+    --t-small: 11.5px;
+    --t-body: 13px;
+    --t-lead: 15px;
+    --t-title: 20px;
+    --t-hero: 30px;
+
+    /* Elevation: an inner top highlight plus a soft shadow. No borders. */
+    --e1: 0 1px 0 rgb(255 247 230 / 0.045) inset, 0 1px 2px rgb(0 0 0 / 0.5);
+    --e2: 0 1px 0 rgb(255 247 230 / 0.06) inset, 0 8px 24px -8px rgb(0 0 0 / 0.7);
+    --e3: 0 1px 0 rgb(255 247 230 / 0.07) inset, 0 24px 60px -20px rgb(0 0 0 / 0.85);
+
+    --d1: 90ms; --d2: 160ms; --d3: 240ms;
+    --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+    --row-h: 30px;
+    --rail-w: 58px;
+    --rail-w-open: 210px;
+    --top-h: 46px;
+    --foot-h: 26px;
+    --inspector-w: 440px;
+  }
+
+  /* Compact density: a live-ops table wants more rows on screen. */
+  :root[data-density="compact"] {
+    --row-h: 24px;
+    --t-body: 12px;
+    --s5: 9px;
+    --s6: 12px;
+    --s7: 18px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --d1: 0.01ms; --d2: 0.01ms; --d3: 0.01ms; }
+  }
+}

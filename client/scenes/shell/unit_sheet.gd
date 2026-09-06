@@ -113,7 +113,7 @@ func _render() -> void:
 	for pair in [["ATK", int(_unit.get("attack", 0)), Palette.DANGER],
 			["DEF", int(_unit.get("defense", 0)), Palette.DIAMOND],
 			["SPD", int(_unit.get("speed", 0)), Palette.SUCCESS],
-			["HP", int(_unit.get("hp", 0)), Palette.GOLD]]:
+			["HP", int(_unit.get("hp", 0)), Palette.GOLD_INK]]:
 		stats.add_child(_stat_chip(str(pair[0]), int(pair[1]), pair[2]))
 
 	var equipped: Dictionary = _unit.get("equipped", {})

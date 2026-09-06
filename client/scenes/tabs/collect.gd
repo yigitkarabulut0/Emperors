@@ -128,7 +128,7 @@ func _build_row(job: Dictionary) -> Control:
 	var right := VBoxContainer.new()
 	right.alignment = BoxContainer.ALIGNMENT_CENTER
 	right.add_theme_constant_override("separation", 2)
-	right.add_child(UI.label("", UI.F_H2, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT))   # 0 gold
+	right.add_child(UI.label("", UI.F_H2, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_RIGHT))   # 0 gold
 	right.add_child(UI.label("", UI.F_CAPTION, Palette.ENERGY, HORIZONTAL_ALIGNMENT_RIGHT)) # 1 cost
 	row.add_child(right)
 
@@ -173,7 +173,7 @@ func _update_row(row: Control, job: Dictionary) -> void:
 
 	(right.get_child(0) as Label).text = "+" + UI.number(int(job.get("gold_payout", 0)))
 	(right.get_child(0) as Label).add_theme_color_override("font_color",
-		Palette.GOLD if unlocked else Palette.TEXT_FAINT)
+		Palette.GOLD_INK if unlocked else Palette.TEXT_FAINT)
 	(right.get_child(1) as Label).text = "%d energy" % int(job.get("energy_cost", 0))
 
 	# The same lit surfaces every other card in the game uses. These were still

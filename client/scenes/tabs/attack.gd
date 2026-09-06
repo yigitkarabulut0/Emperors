@@ -109,7 +109,7 @@ func _target_row(t: Dictionary) -> Control:
 		risk = Palette.DANGER
 		risk_word = "stronger"
 	elif ratio > 0.85:
-		risk = Palette.GOLD
+		risk = Palette.GOLD_INK
 		risk_word = "an even match"
 
 	var b := Button.new()
@@ -159,7 +159,7 @@ func _target_row(t: Dictionary) -> Control:
 	right.alignment = BoxContainer.ALIGNMENT_CENTER
 	right.add_theme_constant_override("separation", 2)
 	row.add_child(right)
-	right.add_child(UI.label("+%s" % UI.number(int(t.get("estimated_steal", 0))), UI.F_H2, Palette.GOLD,
+	right.add_child(UI.label("+%s" % UI.number(int(t.get("estimated_steal", 0))), UI.F_H2, Palette.GOLD_INK,
 		HORIZONTAL_ALIGNMENT_RIGHT))
 	right.add_child(UI.label("if you win", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
 	return b

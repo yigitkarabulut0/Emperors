@@ -94,7 +94,7 @@ func _ready() -> void:
 		line.alignment = BoxContainer.ALIGNMENT_CENTER
 		line.add_theme_constant_override("separation", UI.GAP_S)
 		var currency := str(cost.get("currency", "gold"))
-		var tint := Palette.GOLD
+		var tint := Palette.GOLD_INK
 		var icon := "coin"
 		if currency == "gem":
 			tint = Palette.DIAMOND

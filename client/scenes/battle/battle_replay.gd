@@ -64,7 +64,11 @@ func _ready() -> void:
 	add_child(_root)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0.02, 0.015, 0.01, 0.97)
+	# Parchment, not the near-black theatre this was. Everything in this overlay
+	# -- the round counter, the fortune roll, the two champions' names -- is
+	# drawn straight onto this rather than onto a card, and every one of those
+	# labels is ink. On a black field they were invisible.
+	dim.color = Color(Palette.BG.r, Palette.BG.g, Palette.BG.b, 0.98)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.anchor_right = 1.0
 	dim.anchor_bottom = 1.0
@@ -93,7 +97,7 @@ func _ready() -> void:
 
 	# The Fortune roll is shown BEFORE anything moves. A visible die the player
 	# watches is dramatic; the identical maths applied silently reads as a bug.
-	_fortune = UI.label("", UI.F_CAPTION, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_fortune = UI.label("", UI.F_CAPTION, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_CENTER)
 	_fortune.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_fortune)
 
@@ -354,7 +358,7 @@ func _show_outcome() -> void:
 
 	if won:
 		col.add_child(UI.label("+%s gold" % UI.number(int(_result.get("gold_stolen", 0))),
-			UI.F_H2, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
+			UI.F_H2, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_CENTER))
 	else:
 		col.add_child(UI.label("They kept their coin", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 	col.add_child(UI.label("+%d experience" % int(_result.get("xp_gained", 0)),

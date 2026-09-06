@@ -21,7 +21,7 @@ func _ready() -> void:
 	var head := VBoxContainer.new()
 	head.add_theme_constant_override("separation", 0)
 	add_child(head)
-	_might = UI.label("—", UI.F_DISPLAY, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_might = UI.label("—", UI.F_DISPLAY, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_CENTER)
 	head.add_child(_might)
 	_sub = UI.label("", UI.F_CAPTION, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	head.add_child(_sub)
@@ -250,7 +250,7 @@ func _next_slot_row(next: Dictionary) -> Control:
 	if free:
 		col.add_child(UI.label("FREE — your first barracks slot", UI.F_CAPTION, Palette.SUCCESS))
 	elif unlocked:
-		col.add_child(UI.label("%s gold" % UI.number(int(next.get("cost", 0))), UI.F_CAPTION, Palette.GOLD))
+		col.add_child(UI.label("%s gold" % UI.number(int(next.get("cost", 0))), UI.F_CAPTION, Palette.GOLD_INK))
 		# On the row, not just in the action bar: this is where the eye lands, and
 		# nobody should grind 500 gold for the slot they are about to be given.
 		var free_at := int(next.get("free_at_level", 0))

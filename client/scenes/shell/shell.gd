@@ -177,7 +177,7 @@ func _ready() -> void:
 
 	GameState.changed.connect(_on_state_changed)
 	GameState.action_failed.connect(_on_action_failed)
-	GameState.level_up.connect(func(lv: int) -> void: _flash("Level %d!" % lv, Palette.GOLD))
+	GameState.level_up.connect(func(lv: int) -> void: _flash("Level %d!" % lv, Palette.GOLD_INK))
 
 	# Dev-only: fire the section's primary action once the tab is open, so a
 	# capture run (which disables input) can reach a screen that only exists

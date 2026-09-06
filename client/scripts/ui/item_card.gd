@@ -74,7 +74,7 @@ func _ready() -> void:
 	_stats = UI.label("", UI.F_CAPTION, Palette.TEXT_DIM)
 	col.add_child(_stats)
 
-	_foot = UI.label("", UI.F_CAPTION, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
+	_foot = UI.label("", UI.F_CAPTION, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_RIGHT)
 	_foot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(_foot)
 

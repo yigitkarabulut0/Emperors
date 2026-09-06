@@ -40,7 +40,7 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 14)
 	margin.add_child(col)
 
-	col.add_child(UI.label("EMPERORS", 88, Palette.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
+	col.add_child(UI.caps("EMPERORS", 88, Palette.BANNER, HORIZONTAL_ALIGNMENT_CENTER))
 	col.add_child(UI.label("Rise, and let the realm remember your name.", UI.F_CAPTION,
 		Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
 	col.add_child(UI.spacer(24))

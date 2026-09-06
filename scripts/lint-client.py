@@ -60,6 +60,37 @@ if leaks:
 else:
     ok("no scene hardcodes an res://assets path")
 
+# 2b. Palette.GOLD is ornament, never type.
+#
+#     A convincing gold cannot reach 4.5:1 on parchment, so the palette splits:
+#     GOLD draws frames, rules, laurels and icon tints, where contrast is judged
+#     as a graphic, and GOLD_INK carries anything that has to be READ. The
+#     contrast script measures the palette's VALUES and cannot see which one a
+#     call site picked, so that is measured here.
+#
+#     Twenty-eight call sites were on the wrong side of this line when the
+#     palette was inverted, including every gold payout in the jobs list.
+text_gold = []
+for p in gd:
+    for n, line in enumerate(p.read_text().splitlines(), 1):
+        stripped = line.strip()
+        if stripped.startswith("#") or "Palette.GOLD" not in line:
+            continue
+        if "Palette.GOLD_" in line and "Palette.GOLD," not in line and "Palette.GOLD)" not in line:
+            continue
+        drawn_as_text = (
+            re.search(r"UI\.(label|caps|number_label)\(.*Palette\.GOLD\b(?!_)", line)
+            or re.search(r'font\w*color"\s*,\s*Palette\.GOLD\b(?!_)', line)
+            or re.search(r"set_footer\(.*Palette\.GOLD\b(?!_)", line)
+        )
+        if drawn_as_text:
+            text_gold.append(f"{p.relative_to(ROOT)}:{n}: {stripped[:66]}")
+if text_gold:
+    for g in text_gold:
+        fail("gold used as a text colour (use Palette.GOLD_INK): " + g)
+else:
+    ok("Palette.GOLD is only ever drawn as ornament, never as type")
+
 # 3. Autoloads may only reference autoloads registered before them AT LOAD TIME,
 #    because Godot instantiates them in declaration order and a forward reference
 #    is null while _init/_ready runs. Calling one from an ordinary method later is

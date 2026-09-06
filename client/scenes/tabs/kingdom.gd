@@ -24,7 +24,7 @@ func _ready() -> void:
 	top.add_theme_constant_override("separation", 8)
 	add_child(top)
 
-	_header = UI.label("Loading…", UI.F_CAPTION, Palette.GOLD)
+	_header = UI.label("Loading…", UI.F_CAPTION, Palette.GOLD_INK)
 	_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	top.add_child(_header)
@@ -89,7 +89,7 @@ func _rebuild() -> void:
 		var active: bool = _mode == int(entry[0])
 		b.add_theme_stylebox_override("normal",
 			UI.card_box(active))
-		b.add_theme_color_override("font_color", Palette.GOLD if active else Palette.TEXT_DIM)
+		b.add_theme_color_override("font_color", Palette.GOLD_INK if active else Palette.TEXT_DIM)
 		var m: int = int(entry[0])
 		b.pressed.connect(func() -> void:
 			_mode = m
@@ -120,7 +120,7 @@ func _build_landless() -> void:
 	var can := level >= need and GameState.display_gold() >= cost
 	var found := _card("Found your own kingdom",
 		"%s gold and level %d" % [UI.number(cost), need],
-		Palette.GOLD if can else Palette.TEXT_FAINT)
+		Palette.GOLD_INK if can else Palette.TEXT_FAINT)
 	if can:
 		var b := UI.button("FOUND", UI.F_BODY)
 		b.custom_minimum_size = Vector2(110, 40)
@@ -139,10 +139,10 @@ func _build_overview() -> void:
 
 	_list.add_child(_card("Level %d" % int(k.get("level", 1)),
 		"%s / %s kingdom xp" % [UI.number(int(k.get("xp", 0))), UI.number(int(k.get("xp_to_next", 0)))],
-		Palette.GOLD))
+		Palette.GOLD_INK))
 	_list.add_child(_card("Treasury", "%s gold  ·  %d of %d lords" % [
 		UI.number(int(str(k.get("treasury", "0")))),
-		int(k.get("members", 0)), int(k.get("member_cap", 0))], Palette.GOLD))
+		int(k.get("members", 0)), int(k.get("member_cap", 0))], Palette.GOLD_INK))
 	_list.add_child(_card("Renown", "%s  ·  you are %s" % [
 		UI.number(int(k.get("reputation", 0))), str(me.get("role", "member"))], Palette.SUCCESS))
 
@@ -151,7 +151,7 @@ func _build_overview() -> void:
 		"%s of %s left today  ·  %d favour held" % [
 			UI.number(remaining), UI.number(int(me.get("daily_cap", 0))),
 			int(me.get("favour", 0))],
-		Palette.GOLD if remaining > 0 else Palette.TEXT_FAINT)
+		Palette.GOLD_INK if remaining > 0 else Palette.TEXT_FAINT)
 	if remaining > 0:
 		var b := UI.button("GIVE", UI.F_BODY)
 		b.custom_minimum_size = Vector2(100, 40)
@@ -173,7 +173,7 @@ func _build_leaderboard() -> void:
 		var row := _card("%d.  %s [%s]" % [rank, str(k.get("name", "")), str(k.get("tag", ""))],
 			"renown %s  ·  level %d  ·  %d lords" % [
 				UI.number(int(k.get("reputation", 0))), int(k.get("level", 1)), int(k.get("members", 0))],
-			Palette.GOLD if mine else Palette.TEXT_DIM)
+			Palette.GOLD_INK if mine else Palette.TEXT_DIM)
 		_list.add_child(row)
 
 
@@ -189,7 +189,7 @@ func _build_members() -> void:
 
 	for m in _kv.get("members", []):
 		var role := str(m.get("role", "member"))
-		var colour := Palette.GOLD if role == "king" else \
+		var colour := Palette.GOLD_INK if role == "king" else \
 			(Palette.SUCCESS if role == "marshal" else Palette.TEXT_DIM)
 		var card := _card(str(m.get("name", "")),
 			"%s  ·  level %d  ·  gave %s" % [role, int(m.get("level", 1)),

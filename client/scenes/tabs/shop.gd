@@ -166,7 +166,7 @@ func _style_tabs() -> void:
 		b.add_theme_stylebox_override("normal",
 			UI.panel_box(Palette.PANEL_HIGH if active else Palette.PANEL,
 				Palette.GOLD_DEEP if active else Palette.LINE))
-		b.add_theme_color_override("font_color", Palette.GOLD if active else Palette.TEXT_DIM)
+		b.add_theme_color_override("font_color", Palette.GOLD_INK if active else Palette.TEXT_DIM)
 
 
 ## The diamond half. Each good says plainly what it does and, when buying it
@@ -336,7 +336,7 @@ func _update_affordability() -> void:
 			card.modulate.a = 0.45
 		else:
 			var afford := gold >= price
-			card.set_footer(UI.number(price), Palette.GOLD if afford else Palette.DANGER)
+			card.set_footer(UI.number(price), Palette.GOLD_INK if afford else Palette.DANGER)
 			card.disabled = not afford or _busy
 			card.modulate.a = 1.0 if afford else 0.7
 

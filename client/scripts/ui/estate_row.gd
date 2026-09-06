@@ -89,7 +89,7 @@ func _ready() -> void:
 	_effect = UI.label("", UI.F_CAPTION, Palette.SUCCESS)
 	col.add_child(_effect)
 
-	_cost = UI.label("", UI.F_BODY, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
+	_cost = UI.label("", UI.F_BODY, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_RIGHT)
 	_cost.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_cost.custom_minimum_size = Vector2(110, 0)
 	row.add_child(_cost)
@@ -128,7 +128,7 @@ func refresh(name: String, blurb: String, level: int, max_level: int,
 		_cost.add_theme_color_override("font_color", Palette.TEXT_FAINT)
 	else:
 		_cost.text = UI.number(cost)
-		_cost.add_theme_color_override("font_color", Palette.GOLD if affordable else Palette.DANGER)
+		_cost.add_theme_color_override("font_color", Palette.GOLD_INK if affordable else Palette.DANGER)
 
 	add_theme_stylebox_override("normal", UI.card_box(selected, locked))
 	add_theme_stylebox_override("hover", UI.card_box(true, locked))

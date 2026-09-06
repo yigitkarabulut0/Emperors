@@ -49,7 +49,7 @@ func _rebuild() -> void:
 	var carried := GameState.display_gold()
 	var banked := int(str(GameState.player().get("treasury", "0")))
 
-	_body.add_child(_pile("ON HAND", carried, Palette.GOLD,
+	_body.add_child(_pile("ON HAND", carried, Palette.GOLD_INK,
 		"A raider takes a share of this", "coin"))
 	_body.add_child(_pile("IN THE VAULT", banked, Palette.SUCCESS,
 		"Nobody can take this", "bank"))

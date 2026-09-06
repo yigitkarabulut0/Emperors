@@ -186,7 +186,7 @@ func _render_hero() -> void:
 	might.alignment = BoxContainer.ALIGNMENT_CENTER
 	might.add_theme_constant_override("separation", 0)
 	var totals: Dictionary = _army.get("totals", {})
-	might.add_child(UI.label(UI.number(int(totals.get("might", 0))), UI.F_H1, Palette.GOLD,
+	might.add_child(UI.label(UI.number(int(totals.get("might", 0))), UI.F_H1, Palette.GOLD_INK,
 		HORIZONTAL_ALIGNMENT_RIGHT))
 	might.add_child(UI.label("MIGHT", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
 	head.add_child(might)

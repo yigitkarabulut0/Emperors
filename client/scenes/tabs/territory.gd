@@ -43,14 +43,14 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 1)
 	row.add_child(col)
 	col.add_child(UI.label("YOUR ESTATES EARN", UI.F_MICRO, Palette.TEXT_FAINT))
-	_income = UI.label("", UI.F_BODY, Palette.GOLD)
+	_income = UI.label("", UI.F_BODY, Palette.GOLD_INK)
 	col.add_child(_income)
 	_waiting = UI.label("", UI.F_MICRO, Palette.TEXT_DIM)
 	col.add_child(_waiting)
 
 	# No COLLECT button. Estate income is credited continuously now, so the only
 	# thing a button could do is interrupt the player to tell them so.
-	_rate = UI.label("", UI.F_H2, Palette.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
+	_rate = UI.label("", UI.F_H2, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_RIGHT)
 	_rate.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(_rate)
 

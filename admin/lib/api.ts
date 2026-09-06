@@ -56,3 +56,19 @@ export async function callAdmin<T>(
 export async function isSignedIn(): Promise<boolean> {
   return Boolean((await cookies()).get(SESSION_COOKIE)?.value);
 }
+
+/**
+ * Builds a URL back to the players list, preserving the search and carrying a
+ * message.
+ *
+ * Server actions cannot render; they redirect. Without the search term the list
+ * would reset to "everyone" every time an action ran, which loses the operator's
+ * place in the middle of a job.
+ */
+export function here(q: string, params: Record<string, string>): string {
+  const s = new URLSearchParams();
+  if (q) s.set("q", q);
+  for (const [k, v] of Object.entries(params)) s.set(k, v);
+  const qs = s.toString();
+  return "/players" + (qs ? "?" + qs : "");
+}

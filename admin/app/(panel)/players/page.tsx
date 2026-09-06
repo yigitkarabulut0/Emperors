@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
-import { callAdmin } from "@/lib/api";
+import { redirect } from "next/navigation";
+import { callAdmin, here } from "@/lib/api";
 
 type Player = {
   id: string; username: string; name: string; level: number;
@@ -21,8 +22,15 @@ export default async function PlayersPage({
 
   // Server actions, so no admin token ever reaches the browser and every write
   // goes through the Go API that owns the game's invariants.
+  //
+  // A refused write comes BACK to this page with its reason, rather than being
+  // thrown. Throwing produced Next's 500 screen, so a moderator who mistyped a
+  // grant got a crash page, lost their search, and never found out that the
+  // refusal was "that would leave a negative balance" -- while this page has
+  // carried an error slot for exactly that message all along.
   async function adjust(formData: FormData) {
     "use server";
+    const back = String(formData.get("q") || "");
     const r = await callAdmin("/players/currency", {
       method: "POST",
       body: {
@@ -33,21 +41,23 @@ export default async function PlayersPage({
       },
     });
     revalidatePath("/players");
-    if (!r.ok) throw new Error(r.message);
+    redirect(here(back, r.ok ? { msg: "Granted." } : { err: r.message }));
   }
 
   async function setState(formData: FormData) {
     "use server";
+    const back = String(formData.get("q") || "");
+    const state = String(formData.get("state"));
     const r = await callAdmin("/players/state", {
       method: "POST",
       body: {
         player_id: String(formData.get("player_id")),
-        state: String(formData.get("state")),
+        state,
         note: String(formData.get("note") || "via panel"),
       },
     });
     revalidatePath("/players");
-    if (!r.ok) throw new Error(r.message);
+    redirect(here(back, r.ok ? { msg: state === "banned" ? "Banned." : "Unbanned." } : { err: r.message }));
   }
 
   return (
@@ -104,12 +114,14 @@ export default async function PlayersPage({
                     <div className="row">
                       <form action={adjust} className="row" style={{ gap: 6 }}>
                         <input type="hidden" name="player_id" value={p.id} />
+                        <input type="hidden" name="q" value={q} />
                         <input name="gold" placeholder="gold" style={{ width: 92 }} />
                         <input name="note" placeholder="reason" style={{ width: 120 }} />
                         <button className="ghost" type="submit">Grant</button>
                       </form>
                       <form action={setState}>
                         <input type="hidden" name="player_id" value={p.id} />
+                        <input type="hidden" name="q" value={q} />
                         <input type="hidden" name="state" value={p.state === "banned" ? "active" : "banned"} />
                         <button className={p.state === "banned" ? "ghost" : "danger"} type="submit">
                           {p.state === "banned" ? "Unban" : "Ban"}

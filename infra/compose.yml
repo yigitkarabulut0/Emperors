@@ -8,8 +8,21 @@ services:
     environment:
       EMPERORS_ENV: prod
       EMPERORS_ADDR: ":8080"
-    # No ports: mapping. Only Caddy may reach the API, and it does so over the
-    # internal network by service name.
+    # The game API has no ports mapping. Only Caddy may reach it, and it does so
+    # over the internal network by service name.
+    #
+    # The admin listener is published on LOOPBACK ONLY, so it is reachable from
+    # the host and from nowhere else -- not from the internet, and not from any
+    # other machine. An operator gets to it with an SSH tunnel:
+    #
+    #   ssh -N -L 8081:127.0.0.1:8081 -i ~/.ssh/emperors_deploy root@<ip>
+    #
+    # That is what lets the panel watch the process the phones are actually
+    # talking to. Presence lives in that process's memory, so a panel pointed at
+    # a locally-run server would show an empty board forever and be correct to.
+    # Caddy still has no route to 8081, so "nothing that can grant currency
+    # shares a listener with the game API" is untouched.
+    ports: ["127.0.0.1:8081:8081"]
     networks: [edge]
     healthcheck:
       # distroless has no shell and no curl, so the binary checks itself.

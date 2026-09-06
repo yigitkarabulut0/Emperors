@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
+	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
@@ -38,12 +40,34 @@ type Boostable struct {
 // weekend" is not a generous event, it is an uncapped mint -- and if it is ever
 // really wanted it belongs in a balance publish, which is versioned, reviewed
 // and rollback-able.
+// The advertised cap is READ from the engine, never typed here.
+//
+// It was typed here once, and this list promised xp_bp could reach +200% while
+// economy.Caps enforced +100% -- so the panel told an operator an event would be
+// twice what it actually was, and ApplyBucket quietly clamped the difference
+// away. Two numbers that must agree should not be two numbers.
 func BoostableBuckets() []Boostable {
 	return []Boostable{
-		{"collect_income_bp", "Job payout", "Gold from every collect. Shares its cap with job mastery and the Granary.", 15000},
-		{"xp_bp", "Experience", "Experience from every source.", 20000},
-		{"luck_bp", "Fortune", "Shifts the tier ladder for shop stock and recruits. +10000 doubles the level coefficient.", 10000},
+		{gameconfig.BucketCollectIncome, "Job payout",
+			"Gold from every collect. Shares its cap with job mastery and the Granary.",
+			economy.Caps[economy.BucketCollectIncome]},
+		{gameconfig.BucketXP, "Experience",
+			"Experience from every source.",
+			economy.Caps[economy.BucketXPGain]},
+		{gameconfig.BucketLuck, "Fortune",
+			"Shifts the tier ladder for shop stock and recruits. +10000 doubles the level coefficient.",
+			gameconfig.MaxLuckBP},
 	}
+}
+
+// capFor returns what a bucket is actually allowed to reach.
+func capFor(bucket string) int64 {
+	for _, b := range BoostableBuckets() {
+		if b.Bucket == bucket {
+			return b.CapBP
+		}
+	}
+	return 0
 }
 
 // ListBoosts returns recent events, newest first.
@@ -57,11 +81,11 @@ func (s *Service) ListBoosts(ctx context.Context, limit int32) ([]BoostRow, erro
 	for _, r := range rows {
 		out = append(out, BoostRow{
 			ID: r.ID, Bucket: r.Bucket, AmountBP: r.AmountBp,
-			StartsAt:  r.StartsAt.UTC().Format("2006-01-02 15:04"),
-			EndsAt:    r.EndsAt.UTC().Format("2006-01-02 15:04"),
-			Note:      r.Note, CreatedBy: r.CreatedBy,
-			Live:      r.RevokedAt == nil && r.StartsAt.Before(now) && r.EndsAt.After(now),
-			Revoked:   r.RevokedAt != nil,
+			StartsAt: r.StartsAt.UTC().Format("2006-01-02 15:04"),
+			EndsAt:   r.EndsAt.UTC().Format("2006-01-02 15:04"),
+			Note:     r.Note, CreatedBy: r.CreatedBy,
+			Live:    r.RevokedAt == nil && r.StartsAt.Before(now) && r.EndsAt.After(now),
+			Revoked: r.RevokedAt != nil,
 		})
 	}
 	return out, nil
@@ -84,6 +108,17 @@ func (s *Service) CreateBoost(ctx context.Context, who *Identity,
 	}
 	if amountBP == 0 {
 		return nil, ErrNothingToDo
+	}
+	// Refuse what would be silently clamped. An operator who types 10,000,000
+	// basis points has misunderstood something, and accepting it while quietly
+	// applying a fraction is the worst of both answers -- they walk away
+	// believing the event is a hundred times what it is.
+	//
+	// Negative is allowed down to -cap: ApplyBucket floors a total at zero, so a
+	// nerf event can offset other bonuses but never take a payout below base.
+	if cap := capFor(bucket); cap > 0 && (amountBP > cap || amountBP < -cap) {
+		return nil, fmt.Errorf("%w: %s is capped at %d basis points, and %d would be clamped to it",
+			ErrOutOfRange, bucket, cap, amountBP)
 	}
 
 	now := s.now()

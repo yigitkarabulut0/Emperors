@@ -2129,9 +2129,42 @@ create table billing.clawback_debt (
 
 ---
 
-## 15. Realtime: polling, with exactly one stream
+## 15. Realtime: one websocket, and polling for everything else
 
-**Polling is correct for almost everything here.** The panel has 1–5 concurrent users; a WebSocket layer would be more code, more failure modes, and more attack surface than the problem justifies.
+> **Superseded, 2026-09-06.** This section chose SSE. It is now a websocket, and
+> the surrounding reasoning was rebuilt around what was actually there. What was
+> wrong with the original: it assumed a Redis pub/sub feeding several api
+> instances, and there is one instance and no Redis; it proposed proxying the
+> stream through a Next route handler, which cannot serve a protocol upgrade at
+> all; and it had no answer for presence, because at the time nothing on the
+> server knew who was in the game. The rule at the bottom of this section
+> survived intact and is still the thing worth remembering.
+>
+> **What was built.** `internal/presence` holds the live set in memory in the api
+> process, which serves both listeners, so a fact written by a player's request
+> on `:8080` is readable by an admin's request on `:8081` with nothing in
+> between. `internal/adminstream` fans transitions out over `GET /stream` on the
+> admin listener. The browser opens the socket **same-origin against the Next
+> panel**, which rewrites the upgrade to Go — Next's own server proxies an
+> upgrade to an external rewrite destination, so the httpOnly session cookie
+> rides the handshake and no second credential exists. A short-lived stream
+> ticket was the alternative and was dropped: it buys nothing the cookie does not
+> already have, and it puts a credential in a query string that lands in a log.
+>
+> Every frame carries a dense sequence number. A gap closes the socket rather
+> than being applied, and the reconnect's `hello` carries a complete snapshot —
+> so there is no replay buffer to maintain and the recovery path is the one that
+> gets exercised. A panel that stops reading is dropped rather than allowed to
+> block the broadcaster.
+>
+> **Presence is derived from request activity, and the panel says so.** The game
+> client makes no request at all while idle, so a player holding the phone
+> without tapping is invisible. `POST /v1/presence` is a thirty-second heartbeat
+> that fixes this; until builds carrying it are on phones, those players are
+> shown with a hollow dot and labelled *inferred*. Both kinds of client exist at
+> once and the board must not describe them identically.
+
+**Polling is still correct for almost everything else.** The panel has 1–5 concurrent users, and everything that is merely being watched is fetched rather than pushed.
 
 | Surface | Mechanism | Interval | Why |
 |---|---|---|---|
@@ -2144,15 +2177,16 @@ create table billing.clawback_debt (
 | Battle/audit/ledger tables | on navigation | — | historical data |
 | **Alarms, other admins' actions, draft-stolen notice** | **SSE** | — | see below |
 
-**The one stream: `GET /admin/stream` (`text/event-stream`).** It carries only events that must *interrupt* you because someone or something else acted:
+**The one stream: `GET /stream` (websocket, on the admin listener).** It carries only events that must *interrupt* you because someone or something else acted:
+- `presence.joined` / `presence.left` / `presence.counts` — who is in the game, live
 - `alarm.fired` — an economy alarm tripped
 - `audit.entry` — another admin did something destructive (feeds the footer ticker)
 - `balance.published` — **critical**: if you are editing draft v43 and someone publishes v42-derived v44, your diff baseline just moved. The editor shows an inline warning instead of letting you publish against a stale baseline.
 - `report.created` — a new high-severity report
 
-Server: Go writes SSE frames with a 20s heartbeat comment to defeat idle proxy timeouts, fed by a Redis pub/sub channel so any instance can serve any admin. Next.js proxies it through `app/api/stream/route.ts` (Node runtime, `export const dynamic = "force-dynamic"`) so the browser talks same-origin and the cookie is forwarded.
+Server: `github.com/coder/websocket`, one hub, a buffered channel per subscriber, and a 20s ping. The handler clears the connection's read and write deadlines **before** upgrading — `net/http` stamps them from the admin server's `ReadTimeout`/`WriteTimeout` and the hijack does not clear them, so without that every socket dies at exactly sixty seconds. There is a test that fails if those three lines are removed.
 
-Client: native `EventSource` with exponential-backoff reconnect, mounted once in `(app)/layout.tsx`. On `balance.published`, invalidate the `balance` query key and show a `sonner` toast.
+Client: a plain `WebSocket` opened at `/api/stream` on the panel's own origin, reconnecting with full-jittered backoff, mounted once in `(panel)/layout.tsx`. Disconnection is never silent: the indicator goes amber with a countdown, and when it gives up the counters show `—` rather than a number that was true a while ago.
 
 **Rule to write down:** *stream only what another actor changed; poll everything you are merely watching.*
 

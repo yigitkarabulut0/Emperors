@@ -84,7 +84,7 @@ func TestAccessTokenRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tok, exp, err := s.Mint("player-1", "session-1")
+	tok, exp, err := s.Mint("player-1", "session-1", "family-1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,9 +92,29 @@ func TestAccessTokenRoundTrip(t *testing.T) {
 		t.Errorf("expiry = %v, want %v", exp, now.Add(AccessTokenTTL))
 	}
 
-	pid, sid, err := s.Verify(tok)
-	if err != nil || pid != "player-1" || sid != "session-1" {
-		t.Fatalf("Verify = %q,%q,%v", pid, sid, err)
+	// Verify returns the DEVICE, which is the family -- not the session row,
+	// which is replaced on every refresh.
+	pid, device, err := s.Verify(tok)
+	if err != nil || pid != "player-1" || device != "family-1" {
+		t.Fatalf("Verify = %q,%q,%v", pid, device, err)
+	}
+}
+
+// Tokens minted before the family claim existed must keep working, or a deploy
+// signs everybody out.
+func TestTokenWithoutAFamilyFallsBackToTheSession(t *testing.T) {
+	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
+	s, err := NewSigner(make([]byte, ed25519.SeedSize), func() time.Time { return now })
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, _, err := s.Mint("player-1", "session-1", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, device, err := s.Verify(tok)
+	if err != nil || pid != "player-1" || device != "session-1" {
+		t.Fatalf("Verify = %q,%q,%v", pid, device, err)
 	}
 }
 
@@ -102,7 +122,7 @@ func TestAccessTokenExpires(t *testing.T) {
 	now := time.Date(2026, 9, 4, 12, 0, 0, 0, time.UTC)
 	clock := now
 	s, _ := NewSigner(make([]byte, ed25519.SeedSize), func() time.Time { return clock })
-	tok, _, _ := s.Mint("p", "s")
+	tok, _, _ := s.Mint("p", "s", "f")
 
 	clock = now.Add(AccessTokenTTL + time.Minute)
 	if _, _, err := s.Verify(tok); !errors.Is(err, ErrTokenExpired) {
@@ -119,7 +139,7 @@ func TestAccessTokenRejectsForeignKey(t *testing.T) {
 	a, _ := NewSigner(seedA, now)
 	b, _ := NewSigner(seedB, now)
 
-	tok, _, _ := a.Mint("p", "s")
+	tok, _, _ := a.Mint("p", "s", "f")
 	if _, _, err := b.Verify(tok); err == nil {
 		t.Error("a token signed by another key was accepted")
 	}

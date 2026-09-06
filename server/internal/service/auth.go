@@ -221,7 +221,7 @@ func (d Deps) issueSession(ctx context.Context, q *sqlcdb.Queries, playerID, fam
 		return nil, fmt.Errorf("create session: %w", err)
 	}
 
-	access, exp, err := d.Signer.Mint(playerID.String(), s.ID.String())
+	access, exp, err := d.Signer.Mint(playerID.String(), s.ID.String(), familyID.String())
 	if err != nil {
 		return nil, fmt.Errorf("mint access token: %w", err)
 	}

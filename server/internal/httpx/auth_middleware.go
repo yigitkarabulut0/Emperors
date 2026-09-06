@@ -12,11 +12,12 @@ import (
 )
 
 type playerCtxKey struct{}
+type deviceCtxKey struct{}
 
 // TokenVerifier is the slice of auth the middleware needs, kept as an interface
 // so the router can be tested without a real signer.
 type TokenVerifier interface {
-	Verify(raw string) (playerID, sessionID string, err error)
+	Verify(raw string) (playerID, deviceID string, err error)
 }
 
 // RequireAuth rejects a request without a valid access token and puts the
@@ -31,7 +32,7 @@ func RequireAuth(v TokenVerifier) func(http.Handler) http.Handler {
 				return
 			}
 
-			pid, _, err := v.Verify(raw)
+			pid, device, err := v.Verify(raw)
 			if err != nil {
 				// An expired token is distinguishable from a bad one, because the
 				// client must know whether to refresh or to send the player back to
@@ -52,7 +53,12 @@ func RequireAuth(v TokenVerifier) func(http.Handler) http.Handler {
 				return
 			}
 
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), playerCtxKey{}, id)))
+			ctx := context.WithValue(r.Context(), playerCtxKey{}, id)
+			// The second return used to be discarded here. Presence needs it: two
+			// devices signed in as the same player are two devices on the live
+			// board, and one signing out must not blank the other.
+			ctx = context.WithValue(ctx, deviceCtxKey{}, device)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
@@ -61,4 +67,11 @@ func RequireAuth(v TokenVerifier) func(http.Handler) http.Handler {
 func PlayerID(ctx context.Context) (uuid.UUID, bool) {
 	id, ok := ctx.Value(playerCtxKey{}).(uuid.UUID)
 	return id, ok
+}
+
+// DeviceID returns the token family, which identifies the device and is stable
+// across the fifteen-minute token rotation.
+func DeviceID(ctx context.Context) string {
+	s, _ := ctx.Value(deviceCtxKey{}).(string)
+	return s
 }

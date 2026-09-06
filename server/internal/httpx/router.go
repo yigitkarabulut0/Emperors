@@ -22,6 +22,9 @@ type Deps struct {
 	// Store, when set, makes every request read the live balance version rather
 	// than the one that happened to be loaded at boot.
 	Store *gameconfig.Store
+	// Presence, when set, records who is in the game. Optional so the router
+	// can still be built without one.
+	Presence Presenter
 }
 
 // HealthChecker reports whether dependencies are reachable.
@@ -61,7 +64,7 @@ func NewRouter(d Deps) http.Handler {
 		WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
 
-	a := &api{svc: d.Service, store: d.Store, log: d.Log}
+	a := &api{svc: d.Service, store: d.Store, log: d.Log, presence: d.Presence}
 
 	r.Route("/v1", func(r chi.Router) {
 		// Unauthenticated: sign-up, sign-in and token rotation.
@@ -72,9 +75,20 @@ func NewRouter(d Deps) http.Handler {
 		// Everything else needs a valid access token.
 		r.Group(func(r chi.Router) {
 			r.Use(RequireAuth(d.Verifier))
+			// After auth, so it knows who it is watching. Before CreditTax,
+			// because being here is a fact about the request arriving and must
+			// not depend on a database write that can fail.
+			if d.Presence != nil {
+				r.Use(MarkPresent(d.Presence))
+			}
 			// After auth, so it knows who to pay; before every handler, so no
 			// affordability check ever runs against a stale purse.
 			r.Use(CreditTax(d.Service, d.Log))
+
+			// The heartbeat. Costs one map write and answers 204: it exists so a
+			// player holding the phone without tapping still reads as in the
+			// game, because the client makes no other request while idle.
+			r.Post("/presence", a.heartbeat)
 			r.Get("/state", a.state)
 			r.Get("/avatars", a.avatars)
 			r.Post("/avatar", a.setAvatar)

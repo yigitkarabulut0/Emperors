@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/admin"
+	"github.com/yigitkarabulut0/emperors/server/internal/adminstream"
 	"github.com/yigitkarabulut0/emperors/server/internal/auth"
 	"github.com/yigitkarabulut0/emperors/server/internal/config"
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
@@ -21,6 +22,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/health"
 	"github.com/yigitkarabulut0/emperors/server/internal/httpx"
 	"github.com/yigitkarabulut0/emperors/server/internal/obs"
+	"github.com/yigitkarabulut0/emperors/server/internal/presence"
 	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
@@ -114,6 +116,21 @@ func run() error {
 		Boosts:     boosts,
 	}
 
+	// Who is in the game right now. Held in memory on purpose: this process
+	// serves both listeners, so a fact written by a player's request on :8080 is
+	// readable by an admin's request on :8081 with nothing in between.
+	live := presence.New(time.Now, log)
+	presenceStore := presence.NewStore(pool)
+	// Seeded from last_seen_at so a deploy does not report an exodus that never
+	// happened. Counts say "reconciling" until the process is old enough to have
+	// heard from people itself.
+	if seen, err := presenceStore.Recent(startCtx, time.Now().Add(-presence.IdleWindow)); err != nil {
+		log.Warn("could not seed presence, starting empty", "err", err)
+	} else {
+		live.Seed(seen)
+		log.Info("presence seeded", "players", len(seen))
+	}
+
 	ready := &readiness{}
 	ready.set(true)
 	srv := &http.Server{
@@ -125,6 +142,7 @@ func run() error {
 			Version:  version,
 			Service:  svc,
 			Verifier: signer,
+			Presence: live,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
@@ -137,14 +155,50 @@ func run() error {
 	// listener with the game API.
 	// The admin service shares the boost store, so a boost created in the panel
 	// is live on the next poll without a restart.
-	adminSvc := &admin.Service{Pool: pool, Config: store, Boosts: boosts}
+	adminSvc := &admin.Service{Pool: pool, Config: store, Boosts: boosts, Presence: live}
+
+	// The live event stream. Its snapshot is the same board GET /live returns,
+	// so a panel that has just connected and one that has been open for an hour
+	// are looking at the same thing built by the same code.
+	hub := adminstream.New(time.Now, log.With("surface", "stream"),
+		func(c context.Context) (any, error) { return adminSvc.Live(c) })
+	feed := admin.NewLiveFeed(adminSvc, hub)
+	live.Attach(feed)
+
 	adminSrv := &http.Server{
-		Addr:              cfg.AdminAddr,
-		Handler:           httpx.AdminRouter(adminSvc, log.With("surface", "admin")),
+		Addr: cfg.AdminAddr,
+		Handler: httpx.AdminRouter(adminSvc, log.With("surface", "admin"),
+			&httpx.AdminStream{Hub: hub, Origins: cfg.AdminOrigins}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,
+		// A listener with no idle timeout leaks connections. The websocket is
+		// unaffected: its handler clears the deadlines on its own connection
+		// before upgrading.
+		IdleTimeout: 120 * time.Second,
 	}
+
+	// Unlike store.Watch and boosts.Poll above, this one is waited for: its last
+	// act is to flush last_seen_at, and dropping that on every deploy would lose
+	// up to thirty seconds of activity for every player online.
+	presenceDone := make(chan struct{})
+	go func() {
+		defer close(presenceDone)
+		if err := live.Run(ctx, presenceStore); err != nil {
+			log.Error("presence stopped", "err", err)
+		}
+	}()
+
+	// Enriching an arrival costs a query, so it happens here rather than in the
+	// game middleware that observed it. A player's tap must never wait on an
+	// admin's browser.
+	feedDone := make(chan struct{})
+	go func() {
+		defer close(feedDone)
+		if err := feed.Run(ctx); err != nil {
+			log.Error("live feed stopped", "err", err)
+		}
+	}()
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -175,9 +229,22 @@ func run() error {
 
 	shutCtx, shutCancel := context.WithTimeout(context.Background(), cfg.ShutdownGrace)
 	defer shutCancel()
+	// Before the admin server shuts down, not after: http.Server.Shutdown neither
+	// closes hijacked connections nor waits for them, so a websocket left open
+	// would have the panel believing it is connected to a process that is gone.
+	hub.Close("server restarting")
 	_ = adminSrv.Shutdown(shutCtx)
 	if err := srv.Shutdown(shutCtx); err != nil {
 		return fmt.Errorf("graceful shutdown: %w", err)
+	}
+	select {
+	case <-presenceDone:
+	case <-shutCtx.Done():
+		log.Warn("presence did not stop in time; last_seen_at may be up to a flush behind")
+	}
+	select {
+	case <-feedDone:
+	case <-shutCtx.Done():
 	}
 	log.Info("stopped cleanly")
 	return nil

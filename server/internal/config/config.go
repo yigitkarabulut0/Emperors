@@ -40,6 +40,15 @@ type Config struct {
 	// changing it invalidates every access token and logs everyone out.
 	TokenSeed []byte
 
+	// AdminOrigins is the allowlist for admin websocket handshakes.
+	//
+	// Websockets are exempt from CORS, so the browser will happily connect a
+	// page on any origin to this server and the only thing standing between an
+	// attacker's page and a live feed of who is playing is this check. Empty
+	// means same-origin only, which is the right production value once the panel
+	// and the stream are served from one host.
+	AdminOrigins []string
+
 	// ShopSecret seeds the deterministic shop roll. It must be stable and secret:
 	// stable because changing it reshuffles every player's current offers
 	// mid-window, and secret because anyone who knows it can predict which
@@ -55,6 +64,7 @@ func Load() (*Config, error) {
 		DatabaseURL:       os.Getenv("DATABASE_URL"),
 		DatabaseURLDirect: os.Getenv("DATABASE_URL_DIRECT"),
 		LogLevel:          env("EMPERORS_LOG_LEVEL", "info"),
+		AdminOrigins:      splitList(env("EMPERORS_ADMIN_ORIGINS", "localhost:3000,127.0.0.1:3000")),
 	}
 
 	if seed := os.Getenv("EMPERORS_TOKEN_SEED"); seed != "" {
@@ -148,6 +158,14 @@ func (c *Config) validate() error {
 		problems = append(problems, fmt.Sprintf("EMPERORS_TOKEN_SEED must decode to 32 bytes, got %d", len(c.TokenSeed)))
 	}
 
+	// A wildcard origin would let any page on the internet open a live feed of
+	// who is playing, so it is refused outright rather than warned about.
+	for _, o := range c.AdminOrigins {
+		if strings.Contains(o, "*") && c.Env == "prod" {
+			problems = append(problems, "EMPERORS_ADMIN_ORIGINS must not contain a wildcard in prod")
+		}
+	}
+
 	if seed := os.Getenv("EMPERORS_SHOP_SECRET"); seed != "" {
 		raw, decErr := base64.StdEncoding.DecodeString(seed)
 		if decErr != nil {
@@ -218,4 +236,16 @@ func envDur(k string, def time.Duration) (time.Duration, error) {
 		return 0, fmt.Errorf("%s: %w", k, err)
 	}
 	return d, nil
+}
+
+// splitList parses a comma-separated environment value, dropping blanks.
+func splitList(v string) []string {
+	parts := strings.Split(v, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

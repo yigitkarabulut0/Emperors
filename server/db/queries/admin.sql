@@ -169,8 +169,16 @@ LEFT JOIN app.players p
 GROUP BY d
 ORDER BY d;
 
--- Players seen on each day. "Active" is last_seen_at, which every authenticated
--- request already touches.
+-- Players seen on each day. "Active" is last_seen_at, and the presence registry
+-- is now its only writer.
+--
+-- This comment used to claim that "every authenticated request already touches
+-- it", and that was simply false: the column was written only as a side effect
+-- of the ~18 queries that MUTATE something, so this series counted the players
+-- who ACTED and silently missed everyone who merely looked around. Every active
+-- number in this file was an undercount of exactly the browsing players. The
+-- registry observes every authenticated request -- reads included -- and
+-- flushes in a batch, so the name and the number finally agree.
 -- name: ActiveDaily :many
 SELECT d::date AS day,
        count(p.id)::bigint AS count
@@ -219,3 +227,16 @@ ORDER BY
   CASE WHEN sqlc.arg(sort)::text = 'gold'      THEN gold         END DESC,
   id
 LIMIT sqlc.arg(lim)::int OFFSET sqlc.arg(off)::int;
+
+-- The identity behind a set of presence entries.
+--
+-- The live board is held in memory and knows only player ids, so rendering it
+-- needs one lookup for the whole set rather than one per row.
+-- name: PlayersByIDs :many
+SELECT id, username, display_name, level, gold, diamonds, state, is_bot, last_seen_at, created_at
+FROM app.players
+WHERE id = ANY($1::uuid[]);
+
+-- How many accounts exist at all, for the "of N registered" denominator.
+-- name: TotalRegistered :one
+SELECT count(*)::bigint FROM app.players WHERE NOT is_bot;

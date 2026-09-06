@@ -70,8 +70,16 @@ type ActiveDailyRow struct {
 	Count int64
 }
 
-// Players seen on each day. "Active" is last_seen_at, which every authenticated
-// request already touches.
+// Players seen on each day. "Active" is last_seen_at, and the presence registry
+// is now its only writer.
+//
+// This comment used to claim that "every authenticated request already touches
+// it", and that was simply false: the column was written only as a side effect
+// of the ~18 queries that MUTATE something, so this series counted the players
+// who ACTED and silently missed everyone who merely looked around. Every active
+// number in this file was an undercount of exactly the browsing players. The
+// registry observes every authenticated request -- reads included -- and
+// flushes in a batch, so the name and the number finally agree.
 func (q *Queries) ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]ActiveDailyRow, error) {
 	rows, err := q.db.Query(ctx, activeDaily, arg.Now, arg.Days)
 	if err != nil {
@@ -1091,6 +1099,60 @@ func (q *Queries) PlayerCounts(ctx context.Context) (PlayerCountsRow, error) {
 	return i, err
 }
 
+const playersByIDs = `-- name: PlayersByIDs :many
+SELECT id, username, display_name, level, gold, diamonds, state, is_bot, last_seen_at, created_at
+FROM app.players
+WHERE id = ANY($1::uuid[])
+`
+
+type PlayersByIDsRow struct {
+	ID          uuid.UUID
+	Username    string
+	DisplayName string
+	Level       int32
+	Gold        int64
+	Diamonds    int64
+	State       string
+	IsBot       bool
+	LastSeenAt  time.Time
+	CreatedAt   time.Time
+}
+
+// The identity behind a set of presence entries.
+//
+// The live board is held in memory and knows only player ids, so rendering it
+// needs one lookup for the whole set rather than one per row.
+func (q *Queries) PlayersByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]PlayersByIDsRow, error) {
+	rows, err := q.db.Query(ctx, playersByIDs, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PlayersByIDsRow{}
+	for rows.Next() {
+		var i PlayersByIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.DisplayName,
+			&i.Level,
+			&i.Gold,
+			&i.Diamonds,
+			&i.State,
+			&i.IsBot,
+			&i.LastSeenAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const registrationsDaily = `-- name: RegistrationsDaily :many
 SELECT d::date AS day,
        count(p.id)::bigint AS count
@@ -1229,6 +1291,18 @@ func (q *Queries) SearchPlayers(ctx context.Context, lower string) ([]SearchPlay
 		return nil, err
 	}
 	return items, nil
+}
+
+const totalRegistered = `-- name: TotalRegistered :one
+SELECT count(*)::bigint FROM app.players WHERE NOT is_bot
+`
+
+// How many accounts exist at all, for the "of N registered" denominator.
+func (q *Queries) TotalRegistered(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, totalRegistered)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const touchAdminLogin = `-- name: TouchAdminLogin :exec

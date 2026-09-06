@@ -22,6 +22,9 @@ type api struct {
 	svc   service.Deps
 	store *gameconfig.Store
 	log   *slog.Logger
+	// presence is the live board. Optional: a nil registry makes the heartbeat
+	// endpoint a no-op rather than a crash, which is what the router tests use.
+	presence Presenter
 }
 
 // s returns the service bound to the balance version live RIGHT NOW.
@@ -50,6 +53,16 @@ func decode(w http.ResponseWriter, r *http.Request, into any) bool {
 		return false
 	}
 	return true
+}
+
+// decodeQuiet reads an optional body and never writes a response.
+//
+// For endpoints where a malformed or absent body is not worth failing over --
+// the leaving beacon fires while iOS is suspending the app, and half a body is
+// still worth more than a rejected request.
+func decodeQuiet(r *http.Request, into any) error {
+	r.Body = http.MaxBytesReader(nil, r.Body, maxBodyBytes)
+	return json.NewDecoder(r.Body).Decode(into)
 }
 
 // fail maps a service error to a status code. Services never know about HTTP;
@@ -783,7 +796,6 @@ func isKnownServiceError(err error) bool {
 	return false
 }
 
-
 // avatars lists the pickable portraits and which one is worn.
 func (a *api) avatars(w http.ResponseWriter, r *http.Request) {
 	pid, ok := PlayerID(r.Context())
@@ -822,7 +834,6 @@ func (a *api) setAvatar(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
-
 // --- treasury ---
 //
 // Banked gold cannot be stolen. Depositing costs a fee, withdrawing is free.
@@ -859,7 +870,6 @@ func (a *api) treasuryMove(w http.ResponseWriter, r *http.Request, in bool) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
-
 // kingdomSearch turns a name into a player id so a king can invite someone.
 func (a *api) kingdomSearch(w http.ResponseWriter, r *http.Request) {
 	pid, ok := PlayerID(r.Context())
@@ -874,7 +884,6 @@ func (a *api) kingdomSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJSON(w, http.StatusOK, map[string]any{"players": list})
 }
-
 
 // rerollShop buys a fresh set of offers with diamonds.
 func (a *api) rerollShop(w http.ResponseWriter, r *http.Request) {
@@ -896,7 +905,6 @@ func (a *api) rerollShop(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJSON(w, http.StatusOK, v)
 }
-
 
 // --- the diamond store ---
 //
@@ -937,7 +945,6 @@ func (a *api) buyStoreGood(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJSON(w, http.StatusOK, v)
 }
-
 
 // autoEquip puts the best gear the player owns on the hero, or on everyone.
 func (a *api) autoEquip(w http.ResponseWriter, r *http.Request) {

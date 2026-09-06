@@ -32,8 +32,7 @@ UPDATE app.players
 SET gold = gold + $2,
     tax_milli_accrued = 0,
     tax_updated_at = $3,
-    action_seq = $4,
-    last_seen_at = now()
+    action_seq = $4
 WHERE id = $1
 RETURNING *;
 

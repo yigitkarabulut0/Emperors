@@ -7,12 +7,13 @@ package sqlcdb
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const bumpActionSeq = `-- name: BumpActionSeq :one
-UPDATE app.players SET action_seq = $2, last_seen_at = now() WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
+UPDATE app.players SET action_seq = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
 `
 
 type BumpActionSeqParams struct {
@@ -344,8 +345,40 @@ func (q *Queries) LockPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, erro
 	return i, err
 }
 
+const recentlySeenPlayers = `-- name: RecentlySeenPlayers :many
+SELECT id, last_seen_at FROM app.players
+WHERE last_seen_at > $1 AND NOT is_bot
+`
+
+type RecentlySeenPlayersRow struct {
+	ID         uuid.UUID
+	LastSeenAt time.Time
+}
+
+// The players seen recently, to repopulate the presence registry after a
+// restart. Without it a deploy shows every player leaving at once.
+func (q *Queries) RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time) ([]RecentlySeenPlayersRow, error) {
+	rows, err := q.db.Query(ctx, recentlySeenPlayers, lastSeenAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RecentlySeenPlayersRow{}
+	for rows.Next() {
+		var i RecentlySeenPlayersRow
+		if err := rows.Scan(&i.ID, &i.LastSeenAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setAvatar = `-- name: SetAvatar :one
-UPDATE app.players SET avatar = $2, action_seq = $3, last_seen_at = now()
+UPDATE app.players SET avatar = $2, action_seq = $3
 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
 `
 
@@ -408,8 +441,7 @@ SET stat_energy  = stat_energy  + $2,
     stat_attack  = stat_attack  + $3,
     stat_defense = stat_defense + $4,
     stat_points_unspent = stat_points_unspent - $5,
-    action_seq   = $6,
-    last_seen_at = now()
+    action_seq   = $6
 WHERE id = $1 AND stat_points_unspent >= $5
 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
 `
@@ -485,5 +517,24 @@ UPDATE app.players SET last_seen_at = now() WHERE id = $1
 
 func (q *Queries) TouchPlayerSeen(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, touchPlayerSeen, id)
+	return err
+}
+
+const touchPlayersSeen = `-- name: TouchPlayersSeen :exec
+UPDATE app.players SET last_seen_at = now() WHERE id = ANY($1::uuid[])
+`
+
+// Writes back a whole batch of players the presence registry has heard from.
+//
+// This is what finally makes the comment in admin.sql true. last_seen_at was
+// only ever written as a side effect of the ~18 queries that MUTATE something,
+// so a player who opened the game, read their estates and put the phone down
+// was never recorded as active at all, and every "actives" number undercounted
+// everyone who was merely looking. The registry now records every authenticated
+// request in memory and flushes the set here once every thirty seconds -- one
+// statement regardless of how many players are online, instead of one write per
+// request.
+func (q *Queries) TouchPlayersSeen(ctx context.Context, dollar_1 []uuid.UUID) error {
+	_, err := q.db.Exec(ctx, touchPlayersSeen, dollar_1)
 	return err
 }

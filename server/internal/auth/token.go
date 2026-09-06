@@ -51,11 +51,20 @@ func NewSigner(seed []byte, now func() time.Time) (*Signer, error) {
 // copy of authoritative state and an invitation to trust it.
 type Claims struct {
 	jwt.RegisteredClaims
+	// SessionID is the app.sessions row -- one link in a device's token
+	// rotation chain, replaced on every refresh.
 	SessionID string `json:"sid"`
+	// FamilyID is the DEVICE, and it is stable across refresh.
+	//
+	// These are not interchangeable and confusing them is a real bug: a session
+	// row is regenerated every fifteen minutes, so anything that means "this
+	// phone" -- per-device presence, "sign this device out" -- must key on the
+	// family or it invents a new device four times an hour.
+	FamilyID string `json:"fid,omitempty"`
 }
 
 // Mint issues an access token for a player.
-func (s *Signer) Mint(playerID, sessionID string) (string, time.Time, error) {
+func (s *Signer) Mint(playerID, sessionID, familyID string) (string, time.Time, error) {
 	now := s.now()
 	exp := now.Add(AccessTokenTTL)
 	tok := jwt.NewWithClaims(jwt.SigningMethodEdDSA, Claims{
@@ -67,13 +76,20 @@ func (s *Signer) Mint(playerID, sessionID string) (string, time.Time, error) {
 			Issuer:    "emperors",
 		},
 		SessionID: sessionID,
+		FamilyID:  familyID,
 	})
 	signed, err := tok.SignedString(s.priv)
 	return signed, exp, err
 }
 
-// Verify parses and validates an access token, returning the player id.
-func (s *Signer) Verify(raw string) (playerID, sessionID string, err error) {
+// Verify parses and validates an access token, returning the player and the
+// device that holds it.
+//
+// deviceID is the token's family, which is stable for the life of a sign-in.
+// Tokens minted before the family claim existed fall back to the session id;
+// those expire within fifteen minutes of a deploy, so the fallback is bounded
+// and self-healing.
+func (s *Signer) Verify(raw string) (playerID, deviceID string, err error) {
 	var c Claims
 	// The algorithm is pinned. Without this, a token claiming alg:none or an
 	// HMAC token signed with the public key would be accepted — the classic JWT
@@ -96,6 +112,9 @@ func (s *Signer) Verify(raw string) (playerID, sessionID string, err error) {
 	}
 	if c.Subject == "" {
 		return "", "", ErrTokenInvalid
+	}
+	if c.FamilyID != "" {
+		return c.Subject, c.FamilyID, nil
 	}
 	return c.Subject, c.SessionID, nil
 }

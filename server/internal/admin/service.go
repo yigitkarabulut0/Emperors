@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
+	"github.com/yigitkarabulut0/emperors/server/internal/presence"
 	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
@@ -28,6 +29,18 @@ type Service struct {
 	// Shared with the game service, so a boost created here is live on its next
 	// poll rather than at the next restart.
 	Boosts *service.Boosts
+
+	// Presence is the live board, shared with the game listener in the same
+	// process. Optional: nil makes the live endpoints answer an empty board
+	// rather than fail, which is what the tests use.
+	Presence LiveSet
+}
+
+// LiveSet is the slice of the presence registry the admin surface reads. An
+// interface so admin does not depend on the registry's internals.
+type LiveSet interface {
+	Snapshot() []presence.View
+	Counts() presence.Counts
 }
 
 // now is the clock, and it never panics.

@@ -31,7 +31,7 @@ RETURNING *;
 -- name: PayAndJoinKingdom :one
 UPDATE app.players
 SET gold = gold - $2, kingdom_id = $3, kingdom_role = $4,
-    kingdom_joined_at = now(), action_seq = $5, last_seen_at = now()
+    kingdom_joined_at = now(), action_seq = $5
 WHERE id = $1 AND gold >= $2 AND kingdom_id IS NULL
 RETURNING *;
 
@@ -73,8 +73,7 @@ SET gold = gold - $2,
     kingdom_donated_today = CASE WHEN kingdom_day = $3 THEN kingdom_donated_today + $2 ELSE $2 END,
     kingdom_day = $3,
     kingdom_favour = kingdom_favour + $4,
-    action_seq = $5,
-    last_seen_at = now()
+    action_seq = $5
 WHERE id = $1 AND gold >= $2
 RETURNING *;
 

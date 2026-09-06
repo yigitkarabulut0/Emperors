@@ -28,8 +28,7 @@ UPDATE app.soldiers SET level = $3 WHERE id = $1 AND player_id = $2 RETURNING *;
 UPDATE app.players
 SET soldier_slots = soldier_slots + 1,
     gold = gold - $2,
-    action_seq = $3,
-    last_seen_at = now()
+    action_seq = $3
 WHERE id = $1 AND gold >= $2 AND soldier_slots = $4
 RETURNING *;
 
@@ -58,14 +57,13 @@ WHERE player_id = $1 AND equipped_soldier_id = $2;
 UPDATE app.players
 SET soldier_slots = soldier_slots + 1,
     free_slot_claimed = true,
-    action_seq = $2,
-    last_seen_at = now()
+    action_seq = $2
 WHERE id = $1 AND free_slot_claimed = false AND soldier_slots = 0
 RETURNING *;
 
 -- name: ClaimFreeRecruit :one
 UPDATE app.players
-SET free_recruit_claimed = true, action_seq = $2, last_seen_at = now()
+SET free_recruit_claimed = true, action_seq = $2
 WHERE id = $1 AND free_recruit_claimed = false
 RETURNING *;
 

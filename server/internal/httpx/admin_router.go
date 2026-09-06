@@ -14,12 +14,24 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/admin"
+	"github.com/yigitkarabulut0/emperors/server/internal/adminstream"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
 
 type adminAPI struct {
 	svc *admin.Service
 	log *slog.Logger
+	// hub, when set, serves the live event stream. Optional so the router can be
+	// built without one.
+	hub *adminstream.Hub
+	// origins is the websocket handshake allowlist. See AdminStream.
+	origins []string
+}
+
+// AdminStream attaches the live event stream to the router.
+type AdminStream struct {
+	Hub     *adminstream.Hub
+	Origins []string
 }
 
 type adminCtxKey struct{}
@@ -30,8 +42,11 @@ type adminCtxKey struct{}
 // API. Nothing a player can reach shares a path prefix, a middleware stack or a
 // handler with anything that can grant currency, and in production this router
 // binds to an interface players cannot reach at all.
-func AdminRouter(svc *admin.Service, log *slog.Logger) http.Handler {
+func AdminRouter(svc *admin.Service, log *slog.Logger, stream *AdminStream) http.Handler {
 	a := &adminAPI{svc: svc, log: log}
+	if stream != nil {
+		a.hub, a.origins = stream.Hub, stream.Origins
+	}
 	r := chi.NewRouter()
 
 	r.Use(RequestID)
@@ -72,20 +87,50 @@ func AdminRouter(svc *admin.Service, log *slog.Logger) http.Handler {
 		r.Post("/boosts/revoke", a.revokeBoost)
 
 		r.Get("/audit", a.audit)
+
+		// Who is in the game right now, as a plain read. The stream carries the
+		// same information incrementally; this is what a fresh page load and
+		// anything scripted asks for.
+		r.Get("/live", a.live)
 	})
+
+	// The stream sits in its own group.
+	//
+	// It keeps requireAdmin -- the connection is as privileged as any other read
+	// -- but drops Logger, which would emit a single line on disconnect with a
+	// duration of however long the operator left the tab open. That is not a
+	// request log entry, it is noise; the handler logs connect and disconnect
+	// itself.
+	if a.hub != nil {
+		r.Group(func(r chi.Router) {
+			r.Use(a.requireAdmin)
+			r.Get("/stream", a.stream)
+		})
+	}
 	return r
+}
+
+// stream upgrades to a websocket and pushes events until the panel goes away.
+func (a *adminAPI) stream(w http.ResponseWriter, r *http.Request) {
+	id := who(r)
+	a.log.Info("admin stream opened", "admin", id.Username, "role", id.Role,
+		"watchers", a.hub.Subscribers()+1)
+	a.hub.Serve(w, r, map[string]any{"username": id.Username, "role": id.Role}, a.origins)
+	a.log.Info("admin stream closed", "admin", id.Username, "watchers", a.hub.Subscribers())
+}
+
+func (a *adminAPI) live(w http.ResponseWriter, r *http.Request) {
+	board, err := a.svc.Live(r.Context())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, board)
 }
 
 func (a *adminAPI) requireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if token == "" {
-			// Also accept a cookie, so the panel can use an httpOnly one and keep
-			// the token out of reach of any script on the page.
-			if c, err := r.Cookie("emperors_admin"); err == nil {
-				token = c.Value
-			}
-		}
+		token := adminToken(r)
 		id, err := a.svc.Authenticate(r.Context(), token)
 		if err != nil {
 			WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "sign in again")
@@ -93,6 +138,31 @@ func (a *adminAPI) requireAdmin(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), adminCtxKey{}, id)))
 	})
+}
+
+// adminToken finds the caller's token.
+//
+// Three places, because there are three callers. The Authorization header is
+// what the panel's server-side fetches use. emperors_admin is the cookie this
+// server sets at login. emperors_admin_session is the cookie the Next panel sets
+// on its OWN origin -- and it matters here because a browser cannot put a header
+// on a websocket handshake, so the socket is opened same-origin against the
+// panel and proxied here with that cookie attached verbatim.
+//
+// The two cookie names are deliberately different. Cookies are port-blind, so a
+// panel on localhost:3000 and this server on localhost:8081 share one jar for
+// the host "localhost"; one name would have them overwrite each other during
+// local development.
+func adminToken(r *http.Request) string {
+	if t, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer "); ok && t != "" {
+		return t
+	}
+	for _, name := range []string{"emperors_admin", "emperors_admin_session"} {
+		if c, err := r.Cookie(name); err == nil && c.Value != "" {
+			return c.Value
+		}
+	}
+	return ""
 }
 
 func who(r *http.Request) *admin.Identity {
@@ -145,11 +215,7 @@ func (a *adminAPI) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *adminAPI) logout(w http.ResponseWriter, r *http.Request) {
-	token, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-	if c, err := r.Cookie("emperors_admin"); err == nil && token == "" {
-		token = c.Value
-	}
-	_ = a.svc.Logout(r.Context(), token)
+	_ = a.svc.Logout(r.Context(), adminToken(r))
 	http.SetCookie(w, &http.Cookie{Name: "emperors_admin", Value: "", Path: "/", MaxAge: -1})
 	WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

@@ -34,7 +34,7 @@ RETURNING *;
 -- stops a reroll bought in one window from applying to the next.
 -- name: PayForReroll :one
 UPDATE app.players
-SET diamonds = diamonds - $2, action_seq = $3, last_seen_at = now()
+SET diamonds = diamonds - $2, action_seq = $3
 WHERE id = $1 AND diamonds >= $2
 RETURNING *;
 

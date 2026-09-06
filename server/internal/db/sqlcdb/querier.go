@@ -20,8 +20,16 @@ type Querier interface {
 	ActiveBalance(ctx context.Context) (ActiveBalanceRow, error)
 	// Every boost in force at this instant. Read on a poll, never per request.
 	ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoostsRow, error)
-	// Players seen on each day. "Active" is last_seen_at, which every authenticated
-	// request already touches.
+	// Players seen on each day. "Active" is last_seen_at, and the presence registry
+	// is now its only writer.
+	//
+	// This comment used to claim that "every authenticated request already touches
+	// it", and that was simply false: the column was written only as a side effect
+	// of the ~18 queries that MUTATE something, so this series counted the players
+	// who ACTED and silently missed everyone who merely looked around. Every active
+	// number in this file was an undercount of exactly the browsing players. The
+	// registry observes every authenticated request -- reads included -- and
+	// flushes in a batch, so the name and the number finally agree.
 	ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]ActiveDailyRow, error)
 	// Reputation from a raid, honouring the per-member daily cap.
 	AddKingdomReputation(ctx context.Context, arg AddKingdomReputationParams) error
@@ -203,6 +211,14 @@ type Querier interface {
 	// stops a reroll bought in one window from applying to the next.
 	PayForReroll(ctx context.Context, arg PayForRerollParams) (AppPlayer, error)
 	PlayerCounts(ctx context.Context) (PlayerCountsRow, error)
+	// The identity behind a set of presence entries.
+	//
+	// The live board is held in memory and knows only player ids, so rendering it
+	// needs one lookup for the whole set rather than one per row.
+	PlayersByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]PlayersByIDsRow, error)
+	// The players seen recently, to repopulate the presence registry after a
+	// restart. Without it a deploy shows every player leaving at once.
+	RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time) ([]RecentlySeenPlayersRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
 	// Registrations per day. generate_series so a day with no signups is a zero in
 	// the chart rather than a missing bar that silently narrows the axis.
@@ -242,9 +258,22 @@ type Querier interface {
 	// the balance cannot go negative even under a concurrent double-tap.
 	SpendStatPoints(ctx context.Context, arg SpendStatPointsParams) (AppPlayer, error)
 	TopKingdoms(ctx context.Context, limit int32) ([]TopKingdomsRow, error)
+	// How many accounts exist at all, for the "of N registered" denominator.
+	TotalRegistered(ctx context.Context) (int64, error)
 	TouchAdminLogin(ctx context.Context, id uuid.UUID) error
 	TouchCooldown(ctx context.Context, arg TouchCooldownParams) error
 	TouchPlayerSeen(ctx context.Context, id uuid.UUID) error
+	// Writes back a whole batch of players the presence registry has heard from.
+	//
+	// This is what finally makes the comment in admin.sql true. last_seen_at was
+	// only ever written as a side effect of the ~18 queries that MUTATE something,
+	// so a player who opened the game, read their estates and put the phone down
+	// was never recorded as active at all, and every "actives" number undercounted
+	// everyone who was merely looking. The registry now records every authenticated
+	// request in memory and flushes the set here once every thirty seconds -- one
+	// statement regardless of how many players are online, instead of one write per
+	// request.
+	TouchPlayersSeen(ctx context.Context, dollar_1 []uuid.UUID) error
 	// Clears whatever the player is wearing in this slot, so equipping is a
 	// two-step swap that cannot transiently violate the one-item-per-slot index.
 	UnequipHeroSlot(ctx context.Context, arg UnequipHeroSlotParams) error

@@ -19,7 +19,7 @@ UPDATE app.players
 SET gold = gold + $2, xp = $3, level = $4,
     stat_points_unspent = stat_points_unspent + $5,
     energy_milli = $6, energy_updated_at = $7,
-    action_seq = $8, last_seen_at = now()
+    action_seq = $8
 WHERE id = $1
 RETURNING *;
 

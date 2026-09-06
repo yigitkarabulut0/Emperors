@@ -1,12 +1,12 @@
 -- name: SpendGold :one
 UPDATE app.players
-SET gold = gold - $2, action_seq = $3, last_seen_at = now()
+SET gold = gold - $2, action_seq = $3
 WHERE id = $1 AND gold >= $2
 RETURNING *;
 
 -- name: CreditGold :one
 UPDATE app.players
-SET gold = gold + $2, action_seq = $3, last_seen_at = now()
+SET gold = gold + $2, action_seq = $3
 WHERE id = $1
 RETURNING *;
 
@@ -20,14 +20,14 @@ VALUES ($1, $2, $3, $4, $5);
 -- name: MoveToTreasury :one
 UPDATE app.players
 SET gold = gold - $2, treasury_gold = treasury_gold + $3,
-    action_seq = $4, last_seen_at = now()
+    action_seq = $4
 WHERE id = $1 AND gold >= $2
 RETURNING *;
 
 -- name: MoveFromTreasury :one
 UPDATE app.players
 SET gold = gold + $2, treasury_gold = treasury_gold - $2,
-    action_seq = $3, last_seen_at = now()
+    action_seq = $3
 WHERE id = $1 AND treasury_gold >= $2
 RETURNING *;
 
@@ -36,12 +36,12 @@ RETURNING *;
 -- name: BuyEnergyRefill :one
 UPDATE app.players
 SET diamonds = diamonds - $2, energy_milli = $3, energy_updated_at = $4,
-    action_seq = $5, last_seen_at = now()
+    action_seq = $5
 WHERE id = $1 AND diamonds >= $2
 RETURNING *;
 
 -- name: BuyShield :one
 UPDATE app.players
-SET diamonds = diamonds - $2, shield_until = $3, action_seq = $4, last_seen_at = now()
+SET diamonds = diamonds - $2, shield_until = $3, action_seq = $4
 WHERE id = $1 AND diamonds >= $2
 RETURNING *;

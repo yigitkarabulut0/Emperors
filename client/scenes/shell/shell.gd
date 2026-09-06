@@ -55,15 +55,13 @@ const RAIL_WIDTH := 160
 ## The rail's own tap height, separate from UI.TAP_MIN so that shrinking the
 ## rail does not shrink every button in the game.
 ##
-## The reference draws its plates at 119 units on this grid, and nine of those
-## do not fit above the fold. 88 is what nine leave room for once the crest has
-## taken its share -- the proportion gives, so that no section has to.
+## The FLOOR, not the height. Since the plates share out whatever the column has
+## left, this is only what the shortest device we ship to -- an iPad 10.9 -- can
+## afford. Every phone gives them more: on a 16 Pro Max they come out near 110.
 ##
-## It was 80, and 80 was less than the plate's own contents: a 50-unit icon, two
-## of separation and a 30-unit line of type come to 82, so every plate was
-## overfull and the word underneath sat hard against the edge. The icon is 46 now
-## and the plate 88, which leaves ten units of air inside it.
-const RAIL_TAP := 96
+## Lowering it therefore costs nothing on a phone and buys the iPad room, which
+## is why it is 86 and not the 96 that once had to be the real height.
+const RAIL_TAP := 78
 
 ## How often the client says it is still here.
 ##
@@ -104,17 +102,24 @@ const RAIL_PAD := 10
 ## display's own corner radius eats the last few units as well -- that read as
 ## cards with their corners sliced off.
 ##
-## +2 rather than +6, because this margin is charged three times across the row
-## -- once at each screen edge and once between the rail and the content -- and
-## the widest tab was within six units of the column it had left.
-const EDGE := UI.SKIN_BLEED + 2
+## SKIN_BLEED covers the over-draw; CORNER covers the display's radius. Both are
+## in here rather than split between this and the row's inset, and that is the
+## whole point: the rail absorbs the left-hand corner allowance by bleeding to
+## the edge, so charging it to the ROW made the card's right-hand gap twelve
+## units bigger than its left-hand one. Charged to the CARD instead, the two gaps
+## either side of it are the same number.
+const EDGE := UI.SKIN_BLEED + UI.CORNER
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
 const GOLD_ROLL_SECONDS := 0.30
-## The portrait from the reference, scaled: 138 px of 941 is 106 units, and
-## 96 is that less the collar's own bleed.
-const AVATAR_SIZE := 72
+## The portrait from the reference, scaled: 138 px of 941 is 106 units.
+##
+## The crest does not share out the column's spare height -- the nine sections do
+## -- so this number IS the size it appears at, on every device. That is why it
+## is set close to the reference's rather than trimmed for the iPad: the plates
+## below absorb the difference by starting from a lower floor.
+const AVATAR_SIZE := 98
 
 ## Floors, not fixed heights. The top bar sizes to its own content and the action
 ## host to the tallest bar any section mounts; these only stop them collapsing.
@@ -461,16 +466,15 @@ func _apply_safe_insets() -> void:
 
 	# The row is already inset, so the rail's own padding is symmetric.
 	_rail_pad.add_theme_constant_override("margin_left", RAIL_PAD)
-	# EDGE on both sides as well as the safe inset, so the RAIL is set in from
-	# the screen by exactly what the cards are set in from it on the other side.
-	# Without it the rail hugged the edge while the cards kept a 20-unit margin,
-	# and the page read as if everything had been pushed left.
-	_middle_pad.add_theme_constant_override("margin_left", EDGE + int(i.x))
-	_middle_pad.add_theme_constant_override("margin_right", EDGE + int(i.z))
+	# Only what a device reports BEYOND the corner allowance -- a landscape notch,
+	# an Android cutout. The ordinary rounded-corner case leaves this at zero, so
+	# the rail's stone runs to the screen's edge the way the reference draws it,
+	# and the corner clips stone rather than a card. EDGE carries the allowance
+	# for anything that must not be clipped.
+	_middle_pad.add_theme_constant_override("margin_left", maxi(0, int(i.x) - UI.CORNER))
+	_middle_pad.add_theme_constant_override("margin_right", maxi(0, int(i.z) - UI.CORNER))
 
-	# The content's own right margin is zero: the row is already inset by EDGE on
-	# that side. Only the gap to the rail is the content's to keep.
-	(_content as MarginContainer).add_theme_constant_override("margin_right", 0)
+	(_content as MarginContainer).add_theme_constant_override("margin_right", EDGE)
 	(_content as MarginContainer).add_theme_constant_override("margin_left", EDGE)
 
 	(_action_host as MarginContainer).add_theme_constant_override(
@@ -623,17 +627,12 @@ func _build_rail() -> Control:
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(frame)
 
-	var eagle := _ornament("orn/eagle", UI.ICON_LG, UI.ICON_LG)
-	eagle.anchor_left = 0.5
-	eagle.anchor_right = 0.5
-	eagle.anchor_top = 1.0
-	eagle.anchor_bottom = 1.0
-	eagle.offset_left = -UI.ICON_LG / 2
-	eagle.offset_right = UI.ICON_LG / 2
-	eagle.offset_top = -UI.ICON_LG - 8
-	eagle.offset_bottom = -8
-	eagle.modulate = Palette.TEXT_FAINT
-	panel.add_child(eagle)
+	# No eagle at the foot any more.
+	#
+	# It was anchored to the bottom of the rail, which worked only because the
+	# column ended well short of it -- and that gap of bare stone is exactly what
+	# looked wrong. The plates fill the column now, so there is nowhere for it to
+	# stand.
 
 	# The rail panel bleeds to x=0; only its buttons move in from a left inset,
 	# which is zero in portrait but not on an Android cutout or in landscape.
@@ -653,7 +652,10 @@ func _build_rail() -> Control:
 	# The top gets the same margin as the sides, and for the same reason: the
 	# frame's band is fourteen units deep there too, so at eight the crest plate
 	# was overlapping it and reading as if it had slid up out of the column.
-	_rail_pad.add_theme_constant_override("margin_top", UI.GAP_M)
+	# The same gap the plates keep from each other, so the crest is part of the
+	# stack rather than a thing sitting above it. It was GAP_M, which read as a
+	# band of empty stone under the banner.
+	_rail_pad.add_theme_constant_override("margin_top", RAIL_GAP)
 	_rail_pad.add_theme_constant_override("margin_bottom", UI.GAP_S)
 	panel.add_child(_rail_pad)
 
@@ -669,22 +671,45 @@ func _build_rail() -> Control:
 	var col := VBoxContainer.new()
 	col.name = "RailColumn"    # shell_fits.gd measures this node by name
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# The crest, the nine plates and the foot are three groups, not one list.
-	col.add_theme_constant_override("separation", UI.GAP_S)
+	# One rhythm the whole way down: the crest is the first plate in the stack,
+	# not a header above it.
+	col.add_theme_constant_override("separation", RAIL_GAP)
 	_rail_pad.add_child(col)
 
-	col.add_child(_build_crest())
+	# The crest takes a share of the spare column, WEIGHTED.
+	#
+	# Not expanding at all left it stuck at its minimum while the nine plates grew
+	# into the leftover height, so it came out smaller than every one of them.
+	# Expanding it unweighted was worse: one item against a box of nine took half
+	# the column and made a tall empty plate with a small portrait in it.
+	#
+	# The ratio is what settles it. The nav box carries nine plates and asks for
+	# nine shares; the crest asks for 1.4, so it ends up half again as tall as a
+	# section -- which is what a portrait wants and what the reference draws.
+	var crest_plate := _build_crest()
+	crest_plate.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	crest_plate.size_flags_stretch_ratio = 1.4
+	col.add_child(crest_plate)
 
 	var nav := VBoxContainer.new()
 	# A gap now, where there was none. Nine plates with marble between them read
 	# as stones set into a column; nine flush buttons read as one strip with
 	# lines drawn on it, which is what this was.
 	nav.add_theme_constant_override("separation", RAIL_GAP)
+	nav.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	nav.size_flags_stretch_ratio = float(SECTIONS.size())
 	col.add_child(nav)
 
 	for s in SECTIONS:
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(0, RAIL_TAP)
+		# RAIL_TAP is a FLOOR, and the rest of the column is shared out.
+		#
+		# It used to be the fixed height, so on anything taller than the iPad the
+		# nine plates ended partway down and left a hand's width of bare stone
+		# under them. The floor is what the shortest device we ship to can afford;
+		# every device with more gives it to the plates.
+		b.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		b.focus_mode = Control.FOCUS_NONE
 		b.tooltip_text = str(s["label"])
 		b.pressed.connect(_open.bind(str(s["id"])))
@@ -768,12 +793,16 @@ func _build_crest() -> Control:
 	plate_bg.add_theme_stylebox_override("panel", UI.skin("nav", Palette.RAIL, 8, 8))
 
 	var crest := VBoxContainer.new()
-	crest.add_theme_constant_override("separation", UI.GAP_S)
+	crest.add_theme_constant_override("separation", 0)
+	# Centred in the plate rather than stacked from its top edge.
+	crest.alignment = BoxContainer.ALIGNMENT_CENTER
+	crest.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	plate_bg.add_child(crest)
 
 	var face := Control.new()
 	face.custom_minimum_size = Vector2(AVATAR_SIZE, AVATAR_SIZE)
 	face.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	crest.add_child(face)
 
 	_avatar_btn = Button.new()

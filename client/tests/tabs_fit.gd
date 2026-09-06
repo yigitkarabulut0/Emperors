@@ -87,12 +87,12 @@ func _run() -> void:
 	# what the game runs at. Measuring it reported 429 where the real column is
 	# 488 -- and failed three tabs that fit perfectly well.
 	#
-	# EDGE is charged three times across the row: once at each screen edge, and
-	# once between the rail and the content. The corner allowance is charged at
-	# both edges, and every device with a rounded display gets it.
+	# The rail sits against the screen's edge and EDGE carries both the nine-slice
+	# over-draw and the display's corner allowance, so the row itself is not inset
+	# on any device we ship to.
 	var rail: float = float(shell.get("RAIL_WIDTH"))
 	var edge: float = float(shell.get("EDGE"))
-	var budget := VIEWPORT_W - 3.0 * edge - 2.0 * float(UI.CORNER) - rail
+	var budget := VIEWPORT_W - rail - 2.0 * edge
 
 	var bad: Array[String] = []
 	var report := ""

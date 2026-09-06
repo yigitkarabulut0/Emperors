@@ -44,41 +44,95 @@ export default async function PlayerPage({
   }
   const p = res.data;
 
-  // One shape for every write: post, revalidate, come back with the outcome.
-  // A refusal must land on this page with its reason -- throwing gives Next's
-  // 500 screen, which tells an operator nothing and loses what they typed.
-  const run = (path: string, build: (f: FormData) => Record<string, unknown>) =>
-    async function (formData: FormData) {
-      "use server";
-      const r = await callAdmin(path, { method: "POST", body: { player_id: id, ...build(formData) } });
-      revalidatePath(`/players/${id}`);
-      const q = new URLSearchParams();
-      if (preview !== "0") q.set("preview", preview);
-      q.set(r.ok ? "msg" : "err", r.ok ? "Done." : r.message);
-      redirect(`/players/${id}?${q}`);
-    };
+  // Every action is its own declaration with "use server" as its first
+  // statement.
+  //
+  // A helper that RETURNS an action reads better and does not work: Next has to
+  // identify a server action statically, and a closure produced by a factory is
+  // not something it can see. It compiles, then fails at runtime with "Functions
+  // cannot be passed directly to Client Components" once per form on the page.
+  //
+  // They share one shape: post, revalidate, come back with the outcome. A refusal
+  // has to land HERE with its reason -- throwing gives Next's 500 screen, which
+  // tells an operator nothing and loses whatever they typed.
+  async function back(ok: boolean, message: string) {
+    "use server";
+    const q = new URLSearchParams();
+    if (preview !== "0") q.set("preview", preview);
+    q.set(ok ? "msg" : "err", message);
+    redirect(`/players/${id}?${q}`);
+  }
 
-  const adjust = run("/players/adjust", (f) => ({
-    gold: Number(f.get("gold") || 0),
-    diamonds: Number(f.get("diamonds") || 0),
-    xp: Number(f.get("xp") || 0),
-    stat_points: Number(f.get("stat_points") || 0),
-    note: String(f.get("note") || "via panel"),
-  }));
-  const setLevel = run("/players/level", (f) => ({
-    level: Number(f.get("level") || 0), note: String(f.get("note") || "via panel"),
-  }));
-  const setEnergy = run("/players/energy", (f) => ({
-    energy: Number(f.get("energy") || 0), note: String(f.get("note") || "via panel"),
-  }));
-  const setLuck = run("/players/luck", (f) => ({
-    luck_bp: Number(f.get("luck_bp") || 0),
-    days: Number(f.get("days") || 0),
-    note: String(f.get("note") || "via panel"),
-  }));
-  const setState = run("/players/state", (f) => ({
-    state: String(f.get("state")), note: String(f.get("note") || "via panel"),
-  }));
+  async function adjust(formData: FormData) {
+    "use server";
+    const r = await callAdmin("/players/adjust", {
+      method: "POST",
+      body: {
+        player_id: id,
+        gold: Number(formData.get("gold") || 0),
+        diamonds: Number(formData.get("diamonds") || 0),
+        xp: Number(formData.get("xp") || 0),
+        stat_points: Number(formData.get("stat_points") || 0),
+        note: String(formData.get("note") || "via panel"),
+      },
+    });
+    revalidatePath(`/players/${id}`);
+    await back(r.ok, r.ok ? "Applied." : r.message);
+  }
+
+  async function setLevel(formData: FormData) {
+    "use server";
+    const r = await callAdmin("/players/level", {
+      method: "POST",
+      body: {
+        player_id: id,
+        level: Number(formData.get("level") || 0),
+        note: String(formData.get("note") || "via panel"),
+      },
+    });
+    revalidatePath(`/players/${id}`);
+    await back(r.ok, r.ok ? "Level set." : r.message);
+  }
+
+  async function setEnergy(formData: FormData) {
+    "use server";
+    const r = await callAdmin("/players/energy", {
+      method: "POST",
+      body: {
+        player_id: id,
+        energy: Number(formData.get("energy") || 0),
+        note: String(formData.get("note") || "via panel"),
+      },
+    });
+    revalidatePath(`/players/${id}`);
+    await back(r.ok, r.ok ? "Energy set." : r.message);
+  }
+
+  async function setLuck(formData: FormData) {
+    "use server";
+    const r = await callAdmin("/players/luck", {
+      method: "POST",
+      body: {
+        player_id: id,
+        luck_bp: Number(formData.get("luck_bp") || 0),
+        days: Number(formData.get("days") || 0),
+        note: String(formData.get("note") || "via panel"),
+      },
+    });
+    revalidatePath(`/players/${id}`);
+    await back(r.ok, r.ok ? "Fortune set." : r.message);
+  }
+
+  async function setState(formData: FormData) {
+    "use server";
+    const state = String(formData.get("state"));
+    const r = await callAdmin("/players/state", {
+      method: "POST",
+      body: { player_id: id, state, note: String(formData.get("note") || "via panel") },
+    });
+    revalidatePath(`/players/${id}`);
+    await back(r.ok, r.ok ? (state === "banned" ? "Banned." : "Unbanned.") : r.message);
+  }
 
   async function previewLuck(formData: FormData) {
     "use server";

@@ -60,6 +60,11 @@ const GUTTER := 24
 ## area back out by the shadow margin so the BODY lines up with the control's
 ## rect -- without it every button would render inset by its own shadow and look
 ## smaller than the space it occupies.
+## Clearance for a rounded display corner. Lives here rather than on SafeArea so
+## that a test can reference it: SafeArea reads the Env autoload, and anything
+## depending on it fails a --check-only parse.
+const CORNER := 12
+
 const SKIN_SLICE := 42
 const SKIN_BLEED := 14
 
@@ -69,9 +74,11 @@ const SKIN_BLEED := 14
 ## both into mush. The small family is drawn at 64 square with PAD 6 and
 ## RADIUS 10, so its slice is 22 and its bleed 6.
 const SKIN_GEOM := {
-	"chip": [22, 6],
-	"plaque": [22, 6],
-	"rail_active": [22, 6],
+	"chip": [15, 0],
+	"plaque": [15, 0],
+	"rail_active": [15, 0],
+	"nav": [15, 0],
+	"nav_active": [15, 0],
 }
 
 static var _skins: Dictionary = {}
@@ -312,18 +319,16 @@ static func number_label(text: String, size: int, color: Color,
 	return l
 
 
-## Godot has no letter-spacing for Label, and a Roman inscription is mostly
-## letter-spacing. A thin space between the glyphs is what buys it.
-const _THIN_SPACE := "\u2009"
-
-
-static func _spaced(text: String) -> String:
-	var out := ""
-	for i in text.length():
-		if i > 0:
-			out += _THIN_SPACE
-		out += text[i]
-	return out
+## Letter-spacing was tried here and cut.
+##
+## Godot has no letter-spacing for Label, so it was faked with U+2009 THIN SPACE
+## between the glyphs. Cinzel does not carry that codepoint. It fell through to
+## a fallback face whose space is nothing like thin, so "E S T A T E S" measured
+## 487 units instead of the ~350 it was drawn as -- which made the title row the
+## widest thing on the screen, grew the content column past the viewport, and
+## drew every card on Estates off the right-hand edge.
+##
+## The face is inscriptional capitals already. It does not need the help.
 
 
 ## A screen title in spaced Roman capitals between two laurel branches.
@@ -339,8 +344,9 @@ static func screen_title(text: String) -> Control:
 	# F_DISPLAY, not F_H1. The reference sets its screen title at roughly 62 units
 	# on this grid and it is the loudest thing on the page; at F_H1 it was 36 and
 	# read as a section header rather than as the name of the room.
-	var l := caps(_spaced(text), F_DISPLAY, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
+	var l := caps(text, F_DISPLAY, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
 	l.name = "TitleText"
+	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	row.add_child(l)
 	row.add_child(_laurel("orn/laurel_r"))
 	return row
@@ -350,7 +356,7 @@ static func screen_title(text: String) -> Control:
 static func set_screen_title(row: Control, text: String) -> void:
 	var l: Label = row.get_node_or_null("TitleText")
 	if l != null:
-		l.text = _spaced(text.to_upper())
+		l.text = text.to_upper()
 
 
 static func _laurel(key: String) -> Control:
@@ -514,7 +520,7 @@ static func _stat_cell(icon_key: String, label_text: String, value: String,
 		icon.texture = reg.call("ui_icon", icon_key)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(ICON_XL, ICON_XL)
+	icon.custom_minimum_size = Vector2(ICON_LG, ICON_LG)
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if tint != null:

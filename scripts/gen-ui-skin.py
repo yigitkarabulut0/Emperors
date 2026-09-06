@@ -50,10 +50,16 @@ INK = "#2E1F14"
 # Two families. The big one is unchanged from the previous generator so its
 # twelve names stay drop-in; the small one exists because a currency cartouche
 # is about 36 units tall and two 42-unit slices do not fit inside 36 -- Godot
-# resolves that by squashing both, and the chip renders as mush. client's
-# UI.SKIN_GEOM carries the matching numbers.
+# resolves that by squashing both, and the chip renders as mush.
+#
+# The small family's shadow margin is three rather than six. Its skins are drawn
+# with zero bleed, so that margin is the only thing standing between one plate's
+# body and the next one's, and at six it took twelve units out of every plate's
+# height for a shadow nobody asked to be that big.
+#
+# client's UI.SKIN_GEOM must carry the matching numbers for EVERY name here.
 BIG = dict(size=128, pad=14, radius=10)      # slice 42, bleed 14
-SMALL = dict(size=64, pad=6, radius=6)       # slice 22, bleed 6
+SMALL = dict(size=64, pad=3, radius=6)       # slice 15, bleed 0
 
 TMP = pathlib.Path(tempfile.mkdtemp(prefix="romanui-"))
 

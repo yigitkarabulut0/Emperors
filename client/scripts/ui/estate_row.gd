@@ -65,7 +65,7 @@ func _ready() -> void:
 		row.add_child(_icon)
 
 	_level = UI.label("", UI.F_CAPTION, Palette.GOLD_DEEP)
-	_level.custom_minimum_size = Vector2(64, 0)
+	_level.custom_minimum_size = Vector2(54, 0)
 	_level.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(_level)
 
@@ -91,7 +91,7 @@ func _ready() -> void:
 
 	_cost = UI.label("", UI.F_BODY, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_RIGHT)
 	_cost.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_cost.custom_minimum_size = Vector2(110, 0)
+	_cost.custom_minimum_size = Vector2(92, 0)
 	row.add_child(_cost)
 
 

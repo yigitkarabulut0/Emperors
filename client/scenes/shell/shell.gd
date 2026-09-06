@@ -87,11 +87,14 @@ const RAIL_GAP := 2
 ## skin's own six-unit nine-slice bleed, and the eight the rail's carved frame
 ## occupies down each edge.
 ##
-## Measured rather than judged: at 16 the plate was drawn from 12 to 147 units of
-## a 160 column, and the frame's inner lips are at 11 and 148 -- so it was
-## touching the frame on both sides rather than sitting inside it. 20 puts five
-## units of stone between the two.
-const RAIL_PAD := 20
+## Ten, down from twenty, because the twenty was compensating for a bug.
+##
+## The plate skin was drawing 14 units outside its button on every side -- see
+## UI.SKIN_GEOM -- so the inset had to swallow that before it bought anything,
+## and the plates came out small in the middle of the column. With the skin drawn
+## in the rect it is given, ten is enough: the button is 140 wide, its body 134,
+## sitting between the frame's inner lips at 8 and 152 with four units clear.
+const RAIL_PAD := 10
 
 ## The margin every card and the action button keep from the screen's edge.
 ##
@@ -100,7 +103,11 @@ const RAIL_PAD := 20
 ## being painted two to four units off-screen, and on a phone -- where the
 ## display's own corner radius eats the last few units as well -- that read as
 ## cards with their corners sliced off.
-const EDGE := UI.SKIN_BLEED + 6
+##
+## +2 rather than +6, because this margin is charged three times across the row
+## -- once at each screen edge and once between the rail and the content -- and
+## the widest tab was within six units of the column it had left.
+const EDGE := UI.SKIN_BLEED + 2
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
@@ -158,6 +165,7 @@ var _title: Control
 # Chrome that has to be re-inset whenever the safe area changes.
 var _topbar_panel: PanelContainer
 var _topbar_pad: MarginContainer
+var _middle_pad: MarginContainer
 var _rail_pad: MarginContainer
 
 
@@ -183,10 +191,21 @@ func _ready() -> void:
 
 	root.add_child(_build_top_bar())
 
+	# The rail and the content share one inset from the screen's edges.
+	#
+	# They did not, and that is why the right margin looked bigger than the left:
+	# the content carried the right-hand safe inset itself while the rail sat hard
+	# against x=0, so on a phone the page had 38 units of ground down one side and
+	# 20 down the other. Insetting the row instead means the two edges are the
+	# same number by construction, on every device, whatever it reports.
+	_middle_pad = MarginContainer.new()
+	_middle_pad.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(_middle_pad)
+
 	var middle := HBoxContainer.new()
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	middle.add_theme_constant_override("separation", 0)
-	root.add_child(middle)
+	_middle_pad.add_child(middle)
 
 	middle.add_child(_build_rail())
 
@@ -440,9 +459,18 @@ func _apply_safe_insets() -> void:
 	_topbar_pad.add_theme_constant_override("margin_bottom", 12)
 	_topbar_panel.custom_minimum_size.y = TOPBAR_MIN_H + int(i.y)
 
-	_rail_pad.add_theme_constant_override("margin_left", RAIL_PAD + int(i.x))
+	# The row is already inset, so the rail's own padding is symmetric.
+	_rail_pad.add_theme_constant_override("margin_left", RAIL_PAD)
+	# EDGE on both sides as well as the safe inset, so the RAIL is set in from
+	# the screen by exactly what the cards are set in from it on the other side.
+	# Without it the rail hugged the edge while the cards kept a 20-unit margin,
+	# and the page read as if everything had been pushed left.
+	_middle_pad.add_theme_constant_override("margin_left", EDGE + int(i.x))
+	_middle_pad.add_theme_constant_override("margin_right", EDGE + int(i.z))
 
-	(_content as MarginContainer).add_theme_constant_override("margin_right", EDGE + int(i.z))
+	# The content's own right margin is zero: the row is already inset by EDGE on
+	# that side. Only the gap to the rail is the content's to keep.
+	(_content as MarginContainer).add_theme_constant_override("margin_right", 0)
 	(_content as MarginContainer).add_theme_constant_override("margin_left", EDGE)
 
 	(_action_host as MarginContainer).add_theme_constant_override(

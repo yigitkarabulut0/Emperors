@@ -61,14 +61,38 @@ func _run() -> void:
 		return
 	await gs.call("refresh")
 
+	# Measured against a notched phone, because that is the narrowest the content
+	# column ever gets: the row is inset by the safe area AND by the shell's own
+	# edge margin on both sides.
+	var fake: Node = root.get_node_or_null("/root/Env")
+	if fake != null:
+		fake.set("fake_safe_area", Vector4(0, 101, 0, 56))
+		fake.set("fake_safe_area_on", true)
+
 	var shell: Node = load("res://scenes/shell/shell.gd").new()
 	root.add_child(shell)
 	for i in 60:
 		await process_frame
 
-	# Everything the shell can show has to fit beside the rail.
+	# The budget is MEASURED off the laid-out shell, not re-derived from its
+	# constants.
+	#
+	# It used to be VIEWPORT_W - RAIL_WIDTH - 20, and that number went stale the
+	# moment the row gained a safe-area inset and an edge margin on both sides: it
+	# claimed 540 where the real column is 464, a 76-unit lie, and the widest tab
+	# wants 439. The test would have passed a layout that clips. Asking the
+	# container how wide it actually is cannot go stale.
+	# Derived, not measured off the tree: this shell is parented to the root
+	# without anchors, so its laid-out width is whatever Godot gave it and not
+	# what the game runs at. Measuring it reported 429 where the real column is
+	# 488 -- and failed three tabs that fit perfectly well.
+	#
+	# EDGE is charged three times across the row: once at each screen edge, and
+	# once between the rail and the content. The corner allowance is charged at
+	# both edges, and every device with a rounded display gets it.
 	var rail: float = float(shell.get("RAIL_WIDTH"))
-	var budget := VIEWPORT_W - rail - 20.0
+	var edge: float = float(shell.get("EDGE"))
+	var budget := VIEWPORT_W - 3.0 * edge - 2.0 * float(UI.CORNER) - rail
 
 	var bad: Array[String] = []
 	var report := ""

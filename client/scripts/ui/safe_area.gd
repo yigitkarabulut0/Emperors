@@ -40,7 +40,10 @@ const MAX_INSET := 0.2
 ## A device that reports a top inset has a rounded display; that is what the
 ## inset is there for. So this applies on precisely those devices and adds
 ## nothing on a square screen or a desktop.
-const CORNER := 18.0
+## 12, not 18. It is charged at both edges; the cards it protects sit between the
+## banner and the action strip, so they are never in the corner where the radius
+## actually bites. The number lives on UI so that tests can reach it.
+const CORNER := float(UI.CORNER)
 
 ## The most recent computed insets, for the loading screen's debug readout. On a
 ## device this is the only way to see what the platform actually reported.

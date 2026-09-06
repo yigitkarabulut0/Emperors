@@ -16,6 +16,21 @@ extends Control
 ## One entry does one thing. Bank and House used to be buttons buried inside the
 ## Keep, which made the Keep a grab bag of five unrelated things and put the
 ## clan system two taps deep behind a line of text.
+## The six the rail carries, and the three it does not.
+##
+## This is arithmetic, not taste. At the reference's plate height of 119 units,
+## nine plates plus their gaps want 1119; the rail's share of an iPad's 1280 is
+## about 1000 once the banner and the action strip have taken theirs. Six fit.
+## That is also exactly how many the reference draws, which is not a coincidence
+## -- and its six map onto this game's sections one for one: Family/House,
+## Collect/Jobs, Inventory/Items, Shop, Soldiers/Army, Attack/Fight.
+##
+## Nothing is lost. Hero, Estates and Bank live behind the plate at the foot,
+## one tap away, and every one of them is a screen you visit deliberately rather
+## than one you flick between.
+const RAIL_SECTIONS := ["house", "jobs", "items", "shop", "army", "fight"]
+const MORE_SECTIONS := ["hero", "estates", "bank"]
+
 const SECTIONS := [
 	{"id": "hero", "icon": "keep", "glyph": "H", "label": "Hero"},
 	{"id": "jobs", "icon": "fields", "glyph": "J", "label": "Jobs"},
@@ -28,54 +43,60 @@ const SECTIONS := [
 	{"id": "house", "icon": "house", "glyph": "K", "label": "House"},
 ]
 
-## Wider than it was. At 96 the nine entries were a column of small capitals on
-## a strip of stone; the reference sets each one as a carved plate with the icon
-## as the loudest thing on it, and that needs room.
+## Measured off the reference rather than chosen.
 ##
-## tabs_fit.gd derives every tab's width budget from this (720 - RAIL - 20), so
-## it cannot grow freely: the widest tab wants 439 and the budget at 120 is 580.
-const RAIL_WIDTH := 120
+## The reference is 941 px wide and its rail is 213 -- 22.6% -- which on this
+## project's 720-unit grid is 163. Everything below comes from the same
+## measurement, at the same scale:
+##
+##   plate height  156 px -> 119 units
+##   gap           8 px   -> 6 units
+##   portrait      138 px -> 106 units
+##
+## 156 is what makes it look drawn rather than fitted, and it is why this is not
+## simply the old rail made wider.
+##
+## 152, not 163: tabs_fit derives every tab's width budget from this, and the
+## shell's own minimum is rail + content. 163 left five units of the screen
+## spare, which is not a margin.
+const RAIL_WIDTH := 152
 
 ## The rail's own tap height, separate from UI.TAP_MIN so that shrinking the
 ## rail does not shrink every button in the game.
 ##
-## 80 units is 48.9 pt on a 16 Pro Max at the 0.611 pt/unit this file's type
-## scale is calibrated to, and 42.1 pt on an SE -- comfortably over Apple's
-## minimum on the device this is played on, and within the tolerance ui.gd
-## already documents on the smallest one.
-const RAIL_TAP := 80
+## The plate height from the reference, scaled. At 80 the icon was a third of
+## the plate and the whole column read as a list of captions.
+const RAIL_TAP := 112
 
 ## How often the client says it is still here.
 ##
 ## The server treats silence past 90 seconds as gone, so thirty is three beats
 ## of headroom -- one lost request on a train must not read as leaving.
 const BEAT_SECONDS := 30.0
-## The icon is the entry, and the word underneath it is the caption. At ICON_MD
-## it was the other way round.
-const ICON_SIZE := 44
+## The icon is the entry and the word under it is the caption -- which is the
+## proportion the reference draws, and the one this kept getting backwards.
+const ICON_SIZE := 62
 
 ## The gap between two carved plates. Three units of marble is what makes them
 ## nine stones set into a column rather than one strip with lines on it.
-const RAIL_GAP := 3
+const RAIL_GAP := 6
 
 ## Short enough that spamming Collect never leaves the counter visibly behind the
 ## real balance, long enough to read as movement.
 const GOLD_ROLL_SECONDS := 0.30
-## Smaller than UI.TAP_MIN, because the rail's vertical budget is the tightest
-## thing in this file and eight units here is eight units the House button does
-## not lose off the bottom of an iPad. 68 is still a 41 pt target on a 16 Pro
-## Max, and the ring drawn inside it is decoration, not margin.
-const AVATAR_SIZE := 68
+## The portrait from the reference, scaled: 138 px of 941 is 106 units, and
+## 96 is that less the collar's own bleed.
+const AVATAR_SIZE := 96
 
 ## Floors, not fixed heights. The top bar sizes to its own content and the action
 ## host to the tallest bar any section mounts; these only stop them collapsing.
 ## The safe-area inset is added on top of both at runtime, so the numbers here
 ## stay device-independent.
 ##
-## 96, down from 140: the bar was two stacked rows -- a portrait, a name and an
-## experience bar over a full-width energy meter. It is one banner now, and the
-## 44 units it gave back are most of what the rail's portrait costs.
-const TOPBAR_MIN_H := 96
+## 76. The reference's banner is 75 px of 1672 -- 4.5% -- which is 57 units
+## here; 76 is the floor its contents actually need, a coin chip plus padding
+## plus the experience thread. The rail's plates are what the difference buys.
+const TOPBAR_MIN_H := 76
 
 ## 116 for the button, a line of caption under it, and margins. Measured on an
 ## iPhone SE, which is the tightest device: at 164 the caption grazed the edge.
@@ -98,6 +119,7 @@ var _gold_tween: Tween
 
 var _current := "jobs"
 var _rail_buttons: Dictionary = {}
+var _more_btn: Button
 var _content: Control
 var _action_host: Control
 var _toast: Label
@@ -168,8 +190,6 @@ func _ready() -> void:
 	content_col.add_child(_content)
 
 	_toast = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
-	_toast.custom_minimum_size = Vector2(0, 30)
-	root.add_child(_toast)
 
 	_action_host = MarginContainer.new()
 	_action_host.custom_minimum_size = Vector2(0, ACTION_H)
@@ -177,6 +197,18 @@ func _ready() -> void:
 		(_action_host as MarginContainer).add_theme_constant_override("margin_" + side, 12)
 	(_action_host as MarginContainer).add_theme_constant_override("margin_bottom", 12)
 	root.add_child(_action_host)
+
+	# The toast is anchored over the action strip rather than given a row of its
+	# own. It is empty for all but a couple of seconds at a time, and it was
+	# holding thirty units open permanently to say nothing -- thirty units the
+	# rail's plates now have. Added last so it draws over the button.
+	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast.anchor_left = 0.0
+	_toast.anchor_right = 1.0
+	_toast.anchor_top = 1.0
+	_toast.anchor_bottom = 1.0
+	_toast.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	add_child(_toast)
 
 	# Holds the player in place through an outage instead of letting them fall
 	# back to the sign-in screen, which is where a lost connection used to end.
@@ -385,6 +417,10 @@ func _apply_safe_insets() -> void:
 		"margin_bottom", 12 + int(i.w))
 	_action_host.custom_minimum_size.y = ACTION_H + int(i.w)
 
+	var above := ACTION_H + int(i.w)
+	_toast.offset_top = -above - 34
+	_toast.offset_bottom = -above
+
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_RESUMED:
@@ -427,6 +463,36 @@ func _purse_chip(host: Control, icon: String, tint: Color) -> Label:
 	line.add_child(value)
 	host.add_child(box)
 	return value
+
+
+## A rail glyph with a shadow under it, so it reads as cut into the plate.
+##
+## The reference's icons are painted objects with their own light; these are one
+## flat path each, which is the right call at this size and is what lets the
+## client tint a single texture gold when a section is open. Drawing the same
+## texture twice -- once dark and offset, once in its real colour -- buys most of
+## that depth back for six lines and keeps the tinting.
+func _relief_icon(tex: Texture2D, size: int) -> Control:
+	var host := Control.new()
+	host.custom_minimum_size = Vector2(size, size)
+	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	for pass_index in 2:
+		var t := TextureRect.new()
+		t.texture = tex
+		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		t.set_anchors_preset(Control.PRESET_FULL_RECT)
+		t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if pass_index == 0:
+			# The shadow, down and right by a unit and a half.
+			t.offset_left = 2
+			t.offset_top = 2
+			t.offset_right = 2
+			t.offset_bottom = 2
+			t.modulate = Color(0, 0, 0, 0.28)
+		host.add_child(t)
+	return host
 
 
 ## A gold ornament that never takes a tap and never forces a row taller.
@@ -538,7 +604,8 @@ func _build_rail() -> Control:
 	nav.add_theme_constant_override("separation", RAIL_GAP)
 	col.add_child(nav)
 
-	for s in SECTIONS:
+	for rail_id in RAIL_SECTIONS:
+		var s := _section(rail_id)
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(0, RAIL_TAP)
 		b.focus_mode = Control.FOCUS_NONE
@@ -555,13 +622,7 @@ func _build_rail() -> Control:
 		# 72 px rail button to grow.
 		var tex := ArtRegistry.ui_icon(str(s["icon"]))
 		if tex != null:
-			var icon := TextureRect.new()
-			icon.texture = tex
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
-			icon.modulate = Palette.TEXT_DIM
-			inner.add_child(icon)
+			inner.add_child(_relief_icon(tex, ICON_SIZE))
 		else:
 			# An unshipped icon must not leave an unlabelled button. Both branches
 			# tint through the same call below, so _style_rail needs no branch.
@@ -596,25 +657,51 @@ func _build_rail() -> Control:
 		lock.add_child(lock_text)
 		_rail_locks[str(s["id"])] = lock
 
-	# Settings, at the foot. It is a rail entry rather than a tenth SECTION so
-	# that lint check 4 -- which reads SECTIONS and demands an icon at
-	# assets/ui/<name>.png -- is not asked about an ornament.
-	var gear := Button.new()
-	# Shorter than a nav plate: it carries an icon and no word, and the rail's
-	# vertical budget is the tightest thing in this file.
-	gear.custom_minimum_size = Vector2(0, 48)
-	gear.focus_mode = Control.FOCUS_NONE
-	gear.tooltip_text = "Settings"
-	gear.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
-	gear.add_theme_stylebox_override("hover", UI.skin("plaque", Palette.RAIL, 4, 4))
-	gear.add_theme_stylebox_override("pressed", UI.skin("plaque", Palette.RAIL, 4, 4))
-	var gear_icon := _ornament("orn/gear", UI.ICON_MD, UI.ICON_MD)
-	gear_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
-	gear_icon.modulate = Palette.TEXT_FAINT
-	gear.add_child(gear_icon)
-	col.add_child(gear)
+	# The foot plate: the three sections the column cannot carry, and settings.
+	# It is a plate like any other, because it is a place you go rather than a
+	# control you operate.
+	_more_btn = Button.new()
+	# Shorter than a section's plate, because it is not a section.
+	_more_btn.custom_minimum_size = Vector2(0, 88)
+	_more_btn.focus_mode = Control.FOCUS_NONE
+	_more_btn.tooltip_text = "Hero, Estates, Bank and settings"
+	_more_btn.pressed.connect(_open_more)
+
+	var more_inner := VBoxContainer.new()
+	more_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	more_inner.set_anchors_preset(Control.PRESET_FULL_RECT)
+	more_inner.alignment = BoxContainer.ALIGNMENT_CENTER
+	more_inner.add_theme_constant_override("separation", 2)
+	var more_icon := TextureRect.new()
+	more_icon.texture = ArtRegistry.ui_icon("orn/gear")
+	more_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	more_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	more_icon.custom_minimum_size = Vector2(UI.ICON_MD, UI.ICON_MD)
+	more_icon.modulate = Palette.TEXT_DIM
+	more_inner.add_child(more_icon)
+	more_inner.add_child(UI.label("More", UI.F_BODY, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER))
+	_more_btn.add_child(more_inner)
+	col.add_child(_more_btn)
 
 	return panel
+
+
+## One entry of SECTIONS by id.
+func _section(id: String) -> Dictionary:
+	for sec in SECTIONS:
+		if str(sec["id"]) == id:
+			return sec
+	return {}
+
+
+## The overflow sheet: the three sections the rail cannot carry, and settings.
+func _open_more() -> void:
+	var entries: Array = []
+	for id in MORE_SECTIONS:
+		entries.append(_section(str(id)))
+	var sheet: CanvasLayer = load("res://scenes/shell/more_sheet.gd").new(entries)
+	sheet.chose.connect(_open)
+	add_child(sheet)
 
 
 ## The player, at the head of their own rail: portrait in a gold ring, with the
@@ -814,6 +901,22 @@ func _unlock_level(id: String) -> int:
 
 
 func _style_rail() -> void:
+	if _more_btn != null:
+		var in_more: bool = MORE_SECTIONS.has(_current)
+		var more_face := "nav_active" if in_more else "nav"
+		_more_btn.add_theme_stylebox_override(
+			"normal", UI.skin(more_face, Palette.BANNER if in_more else Palette.RAIL, 4, 4))
+		_more_btn.add_theme_stylebox_override("hover", UI.skin(more_face, Palette.RAIL, 4, 4))
+		_more_btn.add_theme_stylebox_override(
+			"pressed", UI.skin("nav_active", Palette.BANNER, 4, 4))
+		var mi := _more_btn.get_child(0)
+		mi.get_child(0).modulate = Palette.GOLD if in_more else Palette.TEXT_DIM
+		(mi.get_child(1) as Label).add_theme_color_override("font_color",
+			Palette.BANNER_INK if in_more else Palette.TEXT_DIM)
+		# The word says where you are when you are behind this plate.
+		(mi.get_child(1) as Label).text = \
+			str(_section(_current).get("label", "More")) if in_more else "More"
+
 	for id in _rail_buttons:
 		var b: Button = _rail_buttons[id]
 		var open := _unlocked(str(id))
@@ -837,7 +940,13 @@ func _style_rail() -> void:
 		var tint := Palette.GOLD if active else Palette.TEXT_DIM
 		if not open:
 			tint = Palette.EMPTY_SLOT
-		inner.get_child(0).modulate = tint
+		# Child 1 of the relief host is the lit copy; child 0 is its shadow and
+		# must stay black or the glyph loses its edge.
+		var glyph_host := inner.get_child(0)
+		if glyph_host.get_child_count() > 1:
+			glyph_host.get_child(1).modulate = tint
+		else:
+			glyph_host.modulate = tint
 		inner.get_child(1).add_theme_color_override("font_color",
 			Palette.BANNER_INK if active else (Palette.TEXT_DIM if open else Palette.EMPTY_SLOT))
 

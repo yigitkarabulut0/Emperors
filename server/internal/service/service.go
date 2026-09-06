@@ -40,4 +40,9 @@ type Deps struct {
 	// ShopSecret seeds the deterministic shop roll. Never leaves the server:
 	// anyone holding it could predict which window contains a legendary.
 	ShopSecret []byte
+
+	// Server-wide event modifiers, polled rather than queried per request.
+	// Nil is legal and means no events -- Get() answers nil safely -- so tests
+	// and tools that build a Deps by hand keep working untouched.
+	Boosts *Boosts
 }

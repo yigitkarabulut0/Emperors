@@ -63,6 +63,11 @@ func AdminRouter(svc *admin.Service, log *slog.Logger) http.Handler {
 		r.Post("/balance/publish", a.publish)
 		r.Post("/balance/rollback", a.rollback)
 
+		// Server-wide events.
+		r.Get("/boosts", a.listBoosts)
+		r.Post("/boosts", a.createBoost)
+		r.Post("/boosts/revoke", a.revokeBoost)
+
 		r.Get("/audit", a.audit)
 	})
 	return r
@@ -420,4 +425,51 @@ func decodePlayer(w http.ResponseWriter, r *http.Request, req any, field *string
 		return uuid.Nil, false
 	}
 	return id, true
+}
+
+// --- server-wide events ---
+
+func (a *adminAPI) listBoosts(w http.ResponseWriter, r *http.Request) {
+	rows, err := a.svc.ListBoosts(r.Context(), 50)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{
+		"boosts":  rows,
+		"buckets": admin.BoostableBuckets(),
+	})
+}
+
+func (a *adminAPI) createBoost(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Bucket   string `json:"bucket"`
+		AmountBP int64  `json:"amount_bp"`
+		Hours    int    `json:"hours"`
+		Note     string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	row, err := a.svc.CreateBoost(r.Context(), who(r), req.Bucket, req.AmountBP, req.Hours, req.Note)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, row)
+}
+
+func (a *adminAPI) revokeBoost(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID int64 `json:"id"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	row, err := a.svc.RevokeBoost(r.Context(), who(r), req.ID)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, row)
 }

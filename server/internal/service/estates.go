@@ -10,8 +10,10 @@ import (
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
+	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
 
 var (
@@ -57,6 +59,24 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 			kLevels[k.UpgradeID] = int(k.Level)
 		}
 		estates.ApplyKingdom(d.Config, &eff, int64(p.Level), kLevels, holdLevels)
+	}
+
+	// Server-wide events feed the SAME buckets as everything else, which is what
+	// makes them safe: each bucket keeps its own cap, so an event can lift a
+	// player toward a ceiling but never past one the game's own upgrades could
+	// not already reach. ApplyBucket stays the single place a percentage is
+	// applied, so the cap is still a cap.
+	for bucket, bp := range d.Boosts.Get() {
+		switch bucket {
+		case gameconfig.BucketCollectIncome:
+			eff.Bonuses.Add(economy.BucketCollectIncome, bp)
+		case gameconfig.BucketXP:
+			eff.Bonuses.Add(economy.BucketXPGain, bp)
+		case gameconfig.BucketTaxIncome:
+			eff.TaxMilliPerHour = eff.TaxMilliPerHour * (10000 + bp) / 10000
+		case gameconfig.BucketLuck:
+			eff.LuckBP += bp
+		}
 	}
 
 	// The admin override ADDS to whatever the config granted, and the sum is

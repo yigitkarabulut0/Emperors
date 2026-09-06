@@ -18,9 +18,9 @@ var ErrInvalidAmount = errors.New("amount must be positive")
 
 // TreasuryResult is what the player sees after moving gold.
 type TreasuryResult struct {
-	Moved    int64     `json:"moved"`    // what left the purse (deposit) or arrived in it (withdraw)
-	Fee      int64     `json:"fee"`      // burned on the way in
-	Banked   int64     `json:"banked"`   // what actually landed in the vault
+	Moved    int64     `json:"moved"`  // what left the purse (deposit) or arrived in it (withdraw)
+	Fee      int64     `json:"fee"`    // burned on the way in
+	Banked   int64     `json:"banked"` // what actually landed in the vault
 	Snapshot *Snapshot `json:"snapshot"`
 }
 

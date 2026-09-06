@@ -130,3 +130,28 @@ SELECT * FROM admin.audit_log
 WHERE subject = $1
 ORDER BY created_at DESC
 LIMIT $2;
+
+-- Every boost in force at this instant. Read on a poll, never per request.
+-- name: ActiveBoosts :many
+SELECT bucket, sum(amount_bp)::bigint AS amount_bp
+FROM admin.server_boosts
+WHERE revoked_at IS NULL
+  AND starts_at <= sqlc.arg(now)::timestamptz
+  AND ends_at   >  sqlc.arg(now)::timestamptz
+GROUP BY bucket;
+
+-- name: CreateBoost :one
+INSERT INTO admin.server_boosts (bucket, amount_bp, starts_at, ends_at, note, created_by)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING *;
+
+-- Revoked, never deleted: "why was everyone earning double on the 14th" has to
+-- stay answerable long after the event.
+-- name: RevokeBoost :one
+UPDATE admin.server_boosts
+SET revoked_at = now(), revoked_by = sqlc.arg(revoked_by)
+WHERE id = sqlc.arg(id) AND revoked_at IS NULL
+RETURNING *;
+
+-- name: ListBoosts :many
+SELECT * FROM admin.server_boosts ORDER BY starts_at DESC LIMIT $1;

@@ -104,7 +104,7 @@ func (d Deps) itemView(r sqlcdb.AppPlayerItem) ItemView {
 		ID: r.ID.String(), DefID: r.DefID, Name: name, Slot: r.Slot, Tier: r.Tier, Art: art,
 		Ilvl: int64(r.Ilvl), QualityPct: int64(r.QualityPct), Masterwork: r.Masterwork,
 		Attack: r.Attack, Defense: r.Defense, Speed: r.Speed,
-		Power:     inst.Power(d.Config),
+		Power:      inst.Power(d.Config),
 		SellPrice:  items.SellPrice(d.Config, inst),
 		Equipped:   r.EquippedOnHero,
 		EquippedOn: equippedOn(r),

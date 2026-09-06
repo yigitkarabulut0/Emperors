@@ -220,9 +220,17 @@ func jobViews(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, collects map[string]in
 
 		v := JobView{
 			ID: j.ID, Name: j.Name, Order: j.Order,
-			EnergyCost:     j.EnergyCost,
-			GoldPayout:     res.Gold,
-			XPPayout:       res.XP,
+			EnergyCost: j.EnergyCost,
+			GoldPayout: res.Gold,
+			// The bucket, applied here too.
+			//
+			// economy.Collect returns the job's RAW experience, because AwardXP is
+			// what applies the experience bucket when the collect actually lands.
+			// That is correct for the award and wrong for the list: during a
+			// double-experience event every row advertised the base number and
+			// then paid twice it, so the one screen a player reads constantly
+			// disagreed with what they were given.
+			XPPayout:       economy.ApplyBucket(res.XP, bonuses, economy.BucketXPGain),
 			Collects:       done,
 			MasteryBonusBP: cfg.MilestoneBonusBP(done),
 			UnlockLevel:    j.UnlockLevel,

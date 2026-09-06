@@ -99,9 +99,19 @@ func run() error {
 		return err
 	}
 
+	// Server-wide event modifiers. Loaded once at boot and then polled, because
+	// loadEffects runs on every authenticated request and a query there would
+	// put a database round trip in front of every action in the game.
+	boosts := service.NewBoosts(pool, log, time.Now)
+	if err := boosts.Refresh(startCtx); err != nil {
+		log.Warn("could not load server boosts, starting with none", "err", err)
+	}
+	go boosts.Poll(ctx, 30*time.Second)
+
 	svc := service.Deps{
 		Pool: pool, Config: bundle, Signer: signer, Now: time.Now,
 		ShopSecret: cfg.ShopSecret,
+		Boosts:     boosts,
 	}
 
 	ready := &readiness{}
@@ -125,7 +135,9 @@ func run() error {
 	// The admin surface listens separately. In production it binds to an
 	// interface players cannot reach; nothing that can grant currency shares a
 	// listener with the game API.
-	adminSvc := &admin.Service{Pool: pool, Config: store}
+	// The admin service shares the boost store, so a boost created in the panel
+	// is live on the next poll without a restart.
+	adminSvc := &admin.Service{Pool: pool, Config: store, Boosts: boosts}
 	adminSrv := &http.Server{
 		Addr:              cfg.AdminAddr,
 		Handler:           httpx.AdminRouter(adminSvc, log.With("surface", "admin")),

@@ -142,7 +142,8 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 			statPoints, diamonds = up.StatPoints, up.Diamonds
 			levelsGained += up.LevelsGained
 			goldGained += reward.Gold
-			xpGained += reward.XP
+			// The awarded figure, matching what AwardXP actually credited.
+			xpGained += economy.ApplyBucket(reward.XP, eff.Bonuses, economy.BucketXPGain)
 			if reward.MilestoneHit != nil {
 				res.MilestoneHit = reward.MilestoneHit.Collects
 			}

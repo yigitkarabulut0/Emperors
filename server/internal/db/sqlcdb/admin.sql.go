@@ -12,6 +12,41 @@ import (
 	"github.com/google/uuid"
 )
 
+const activeBoosts = `-- name: ActiveBoosts :many
+SELECT bucket, sum(amount_bp)::bigint AS amount_bp
+FROM admin.server_boosts
+WHERE revoked_at IS NULL
+  AND starts_at <= $1::timestamptz
+  AND ends_at   >  $1::timestamptz
+GROUP BY bucket
+`
+
+type ActiveBoostsRow struct {
+	Bucket   string
+	AmountBp int64
+}
+
+// Every boost in force at this instant. Read on a poll, never per request.
+func (q *Queries) ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoostsRow, error) {
+	rows, err := q.db.Query(ctx, activeBoosts, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ActiveBoostsRow{}
+	for rows.Next() {
+		var i ActiveBoostsRow
+		if err := rows.Scan(&i.Bucket, &i.AmountBp); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const adminAdjustCurrency = `-- name: AdminAdjustCurrency :one
 UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at
 `
@@ -575,6 +610,46 @@ func (q *Queries) CreateAdminUser(ctx context.Context, arg CreateAdminUserParams
 	return i, err
 }
 
+const createBoost = `-- name: CreateBoost :one
+INSERT INTO admin.server_boosts (bucket, amount_bp, starts_at, ends_at, note, created_by)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, bucket, amount_bp, starts_at, ends_at, note, created_by, created_at, revoked_at, revoked_by
+`
+
+type CreateBoostParams struct {
+	Bucket    string
+	AmountBp  int64
+	StartsAt  time.Time
+	EndsAt    time.Time
+	Note      string
+	CreatedBy string
+}
+
+func (q *Queries) CreateBoost(ctx context.Context, arg CreateBoostParams) (AdminServerBoost, error) {
+	row := q.db.QueryRow(ctx, createBoost,
+		arg.Bucket,
+		arg.AmountBp,
+		arg.StartsAt,
+		arg.EndsAt,
+		arg.Note,
+		arg.CreatedBy,
+	)
+	var i AdminServerBoost
+	err := row.Scan(
+		&i.ID,
+		&i.Bucket,
+		&i.AmountBp,
+		&i.StartsAt,
+		&i.EndsAt,
+		&i.Note,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.RevokedAt,
+		&i.RevokedBy,
+	)
+	return i, err
+}
+
 const getAdminByID = `-- name: GetAdminByID :one
 SELECT id, username, password_hash, role, disabled, created_at, last_login_at FROM admin.users WHERE id = $1
 `
@@ -727,6 +802,41 @@ func (q *Queries) ListAudit(ctx context.Context, limit int32) ([]AdminAuditLog, 
 	return items, nil
 }
 
+const listBoosts = `-- name: ListBoosts :many
+SELECT id, bucket, amount_bp, starts_at, ends_at, note, created_by, created_at, revoked_at, revoked_by FROM admin.server_boosts ORDER BY starts_at DESC LIMIT $1
+`
+
+func (q *Queries) ListBoosts(ctx context.Context, limit int32) ([]AdminServerBoost, error) {
+	rows, err := q.db.Query(ctx, listBoosts, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminServerBoost{}
+	for rows.Next() {
+		var i AdminServerBoost
+		if err := rows.Scan(
+			&i.ID,
+			&i.Bucket,
+			&i.AmountBp,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.Note,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.RevokedAt,
+			&i.RevokedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const playerCounts = `-- name: PlayerCounts :one
 SELECT
   count(*) FILTER (WHERE NOT is_bot)::bigint AS players,
@@ -771,6 +881,38 @@ UPDATE admin.sessions SET revoked_at = now() WHERE token_hash = $1
 func (q *Queries) RevokeAdminSession(ctx context.Context, tokenHash []byte) error {
 	_, err := q.db.Exec(ctx, revokeAdminSession, tokenHash)
 	return err
+}
+
+const revokeBoost = `-- name: RevokeBoost :one
+UPDATE admin.server_boosts
+SET revoked_at = now(), revoked_by = $1
+WHERE id = $2 AND revoked_at IS NULL
+RETURNING id, bucket, amount_bp, starts_at, ends_at, note, created_by, created_at, revoked_at, revoked_by
+`
+
+type RevokeBoostParams struct {
+	RevokedBy *string
+	ID        int64
+}
+
+// Revoked, never deleted: "why was everyone earning double on the 14th" has to
+// stay answerable long after the event.
+func (q *Queries) RevokeBoost(ctx context.Context, arg RevokeBoostParams) (AdminServerBoost, error) {
+	row := q.db.QueryRow(ctx, revokeBoost, arg.RevokedBy, arg.ID)
+	var i AdminServerBoost
+	err := row.Scan(
+		&i.ID,
+		&i.Bucket,
+		&i.AmountBp,
+		&i.StartsAt,
+		&i.EndsAt,
+		&i.Note,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.RevokedAt,
+		&i.RevokedBy,
+	)
+	return i, err
 }
 
 const searchPlayers = `-- name: SearchPlayers :many

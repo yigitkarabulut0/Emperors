@@ -129,8 +129,12 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 		}
 
 		res = CollectResult{
-			GoldGained:     reward.Gold,
-			XPGained:       reward.XP,
+			GoldGained: reward.Gold,
+			// The experience actually awarded, not the job's raw figure.
+			// AwardXP applies the experience bucket internally, so reporting
+			// reward.XP told a player "+2 xp" while their bar moved by 4 during
+			// a double-experience event.
+			XPGained:       economy.ApplyBucket(reward.XP, eff.Bonuses, economy.BucketXPGain),
 			LevelsGained:   up.LevelsGained,
 			DiamondsGained: up.Diamonds,
 		}

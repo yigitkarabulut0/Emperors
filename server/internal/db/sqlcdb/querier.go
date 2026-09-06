@@ -6,6 +6,7 @@ package sqlcdb
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -17,6 +18,8 @@ type Querier interface {
 	// was live when survives — the only way to explain an old battle after a
 	// rebalance.
 	ActiveBalance(ctx context.Context) (ActiveBalanceRow, error)
+	// Every boost in force at this instant. Read on a poll, never per request.
+	ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoostsRow, error)
 	// Reputation from a raid, honouring the per-member daily cap.
 	AddKingdomReputation(ctx context.Context, arg AddKingdomReputationParams) error
 	AddKingdomTreasury(ctx context.Context, arg AddKingdomTreasuryParams) (AppKingdom, error)
@@ -84,6 +87,7 @@ type Querier interface {
 	CreateAdminSession(ctx context.Context, arg CreateAdminSessionParams) (AdminSession, error)
 	CreateAdminUser(ctx context.Context, arg CreateAdminUserParams) (AdminUser, error)
 	CreateBalanceVersion(ctx context.Context, arg CreateBalanceVersionParams) (AdminBalanceVersion, error)
+	CreateBoost(ctx context.Context, arg CreateBoostParams) (AdminServerBoost, error)
 	CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer, error)
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) (AppIdentity, error)
 	CreateInvite(ctx context.Context, arg CreateInviteParams) error
@@ -149,6 +153,7 @@ type Querier interface {
 	ListAudit(ctx context.Context, limit int32) ([]AdminAuditLog, error)
 	ListBalanceVersions(ctx context.Context, limit int32) ([]ListBalanceVersionsRow, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
+	ListBoosts(ctx context.Context, limit int32) ([]AdminServerBoost, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
 	ListInvitesForPlayer(ctx context.Context, playerID uuid.UUID) ([]ListInvitesForPlayerRow, error)
@@ -196,6 +201,9 @@ type Querier interface {
 	// Dismissing a soldier must not destroy its gear; the items return to the bag.
 	ReleaseSoldierItems(ctx context.Context, arg ReleaseSoldierItemsParams) error
 	RevokeAdminSession(ctx context.Context, tokenHash []byte) error
+	// Revoked, never deleted: "why was everyone earning double on the 14th" has to
+	// stay answerable long after the event.
+	RevokeBoost(ctx context.Context, arg RevokeBoostParams) (AdminServerBoost, error)
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	// Revokes an entire rotation chain. Presenting an already-rotated refresh token
 	// means the token was captured, so every descendant of that family is burned.

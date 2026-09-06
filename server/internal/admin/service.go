@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
+	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
 var (
@@ -23,6 +24,10 @@ type Service struct {
 	Pool   *pgxpool.Pool
 	Config *gameconfig.Store
 	Now    func() int64
+
+	// Shared with the game service, so a boost created here is live on its next
+	// poll rather than at the next restart.
+	Boosts *service.Boosts
 }
 
 // now is the clock, and it never panics.

@@ -41,6 +41,19 @@ type AdminBalanceVersion struct {
 	CreatedAt time.Time
 }
 
+type AdminServerBoost struct {
+	ID        int64
+	Bucket    string
+	AmountBp  int64
+	StartsAt  time.Time
+	EndsAt    time.Time
+	Note      string
+	CreatedBy string
+	CreatedAt time.Time
+	RevokedAt *time.Time
+	RevokedBy *string
+}
+
 type AdminSession struct {
 	ID        uuid.UUID
 	AdminID   uuid.UUID

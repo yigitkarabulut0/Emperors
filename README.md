@@ -14,13 +14,19 @@ Next.js admin panel. iPhone first, then Android, then Steam.
 | `art/` | Gemini asset-generation workspace. **Never** imported by Godot |
 | `contract/` | OpenAPI spec + generated clients |
 | `infra/` | Dockerfile, compose, Caddy, deploy |
-| `docs/` | Architecture and the full design corpus under `docs/design/` |
+| `docs/` | `FRONTEND.md`, the build plan, and the design corpus under `docs/design/` |
 | `proof/` | Per-milestone evidence from the real device |
 
 ## Start here
 
+- **`CLAUDE.md`** — the five rules, the deploy sequence, and the mistakes this
+  codebase has already made. Read it before changing anything.
+- **`docs/FRONTEND.md`** — every screen, every endpoint, the UI system and the
+  art pipeline. Read it before changing anything in `client/`.
 - `docs/PLAN.md` — the build plan and milestones
-- `docs/design/` — seven subsystem designs, each with its adversarial review appended
+- `docs/design/` — seven subsystem designs, each with its adversarial review
+  appended. Parts of `economy.md` are now out of date; its header carries a table
+  of which parts and what replaced them.
 
 ## Development
 

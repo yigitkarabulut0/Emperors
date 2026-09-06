@@ -687,6 +687,152 @@ def house() -> str:
     ])
 
 
+
+# --- ornaments ----------------------------------------------------------------
+#
+# The Roman furniture: laurel, eagle, rule, crest. Same rules as every icon here
+# -- one flat white path on transparency, so the client tints a single texture
+# with modulate instead of shipping a variant per state.
+#
+# These are drawn under fill-rule NONZERO, not evenodd. A laurel leaf has to
+# overlap the stem it grows from, and under evenodd two overlapping filled
+# subpaths punch each other out -- which is what gives an icon its holes for
+# free and what would turn a laurel branch into lace. Wound the same way,
+# nonzero merges them.
+
+LAUREL_VIEW = (64.0, 24.0)
+RULE_VIEW = (128.0, 10.0)
+
+
+def _leaf(x: float, y: float, length: float, width: float, angle_deg: float) -> str:
+    """One almond leaf, growing from (x, y) along `angle_deg`.
+
+    Two quadratic curves meeting at the tip. A polygon would be cheaper and
+    reads as a shard at 40 px; the curve is what makes it a leaf.
+    """
+    a = math.radians(angle_deg)
+    ux, uy = math.cos(a), math.sin(a)
+    px_, py_ = -uy, ux                      # unit normal
+    tx, ty = x + ux * length, y + uy * length
+    mx, my = x + ux * length * 0.45, y + uy * length * 0.45
+    c1x, c1y = mx + px_ * width, my + py_ * width
+    c2x, c2y = mx - px_ * width, my - py_ * width
+    return (f"M{x:.3g},{y:.3g}"
+            f"Q{c1x:.3g},{c1y:.3g} {tx:.3g},{ty:.3g}"
+            f"Q{c2x:.3g},{c2y:.3g} {x:.3g},{y:.3g}Z")
+
+
+def _branch(flip: bool = False) -> tuple[str, str]:
+    """A laurel branch: a tapering stem with six pairs of leaves.
+
+    Judged at 40 px, per docs/ART.md. Veins and a fine stem vanish there, so
+    this is six fat leaf masses and a stem thick enough to survive -- the
+    silhouette is the whole icon at that size.
+
+    `flip` mirrors every x about the view width rather than repeating the same
+    art twice, so the pair frames a title symmetrically. The first version of
+    this took the flag and ignored it, and shipped two identical branches.
+    """
+    W = LAUREL_VIEW[0]
+    fx = (lambda x: W - x) if flip else (lambda x: x)
+    fa = (lambda a: 180.0 - a) if flip else (lambda a: a)
+
+    parts: list[str] = []
+    # the stem, thick at the root and tapering to the tip
+    parts.append(
+        f"M{fx(2):.3g},13.4Q{fx(30):.3g},10.6 {fx(60):.3g},10.6"
+        f"L{fx(60):.3g},13.0Q{fx(30):.3g},13.0 {fx(2):.3g},15.6Z")
+    for i in range(6):
+        t_ = i / 5.0
+        x = 8 + t_ * 46
+        y = 13.6 - t_ * 2.4
+        length = 8.4 - t_ * 2.6
+        width = 3.0 - t_ * 0.9
+        parts.append(_leaf(fx(x), y, length, width, fa(-58 + t_ * 16)))
+        parts.append(_leaf(fx(x + 2.5), y, length * 0.86, width * 0.9, fa(52 - t_ * 14)))
+    return " ".join(parts), "nonzero"
+
+
+def laurel_r():
+    return _branch(False)
+
+
+def laurel_l():
+    return _branch(True)
+
+
+def rule_bar():
+    """A hairline with a diamond at its centre, for dividing a card."""
+    return (
+        rect(3, 4.3, 52, 1.4)
+        + poly((64, 1.2), (68.6, 5.0), (64, 8.8), (59.4, 5.0))
+        + rect(73, 4.3, 52, 1.4),
+        "nonzero",
+    )
+
+
+def _wing(flip: bool) -> str:
+    """One eagle wing, swept up and out, with a notched trailing edge.
+
+    The notches are the whole point. A smooth swept curve on both edges is a
+    moth -- which is exactly what the first draft of this looked like at 32 px.
+    Three steps along the underside read as primaries and nothing else does.
+    """
+    pts = [(16.0, 12.6), (19.2, 9.4), (23.0, 7.8), (27.4, 7.2), (29.8, 8.6),
+           (26.2, 10.4), (27.2, 12.0), (23.4, 13.0), (23.8, 14.8),
+           (20.4, 14.6), (20.0, 16.2), (17.0, 14.6)]
+    if flip:
+        pts = [(32.0 - x, y) for x, y in pts]
+    return poly(*pts)
+
+
+def eagle():
+    """The aquila: wings out, head in profile, standing on a bar.
+
+    At 32 px an eagle is a silhouette and nothing else -- no feathers on the
+    body, no legs, no talons. What has to survive is the notched wing and the
+    hooked beak; everything else is mass.
+    """
+    return (
+        _wing(False)
+        + _wing(True)
+        # body: a wedge, widest at the shoulders
+        + poly((13.9, 12.2), (18.1, 12.2), (17.2, 22.6), (14.8, 22.6))
+        # head, and a hooked beak facing right so the bird has a direction
+        + circle(16.0, 9.4, 2.6)
+        + poly((18.0, 8.4), (22.0, 9.8), (19.4, 10.4), (18.0, 10.9))
+        # the perch
+        + rect(9.5, 23.0, 13, 1.9),
+        "nonzero",
+    )
+
+
+def gear():
+    """Settings. Eight teeth and a bore, cut by winding the bore backwards."""
+    parts = [circle(16, 16, 9.4)]
+    for i in range(8):
+        a = math.radians(i * 45.0)
+        cx, cy = 16 + math.cos(a) * 11.0, 16 + math.sin(a) * 11.0
+        ux, uy = math.cos(a), math.sin(a)
+        px_, py_ = -uy, ux
+        parts.append(poly(
+            (cx + px_ * 2.6 - ux * 2.2, cy + py_ * 2.6 - uy * 2.2),
+            (cx - px_ * 2.6 - ux * 2.2, cy - py_ * 2.6 - uy * 2.2),
+            (cx - px_ * 1.7 + ux * 2.4, cy - py_ * 1.7 + uy * 2.4),
+            (cx + px_ * 1.7 + ux * 2.4, cy + py_ * 1.7 + uy * 2.4),
+        ))
+    parts.append(circle_rev(16, 16, 4.2))
+    return " ".join(parts), "nonzero"
+
+
+# No wreath here on purpose. A closed laurel crown was drawn and cut: at 40 px
+# the leaves merged into the ring they sat on and it read as a bumpy donut. The
+# flanking pair below does the same job and survives the size.
+ORNAMENTS = {"eagle": eagle, "gear": gear}
+ORNAMENTS_WIDE = {"laurel_l": laurel_l, "laurel_r": laurel_r}
+ORNAMENTS_RULE = {"rule": rule_bar}
+
+
 ICONS = {
     "bank": bank, "house": house,
     "keep": keep, "fields": fields, "armory": armory, "market": market,
@@ -707,33 +853,49 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     promote.mkdir(parents=True, exist_ok=True)
 
-    families = [("", ICONS, args.px), ("jobs/", JOBS, args.px),
-                ("upgrades/", UPGRADES, args.px), ("holdings/", HOLDINGS, args.px),
-                ("slots/", SLOTS, args.px), ("currency/", CURRENCY, args.px)]
+    square = (VIEW, VIEW)
+    families = [("", ICONS, args.px, square), ("jobs/", JOBS, args.px, square),
+                ("upgrades/", UPGRADES, args.px, square),
+                ("holdings/", HOLDINGS, args.px, square),
+                ("slots/", SLOTS, args.px, square),
+                ("currency/", CURRENCY, args.px, square),
+                ("orn/", ORNAMENTS, args.px, square),
+                ("orn/", ORNAMENTS_WIDE, args.px * 3, LAUREL_VIEW),
+                ("orn/", ORNAMENTS_RULE, args.px * 5, RULE_VIEW)]
     total = 0
-    for prefix, table, px in families:
+    for prefix, table, px, view in families:
         (out / prefix).mkdir(parents=True, exist_ok=True)
         (promote / prefix).mkdir(parents=True, exist_ok=True)
-        total += render(table, out / prefix, promote / prefix, px, root)
+        total += render(table, out / prefix, promote / prefix, px, root, view)
     print(f"{total} icons at {args.px}px")
     return 0
 
 
 def render(table, out: pathlib.Path, promote: pathlib.Path, px: int,
-           root: pathlib.Path) -> int:
+           root: pathlib.Path, view: tuple[float, float] = (VIEW, VIEW)) -> int:
+    """Rasterises one family.
+
+    `view` is the authoring grid, and it is a parameter rather than the module's
+    square VIEW because the ornaments are not square -- a laurel branch is 64x24
+    and a divider rule 128x8. `px` sizes the LONG edge; the short one follows the
+    aspect, so nothing is stretched.
+    """
+    vw, vh = view
     for name, fn in table.items():
         drawn = fn()
         d, rule = drawn if isinstance(drawn, tuple) else (drawn, "evenodd")
         svg = (
-            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VIEW:g} {VIEW:g}" '
-            f'width="{VIEW:g}" height="{VIEW:g}">'
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {vw:g} {vh:g}" '
+            f'width="{vw:g}" height="{vh:g}">'
             f'<path fill="#FFFFFF" fill-rule="{rule}" d="{d}"/></svg>'
         )
         svg_path = out / f"{name}.svg"
         svg_path.write_text(svg)
         png_path = promote / f"{name}.png"
+        w = px
+        h = max(1, round(px * vh / vw))
         subprocess.run(
-            ["rsvg-convert", "-w", str(px), "-h", str(px),
+            ["rsvg-convert", "-w", str(w), "-h", str(h),
              "-o", str(png_path), str(svg_path)],
             check=True,
         )

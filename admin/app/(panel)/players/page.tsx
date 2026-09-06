@@ -1,150 +1,89 @@
 import Link from "next/link";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { callAdmin, here } from "@/lib/api";
+import { callAdmin } from "@/lib/api";
+import { PlayerTable, type Row } from "./PlayerTable";
 
-type Player = {
-  id: string; username: string; name: string; level: number;
-  gold: string; diamonds: number; state: string; is_bot: boolean; last_seen: string;
-};
-
-const n = (v: string | number) => Number(v).toLocaleString("en-US");
+type Browse = { players: Row[]; total: number; offset: number; limit: number };
 
 export default async function PlayersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; msg?: string; err?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; state?: string; bots?: string; min_level?: string; offset?: string }>;
 }) {
-  const { q = "", msg, err } = await searchParams;
-  // An empty term matches everyone, and the query is ordered by last_seen_at, so
-  // landing on this page with no search shows the 50 most recently active players
-  // — which is what a moderator actually wants to see first.
-  const res = await callAdmin<{ players: Player[] }>(`/players?q=${encodeURIComponent(q)}`);
+  const sp = await searchParams;
+  const q = sp.q ?? "";
+  const sort = sp.sort ?? "last_seen";
+  const offset = Number(sp.offset ?? 0);
+  const limit = 50;
 
-  // Server actions, so no admin token ever reaches the browser and every write
-  // goes through the Go API that owns the game's invariants.
-  //
-  // A refused write comes BACK to this page with its reason, rather than being
-  // thrown. Throwing produced Next's 500 screen, so a moderator who mistyped a
-  // grant got a crash page, lost their search, and never found out that the
-  // refusal was "that would leave a negative balance" -- while this page has
-  // carried an error slot for exactly that message all along.
-  async function adjust(formData: FormData) {
-    "use server";
-    const back = String(formData.get("q") || "");
-    const r = await callAdmin("/players/currency", {
-      method: "POST",
-      body: {
-        player_id: String(formData.get("player_id")),
-        gold: Number(formData.get("gold") || 0),
-        diamonds: Number(formData.get("diamonds") || 0),
-        note: String(formData.get("note") || "via panel"),
-      },
-    });
-    revalidatePath("/players");
-    redirect(here(back, r.ok ? { msg: "Granted." } : { err: r.message }));
-  }
+  const params = new URLSearchParams({
+    q, sort, state: sp.state ?? "", bots: sp.bots ?? "",
+    min_level: sp.min_level ?? "0", limit: String(limit), offset: String(offset),
+  });
+  const res = await callAdmin<Browse>(`/players/browse?${params}`);
 
-  async function setState(formData: FormData) {
-    "use server";
-    const back = String(formData.get("q") || "");
-    const state = String(formData.get("state"));
-    const r = await callAdmin("/players/state", {
-      method: "POST",
-      body: {
-        player_id: String(formData.get("player_id")),
-        state,
-        note: String(formData.get("note") || "via panel"),
-      },
-    });
-    revalidatePath("/players");
-    redirect(here(back, r.ok ? { msg: state === "banned" ? "Banned." : "Unbanned." } : { err: r.message }));
-  }
+  const link = (patch: Record<string, string>) => {
+    const u = new URLSearchParams({ q, sort, ...(sp.state ? { state: sp.state } : {}),
+      ...(sp.bots ? { bots: sp.bots } : {}), ...(sp.min_level ? { min_level: sp.min_level } : {}) });
+    for (const [k, v] of Object.entries(patch)) v ? u.set(k, v) : u.delete(k);
+    return `/players?${u}`;
+  };
 
   return (
     <>
       <h1>Players</h1>
       <p className="muted">
-        Every grant and every ban is written to the audit trail with its before and
-        after values, and a currency grant also writes a ledger row so the economy
-        dashboard stays honest.
+        Grants and bans happen in place — the row updates, the page does not reload.
+        Every one is written to the audit trail with its before and after values,
+        and a gold grant also writes a ledger row so the economy stays honest.
       </p>
 
-      <form className="card row" style={{ marginTop: 16 }}>
-        <input name="q" defaultValue={q} placeholder="Search by username or display name" style={{ flex: 1 }} />
-        <button type="submit">Search</button>
-        {q ? <a className="ghost button" href="/players">Clear</a> : null}
-      </form>
+      {/* Filters navigate; only writes stay inline. A filter IS a new question,
+          and its answer belongs in the URL so it can be shared and reloaded. */}
+      <div className="card card-tight">
+        <form className="row wrap" style={{ gap: 8 }} action="/players">
+          <input name="q" defaultValue={q} placeholder="username or display name" style={{ flex: 1, minWidth: 220 }} />
+          <select name="sort" defaultValue={sort}>
+            <option value="last_seen">Last seen</option>
+            <option value="created">Newest</option>
+            <option value="level">Level</option>
+            <option value="gold">Gold</option>
+          </select>
+          <select name="state" defaultValue={sp.state ?? ""}>
+            <option value="">Any state</option>
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
+          </select>
+          <input name="min_level" defaultValue={sp.min_level ?? ""} placeholder="min level" style={{ width: 110 }} />
+          <label className="row muted" style={{ gap: 6 }}>
+            <input type="checkbox" name="bots" value="1" defaultChecked={sp.bots === "1"} style={{ width: 16 }} />
+            bots
+          </label>
+          <button type="submit">Search</button>
+          {q || sp.state || sp.bots || sp.min_level ? <Link href="/players" className="button ghost">Clear</Link> : null}
+        </form>
+      </div>
 
-      {msg ? <p className="ok">{msg}</p> : null}
-      {err ? <p className="err">{err}</p> : null}
-
-      {!res.ok ? <p className="err">{res.message}</p> : null}
-
-      {res.ok ? (
-        <div className="card" style={{ marginTop: 12 }}>
-          <p className="muted" style={{ margin: "0 0 10px" }}>
-            {q
-              ? `${res.data.players.length} match${res.data.players.length === 1 ? "" : "es"} for “${q}”.`
-              : "The 50 most recently active players. Search to narrow."}
-          </p>
-          <table>
-            <thead>
-              <tr>
-                <th>Player</th><th className="num">Level</th><th className="num">Gold</th>
-                <th className="num">Diamonds</th><th>State</th><th>Last seen</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {res.data.players.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    {/* The list stays the quick surface -- gold and a ban. The
-                        name opens everything else. */}
-                    <div><Link href={`/players/${p.id}`}>{p.name}</Link></div>
-                    <div className="muted" style={{ fontSize: 11 }}>
-                      {p.username}{p.is_bot ? " · bot" : ""}
-                    </div>
-                  </td>
-                  <td className="num">{p.level}</td>
-                  <td className="num">{n(p.gold)}</td>
-                  <td className="num">{n(p.diamonds)}</td>
-                  <td>
-                    <span className={p.state === "banned" ? "pill err" : "pill"}>{p.state}</span>
-                  </td>
-                  <td className="muted">{p.last_seen}</td>
-                  <td>
-                    <div className="row">
-                      <form action={adjust} className="row" style={{ gap: 6 }}>
-                        <input type="hidden" name="player_id" value={p.id} />
-                        <input type="hidden" name="q" value={q} />
-                        <input name="gold" placeholder="gold" style={{ width: 92 }} />
-                        <input name="note" placeholder="reason" style={{ width: 120 }} />
-                        <button className="ghost" type="submit">Grant</button>
-                      </form>
-                      <form action={setState}>
-                        <input type="hidden" name="player_id" value={p.id} />
-                        <input type="hidden" name="q" value={q} />
-                        <input type="hidden" name="state" value={p.state === "banned" ? "active" : "banned"} />
-                        <button className={p.state === "banned" ? "ghost" : "danger"} type="submit">
-                          {p.state === "banned" ? "Unban" : "Ban"}
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {res.data.players.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="muted">
-                    {q ? `Nobody matched “${q}”.` : "No players yet."}
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+      <div className="card">
+        {!res.ok ? <p className="err">{res.message}</p> : (
+          <>
+            <div className="head">
+              <h2>{res.data.total.toLocaleString("en-US")} players</h2>
+              <span className="muted">
+                {offset + 1}–{Math.min(offset + limit, res.data.total)}
+              </span>
+            </div>
+            <PlayerTable rows={res.data.players} />
+            <div className="row" style={{ justifyContent: "space-between", marginTop: 14 }}>
+              {offset > 0
+                ? <Link className="button ghost" href={link({ offset: String(Math.max(0, offset - limit)) })}>← Previous</Link>
+                : <span />}
+              {offset + limit < res.data.total
+                ? <Link className="button ghost" href={link({ offset: String(offset + limit) })}>Next →</Link>
+                : <span />}
+            </div>
+          </>
+        )}
+      </div>
     </>
   );
 }

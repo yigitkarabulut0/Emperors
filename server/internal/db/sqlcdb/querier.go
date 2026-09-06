@@ -20,6 +20,9 @@ type Querier interface {
 	ActiveBalance(ctx context.Context) (ActiveBalanceRow, error)
 	// Every boost in force at this instant. Read on a poll, never per request.
 	ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoostsRow, error)
+	// Players seen on each day. "Active" is last_seen_at, which every authenticated
+	// request already touches.
+	ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]ActiveDailyRow, error)
 	// Reputation from a raid, honouring the per-member daily cap.
 	AddKingdomReputation(ctx context.Context, arg AddKingdomReputationParams) error
 	AddKingdomTreasury(ctx context.Context, arg AddKingdomTreasuryParams) (AppKingdom, error)
@@ -52,6 +55,11 @@ type Querier interface {
 	// That player's own history, newest first, rather than the whole trail.
 	AuditForSubject(ctx context.Context, arg AuditForSubjectParams) ([]AdminAuditLog, error)
 	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
+	// The browsable list: filterable, sortable, paged.
+	//
+	// One query with switched ORDER BY rather than six near-identical ones. The
+	// sort keys are a fixed set from the handler, never anything a caller types.
+	BrowsePlayers(ctx context.Context, arg BrowsePlayersParams) ([]BrowsePlayersRow, error)
 	BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (AppPlayer, error)
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
 	// Advances a job's lifetime count by several collects at once.
@@ -150,6 +158,8 @@ type Querier interface {
 	InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
 	LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, error)
+	// How the population is spread across the level ladder, in bands of ten.
+	LevelBands(ctx context.Context) ([]LevelBandsRow, error)
 	ListAudit(ctx context.Context, limit int32) ([]AdminAuditLog, error)
 	ListBalanceVersions(ctx context.Context, limit int32) ([]ListBalanceVersionsRow, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
@@ -183,6 +193,8 @@ type Querier interface {
 	// never be seen half-applied. The guards are in the WHERE: no row comes back if
 	// the player cannot cover it, and the CHECK constraints refuse a negative side.
 	MoveToTreasury(ctx context.Context, arg MoveToTreasuryParams) (AppPlayer, error)
+	// Who is here right now.
+	OnlineNow(ctx context.Context, since time.Time) ([]OnlineNowRow, error)
 	// Founding: pay, and join in the same statement so a crash cannot leave a
 	// kingdom with no king.
 	PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomParams) (AppPlayer, error)
@@ -192,6 +204,9 @@ type Querier interface {
 	PayForReroll(ctx context.Context, arg PayForRerollParams) (AppPlayer, error)
 	PlayerCounts(ctx context.Context) (PlayerCountsRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
+	// Registrations per day. generate_series so a day with no signups is a zero in
+	// the chart rather than a missing bar that silently narrows the axis.
+	RegistrationsDaily(ctx context.Context, arg RegistrationsDailyParams) ([]RegistrationsDailyRow, error)
 	// Takes an item off whoever is wearing it: the hero, a soldier, or nobody.
 	//
 	// There are two holder columns, so "worn" is not one flag. Clearing only the

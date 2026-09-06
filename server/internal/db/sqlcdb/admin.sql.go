@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const activeBoosts = `-- name: ActiveBoosts :many
@@ -37,6 +38,50 @@ func (q *Queries) ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoos
 	for rows.Next() {
 		var i ActiveBoostsRow
 		if err := rows.Scan(&i.Bucket, &i.AmountBp); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const activeDaily = `-- name: ActiveDaily :many
+SELECT d::date AS day,
+       count(p.id)::bigint AS count
+FROM generate_series(
+        ($1::timestamptz - make_interval(days => $2::int))::date,
+        $1::timestamptz::date, '1 day') AS d
+LEFT JOIN app.players p
+       ON p.last_seen_at::date = d::date AND NOT p.is_bot
+GROUP BY d
+ORDER BY d
+`
+
+type ActiveDailyParams struct {
+	Now  time.Time
+	Days int32
+}
+
+type ActiveDailyRow struct {
+	Day   pgtype.Date
+	Count int64
+}
+
+// Players seen on each day. "Active" is last_seen_at, which every authenticated
+// request already touches.
+func (q *Queries) ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]ActiveDailyRow, error) {
+	rows, err := q.db.Query(ctx, activeDaily, arg.Now, arg.Days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ActiveDailyRow{}
+	for rows.Next() {
+		var i ActiveDailyRow
+		if err := rows.Scan(&i.Day, &i.Count); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -550,6 +595,95 @@ func (q *Queries) BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsR
 	return i, err
 }
 
+const browsePlayers = `-- name: BrowsePlayers :many
+SELECT id, username, display_name, level, gold, diamonds, state, is_bot,
+       luck_bp, created_at, last_seen_at,
+       count(*) OVER ()::bigint AS total
+FROM app.players
+WHERE ($1::text = '' OR username ILIKE '%' || $1::text || '%'
+                              OR display_name ILIKE '%' || $1::text || '%')
+  AND ($2::text = '' OR state = $2::text)
+  AND ($3::bool OR NOT is_bot)
+  AND level >= $4::int
+ORDER BY
+  CASE WHEN $5::text = 'last_seen' THEN last_seen_at END DESC,
+  CASE WHEN $5::text = 'created'   THEN created_at   END DESC,
+  CASE WHEN $5::text = 'level'     THEN level        END DESC,
+  CASE WHEN $5::text = 'gold'      THEN gold         END DESC,
+  id
+LIMIT $7::int OFFSET $6::int
+`
+
+type BrowsePlayersParams struct {
+	Q           string
+	State       string
+	IncludeBots bool
+	MinLevel    int32
+	Sort        string
+	Off         int32
+	Lim         int32
+}
+
+type BrowsePlayersRow struct {
+	ID          uuid.UUID
+	Username    string
+	DisplayName string
+	Level       int32
+	Gold        int64
+	Diamonds    int64
+	State       string
+	IsBot       bool
+	LuckBp      int32
+	CreatedAt   time.Time
+	LastSeenAt  time.Time
+	Total       int64
+}
+
+// The browsable list: filterable, sortable, paged.
+//
+// One query with switched ORDER BY rather than six near-identical ones. The
+// sort keys are a fixed set from the handler, never anything a caller types.
+func (q *Queries) BrowsePlayers(ctx context.Context, arg BrowsePlayersParams) ([]BrowsePlayersRow, error) {
+	rows, err := q.db.Query(ctx, browsePlayers,
+		arg.Q,
+		arg.State,
+		arg.IncludeBots,
+		arg.MinLevel,
+		arg.Sort,
+		arg.Off,
+		arg.Lim,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BrowsePlayersRow{}
+	for rows.Next() {
+		var i BrowsePlayersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.DisplayName,
+			&i.Level,
+			&i.Gold,
+			&i.Diamonds,
+			&i.State,
+			&i.IsBot,
+			&i.LuckBp,
+			&i.CreatedAt,
+			&i.LastSeenAt,
+			&i.Total,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countAdmins = `-- name: CountAdmins :one
 SELECT count(*) FROM admin.users
 `
@@ -768,6 +902,40 @@ func (q *Queries) GoldFlows(ctx context.Context, dollar_1 int32) ([]GoldFlowsRow
 	return items, nil
 }
 
+const levelBands = `-- name: LevelBands :many
+SELECT (level / 10 * 10)::int AS band, count(*)::bigint AS count
+FROM app.players
+WHERE NOT is_bot
+GROUP BY band
+ORDER BY band
+`
+
+type LevelBandsRow struct {
+	Band  int32
+	Count int64
+}
+
+// How the population is spread across the level ladder, in bands of ten.
+func (q *Queries) LevelBands(ctx context.Context) ([]LevelBandsRow, error) {
+	rows, err := q.db.Query(ctx, levelBands)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []LevelBandsRow{}
+	for rows.Next() {
+		var i LevelBandsRow
+		if err := rows.Scan(&i.Band, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAudit = `-- name: ListAudit :many
 SELECT id, admin_id, admin_name, action, subject, before, after, note, created_at FROM admin.audit_log ORDER BY created_at DESC LIMIT $1
 `
@@ -837,6 +1005,55 @@ func (q *Queries) ListBoosts(ctx context.Context, limit int32) ([]AdminServerBoo
 	return items, nil
 }
 
+const onlineNow = `-- name: OnlineNow :many
+SELECT id, username, display_name, level, gold, diamonds, state, last_seen_at
+FROM app.players
+WHERE NOT is_bot AND last_seen_at > $1::timestamptz
+ORDER BY last_seen_at DESC
+LIMIT 50
+`
+
+type OnlineNowRow struct {
+	ID          uuid.UUID
+	Username    string
+	DisplayName string
+	Level       int32
+	Gold        int64
+	Diamonds    int64
+	State       string
+	LastSeenAt  time.Time
+}
+
+// Who is here right now.
+func (q *Queries) OnlineNow(ctx context.Context, since time.Time) ([]OnlineNowRow, error) {
+	rows, err := q.db.Query(ctx, onlineNow, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []OnlineNowRow{}
+	for rows.Next() {
+		var i OnlineNowRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.DisplayName,
+			&i.Level,
+			&i.Gold,
+			&i.Diamonds,
+			&i.State,
+			&i.LastSeenAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const playerCounts = `-- name: PlayerCounts :one
 SELECT
   count(*) FILTER (WHERE NOT is_bot)::bigint AS players,
@@ -872,6 +1089,50 @@ func (q *Queries) PlayerCounts(ctx context.Context) (PlayerCountsRow, error) {
 		&i.AvgLevel,
 	)
 	return i, err
+}
+
+const registrationsDaily = `-- name: RegistrationsDaily :many
+SELECT d::date AS day,
+       count(p.id)::bigint AS count
+FROM generate_series(
+        ($1::timestamptz - make_interval(days => $2::int))::date,
+        $1::timestamptz::date, '1 day') AS d
+LEFT JOIN app.players p
+       ON p.created_at::date = d::date AND NOT p.is_bot
+GROUP BY d
+ORDER BY d
+`
+
+type RegistrationsDailyParams struct {
+	Now  time.Time
+	Days int32
+}
+
+type RegistrationsDailyRow struct {
+	Day   pgtype.Date
+	Count int64
+}
+
+// Registrations per day. generate_series so a day with no signups is a zero in
+// the chart rather than a missing bar that silently narrows the axis.
+func (q *Queries) RegistrationsDaily(ctx context.Context, arg RegistrationsDailyParams) ([]RegistrationsDailyRow, error) {
+	rows, err := q.db.Query(ctx, registrationsDaily, arg.Now, arg.Days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RegistrationsDailyRow{}
+	for rows.Next() {
+		var i RegistrationsDailyRow
+		if err := rows.Scan(&i.Day, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const revokeAdminSession = `-- name: RevokeAdminSession :exec

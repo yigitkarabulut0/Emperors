@@ -64,6 +64,9 @@ func AdminRouter(svc *admin.Service, log *slog.Logger) http.Handler {
 		r.Post("/balance/rollback", a.rollback)
 
 		// Server-wide events.
+		r.Get("/analytics", a.analytics)
+		r.Get("/players/browse", a.browsePlayers)
+
 		r.Get("/boosts", a.listBoosts)
 		r.Post("/boosts", a.createBoost)
 		r.Post("/boosts/revoke", a.revokeBoost)
@@ -472,4 +475,34 @@ func (a *adminAPI) revokeBoost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, row)
+}
+
+// --- population ---
+
+func (a *adminAPI) analytics(w http.ResponseWriter, r *http.Request) {
+	days, _ := strconv.Atoi(r.URL.Query().Get("days"))
+	mins, _ := strconv.Atoi(r.URL.Query().Get("online"))
+	v, err := a.svc.GetAnalytics(r.Context(), days, mins)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) browsePlayers(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	limit, _ := strconv.Atoi(q.Get("limit"))
+	offset, _ := strconv.Atoi(q.Get("offset"))
+	minLevel, _ := strconv.Atoi(q.Get("min_level"))
+	v, err := a.svc.BrowsePlayers(r.Context(), admin.BrowseFilter{
+		Q: q.Get("q"), State: q.Get("state"),
+		IncludeBots: q.Get("bots") == "1", MinLevel: minLevel,
+		Sort: q.Get("sort"), Limit: limit, Offset: offset,
+	})
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
 }

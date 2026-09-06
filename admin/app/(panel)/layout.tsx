@@ -20,8 +20,9 @@ export default async function PanelLayout({ children }: { children: ReactNode })
     <div className="shell">
       <nav className="rail">
         <div className="brand">EMPERORS</div>
-        <a href="/">Dashboard</a>
+        <a href="/">Overview</a>
         <a href="/players">Players</a>
+        <a href="/events">Events</a>
         <a href="/balance">Balance</a>
         <a href="/audit">Audit</a>
         <form action={signOut}>

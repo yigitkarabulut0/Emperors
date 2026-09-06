@@ -155,3 +155,67 @@ RETURNING *;
 
 -- name: ListBoosts :many
 SELECT * FROM admin.server_boosts ORDER BY starts_at DESC LIMIT $1;
+
+-- Registrations per day. generate_series so a day with no signups is a zero in
+-- the chart rather than a missing bar that silently narrows the axis.
+-- name: RegistrationsDaily :many
+SELECT d::date AS day,
+       count(p.id)::bigint AS count
+FROM generate_series(
+        (sqlc.arg(now)::timestamptz - make_interval(days => sqlc.arg(days)::int))::date,
+        sqlc.arg(now)::timestamptz::date, '1 day') AS d
+LEFT JOIN app.players p
+       ON p.created_at::date = d::date AND NOT p.is_bot
+GROUP BY d
+ORDER BY d;
+
+-- Players seen on each day. "Active" is last_seen_at, which every authenticated
+-- request already touches.
+-- name: ActiveDaily :many
+SELECT d::date AS day,
+       count(p.id)::bigint AS count
+FROM generate_series(
+        (sqlc.arg(now)::timestamptz - make_interval(days => sqlc.arg(days)::int))::date,
+        sqlc.arg(now)::timestamptz::date, '1 day') AS d
+LEFT JOIN app.players p
+       ON p.last_seen_at::date = d::date AND NOT p.is_bot
+GROUP BY d
+ORDER BY d;
+
+-- Who is here right now.
+-- name: OnlineNow :many
+SELECT id, username, display_name, level, gold, diamonds, state, last_seen_at
+FROM app.players
+WHERE NOT is_bot AND last_seen_at > sqlc.arg(since)::timestamptz
+ORDER BY last_seen_at DESC
+LIMIT 50;
+
+-- How the population is spread across the level ladder, in bands of ten.
+-- name: LevelBands :many
+SELECT (level / 10 * 10)::int AS band, count(*)::bigint AS count
+FROM app.players
+WHERE NOT is_bot
+GROUP BY band
+ORDER BY band;
+
+-- The browsable list: filterable, sortable, paged.
+--
+-- One query with switched ORDER BY rather than six near-identical ones. The
+-- sort keys are a fixed set from the handler, never anything a caller types.
+-- name: BrowsePlayers :many
+SELECT id, username, display_name, level, gold, diamonds, state, is_bot,
+       luck_bp, created_at, last_seen_at,
+       count(*) OVER ()::bigint AS total
+FROM app.players
+WHERE (sqlc.arg(q)::text = '' OR username ILIKE '%' || sqlc.arg(q)::text || '%'
+                              OR display_name ILIKE '%' || sqlc.arg(q)::text || '%')
+  AND (sqlc.arg(state)::text = '' OR state = sqlc.arg(state)::text)
+  AND (sqlc.arg(include_bots)::bool OR NOT is_bot)
+  AND level >= sqlc.arg(min_level)::int
+ORDER BY
+  CASE WHEN sqlc.arg(sort)::text = 'last_seen' THEN last_seen_at END DESC,
+  CASE WHEN sqlc.arg(sort)::text = 'created'   THEN created_at   END DESC,
+  CASE WHEN sqlc.arg(sort)::text = 'level'     THEN level        END DESC,
+  CASE WHEN sqlc.arg(sort)::text = 'gold'      THEN gold         END DESC,
+  id
+LIMIT sqlc.arg(lim)::int OFFSET sqlc.arg(off)::int;

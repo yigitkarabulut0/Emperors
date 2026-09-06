@@ -336,7 +336,10 @@ static func screen_title(text: String) -> Control:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", GAP_M)
 	row.add_child(_laurel("orn/laurel_l"))
-	var l := caps(_spaced(text), F_H1, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
+	# F_DISPLAY, not F_H1. The reference sets its screen title at roughly 62 units
+	# on this grid and it is the loudest thing on the page; at F_H1 it was 36 and
+	# read as a section header rather than as the name of the room.
+	var l := caps(_spaced(text), F_DISPLAY, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
 	l.name = "TitleText"
 	row.add_child(l)
 	row.add_child(_laurel("orn/laurel_r"))
@@ -362,7 +365,10 @@ static func _laurel(key: String) -> Control:
 	# 112 x 42 matches the branch's own 64:24, so it is drawn at its aspect and
 	# large enough for a leaf to be a leaf. At ICON_XL x ICON_MD it came out 45 px
 	# wide on a phone and the branch read as a row of chevrons.
-	t.custom_minimum_size = Vector2(112, 42)
+	# Sized to the title beside it: the reference's branches are about 78 units
+	# wide and 57 tall, and they read as laurel rather than as chevrons only
+	# because they are given that room.
+	t.custom_minimum_size = Vector2(124, 54)
 	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	t.modulate = Palette.GOLD
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE

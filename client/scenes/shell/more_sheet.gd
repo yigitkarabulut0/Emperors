@@ -98,7 +98,6 @@ func _row(sec: Dictionary) -> Control:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.custom_minimum_size = Vector2(UI.ICON_LG, UI.ICON_LG)
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	icon.modulate = Palette.TEXT_DIM
 	row.add_child(icon)
 
 	var word := UI.label(str(sec.get("label", id)), UI.F_H2, Palette.TEXT)

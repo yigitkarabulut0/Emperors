@@ -351,13 +351,31 @@ func _build_top_bar() -> Control:
 	_topbar_pad = MarginContainer.new()
 	_topbar_panel.add_child(_topbar_pad)
 
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", UI.GAP_S)
-	_topbar_pad.add_child(col)
-
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", UI.GAP_M)
-	col.add_child(row)
+	_topbar_pad.add_child(row)
+
+	# Experience, as a thread laid along the banner's bottom edge.
+	#
+	# It was a bar with its own groove under the coins, and an empty groove is
+	# what it is for all of a new session -- a broken-looking strip across the
+	# top of the game. The reference has nothing there at all. This keeps the one
+	# figure that says "you are getting somewhere" without spending a row on it:
+	# no background, three units tall, anchored to the panel rather than laid out
+	# in it, so it costs the banner no height.
+	_xp_bar = ProgressBar.new()
+	_xp_bar.show_percentage = false
+	_xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_xp_bar.anchor_left = 0.0
+	_xp_bar.anchor_right = 1.0
+	_xp_bar.anchor_top = 1.0
+	_xp_bar.anchor_bottom = 1.0
+	_xp_bar.offset_top = -5
+	_xp_bar.offset_bottom = -2
+	_xp_bar.add_theme_stylebox_override("background", StyleBoxEmpty.new())
+	_xp_bar.add_theme_stylebox_override(
+		"fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 0))
+	_topbar_panel.add_child(_xp_bar)
 
 	# The crest, then the purse. One row, where it used to be two: a portrait,
 	# a name and an experience bar over a full-width energy meter. The portrait
@@ -375,20 +393,6 @@ func _build_top_bar() -> Control:
 	_energy = _purse_chip(row, "bolt", Palette.ENERGY)
 
 	row.add_child(_ornament("orn/laurel_r", 64, 24))
-
-	# Experience as a thread along the foot of the banner rather than a bar with
-	# a number beside it. It is here at all because it is the one figure that
-	# says "you are getting somewhere", and it was two taps away before; the
-	# exact count lives on the Hero card, which is where you go to read it.
-	_xp_bar = ProgressBar.new()
-	_xp_bar.show_percentage = false
-	_xp_bar.custom_minimum_size = Vector2(0, 8)
-	_xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_xp_bar.add_theme_stylebox_override(
-		"background", UI.panel_box(Palette.BANNER.darkened(0.35), Color.TRANSPARENT, 4))
-	_xp_bar.add_theme_stylebox_override(
-		"fill", UI.panel_box(Palette.GOLD, Color.TRANSPARENT, 4))
-	col.add_child(_xp_bar)
 
 	return _topbar_panel
 
@@ -937,14 +941,19 @@ func _style_rail() -> void:
 		b.add_theme_stylebox_override("pressed", UI.skin("nav_active", Palette.BANNER, 4, 4))
 		b.add_theme_stylebox_override("disabled", UI.skin("nav", Palette.RAIL, 4, 4))
 		var inner := b.get_child(0)
-		var tint := Palette.GOLD if active else Palette.TEXT_DIM
-		if not open:
-			tint = Palette.EMPTY_SLOT
-		# Child 1 of the relief host is the lit copy; child 0 is its shadow and
-		# must stay black or the glyph loses its edge.
+		# The rail icons are painted objects with their own colour, so state is
+		# NOT carried by tinting them any more -- it is carried by the plate,
+		# red when the section is open and stone when it is not, which is how the
+		# reference does it. The only tint left is the one a locked section needs:
+		# drained and half faded, so you can see what is coming without being
+		# invited to tap it.
+		var tint := Color.WHITE if open else Color(0.72, 0.69, 0.63, 0.5)
+		# Child 1 of the relief host is the icon; child 0 is its shadow and must
+		# stay dark or it loses its footing on the stone.
 		var glyph_host := inner.get_child(0)
 		if glyph_host.get_child_count() > 1:
 			glyph_host.get_child(1).modulate = tint
+			glyph_host.get_child(0).modulate = Color(0, 0, 0, 0.28 if open else 0.10)
 		else:
 			glyph_host.modulate = tint
 		inner.get_child(1).add_theme_color_override("font_color",

@@ -314,6 +314,12 @@ type Querier interface {
 	ReleaseItem(ctx context.Context, arg ReleaseItemParams) error
 	// Dismissing a soldier must not destroy its gear; the items return to the bag.
 	ReleaseSoldierItems(ctx context.Context, arg ReleaseSoldierItemsParams) error
+	// Moves the password login onto a renamed player's new name, so the name they
+	// see is the name they sign in with.
+	RenameIdentitySubject(ctx context.Context, arg RenameIdentitySubjectParams) error
+	// Buys a new name. The WHERE carries the price, so a double tap cannot pay
+	// twice, and players_username_lower_key refuses a name somebody else holds.
+	RenamePlayer(ctx context.Context, arg RenamePlayerParams) (AppPlayer, error)
 	RevokeAdminSession(ctx context.Context, tokenHash []byte) error
 	// Revoked, never deleted: "why was everyone earning double on the 14th" has to
 	// stay answerable long after the event.

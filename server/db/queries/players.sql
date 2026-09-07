@@ -53,6 +53,17 @@ RETURNING *;
 UPDATE app.players SET avatar = $2, action_seq = $3
 WHERE id = $1 RETURNING *;
 
+-- Buys a new name. The WHERE carries the price, so a double tap cannot pay
+-- twice, and players_username_lower_key refuses a name somebody else holds.
+-- name: RenamePlayer :one
+UPDATE app.players
+SET username     = sqlc.arg(username),
+    display_name = sqlc.arg(display_name),
+    diamonds     = diamonds - sqlc.arg(diamonds),
+    action_seq   = sqlc.arg(action_seq)
+WHERE id = sqlc.arg(id) AND diamonds >= sqlc.arg(diamonds)
+RETURNING *;
+
 -- Finds someone to invite. Prefix match rather than substring, so a search is
 -- index-friendly and a player cannot enumerate the roster by typing one letter.
 --

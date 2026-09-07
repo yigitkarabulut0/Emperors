@@ -109,7 +109,8 @@
   "store": {
     "energy_refill_diamonds": 12,
     "shield_diamonds": 20,
-    "shield_hours": 8
+    "shield_hours": 8,
+    "rename_diamonds": 100
   },
   "sections": [
     {

@@ -25,8 +25,16 @@ type Snapshot struct {
 	Energy   EnergyView    `json:"energy"`
 	Sections []SectionView `json:"sections"`
 	Jobs     []JobView     `json:"jobs"`
+	Prices   PricesView    `json:"prices"`
 	ServerAt time.Time     `json:"server_at"`
 	Config   ConfigVersion `json:"config"`
+}
+
+// PricesView is what a screen quotes before the player commits. Sent resolved,
+// from the live balance, so the number on a button can never disagree with
+// the number the server charges.
+type PricesView struct {
+	RenameDiamonds int64 `json:"rename_diamonds"`
 }
 
 // SectionView is one navigation entry: whether the player has reached it, and
@@ -193,6 +201,7 @@ func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {
 		Gold:              itoa(p.Gold),
 		Treasury:          itoa(p.TreasuryGold),
 		Diamonds:          p.Diamonds,
+		Prices:   PricesView{RenameDiamonds: d.Config.Progression.Store.RenameDiamonds},
 		StatEnergy:        int(p.StatEnergy),
 		StatAttack:        int(p.StatAttack),
 		StatDefense:       int(p.StatDefense),

@@ -76,3 +76,20 @@ func (q *Queries) MarkIdentityUsed(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, markIdentityUsed, id)
 	return err
 }
+
+const renameIdentitySubject = `-- name: RenameIdentitySubject :exec
+UPDATE app.identities SET subject = $3 WHERE player_id = $1 AND kind = $2
+`
+
+type RenameIdentitySubjectParams struct {
+	PlayerID uuid.UUID
+	Kind     string
+	Subject  string
+}
+
+// Moves the password login onto a renamed player's new name, so the name they
+// see is the name they sign in with.
+func (q *Queries) RenameIdentitySubject(ctx context.Context, arg RenameIdentitySubjectParams) error {
+	_, err := q.db.Exec(ctx, renameIdentitySubject, arg.PlayerID, arg.Kind, arg.Subject)
+	return err
+}

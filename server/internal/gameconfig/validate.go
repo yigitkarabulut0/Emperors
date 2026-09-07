@@ -158,6 +158,24 @@ func (b *Bundle) Validate() error {
 		}
 	}
 
+	// --- store ---
+	//
+	// A diamond price of zero is not "free", it is a field the generator was not
+	// re-run for. Reforge shipped at one gold that way; nothing in the store may
+	// ship at nothing.
+	for _, price := range []struct {
+		name string
+		v    int64
+	}{
+		{"energy_refill_diamonds", b.Progression.Store.EnergyRefillDiamonds},
+		{"shield_diamonds", b.Progression.Store.ShieldDiamonds},
+		{"rename_diamonds", b.Progression.Store.RenameDiamonds},
+	} {
+		if price.v <= 0 {
+			p = append(p, fmt.Sprintf("store.%s must be positive — zero would make it free", price.name))
+		}
+	}
+
 	// --- energy ---
 	e := b.Progression.Energy
 	if e.BaseMax <= 0 {

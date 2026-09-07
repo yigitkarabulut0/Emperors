@@ -92,6 +92,7 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/state", a.state)
 			r.Get("/avatars", a.avatars)
 			r.Post("/avatar", a.setAvatar)
+			r.Post("/profile/rename", a.rename)
 			r.Post("/collect", a.collect)
 			r.Post("/collect/batch", a.collectBatch)
 			r.Post("/stats/spend", a.spendStats)

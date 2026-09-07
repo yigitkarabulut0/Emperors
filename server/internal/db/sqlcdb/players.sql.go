@@ -774,6 +774,85 @@ func (q *Queries) RegisterDevice(ctx context.Context, arg RegisterDeviceParams) 
 	return err
 }
 
+const renamePlayer = `-- name: RenamePlayer :one
+UPDATE app.players
+SET username     = $1,
+    display_name = $2,
+    diamonds     = diamonds - $3,
+    action_seq   = $4
+WHERE id = $5 AND diamonds >= $3
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+`
+
+type RenamePlayerParams struct {
+	Username    string
+	DisplayName string
+	Diamonds    int64
+	ActionSeq   int64
+	ID          uuid.UUID
+}
+
+// Buys a new name. The WHERE carries the price, so a double tap cannot pay
+// twice, and players_username_lower_key refuses a name somebody else holds.
+func (q *Queries) RenamePlayer(ctx context.Context, arg RenamePlayerParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, renamePlayer,
+		arg.Username,
+		arg.DisplayName,
+		arg.Diamonds,
+		arg.ActionSeq,
+		arg.ID,
+	)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
+		&i.Legacy,
+	)
+	return i, err
+}
+
 const setAvatar = `-- name: SetAvatar :one
 UPDATE app.players SET avatar = $2, action_seq = $3
 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy

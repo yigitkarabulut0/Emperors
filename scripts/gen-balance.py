@@ -206,6 +206,9 @@ emit("progression.json", json.dumps({
         "energy_refill_diamonds": 12,
         "shield_diamonds": 20,
         "shield_hours": 8,
+        # A new name for the hero. Vanity, not power, so it belongs in this list;
+        # priced by hand for now and to be revisited with the rest of the store.
+        "rename_diamonds": 100,
     },
     # Which sections a player can reach, and when.
     #

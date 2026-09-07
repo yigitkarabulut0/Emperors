@@ -30,6 +30,15 @@ static func prompt_amount(host: Node, cfg: Dictionary) -> Dictionary:
 	return {"action": action, "value": d.value}
 
 
+## {title, body, placeholder, preset, max_length, confirm_text} -> {"action": "confirm"|"", "text": String}
+## The text is trimmed, never validated: the server holds the rules for what a
+## name may be and answers with the one that was broken.
+static func prompt_text(host: Node, cfg: Dictionary) -> Dictionary:
+	var d := _Modal.new(host, cfg, "text")
+	var action: String = await d.finished
+	return {"action": action, "text": d.text_value}
+
+
 class _Modal:
 	extends RefCounted
 	signal finished(result: String)
@@ -74,9 +83,11 @@ class _Modal:
 			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			col.add_child(body)
 
-		if mode == "amount":
+		if mode == "amount" or mode == "text":
 			_input = LineEdit.new()
-			_input.placeholder_text = str(cfg.get("placeholder", "Amount"))
+			_input.placeholder_text = str(cfg.get("placeholder", "Amount" if mode == "amount" else ""))
+			if cfg.has("max_length"):
+				_input.max_length = int(cfg["max_length"])
 			_input.custom_minimum_size = Vector2(0, 72)
 			_input.add_theme_font_override("font", UI.font("body", 600))
 			_input.add_theme_font_size_override("font_size", 32)
@@ -92,6 +103,10 @@ class _Modal:
 			col.add_child(_input)
 			if cfg.has("preset"):
 				_input.text = str(cfg["preset"])
+			if mode == "text":
+				# Typing is the whole point of this dialog, so the keyboard comes
+				# up with it rather than after a second tap on the field.
+				_input.call_deferred("grab_focus")
 
 		var buttons := VBoxContainer.new()
 		buttons.add_theme_constant_override("separation", 12)

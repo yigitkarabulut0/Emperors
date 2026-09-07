@@ -50,3 +50,20 @@ func TestValidateRejectsAPoolSmallerThanAnHourOfRegen(t *testing.T) {
 		t.Errorf("rejected for the wrong reason: %v", err)
 	}
 }
+
+// The store's prices are the one place a forgotten generator run turns into a
+// free purchase rather than a refused load.
+func TestValidateRejectsAFreeRename(t *testing.T) {
+	b, _ := LoadSeed()
+	b.Progression.Store.RenameDiamonds = 0
+	if err := b.build(); err != nil {
+		t.Fatal(err)
+	}
+	err := b.Validate()
+	if err == nil {
+		t.Fatal("Validate accepted a rename that costs nothing")
+	}
+	if !strings.Contains(err.Error(), "rename_diamonds") {
+		t.Errorf("rejected for the wrong reason: %v", err)
+	}
+}

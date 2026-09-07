@@ -152,6 +152,10 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "last_king", "promote another lord before you leave")
 	case errors.Is(err, service.ErrSameKingdom):
 		WriteProblem(w, r, http.StatusForbidden, "same_kingdom", "you cannot raid your own kingdom")
+	case errors.Is(err, service.ErrBadName):
+		WriteProblem(w, r, http.StatusBadRequest, "invalid_username", err.Error())
+	case errors.Is(err, service.ErrSameName):
+		WriteProblem(w, r, http.StatusConflict, "same_name", "that is already your name")
 	case errors.Is(err, service.ErrStaleAction):
 		// 409, not 400: the request was well-formed, the client is just behind.
 		// It should re-read state rather than retry blindly.
@@ -1163,6 +1167,7 @@ func isKnownServiceError(err error) bool {
 		service.ErrAlreadyInKingdom, service.ErrNotInKingdom, service.ErrKingdomFull,
 		service.ErrNotInvited, service.ErrNotPermitted, service.ErrKingdomNameTaken,
 		service.ErrDonationCap, service.ErrLastKing, service.ErrSameKingdom,
+		service.ErrBadName, service.ErrSameName,
 	} {
 		if errors.Is(err, e) {
 			return true
@@ -1202,6 +1207,30 @@ func (a *api) setAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v, err := a.s().SetAvatar(r.Context(), pid, req.Avatar, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// A new name costs diamonds and is held to the same rules as signup.
+type renameReq struct {
+	Name      string `json:"name"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+func (a *api) rename(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req renameReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().Rename(r.Context(), pid, req.Name, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return

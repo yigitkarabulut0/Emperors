@@ -56,7 +56,7 @@ func _ready() -> void:
 	_footer = _ui["footer"]
 	_ground = _ui["ground_bottom"]
 
-	_identity["edit"].pressed.connect(_pick_avatar)
+	_identity["edit"].pressed.connect(_rename)
 	_gear["equip_best"].pressed.connect(_equip_best)
 	for slot in ["weapon", "armor", "horse"]:
 		var tile: Control = _gear_tile(slot)["node"]
@@ -314,7 +314,7 @@ func _act(path: String, body: Dictionary) -> void:
 		await _load()
 
 
-# --- stats, gear, avatar -------------------------------------------------------------------
+# --- stats, gear, name ---------------------------------------------------------------------
 
 func _spend_point(stat: String) -> void:
 	if _busy or int(GameState.player().get("stat_points_unspent", 0)) <= 0:
@@ -389,22 +389,31 @@ func _choose_gear(slot: String) -> void:
 		GameState.action_failed.emit(res.error)
 
 
-func _pick_avatar() -> void:
+## The quill beside the name. A new name costs diamonds; the price is the
+## server's (snapshot.prices) and the rules for what a name may be are the
+## server's too -- this screen only asks and shows the answer.
+func _rename() -> void:
 	if _busy:
 		return
-	var res: Api.Response = await Api.get_json("/v1/avatars")
-	if not res.ok:
+	var price := int(GameState.snapshot.get("prices", {}).get("rename_diamonds", 0))
+	var have := int(GameState.player().get("diamonds", 0))
+	var r: Dictionary = await Dialog.prompt_text(self, {
+		"title": "Change your name",
+		"body": "3 to 16 letters, digits or underscore.\nCosts %d diamonds. You have %d." % [price, have],
+		"placeholder": str(GameState.player().get("username", "")),
+		"max_length": 16,
+		"confirm_text": "Rename for %d diamonds" % price,
+	})
+	if str(r.get("action", "")) != "confirm":
 		return
-	var options: Array = []
-	for a in res.data.get("avatars", []):
-		options.append({"id": str(a.get("id", "")), "label": str(a.get("id", "")).capitalize() + (" ✓" if bool(a.get("selected", false)) else "")})
-	var pick := await Dialog.choose(self, {"title": "Choose a crest", "options": options})
-	if pick == "":
+	var name := str(r.get("text", ""))
+	if name == "":
 		return
 	_busy = true
-	var r: Api.Response = await Api.post_json("/v1/avatar", _with_seq({"avatar": pick}))
+	var res: Api.Response = await Api.post_json("/v1/profile/rename", _with_seq({"name": name}))
 	_busy = false
-	if r.ok:
-		await GameState.refresh()
+	if res.ok:
+		GameState.adopt(res.data)
+		GameState.changed.emit()
 	else:
-		GameState.action_failed.emit(r.error)
+		GameState.action_failed.emit(res.error)

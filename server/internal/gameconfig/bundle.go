@@ -144,6 +144,8 @@ type StoreConfig struct {
 	EnergyRefillDiamonds int64 `json:"energy_refill_diamonds"`
 	ShieldDiamonds       int64 `json:"shield_diamonds"`
 	ShieldHours          int64 `json:"shield_hours"`
+	// A new name for the hero. Vanity, not power, so it belongs here.
+	RenameDiamonds int64 `json:"rename_diamonds"`
 }
 
 // SectionGate is one navigation entry and the level that reveals it.

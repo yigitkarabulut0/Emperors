@@ -249,11 +249,13 @@
      "kind": "image",
      "asset": "items/{item}",
      "rect": [
-      5,
-      5,
-      192,
-      216
-     ]
+      24,
+      56,
+      154,
+      150
+     ],
+     "fit": "contain",
+     "note": "inset in the frame's inpainted painting area, below the badge"
     },
     {
      "id": "badge",

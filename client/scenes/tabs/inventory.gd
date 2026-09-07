@@ -72,17 +72,18 @@ func _paint_equipped() -> void:
 		var slot: String = ["weapon", "armor", "horse"][i]
 		var p: Dictionary = _equipped[i]["parts"]
 		var item: Variant = eq.get(slot, null)
+		var painting: TextureRect = p["painting"]
+		painting.visible = item is Dictionary
 		if item is Dictionary:
-			p["painting"].texture = Art.item(str(item.get("art", "")), "equipped")
-			p["painting"].modulate = Color.WHITE
+			painting.texture = Art.item(str(item.get("art", "")))
+			p["tile"].modulate = Color.WHITE
 			p["level"].text = "Lv. %d" % int(item.get("ilvl", 1))
 			p["name"].text = str(item.get("name", ""))
 			UI.fit_label(p["name"], 21, 14)
 			var line: Array = STAT_LINE[slot]
 			p["stat"].text = "%s +%s" % [line[1] if slot != "horse" else "POWER", UI.grouped(int(item.get(line[0] if slot != "horse" else "power", 0)))]
 		else:
-			p["painting"].texture = Art.item("%s_00" % slot, "equipped")
-			p["painting"].modulate = Color(0.35, 0.35, 0.35)
+			p["tile"].modulate = Color(0.55, 0.55, 0.55)
 			p["level"].text = ""
 			p["name"].text = "Empty"
 			p["stat"].text = "Tap an item to equip"
@@ -130,7 +131,8 @@ func _paint_grid() -> void:
 		built["parts"]["btn_equip"].pressed.connect(_equip.bind(i))
 		built["parts"]["btn_sell"].pressed.connect(_sell.bind(i))
 		built["parts"]["btn_reforge"].pressed.connect(_reforge.bind(i))
-		# Tier frame overlay: nine-patch border drawn over the painting's baked frame.
+		# Tier frame overlay: nine-patch border drawn over the empty tile's baked
+		# common ring (parts[1]); the item design sits inset inside it.
 		var frame := NinePatchRect.new()
 		frame.draw_center = false
 		UI.place(frame, Layout.rect_of(tpl["parts"][1]))
@@ -151,7 +153,7 @@ func _paint_grid() -> void:
 		var p: Dictionary = c["parts"]
 		var slot := str(it.get("slot", "weapon"))
 		var tier := str(it.get("tier", "common"))
-		p["painting"].texture = Art.item(str(it.get("art", "")), "inventory")
+		p["painting"].texture = Art.item(str(it.get("art", "")))
 		var frame: NinePatchRect = c["frame"]
 		frame.texture = Art.tex("inventory/frame_" + tier)
 		var m := 18 if tier == "legendary" else 10

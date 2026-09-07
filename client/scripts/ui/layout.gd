@@ -159,7 +159,12 @@ static func _build_part(p: Dictionary, origin: Vector2) -> Control:
 static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 	match kind:
 		"image":
-			return UI.image(str(p.get("asset", "")), r)
+			var img := UI.image(str(p.get("asset", "")), r)
+			if str(p.get("fit", "")) == "contain":
+				# A painting that is not a crop of this box (an item design drawn
+				# into a tile) keeps its own proportions and centres in the box.
+				img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			return img
 		"ninepatch":
 			var np := NinePatchRect.new()
 			np.texture = Art.tex(str(p.get("asset", "")))

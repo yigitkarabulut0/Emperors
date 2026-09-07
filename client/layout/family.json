@@ -12,11 +12,11 @@
   "identity_plate has name, level and xp text erased; the lion crest and quill button stay baked.",
   "stats_strip is one image holding the three cells; only the numbers are erased.",
   "gear_panel keeps YOUR GEAR, the ornament line, EQUIP BEST and the three tiles baked; the tiles are re-drawn over the same rects from items/ so an equipped item can change. gear_tile_empty is an inpainted frame for an empty slot (not in the reference).",
-  "upgrade_card is the GRANARY card with painting, name, level and bonus text erased so any upgrade can be shown; granary_art is the painting. Only a MAX LEVEL button exists in the reference \u2014 a purchasable upgrade has no button art here; reuse btn_max_level's plate with live text if needed (its label is baked).",
+  "upgrade_card is the GRANARY card with painting, name, level and bonus text erased so any upgrade can be shown; granary_art is the painting. Only a MAX LEVEL button exists in the reference — a purchasable upgrade has no button art here; reuse btn_max_level's plate with live text if needed (its label is baked).",
   "family_sword/armor/horse under items/ include their gold frame, red gem and the Lv badge plate; the badge number is erased."
  ],
  "fonts": {
-  "title": "Cinzel \u2014 caps with flared serifs (name, LEVEL, GRANARY, stat labels)",
+  "title": "Cinzel — caps with flared serifs (name, LEVEL, GRANARY, stat labels)",
   "body": "transitional serif (XP text, stat numbers, bonus line, Lv. badges)"
  },
  "elements": [
@@ -310,14 +310,26 @@
       {
        "id": "art",
        "kind": "image",
-       "asset": "items/family_sword",
+       "asset": "family/gear_tile_empty",
        "rect": [
         0,
         0,
         220,
         192
        ],
-       "empty_asset": "family/gear_tile_empty"
+       "note": "the painting's empty frame"
+      },
+      {
+       "id": "painting",
+       "kind": "image",
+       "asset": "items/{item}",
+       "rect": [
+        18,
+        14,
+        184,
+        144
+       ],
+       "fit": "contain"
       },
       {
        "id": "lv",
@@ -357,14 +369,25 @@
       {
        "id": "art",
        "kind": "image",
-       "asset": "items/family_armor",
+       "asset": "family/gear_tile_empty",
        "rect": [
         0,
         0,
         220,
         192
+       ]
+      },
+      {
+       "id": "painting",
+       "kind": "image",
+       "asset": "items/{item}",
+       "rect": [
+        18,
+        14,
+        184,
+        144
        ],
-       "empty_asset": "family/gear_tile_empty"
+       "fit": "contain"
       },
       {
        "id": "lv",
@@ -404,14 +427,26 @@
       {
        "id": "art",
        "kind": "image",
-       "asset": "items/family_horse",
+       "asset": "family/gear_tile_empty",
        "rect": [
+        5,
         0,
-        0,
-        226,
+        220,
         192
        ],
-       "empty_asset": "family/gear_tile_empty"
+       "note": "this crop starts 5 px before its frame, so the frame sits at x 5"
+      },
+      {
+       "id": "painting",
+       "kind": "image",
+       "asset": "items/{item}",
+       "rect": [
+        23,
+        14,
+        184,
+        144
+       ],
+       "fit": "contain"
       },
       {
        "id": "lv",

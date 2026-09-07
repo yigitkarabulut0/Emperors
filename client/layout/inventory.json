@@ -89,15 +89,29 @@
    ],
    "parts": [
     {
-     "id": "painting",
+     "id": "tile",
      "kind": "image",
-     "bind": "painting",
+     "asset": "family/gear_tile_empty",
      "rect": [
       0,
       0,
-      221,
-      194
-     ]
+      220,
+      192
+     ],
+     "note": "the same gold frame as family.png's gear tiles; the panel's erased slot shows in the 1-2 px the crop is short"
+    },
+    {
+     "id": "painting",
+     "kind": "image",
+     "asset": "items/{item}",
+     "rect": [
+      18,
+      14,
+      184,
+      134
+     ],
+     "fit": "contain",
+     "note": "the worn design, inset in the tile; hidden when the slot is empty"
     },
     {
      "id": "level",
@@ -461,15 +475,28 @@
        ]
       },
       {
-       "id": "painting",
+       "id": "tile",
        "kind": "image",
-       "bind": "painting",
+       "asset": "inventory/item_tile_empty",
        "rect": [
         6,
         6,
         140,
         140
-       ]
+       ],
+       "note": "index 1: inventory.gd places the tier ring over this rect"
+      },
+      {
+       "id": "painting",
+       "kind": "image",
+       "asset": "items/{item}",
+       "rect": [
+        24,
+        18,
+        104,
+        94
+       ],
+       "fit": "contain"
       },
       {
        "id": "level",

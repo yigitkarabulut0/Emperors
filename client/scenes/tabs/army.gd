@@ -196,8 +196,14 @@ func _paint_selected() -> void:
 			_ui[k].text = "-"
 		_ui["sel_troop_text"].text = ""
 		_sel_numeral_label.visible = false
+		# Empty tiles, not hidden ones: the panel behind has the painting's own
+		# gear baked into it, so hiding the tiles showed a spear, a jerkin and a
+		# horse on a slot that holds nobody.
 		for t in _gear_tiles:
-			t["node"].visible = false
+			t["node"].visible = true
+			t["parts"]["painting"].visible = false
+			t["parts"]["art"].modulate = Color(0.4, 0.4, 0.45)
+			t["parts"]["level"].text = ""
 		return
 	var type := str(soldier.get("type", "peasant"))
 	var tier := int(TIER_INDEX.get(str(soldier.get("tier", "common")), 1))
@@ -234,8 +240,12 @@ func _paint_selected() -> void:
 		var t: Dictionary = _gear_tiles[i]
 		t["node"].visible = true
 		var item: Variant = eq.get(slot, null)
-		t["parts"]["art"].texture = Art.item("%s_00" % slot, "soldier")
+		# The tile is the painting's empty gear frame; the worn item's design is
+		# drawn inset into it.
+		var painting: TextureRect = t["parts"]["painting"]
+		painting.visible = item is Dictionary
 		if item is Dictionary:
+			painting.texture = Art.item(str(item.get("art", "")))
 			t["parts"]["art"].modulate = Color.WHITE
 			t["parts"]["level"].text = "Lv. %d" % int(item.get("ilvl", 1))
 		else:

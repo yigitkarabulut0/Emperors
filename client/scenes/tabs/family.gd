@@ -11,7 +11,6 @@ const BUCKET_LABEL := {
 	"soldier_def_bp": "SOLDIER DEFENCE", "soldier_spd_bp": "SOLDIER SPEED", "shop_discount_bp": "SHOP DISCOUNT",
 	"steal_cap_bp": "RAID STEAL CAP", "ransom_bp": "RANSOM",
 }
-const SLOT_ART := {"weapon": "items/family_sword", "armor": "items/family_armor", "horse": "items/family_horse"}
 
 var _scroll: ScrollContainer
 var _content: Control
@@ -139,12 +138,15 @@ func _paint_gear() -> void:
 	for slot in ["weapon", "armor", "horse"]:
 		var parts: Dictionary = _gear_tile(slot)["parts"]
 		var item: Variant = eq.get(slot, null)
+		# The tile is the painting's empty frame; the worn item's own design is
+		# drawn inset into it, so the picture follows the gear.
+		var painting: TextureRect = parts["painting"]
+		painting.visible = item is Dictionary
 		if item is Dictionary:
-			parts["art"].texture = Art.tex(SLOT_ART[slot])
+			painting.texture = Art.item(str(item.get("art", "")))
 			parts["lv"].text = "Lv. %d" % int(item.get("ilvl", 1))
 			parts["art"].modulate = Color.WHITE
 		else:
-			parts["art"].texture = Art.tex("family/gear_tile_empty")
 			parts["lv"].text = ""
 			parts["art"].modulate = Color(0.8, 0.8, 0.8)
 

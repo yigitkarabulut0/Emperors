@@ -97,7 +97,7 @@ func _paint() -> void:
 		var item: Dictionary = offer.get("item", {})
 		var tier := str(item.get("tier", "common"))
 		_set_frame(c, tier)
-		p["painting"].texture = Art.item(str(item.get("art", "")), "shop")
+		p["painting"].texture = Art.item(str(item.get("art", "")))
 		p["badge"].texture = Art.tex(BADGES.get(tier, "shop/badge_uncommon"))
 		p["badge"].size = p["badge"].texture.get_size()
 		p["name"].text = str(item.get("name", ""))

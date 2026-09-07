@@ -65,7 +65,8 @@
      "instance_assets": ["items/army_spear", "items/army_leather_armor", "items/army_horse"],
      "instance_sizes": [[98, 100], [100, 100], [103, 100]],
      "parts": [
-       {"id": "art", "kind": "image", "rect": [0, 0, 98, 100]},
+       {"id": "art", "kind": "image", "asset": "army/gear_tile_empty", "rect": [0, 0, 98, 100]},
+       {"id": "painting", "kind": "image", "asset": "items/{item}", "rect": [11, 9, 76, 62], "fit": "contain"},
        {"id": "level", "kind": "text", "rect": [48, 74, 48, 25], "font": "body", "size": 20, "weight": 500, "color": "#A8B1BE", "align": "center", "sample": "Lv. 10",
         "instance_rects": [[444, 1230, 48, 25], [552, 1230, 46, 25], [661, 1230, 45, 25]]},
        {"id": "tap", "kind": "button", "rect": [0, 0, 98, 100], "action": "soldier_gear_slot"}

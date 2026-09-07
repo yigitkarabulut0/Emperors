@@ -125,8 +125,9 @@ coordinate: it asks for parts by id and fills in live values.
  ]}
 ```
 
-Kinds: `image`, `text`, `button` (a painted crop; with no asset, an invisible
-tap target), `ninepatch`, `fill` (a bar clipped from the left via
+Kinds: `image` (`fit: contain` keeps a painting's own proportions inside its
+box, for item designs drawn into a tile), `text`, `button` (a painted crop; with
+no asset, an invisible tap target), `ninepatch`, `fill` (a bar clipped from the left via
 `Layout.set_fill`; an `image` carrying a `fill` key is built as one), `scroll`,
 `group`, `template` (repeated component;
 `instances` may be `[x, y]` or `{pos|at, assets, texts, rects, data}`).
@@ -161,7 +162,11 @@ name to its box — a Label grows to its text, so the box width is kept in meta.
   (`Art.item(key, "shop"|"inventory"|"equipped"|"family"|"soldier")`) because each
   painting size belongs to one screen.
 
-Things the paintings do not contain, and how they are handled: only six job
+Things the paintings do not contain, and how they are handled: item designs
+(the paintings hold one item per slot per screen, so every slot showed the same
+picture; the 21 designs the balance names now ship as their own matted paintings
+under `items/painted/`, rendered by `scripts/gen-items-painted.sh` into
+`art/painted/` and drawn inset into each screen's empty tile crop), only six job
 paintings (cycle), one upgrade painting (the granary, reused), portraits for
 rivals and lords (assigned by hashing the id), tier numerals I–III (higher tiers
 use a blank plate with live text), one large soldier portrait (others are scaled

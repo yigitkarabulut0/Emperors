@@ -143,6 +143,7 @@ func _paint_card(i: int) -> void:
 		p["portrait"].modulate = Color.WHITE
 		_numeral(p["numeral"], _numeral_labels[i], tier)
 		p["name"].text = DISPLAY_NAME.get(type, type.to_upper())
+		UI.fit_label(p["name"], 22, 15)
 		p["attack"].text = UI.grouped(int(soldier.get("attack", 0)))
 		p["defence"].text = UI.grouped(int(soldier.get("defense", 0)))
 		p["power"].text = UI.grouped(int(soldier.get("ehp", 0)))

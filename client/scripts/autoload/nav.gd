@@ -6,6 +6,12 @@ extends Node
 var host: SubViewport = null
 
 
+## Where overlays (dialogs, the battle) mount: the capture viewport when there
+## is one, so screenshots include them; else the window root.
+func overlay_parent() -> Node:
+	return host if host != null else get_tree().root
+
+
 func go(path: String) -> void:
 	if host == null:
 		get_tree().change_scene_to_file(path)

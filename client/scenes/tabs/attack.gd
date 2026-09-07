@@ -262,7 +262,7 @@ func _replay(i: int) -> void:
 func _show_replay(result: Dictionary, target: Dictionary) -> void:
 	var replay: CanvasLayer = load("res://scenes/battle/battle_replay.gd").new()
 	replay.setup(result, target)
-	get_tree().root.add_child(replay)
+	Nav.overlay_parent().add_child(replay)
 	await replay.finished
 
 

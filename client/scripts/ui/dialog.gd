@@ -42,7 +42,7 @@ class _Modal:
 	func _init(host: Node, cfg: Dictionary, mode: String) -> void:
 		_layer = CanvasLayer.new()
 		_layer.layer = 50
-		host.get_tree().root.add_child(_layer)
+		Nav.overlay_parent().add_child(_layer)
 
 		var back := ColorRect.new()
 		back.color = Color(0, 0, 0, 0.72)

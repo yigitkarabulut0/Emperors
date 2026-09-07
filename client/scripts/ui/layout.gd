@@ -57,9 +57,20 @@ static func rect_of(e: Dictionary, origin: Vector2 = Vector2.ZERO) -> Rect2:
 ## elements and {id: [ {node, parts}, ... ]} for templates with instances.
 static func build(screen: String, host: Control) -> Dictionary:
 	var out := {}
+	# A template a scroll region names in its content is a prototype for the
+	# screen's own list; its painted instances must not be built as static copies.
+	var prototypes := {}
+	for e in spec(screen).get("elements", []):
+		if str(e.get("kind", "")) == "scroll":
+			for c in e.get("content", []):
+				if c is String:
+					prototypes[c] = true
 	for e in spec(screen).get("elements", []):
 		var id := str(e.get("id", ""))
 		var kind := str(e.get("kind", "image"))
+		if kind == "template" and prototypes.has(id):
+			out[id] = []
+			continue
 		if kind == "template":
 			# Templates with instances are built in place; templates without are
 			# left to the screen (they live inside a scroll region).

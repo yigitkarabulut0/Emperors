@@ -216,7 +216,14 @@ func _build_rail() -> void:
 
 	_rail.add_child(UI.image("chrome/avatar", Rect2(14, 6, 132, 190)))
 	_level = UI.label("", 30, UI.INK, "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_level, Rect2(50, 147, 62, 38))
+	# Centred on the plaque painted into chrome/avatar, not guessed.
+	#
+	# Measured off the source image: the plaque's gold rims sit at y 130-136 and
+	# y 172-178, so its interior runs 138-170 and its centre is 154. The avatar
+	# is placed at y 6, which puts that centre at 160 on the rail. A 38-tall
+	# label centred there starts at 141; it was at 147, which pushed the number
+	# six units low and hung it over the plaque's bottom rim.
+	UI.place(_level, Rect2(50, 141, 62, 38))
 	_rail.add_child(_level)
 
 	for id in ORDER:

@@ -16,6 +16,13 @@ var _rows: Array = []            ## [{node, parts, job_id}]
 var _quests: Array = []
 var _quest_cards: Array = []
 var _quests_loaded_ms := -100000
+
+## The reward row's geometry, from layout/collect.json's quest_card parts.
+## reward_icon sits at x 57 and the reward text at x 104..224, so the row a
+## claimed quest fills runs from 57 to 224.
+const REWARD_TEXT_X := 104.0
+const REWARD_TEXT_W := 120.0
+const REWARD_ROW_W := 167.0
 var _built := false
 var _busy := false
 
@@ -75,8 +82,39 @@ func _ensure_rows() -> void:
 		built["job_id"] = str(job.get("id", ""))
 		var btn: TextureButton = built["parts"]["collect"]
 		btn.pressed.connect(_on_collect.bind(str(job.get("id", ""))))
+		built["empty"] = _build_empty_overlay(btn)
 		_rows.append(built)
 	content.custom_minimum_size = Vector2(sc.size.x, origin.y + jobs.size() * pitch + 8)
+
+
+## The "no energy" face of a Collect button.
+##
+## The button's green and its COLLECT are painted into one texture, so there is
+## no tint that turns it red -- modulate MULTIPLIES, and green times red is very
+## nearly black. A wash over the interior with the word redrawn on top keeps the
+## painted gold frame doing its job and still reads as a different button.
+##
+## Slightly translucent so the original shading shows through and it does not
+## land as a flat rectangle; inset ten units so the frame's chamfered corners
+## stay clear of it.
+func _build_empty_overlay(btn: TextureButton) -> Control:
+	var holder := Control.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.position = Vector2(10, 10)
+	holder.size = btn.size - Vector2(20, 20)
+	holder.visible = false
+	btn.add_child(holder)
+
+	var wash := ColorRect.new()
+	wash.color = Color(0.52, 0.11, 0.11, 0.93)
+	wash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	wash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(wash)
+
+	var l := UI.label("NO ENERGY", 24, Color("#F6E4D8"), "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
+	l.set_anchors_preset(Control.PRESET_FULL_RECT)
+	holder.add_child(l)
+	return holder
 
 
 func _painting_for(job: Dictionary, index: int) -> String:
@@ -122,6 +160,15 @@ func _paint_rows() -> void:
 		p["mastery_3"].text = tier[2]
 		r["node"].modulate = Color.WHITE if unlocked else Color(0.55, 0.55, 0.55)
 
+		# Energy is projected between polls rather than polled, so this is driven
+		# by GameState.energy_changed as well as by a state refresh -- the button
+		# has to go back to green the moment the bar ticks over the cost.
+		var short_of_energy := unlocked \
+			and GameState.display_energy() < int(job.get("energy_cost", 0))
+		var overlay: Control = r.get("empty")
+		if overlay != null:
+			overlay.visible = short_of_energy
+
 
 func _on_collect(job_id: String) -> void:
 	var job := _job(job_id)
@@ -160,15 +207,30 @@ func _paint_quests() -> void:
 		p["reward_icon"].texture = Art.tex("icons/reward_crown")
 		var claimed := bool(q.get("claimed", false))
 		var done := bool(q.get("done", false))
+		var reward: Label = p["reward"]
+		var icon: TextureRect = p["reward_icon"]
 		if claimed:
-			p["reward"].text = "CLAIMED"
-			p["reward"].label_settings.font_color = UI.DIM
-		elif done:
-			p["reward"].text = "CLAIM +%d XP" % int(q.get("xp", 0))
-			p["reward"].label_settings.font_color = UI.GREEN
+			# CLAIMED is a state, not a reward, so it takes the whole reward row
+			# and loses the crown. Left-aligned beside an icon it read as pushed
+			# to one side, because it was: the box starts where a "+100 XP"
+			# begins, and there is nothing to its left any more.
+			reward.text = "CLAIMED"
+			reward.label_settings.font_color = UI.DIM
+			reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			reward.position.x = icon.position.x
+			reward.size.x = REWARD_ROW_W
+			icon.visible = false
 		else:
-			p["reward"].text = "+%d XP" % int(q.get("xp", 0))
-			p["reward"].label_settings.font_color = Color("#F3EDE0")
+			reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			reward.position.x = REWARD_TEXT_X
+			reward.size.x = REWARD_TEXT_W
+			icon.visible = true
+			if done:
+				reward.text = "CLAIM +%d XP" % int(q.get("xp", 0))
+				reward.label_settings.font_color = UI.GREEN
+			else:
+				reward.text = "+%d XP" % int(q.get("xp", 0))
+				reward.label_settings.font_color = Color("#F3EDE0")
 
 
 func _quest_title(q: Dictionary) -> String:

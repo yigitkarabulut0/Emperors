@@ -61,6 +61,8 @@ static func label(text: String, size: int, color: Color = INK, role: String = "b
 static func image(asset: String, rect: Rect2) -> TextureRect:
 	var t := TextureRect.new()
 	t.texture = Art.tex(asset)
+	# A TextureRect refuses to be smaller than its texture unless told so.
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.position = rect.position
 	t.size = rect.size
 	t.stretch_mode = TextureRect.STRETCH_SCALE

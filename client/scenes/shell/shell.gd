@@ -204,6 +204,7 @@ func _build_rail() -> void:
 	_rail.add_child(UI.image("chrome/rail_bottom", Rect2(0, 1470, 160, 202)))
 
 	_plate = TextureRect.new()
+	_plate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_plate.stretch_mode = TextureRect.STRETCH_SCALE
 	_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_rail.add_child(_plate)

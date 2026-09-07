@@ -59,6 +59,10 @@ func _load() -> void:
 	if h.ok:
 		_history = h.data.get("entries", [])
 	_paint()
+	# Dev: --replay-last opens the most recent battle's playback on arrival.
+	if Env.args.has("replay_last") and not _history.is_empty():
+		Env.args.erase("replay_last")
+		_replay(0)
 
 
 func _set_view(v: String) -> void:
@@ -170,15 +174,15 @@ func _paint_history() -> void:
 		r["node"].visible = true
 		var e: Dictionary = _history[i]
 		var p: Dictionary = r["parts"]
-		var won := bool(e.get("won", e.get("attacker_won", false)))
+		var won := bool(e.get("won", false))
 		p["icon"].texture = Art.tex("icons/sword_victory" if won else "icons/sword_defeat")
-		var who := str(e.get("opponent", e.get("opponent_name", "")))
+		var who := str(e.get("opponent_name", e.get("opponent", "")))
 		p["result"].text = "%s vs. %s" % ["Victory" if won else "Defeat", who]
 		p["result"].label_settings.font_color = UI.GREEN if won else UI.RED
 		var gold := int(str(e.get("gold", e.get("gold_delta", "0"))))
 		p["gold"].text = ("+" if gold > 0 else "") + UI.grouped(gold) if gold != 0 else "-"
 		p["coin"].visible = gold != 0
-		p["time"].text = UI.ago(int(e.get("seconds_ago", 0)))
+		p["time"].text = UI.ago(_seconds_since(str(e.get("at", ""))))
 	# Tapping a row replays the fight.
 	for i in _history_rows.size():
 		var r: Dictionary = _history_rows[i]
@@ -187,6 +191,13 @@ func _paint_history() -> void:
 			hit.pressed.connect(_replay.bind(i))
 			r["node"].add_child(hit)
 			r["hit"] = hit
+
+
+func _seconds_since(iso: String) -> int:
+	if iso == "":
+		return 0
+	var then := Time.get_unix_time_from_datetime_string(iso.trim_suffix("Z"))
+	return maxi(0, int(Time.get_unix_time_from_system()) - int(then))
 
 
 func _portrait_for(t: Dictionary) -> String:
@@ -229,10 +240,7 @@ func _attack(t: Dictionary, revenge: bool) -> void:
 	var res: Api.Response = await GameState.act("/v1/attack", {"target_id": str(t.get("player_id", "")), "revenge": revenge})
 	_busy = false
 	if res.ok:
-		var won := bool(res.data.get("won", res.data.get("attacker_won", false)))
-		var gold := int(str(res.data.get("gold", res.data.get("gold_stolen", "0"))))
-		await Dialog.ask(self, {"title": "Victory!" if won else "Defeat",
-			"body": ("You plundered %s gold." % UI.grouped(gold)) if won else "Your army was driven back.", "confirm_text": "OK"})
+		await _show_replay(res.data, t)
 		await _load()
 
 
@@ -243,14 +251,24 @@ func _replay(i: int) -> void:
 	var res: Api.Response = await Api.get_json("/v1/battles/%s" % str(e.get("battle_id", "")))
 	if not res.ok:
 		return
-	var rounds: Array = res.data.get("events", res.data.get("rounds", []))
-	await Dialog.ask(self, {"title": "Battle replay", "body": "%d rounds. %s" % [rounds.size(),
-		"Victory" if bool(res.data.get("attacker_won", false)) else "Defeat"], "confirm_text": "Close"})
+	var data := res.data.duplicate()
+	data["won"] = bool(e.get("won", false))
+	data["gold_stolen"] = int(str(e.get("gold", "0")))
+	data["xp_gained"] = int(e.get("xp_gained", 0))
+	await _show_replay(data, {"name": str(e.get("opponent_name", ""))})
+
+
+## The animated playback of a fight the server resolved.
+func _show_replay(result: Dictionary, target: Dictionary) -> void:
+	var replay: CanvasLayer = load("res://scenes/battle/battle_replay.gd").new()
+	replay.setup(result, target)
+	get_tree().root.add_child(replay)
+	await replay.finished
 
 
 func _view_all_history() -> void:
 	var lines: Array = []
 	for e in _history.slice(0, 12):
 		var won := bool(e.get("won", e.get("attacker_won", false)))
-		lines.append("%s vs. %s  %s" % ["Victory" if won else "Defeat", str(e.get("opponent", "")), UI.ago(int(e.get("seconds_ago", 0)))])
+		lines.append("%s vs. %s  %s" % ["Victory" if won else "Defeat", str(e.get("opponent_name", "")), UI.ago(_seconds_since(str(e.get("at", ""))))])
 	await Dialog.ask(self, {"title": "Battle history", "body": "\n".join(lines) if not lines.is_empty() else "No battles yet.", "confirm_text": "Close"})

@@ -191,6 +191,11 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 			return l
 		"button":
 			var asset := str(p.get("asset", ""))
+			if asset == "" and p.has("states"):
+				# A stateful painted tab: start on whichever state the painting shows.
+				var st: Dictionary = p["states"]
+				var first: Dictionary = st.get("active", st.get("inactive", {}))
+				asset = str(first.get("asset", ""))
 			if asset == "" or asset.contains("<") or asset.contains("{"):
 				# The painted button is part of a bigger crop: an invisible tap target.
 				var hs := UI.hotspot(r)

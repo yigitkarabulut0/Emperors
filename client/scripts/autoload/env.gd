@@ -46,6 +46,9 @@ func _parse_args() -> void:
 		elif a == "--tab" and i + 1 < raw.size():
 			args["tab"] = raw[i + 1]
 			i += 2
+		elif a == "--replay-last":
+			args["replay_last"] = true
+			i += 1
 		elif a.begins_with("--api="):
 			api_base_url = a.substr(6)
 			i += 1

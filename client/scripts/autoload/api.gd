@@ -132,7 +132,8 @@ func _once(lane: Lane, method: int, path: String, body: Dictionary, authed: bool
 	if not lane.live:
 		lane.http.close()
 
-	var parsed: Variant = JSON.parse_string(raw.get_string_from_utf8())
+	var text := raw.get_string_from_utf8().strip_edges()
+	var parsed: Variant = JSON.parse_string(text) if text != "" else null
 	var data: Dictionary = parsed if parsed is Dictionary else {}
 	if not _reachable:
 		_reachable = true

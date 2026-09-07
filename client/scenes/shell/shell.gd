@@ -82,6 +82,86 @@ func _ready() -> void:
 
 	_on_changed()
 	open(str(Env.args.get("tab", "collect")))
+	_daily_on_boot.call_deferred()
+
+
+# --- diamonds, energy, the daily reward ------------------------------------------------
+
+var _busy_popup := false
+var _daily_shown := false
+
+
+## Diamonds are earned, never bought: level-ups and the daily calendar. The "+"
+## on the pill opens the calendar with a claim when one is due.
+func _diamonds_popup() -> void:
+	if _busy_popup:
+		return
+	_busy_popup = true
+	var res: Api.Response = await Api.get_json("/v1/daily")
+	_busy_popup = false
+	if not res.ok:
+		toast(res.error)
+		return
+	var d := res.data
+	var rewards: Array = d.get("rewards", [])
+	var day := int(d.get("day", 1))
+	var lines: Array = []
+	for i in rewards.size():
+		var mark := "●" if i + 1 < day or (i + 1 == day and not bool(d.get("claimable", false))) else ("▶" if i + 1 == day else "○")
+		lines.append("%s Day %d   %d diamonds" % [mark, i + 1, int(rewards[i])])
+	var body := "Diamonds come from levelling up and from the daily reward.\nStreak: %d days.\n\n%s" % [int(d.get("streak", 0)), "\n".join(lines)]
+	if bool(d.get("claimable", false)):
+		if await Dialog.ask(self, {"title": "Daily reward", "body": body, "confirm_text": "Claim %d diamonds" % int(d.get("reward", 0)), "cancel_text": "Later"}):
+			var c: Api.Response = await Api.post_json("/v1/daily/claim", {})
+			if c.ok:
+				toast("+%d diamonds" % int(d.get("reward", 0)))
+				await GameState.refresh()
+			elif c.code != "already_claimed":
+				toast(c.error)
+	else:
+		await Dialog.ask(self, {"title": "Diamonds", "body": body + "\n\nToday's reward is already claimed.", "confirm_text": "OK"})
+
+
+## The "+" on energy offers the refill from the Diamond Goods directly.
+func _energy_popup() -> void:
+	if _busy_popup:
+		return
+	_busy_popup = true
+	var res: Api.Response = await Api.get_json("/v1/store")
+	_busy_popup = false
+	if not res.ok:
+		toast(res.error)
+		return
+	var good: Dictionary = {}
+	for g in res.data.get("goods", []):
+		if str(g.get("id", "")) == "energy_refill":
+			good = g
+	if good.is_empty():
+		open("shop")
+		return
+	var have := int(GameState.player().get("diamonds", 0))
+	var cost := int(good.get("diamonds", 0))
+	var body := "%s\nCosts %d diamonds. You have %d." % [str(good.get("blurb", "")), cost, have]
+	if not bool(good.get("useful", true)):
+		await Dialog.ask(self, {"title": "Energy refill", "body": body + "\nYour energy is already full.", "confirm_text": "OK"})
+		return
+	if have < cost:
+		await Dialog.ask(self, {"title": "Energy refill", "body": body + "\nNot enough diamonds. Tap the diamond pill to see how to earn them.", "confirm_text": "OK"})
+		return
+	if await Dialog.ask(self, {"title": "Energy refill", "body": body, "confirm_text": "Refill"}):
+		var r: Api.Response = await GameState.act("/v1/store/buy", {"good": "energy_refill"})
+		if r.ok:
+			toast("Energy refilled")
+
+
+## Once per session, when the day's reward is waiting, offer it on arrival.
+func _daily_on_boot() -> void:
+	if _daily_shown or Env.args.has("capture"):
+		return
+	_daily_shown = true
+	var res: Api.Response = await Api.get_json("/v1/daily")
+	if res.ok and bool(res.data.get("claimable", false)):
+		_diamonds_popup()
 
 
 ## On a phone the display's safe area (notch, Dynamic Island) sits over the top
@@ -185,9 +265,9 @@ func _build_pills() -> void:
 	var plus_gold := UI.hotspot(Rect2(354, 24, 38, 52))
 	plus_gold.pressed.connect(open.bind("collect"))
 	var plus_gems := UI.hotspot(Rect2(598, 24, 38, 52))
-	plus_gems.pressed.connect(open.bind("shop"))
+	plus_gems.pressed.connect(_diamonds_popup)
 	var plus_energy := UI.hotspot(Rect2(848, 24, 38, 52))
-	plus_energy.pressed.connect(open.bind("shop"))
+	plus_energy.pressed.connect(_energy_popup)
 	for h in [plus_gold, plus_gems, plus_energy]:
 		top.add_child(h)
 

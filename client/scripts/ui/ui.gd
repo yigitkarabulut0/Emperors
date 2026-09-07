@@ -33,9 +33,11 @@ static func font(role: String = "body", weight: int = 500) -> Font:
 	return fv
 
 
+## The paintings' type is one step heavier than the layouts' nominal weights
+## read as, so every weight is lifted by 100 (Cinzel tops out at 900).
 static func settings(size: int, color: Color, role: String = "body", weight: int = 500, shadow: bool = true) -> LabelSettings:
 	var s := LabelSettings.new()
-	s.font = font(role, weight)
+	s.font = font(role, mini(weight + 100, 900 if role == "title" else 800))
 	s.font_size = size
 	s.font_color = color
 	if shadow:

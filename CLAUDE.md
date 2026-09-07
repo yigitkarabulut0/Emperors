@@ -4,8 +4,9 @@ A 2D portrait mobile idle/RPG kingdom game. Godot 4.7 client, Go 1.27 server,
 Postgres on Neon, Next.js live-ops panel. iPhone first.
 
 **Read `docs/FRONTEND.md` before touching `client/`.** It is the screen-by-screen
-and endpoint-by-endpoint reference, and it is where the art pipeline is written
-down. This file is the short list of things that will silently break if you do
+reference. The client was rebuilt (September 2026) from seven reference
+paintings: every icon, button, frame and portrait is a crop of `art/reference/`,
+never redrawn; only live text is set in type. `art/SLICING_GUIDE.md` is the rule. This file is the short list of things that will silently break if you do
 not know them.
 
 ---
@@ -75,12 +76,12 @@ nothing happen.** The database's active version beats the embedded seed.
 python3 scripts/gen-balance.py    # must be idempotent: run twice, no diff
 python3 scripts/pace.py           # time-to-level under real session patterns
 cd server && go build ./... && go vet ./... && go test -count=1 ./...
-python3 scripts/lint-client.py
-godot --headless --path client --script tests/<name>.gd
+python3 scripts/lint-client.py     # compiles every script; layouts <-> assets <-> manifests
+godot --path client -- --dev-login <user> <pw> --tab collect --capture shot.png --capture-after 6
 ```
 
-`scripts/smoke-m*.py` drive the live HTTP API end to end. `tabs_fit.gd`,
-`offline_session.gd` and `reconnect.gd` need a running server; the rest do not.
+`scripts/smoke-m*.py` drive the live HTTP API end to end. A capture run saves the
+941x1672 design grid 1:1; put it beside `art/reference/<tab>.png` and look.
 
 After a schema change: `cd server && sqlc generate`.
 
@@ -117,12 +118,12 @@ this codebase invites.
 
 | Path | What |
 |---|---|
-| `client/` | Godot 4.7 game. 720×1280 portrait, all UI built in code |
+| `client/` | Godot 4.7 game. 941×1672 portrait, every asset a 1:1 cut of `art/reference/` |
 | `server/` | Go API, authoritative for every number |
 | `balance/` | Generated tuning documents — **do not hand-edit** |
 | `scripts/` | `gen-balance.py`, `pace.py`, `lint-client.py`, smoke tests, deploy |
 | `admin/` | Next.js live-ops panel (its own `AGENTS.md`) |
-| `art/` | Asset generation workspace. **Never** imported by Godot |
+| `art/` | `reference/` (the seven paintings), `slices/` (crop manifests + layouts), `qa/` (side-by-sides), `SLICING_GUIDE.md`. **Never** imported by Godot |
 | `docs/design/` | Seven subsystem designs, each with its adversarial review appended |
 | `docs/FRONTEND.md` | **Start here for client work** |
 | `proof/` | Per-milestone device screenshots |

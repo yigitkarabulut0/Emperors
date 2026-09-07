@@ -82,39 +82,46 @@ func _ensure_rows() -> void:
 		built["job_id"] = str(job.get("id", ""))
 		var btn: TextureButton = built["parts"]["collect"]
 		btn.pressed.connect(_on_collect.bind(str(job.get("id", ""))))
-		built["empty"] = _build_empty_overlay(btn)
+		built["empty"] = _build_empty_face(btn)
 		_rows.append(built)
 	content.custom_minimum_size = Vector2(sc.size.x, origin.y + jobs.size() * pitch + 8)
 
 
 ## The "no energy" face of a Collect button.
 ##
-## The button's green and its COLLECT are painted into one texture, so there is
-## no tint that turns it red -- modulate MULTIPLIES, and green times red is very
-## nearly black. A wash over the interior with the word redrawn on top keeps the
-## painted gold frame doing its job and still reads as a different button.
+## The button's green field, its gold frame and the word COLLECT are one painted
+## texture, so there is no tint that turns it red -- modulate multiplies, and
+## green times red is nearly black -- and an overlay rectangle is worse: it
+## leaves green showing along the frame's chamfered corners and reads as a
+## sticker laid on the button rather than as the button.
 ##
-## Slightly translucent so the original shading shows through and it does not
-## land as a flat rectangle; inset ten units so the frame's chamfered corners
-## stay clear of it.
-func _build_empty_overlay(btn: TextureButton) -> Control:
-	var holder := Control.new()
-	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.position = Vector2(10, 10)
-	holder.size = btn.size - Vector2(20, 20)
-	holder.visible = false
-	btn.add_child(holder)
-
-	var wash := ColorRect.new()
-	wash.color = Color(0.52, 0.11, 0.11, 0.93)
-	wash.set_anchors_preset(Control.PRESET_FULL_RECT)
-	wash.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(wash)
-
-	var l := UI.label("NO ENERGY", 24, Color("#F6E4D8"), "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
+## So the red face is a second texture of the same painting, baked by
+## tools/make_empty_button.gd: the word inpainted away and the field's hue
+## rotated to crimson, with every pixel of the frame, bevel, vignette and
+## silhouette kept. Swapping texture_normal swaps the whole button; the word
+## NO ENERGY is then a normal label over the empty field.
+##
+## Returns the label, which _paint_rows() shows or hides; the swap rides along
+## with it so the two can never disagree.
+func _build_empty_face(btn: TextureButton) -> Label:
+	var l := UI.label("NO ENERGY", 24, Color("#F7E7DA"), "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
 	l.set_anchors_preset(Control.PRESET_FULL_RECT)
-	holder.add_child(l)
-	return holder
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.visible = false
+	btn.add_child(l)
+	return l
+
+
+## Puts a Collect button on its green or its red face.
+func _set_empty(row: Dictionary, empty: bool) -> void:
+	var l: Label = row.get("empty")
+	if l == null:
+		return
+	if l.visible == empty:
+		return
+	l.visible = empty
+	var btn: TextureButton = row["parts"]["collect"]
+	btn.texture_normal = Art.tex("collect/collect_button_empty" if empty else "collect/collect_button")
 
 
 func _painting_for(job: Dictionary, index: int) -> String:
@@ -165,9 +172,7 @@ func _paint_rows() -> void:
 		# has to go back to green the moment the bar ticks over the cost.
 		var short_of_energy := unlocked \
 			and GameState.display_energy() < int(job.get("energy_cost", 0))
-		var overlay: Control = r.get("empty")
-		if overlay != null:
-			overlay.visible = short_of_energy
+		_set_empty(r, short_of_energy)
 
 
 func _on_collect(job_id: String) -> void:

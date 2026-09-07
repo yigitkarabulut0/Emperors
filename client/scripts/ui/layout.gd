@@ -134,6 +134,15 @@ static func instantiate(template: Dictionary, inst: Variant = null) -> Dictionar
 
 static func _build_part(p: Dictionary, origin: Vector2) -> Control:
 	var kind := str(p.get("kind", "image"))
+	# The measured layouts write a bar as an image with a "fill" side ("left"),
+	# not as kind "fill". Both mean the same thing: a clipped wrap that remembers
+	# its full width, so set_fill() can be called on it on every repaint. Built as
+	# a plain image it is a TextureRect with nothing to remember that width by,
+	# and set_fill() then scales it by the fraction of its *current* width each
+	# time -- the bar creeps backwards on every paint while the number beside it
+	# stays put.
+	if kind == "image" and p.has("fill"):
+		kind = "fill"
 	var r := rect_of(p, origin)
 	var n: Control = _build_kind(p, kind, r)
 	if n != null and p.has("parts") and kind != "template" and kind != "group":
@@ -261,7 +270,11 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 
 
 static func set_fill(wrap: Control, frac: float) -> void:
-	var full: Vector2 = wrap.get_meta("full", wrap.size)
+	# The full width is fixed on first use. Reading it off the current size would
+	# make every call shrink the bar by the fraction of what the last call left.
+	if not wrap.has_meta("full"):
+		wrap.set_meta("full", wrap.size)
+	var full: Vector2 = wrap.get_meta("full")
 	var w := full.x * clampf(frac, 0.0, 1.0)
 	# A zero-width clip rect does not clip at all, so an empty bar is hidden.
 	wrap.visible = w >= 1.0

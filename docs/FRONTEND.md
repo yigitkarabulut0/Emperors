@@ -127,7 +127,8 @@ coordinate: it asks for parts by id and fills in live values.
 
 Kinds: `image`, `text`, `button` (a painted crop; with no asset, an invisible
 tap target), `ninepatch`, `fill` (a bar clipped from the left via
-`Layout.set_fill`), `scroll`, `group`, `template` (repeated component;
+`Layout.set_fill`; an `image` carrying a `fill` key is built as one), `scroll`,
+`group`, `template` (repeated component;
 `instances` may be `[x, y]` or `{pos|at, assets, texts, rects, data}`).
 Top-level rects are absolute; part rects are relative to their template.
 `Layout.build()` returns `{id: node}` for plain elements and

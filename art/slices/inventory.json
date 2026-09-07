@@ -1,0 +1,734 @@
+{
+ "source": "inventory.png",
+ "crops": [
+  {
+   "name": "inventory/header",
+   "rect": [
+    155,
+    0,
+    786,
+    228
+   ],
+   "inpaint": [
+    [
+     182,
+     18,
+     222,
+     65
+    ],
+    [
+     423,
+     18,
+     212,
+     65
+    ],
+    [
+     651,
+     18,
+     231,
+     65
+    ]
+   ]
+  },
+  {
+   "name": "inventory/equipped_panel",
+   "rect": [
+    155,
+    226,
+    786,
+    380
+   ],
+   "erase": [
+    {
+     "rect": [
+      185,
+      320,
+      221,
+      198
+     ],
+     "sample_x": [
+      182,
+      186
+     ]
+    },
+    {
+     "rect": [
+      438,
+      320,
+      220,
+      198
+     ],
+     "sample_x": [
+      430,
+      437
+     ]
+    },
+    {
+     "rect": [
+      690,
+      320,
+      218,
+      198
+     ],
+     "sample_x": [
+      681,
+      689
+     ]
+    },
+    {
+     "rect": [
+      193,
+      510,
+      224,
+      68
+     ],
+     "sample_x": [
+      183,
+      191
+     ]
+    },
+    {
+     "rect": [
+      446,
+      510,
+      218,
+      68
+     ],
+     "sample_x": [
+      434,
+      442
+     ]
+    },
+    {
+     "rect": [
+      698,
+      510,
+      218,
+      68
+     ],
+     "sample_x": [
+      686,
+      694
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/royal_longsword",
+   "rect": [
+    185,
+    320,
+    221,
+    194
+   ],
+   "erase": [
+    {
+     "rect": [
+      335,
+      474,
+      56,
+      22
+     ],
+     "sample_x": [
+      326,
+      333
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/lionheart_armor",
+   "rect": [
+    438,
+    320,
+    220,
+    194
+   ],
+   "erase": [
+    {
+     "rect": [
+      588,
+      474,
+      56,
+      22
+     ],
+     "sample_x": [
+      579,
+      586
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/war_steed",
+   "rect": [
+    690,
+    320,
+    218,
+    194
+   ],
+   "erase": [
+    {
+     "rect": [
+      840,
+      474,
+      56,
+      22
+     ],
+     "sample_x": [
+      831,
+      838
+     ]
+    }
+   ]
+  },
+  {
+   "name": "inventory/chip_all_active",
+   "rect": [
+    171,
+    598,
+    136,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_common",
+   "rect": [
+    302,
+    598,
+    156,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_uncommon",
+   "rect": [
+    460,
+    598,
+    181,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_rare",
+   "rect": [
+    643,
+    598,
+    184,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_epic",
+   "rect": [
+    171,
+    658,
+    161,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_legendary",
+   "rect": [
+    336,
+    658,
+    172,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_mystic",
+   "rect": [
+    511,
+    658,
+    152,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_special",
+   "rect": [
+    666,
+    658,
+    161,
+    60
+   ]
+  },
+  {
+   "name": "inventory/chip_frame_active",
+   "rect": [
+    173,
+    601,
+    132,
+    54
+   ],
+   "erase": [
+    {
+     "rect": [
+      212,
+      616,
+      48,
+      24
+     ],
+     "sample_x": [
+      190,
+      200
+     ]
+    }
+   ]
+  },
+  {
+   "name": "inventory/chip_frame_idle",
+   "rect": [
+    302,
+    598,
+    156,
+    60
+   ],
+   "erase": [
+    {
+     "rect": [
+      326,
+      612,
+      112,
+      30
+     ],
+     "sample_x": [
+      312,
+      320
+     ]
+    }
+   ]
+  },
+  {
+   "name": "inventory/sliders_button",
+   "rect": [
+    832,
+    596,
+    100,
+    124
+   ]
+  },
+  {
+   "name": "inventory/card_frame",
+   "rect": [
+    160,
+    729,
+    382,
+    203
+   ],
+   "erase": [
+    {
+     "rect": [
+      168,
+      737,
+      366,
+      138
+     ],
+     "sample_x": [
+      306,
+      313
+     ]
+    },
+    {
+     "rect": [
+      168,
+      875,
+      366,
+      50
+     ],
+     "sample_x": [
+      413,
+      417
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/shadowfang",
+   "rect": [
+    166,
+    735,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      236,
+      846,
+      58,
+      18
+     ],
+     "sample_x": [
+      230,
+      236
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/dragonplate",
+   "rect": [
+    552,
+    735,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      622,
+      846,
+      58,
+      18
+     ],
+     "sample_x": [
+      616,
+      622
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/knights_blade",
+   "rect": [
+    166,
+    945,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      236,
+      1056,
+      58,
+      18
+     ],
+     "sample_x": [
+      230,
+      236
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/forest_charger",
+   "rect": [
+    552,
+    945,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      622,
+      1056,
+      58,
+      18
+     ],
+     "sample_x": [
+      616,
+      622
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/recruit_armor",
+   "rect": [
+    166,
+    1155,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      236,
+      1266,
+      58,
+      18
+     ],
+     "sample_x": [
+      230,
+      236
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/bloodcrown",
+   "rect": [
+    552,
+    1155,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      622,
+      1266,
+      58,
+      18
+     ],
+     "sample_x": [
+      616,
+      622
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/nightmare",
+   "rect": [
+    166,
+    1366,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      236,
+      1477,
+      58,
+      18
+     ],
+     "sample_x": [
+      230,
+      236
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/ranger_mail",
+   "rect": [
+    552,
+    1366,
+    140,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      622,
+      1477,
+      58,
+      18
+     ],
+     "sample_x": [
+      616,
+      622
+     ]
+    }
+   ]
+  },
+  {
+   "name": "inventory/frame_epic",
+   "rect": [
+    166,
+    735,
+    140,
+    140
+   ]
+  },
+  {
+   "name": "inventory/frame_legendary",
+   "rect": [
+    552,
+    735,
+    140,
+    140
+   ]
+  },
+  {
+   "name": "inventory/frame_rare",
+   "rect": [
+    166,
+    945,
+    140,
+    140
+   ]
+  },
+  {
+   "name": "inventory/frame_uncommon",
+   "rect": [
+    552,
+    945,
+    140,
+    140
+   ]
+  },
+  {
+   "name": "inventory/frame_common",
+   "rect": [
+    166,
+    1155,
+    140,
+    140
+   ]
+  },
+  {
+   "name": "inventory/frame_special",
+   "rect": [
+    552,
+    1155,
+    140,
+    140
+   ]
+  },
+  {
+   "name": "inventory/frame_mystic",
+   "rect": [
+    166,
+    1366,
+    140,
+    140
+   ]
+  },
+  {
+   "name": "inventory/badge_epic",
+   "rect": [
+    443,
+    736,
+    90,
+    47
+   ]
+  },
+  {
+   "name": "inventory/badge_legendary",
+   "rect": [
+    825,
+    737,
+    99,
+    45
+   ]
+  },
+  {
+   "name": "inventory/badge_rare",
+   "rect": [
+    443,
+    947,
+    90,
+    46
+   ]
+  },
+  {
+   "name": "inventory/badge_uncommon",
+   "rect": [
+    825,
+    947,
+    99,
+    46
+   ]
+  },
+  {
+   "name": "inventory/badge_common",
+   "rect": [
+    442,
+    1158,
+    91,
+    45
+   ]
+  },
+  {
+   "name": "inventory/badge_special",
+   "rect": [
+    825,
+    1158,
+    99,
+    45
+   ]
+  },
+  {
+   "name": "inventory/badge_mystic",
+   "rect": [
+    442,
+    1369,
+    91,
+    44
+   ]
+  },
+  {
+   "name": "inventory/btn_equip",
+   "rect": [
+    174,
+    877,
+    122,
+    43
+   ]
+  },
+  {
+   "name": "inventory/btn_sell",
+   "rect": [
+    303,
+    877,
+    108,
+    43
+   ]
+  },
+  {
+   "name": "inventory/btn_reforge",
+   "rect": [
+    419,
+    877,
+    110,
+    43
+   ]
+  },
+  {
+   "name": "inventory/icon_attack",
+   "rect": [
+    313,
+    803,
+    34,
+    34
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "inventory/icon_power",
+   "rect": [
+    700,
+    832,
+    32,
+    28
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "inventory/icon_defence",
+   "rect": [
+    700,
+    804,
+    32,
+    30
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "inventory/icon_speed",
+   "rect": [
+    699,
+    1044,
+    32,
+    28
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "inventory/ground_bottom",
+   "rect": [
+    155,
+    1560,
+    786,
+    112
+   ]
+  }
+ ]
+}

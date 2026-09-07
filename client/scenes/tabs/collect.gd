@@ -1,351 +1,203 @@
-extends VBoxContainer
-## The Collect tab: the game's core loop.
+extends Control
+## COLLECT — today's quests and the job list. Layout: layout/collect.json.
 ##
-## Pick a job, then tap the big button. The button lives in the shell's bottom
-## strip because that is the only part of a tall phone a thumb reaches, and this
-## is the action a player performs hundreds of times a session.
+## The screen renders what the server sent: payouts are resolved values, the
+## counter is collects / next milestone, and a tap queues an optimistic collect
+## through GameState (confirmed + replay(pending) is what the pills show).
 
-const ICON_SIZE := UI.ICON_LG
+const SCREEN := "collect"
+const PAINTINGS := ["collect/job_grapes", "collect/job_strawberries", "collect/job_wheat",
+	"collect/job_timber", "collect/job_stone", "collect/job_tax"]
+const PAINTING_BY_WORD := {"grape": 0, "berr": 1, "wheat": 2, "timber": 3, "wood": 3, "log": 3,
+	"stone": 4, "quarry": 4, "tax": 5}
 
-var _selected := ""
-var _rows: Dictionary = {}
-var _list: VBoxContainer
-var _action: Button
-var _action_sub: Label
-
-## Today's three tasks.
-##
-## They live here rather than on a tenth rail entry: most of them are about
-## collecting, this is the screen a player already has open while doing it, and
-## shell_fits.gd measures the rail's column against an iPad that has no room.
-##
-## Kept OUTSIDE the job list's container because that list rebuilds by diffing
-## row counts, and quests appearing would look like the job set changed.
-var _quests: VBoxContainer
-var _quest_busy := false
-## Throttles the quest refresh. `changed` fires on every settled batch, and a
-## request per tap would be a storm; three seconds is fast enough that a counter
-## looks live and slow enough to cost nothing.
-var _quests_at_ms := 0
-const QUEST_REFRESH_MS := 3000
+var _ui: Dictionary = {}
+var _rows: Array = []            ## [{node, parts, job_id}]
+var _quests: Array = []
+var _quest_cards: Array = []
+var _quests_loaded_ms := -100000
+var _built := false
+var _busy := false
 
 
 func _ready() -> void:
-	add_theme_constant_override("separation", 8)
-
-	_quests = VBoxContainer.new()
-	_quests.add_theme_constant_override("separation", 4)
-	add_child(_quests)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-
-	# Lists follow your finger. Godot's own touch scrolling is gated behind
-
-	# is_touchscreen_available() and is eaten by the buttons the list is made of.
-
-	DragScroll.install(scroll)
-	add_child(scroll)
-
-	_list = VBoxContainer.new()
-	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_list.add_theme_constant_override("separation", 6)
-	scroll.add_child(_list)
-
-	GameState.changed.connect(_rebuild)
-	GameState.changed.connect(_maybe_reload_quests)
-	_reload_quests.call_deferred()
-	# Energy regenerates without the snapshot changing, so the button has to be
-	# re-armed from its own signal or it stays disabled until something else
-	# happens to redraw it.
-	GameState.energy_changed.connect(func(_v: int) -> void: _refresh_action())
-	_rebuild()
+	_ui = Layout.build(SCREEN, self)
+	_quest_cards = _ui.get("quest_card", [])
+	for i in _quest_cards.size():
+		var hit := UI.hotspot(Rect2(Vector2.ZERO, _quest_cards[i]["node"].size))
+		hit.pressed.connect(_claim_quest.bind(i))
+		_quest_cards[i]["node"].add_child(hit)
+	var sc: ScrollContainer = _ui["job_list"]
+	sc.scroll_deadzone = 14
+	_built = true
+	GameState.energy_changed.connect(func(_v: int) -> void: _paint_rows())
+	set_process(true)
 
 
-## The shell owns the bottom strip, so the tab hands it a button rather than
-## drawing one inside its own scroll area.
-func mount_action_bar(host: Control) -> void:
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
-	host.add_child(col)
-
-	_action = UI.button("SELECT A JOB", UI.F_H2)
-	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
-	_action.pressed.connect(_collect_selected)
-	col.add_child(_action)
-
-	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
-	col.add_child(_action_sub)
-
-	_refresh_action()
-
-
-func _rebuild() -> void:
-	if not GameState.has_state():
+func refresh() -> void:
+	if not _built:
 		return
-
-	var jobs := GameState.jobs()
-	# Auto-select the best job the player can currently afford, so a new player's
-	# first tap needs no decision and a returning player's default is not stale.
-	if _selected == "":
-		for j in jobs:
-			if bool(j.get("unlocked", false)):
-				_selected = str(j.get("id", ""))
-
-	# Rebuild only when the row set changed; otherwise update in place so tapping
-	# does not rebuild 15 rows and lose scroll position.
-	if _rows.size() != jobs.size():
-		for c in _list.get_children():
-			c.queue_free()
-		_rows.clear()
-		for j in jobs:
-			var row := _build_row(j)
-			_list.add_child(row)
-			_rows[str(j.get("id", ""))] = row
-
-	for j in jobs:
-		var row: Control = _rows.get(str(j.get("id", "")))
-		if row:
-			_update_row(row, j)
-
-	_refresh_action()
+	_ensure_rows()
+	_paint_rows()
+	_paint_quests()
+	if Time.get_ticks_msec() - _quests_loaded_ms > 3000:
+		_load_quests()
 
 
-func _build_row(job: Dictionary) -> Control:
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
-	b.focus_mode = Control.FOCUS_NONE
-	b.pressed.connect(_select.bind(str(job.get("id", ""))))
-	b.set_meta("job_id", str(job.get("id", "")))
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 14)
-	b.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	margin.add_child(row)
-
-	# Fifteen rows of near-identical text are hard to scan. The icon is how a
-	# player finds the job they were on without reading every name.
-	var icon := TextureRect.new()
-	icon.texture = ArtRegistry.ui_icon("jobs/" + str(job.get("id", "")))
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
-	row.add_child(icon)
-
-	var left := VBoxContainer.new()
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	left.alignment = BoxContainer.ALIGNMENT_CENTER
-	left.add_theme_constant_override("separation", 2)
-	left.add_child(UI.label("", UI.F_H2, Palette.TEXT))     # 0 name
-	left.add_child(UI.label("", UI.F_MICRO, Palette.TEXT_FAINT)) # 1 mastery / unlock
-	row.add_child(left)
-
-	var right := VBoxContainer.new()
-	right.alignment = BoxContainer.ALIGNMENT_CENTER
-	right.add_theme_constant_override("separation", 2)
-	right.add_child(UI.label("", UI.F_H2, Palette.GOLD_INK, HORIZONTAL_ALIGNMENT_RIGHT))   # 0 gold
-	right.add_child(UI.label("", UI.F_CAPTION, Palette.ENERGY, HORIZONTAL_ALIGNMENT_RIGHT)) # 1 cost
-	row.add_child(right)
-
-	return b
+func _process(_dt: float) -> void:
+	if not visible:
+		return
+	var l: Label = _ui.get("quests_reset")
+	if l != null:
+		l.text = "Resets in " + UI.duration(_seconds_to_local_midnight())
 
 
-func _update_row(row: Control, job: Dictionary) -> void:
-	var id := str(job.get("id", ""))
-	var unlocked := bool(job.get("unlocked", false))
-	var selected := id == _selected
-	var affordable := unlocked and GameState.display_energy() >= int(job.get("energy_cost", 0))
+# --- jobs -------------------------------------------------------------------------
 
-	var box := row.get_child(0).get_child(0)
-	var icon: TextureRect = box.get_child(0)
-	var left: VBoxContainer = box.get_child(1)
-	var right: VBoxContainer = box.get_child(2)
-
-	# Gold when it is the job you are about to run, plain when available, faint
-	# when still locked -- the same three states the row's text already uses.
-	if selected:
-		icon.modulate = Palette.GOLD
-	else:
-		icon.modulate = Palette.TEXT if unlocked else Palette.TEXT_FAINT
-
-	(left.get_child(0) as Label).text = str(job.get("name", ""))
-	(left.get_child(0) as Label).add_theme_color_override("font_color",
-		Palette.TEXT if unlocked else Palette.TEXT_FAINT)
-
-	var sub := ""
-	if not unlocked:
-		sub = "unlocks at level %d" % int(job.get("unlock_level", 0))
-	else:
-		var done := int(job.get("collects", 0))
-		var bonus := int(job.get("mastery_bonus_bp", 0))
-		var next := int(job.get("next_milestone", 0))
-		sub = "%d done" % done
-		if bonus > 0:
-			sub += "   +%d%% mastery" % (bonus / 100)
-		if next > 0:
-			sub += "   next at %d" % next
-	(left.get_child(1) as Label).text = sub
-
-	(right.get_child(0) as Label).text = "+" + UI.number(int(job.get("gold_payout", 0)))
-	(right.get_child(0) as Label).add_theme_color_override("font_color",
-		Palette.GOLD_INK if unlocked else Palette.TEXT_FAINT)
-	(right.get_child(1) as Label).text = "%d energy" % int(job.get("energy_cost", 0))
-
-	# The same lit surfaces every other card in the game uses. These were still
-	# flat boxes, which is why the jobs list -- the screen the game is mostly
-	# played on -- looked plainer than everything around it. A locked job is
-	# sunken, the selected one is raised with a gold edge.
-	row.add_theme_stylebox_override("normal", UI.card_box(selected, not unlocked))
-	row.add_theme_stylebox_override("hover", UI.card_box(true, not unlocked))
-	row.add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
-	# A locked row is disabled, and with no box of its own it would fall back to
-	# the engine default and disappear.
-	row.add_theme_stylebox_override("disabled", UI.card_box(false, true))
-	row.disabled = not unlocked
-	row.modulate.a = 1.0 if affordable or not unlocked else 0.75
+func _ensure_rows() -> void:
+	var jobs: Array = GameState.jobs().duplicate()
+	jobs.sort_custom(func(a, b): return int(a.get("order", 0)) < int(b.get("order", 0)))
+	if _rows.size() == jobs.size():
+		return
+	var sc: ScrollContainer = _ui["job_list"]
+	var content: Control = sc.get_meta("content")
+	for r in _rows:
+		r["node"].queue_free()
+	_rows.clear()
+	var tpl := Layout.element(SCREEN, "job_row")
+	var origin := Layout.rect_of(tpl).position - Layout.rect_of(Layout.element(SCREEN, "job_list")).position
+	var pitch := float(tpl.get("pitch", 168))
+	for i in jobs.size():
+		var job: Dictionary = jobs[i]
+		var built := Layout.instantiate(tpl, {"assets": {"tile": _painting_for(job, i)}})
+		built["node"].position = origin + Vector2(0, i * pitch)
+		content.add_child(built["node"])
+		built["job_id"] = str(job.get("id", ""))
+		var btn: TextureButton = built["parts"]["collect"]
+		btn.pressed.connect(_on_collect.bind(str(job.get("id", ""))))
+		_rows.append(built)
+	content.custom_minimum_size = Vector2(sc.size.x, origin.y + jobs.size() * pitch + 8)
 
 
-func _select(id: String) -> void:
-	_selected = id
-	_rebuild()
+func _painting_for(job: Dictionary, index: int) -> String:
+	var key := (str(job.get("id", "")) + " " + str(job.get("name", ""))).to_lower()
+	for word in PAINTING_BY_WORD:
+		if key.contains(word):
+			return PAINTINGS[PAINTING_BY_WORD[word]]
+	return PAINTINGS[index % PAINTINGS.size()]
 
 
-func _selected_job() -> Dictionary:
+func _job(id: String) -> Dictionary:
 	for j in GameState.jobs():
-		if str(j.get("id", "")) == _selected:
+		if str(j.get("id", "")) == id:
 			return j
 	return {}
 
 
-func _collect_selected() -> void:
-	var job := _selected_job()
+func _paint_rows() -> void:
+	for r in _rows:
+		var job := _job(r["job_id"])
+		if job.is_empty():
+			continue
+		var p: Dictionary = r["parts"]
+		var name: String = str(job.get("name", "")).to_upper()
+		var name_label: Label = p["name"]
+		name_label.text = name
+		name_label.label_settings.font_size = 24 if name.length() <= 18 else 19
+		p["energy"].text = str(int(job.get("energy_cost", 0)))
+		p["gold"].text = UI.grouped(int(job.get("gold_payout", 0)))
+		p["xp"].text = UI.grouped(int(job.get("xp_payout", 0)))
+		var unlocked := bool(job.get("unlocked", false))
+		var next := int(job.get("next_milestone", 0))
+		var collects := int(job.get("collects", 0))
+		if not unlocked:
+			p["counter"].text = "LV %d" % int(job.get("unlock_level", 1))
+		elif next <= 0:
+			p["counter"].text = "%d / MAX" % collects
+		else:
+			p["counter"].text = "%d / %d" % [collects, next]
+		var tier: Array = ["25  +5%", "50  +10%", "100  +15%"] if next <= 100 else ["250  +20%", "500  +25%", "1000  +30%"]
+		p["mastery_1"].text = tier[0]
+		p["mastery_2"].text = tier[1]
+		p["mastery_3"].text = tier[2]
+		r["node"].modulate = Color.WHITE if unlocked else Color(0.55, 0.55, 0.55)
+
+
+func _on_collect(job_id: String) -> void:
+	var job := _job(job_id)
 	if job.is_empty():
+		return
+	if not bool(job.get("unlocked", false)):
+		GameState.action_failed.emit("Unlocks at level %d" % int(job.get("unlock_level", 1)))
 		return
 	if not GameState.collect(job):
-		# Refused locally, so there is no round trip and no flicker. Re-running
-		# the whole refresh rather than only writing the message: the message was
-		# the half that never got cleared, because the only thing that rewrites it
-		# is the call that was not happening.
-		_refresh_action()
+		GameState.action_failed.emit("Not enough energy")
 
 
-## The shell calls this on every re-entry to a cached section. Collect renders
-## straight from GameState so it has nothing to re-fetch, but re-arming the
-## button here kills the stale-disabled bug from a second direction.
-func _reload() -> void:
-	_rebuild()
+# --- quests -----------------------------------------------------------------------
 
-
-func _refresh_action() -> void:
-	if _action == null:
-		return
-	var job := _selected_job()
-	if job.is_empty():
-		_action.text = "SELECT A JOB"
-		_action.disabled = true
-		_action_sub.text = ""
-		return
-
-	var cost := int(job.get("energy_cost", 0))
-	var can := GameState.display_energy() >= cost
-	_action.text = "%s  —  %d ⚡" % [str(job.get("name", "")).to_upper(), cost]
-	_action.disabled = not can
-
-	# No "N queued" any more. The gold and the experience have ALREADY moved on
-	# screen by the time this runs -- the queue is an implementation detail of
-	# getting the server to agree, and announcing it was the single thing making
-	# a tap that already happened feel like it had not.
-	if not can:
-		_action_sub.text = "Not enough energy"
-	else:
-		_action_sub.text = "+%s gold   +%d xp" % [
-			UI.number(int(job.get("gold_payout", 0))), int(job.get("xp_payout", 0))]
-
-
-## Draws today's tasks, and refreshes them after anything that could advance one.
-func _reload_quests() -> void:
+func _load_quests() -> void:
+	_quests_loaded_ms = Time.get_ticks_msec()
 	var res: Api.Response = await Api.get_json("/v1/quests")
-	if not res.ok:
+	if res.ok:
+		_quests = res.data.get("quests", [])
+		_paint_quests()
+
+
+func _paint_quests() -> void:
+	for i in _quest_cards.size():
+		var p: Dictionary = _quest_cards[i]["parts"]
+		if i >= _quests.size():
+			_quest_cards[i]["node"].visible = false
+			continue
+		_quest_cards[i]["node"].visible = true
+		var q: Dictionary = _quests[i]
+		var target := int(q.get("target", 0))
+		var progress := mini(int(q.get("progress", 0)), target)
+		p["title"].text = _quest_title(q)
+		p["progress"].text = "%d / %d" % [progress, target]
+		Layout.set_fill(p["bar_fill"], float(progress) / maxf(1.0, float(target)))
+		p["reward_icon"].texture = Art.tex("icons/reward_crown")
+		var claimed := bool(q.get("claimed", false))
+		var done := bool(q.get("done", false))
+		if claimed:
+			p["reward"].text = "CLAIMED"
+			p["reward"].label_settings.font_color = UI.DIM
+		elif done:
+			p["reward"].text = "CLAIM +%d XP" % int(q.get("xp", 0))
+			p["reward"].label_settings.font_color = UI.GREEN
+		else:
+			p["reward"].text = "+%d XP" % int(q.get("xp", 0))
+			p["reward"].label_settings.font_color = Color("#F3EDE0")
+
+
+func _quest_title(q: Dictionary) -> String:
+	var id := str(q.get("id", ""))
+	var n := int(q.get("target", 0))
+	if id.begins_with("collect_"):
+		return "Collect\n%d times" % n
+	if id.begins_with("energy_"):
+		return "Spend\n%d energy" % n
+	if id.begins_with("win_"):
+		return "Defeat\n%d rival%s" % [n, "" if n == 1 else "s"]
+	return str(q.get("name", ""))
+
+
+func _claim_quest(i: int) -> void:
+	if _busy or i >= _quests.size():
 		return
-	for c in _quests.get_children():
-		c.queue_free()
-
-	var list: Array = res.data.get("quests", [])
-	if list.is_empty():
+	var q: Dictionary = _quests[i]
+	if not bool(q.get("done", false)) or bool(q.get("claimed", false)):
 		return
-	_quests.add_child(UI.label("TODAY", UI.F_MICRO, Palette.TEXT_FAINT))
-	for qv in list:
-		_quests.add_child(_quest_row(qv))
+	_busy = true
+	var res: Api.Response = await GameState.act("/v1/quests/claim", {"slot": int(q.get("slot", i))})
+	_busy = false
+	if res.ok:
+		GameState.action_failed.emit("Quest reward claimed")
+		await _load_quests()
 
 
-func _quest_row(qv: Dictionary) -> Control:
-	var done := bool(qv.get("done", false))
-	var claimed := bool(qv.get("claimed", false))
-
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 44)
-	b.focus_mode = Control.FOCUS_NONE
-	b.disabled = claimed or not done
-	b.add_theme_stylebox_override("normal", UI.panel_box(
-		Palette.PANEL_HIGH if (done and not claimed) else Palette.PANEL,
-		Palette.GOLD_DEEP if (done and not claimed) else Palette.LINE))
-	b.add_theme_stylebox_override("disabled", UI.panel_box(Palette.PANEL, Palette.LINE))
-	b.pressed.connect(_claim_quest.bind(int(qv.get("slot", 0))))
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 10)
-	b.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	margin.add_child(row)
-
-	var name_col := VBoxContainer.new()
-	name_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	name_col.add_theme_constant_override("separation", 0)
-	row.add_child(name_col)
-	name_col.add_child(UI.label(str(qv.get("name", "")), UI.F_CAPTION,
-		Palette.TEXT_DIM if claimed else Palette.TEXT))
-	name_col.add_child(UI.label("%d / %d" % [int(qv.get("progress", 0)), int(qv.get("target", 0))],
-		UI.F_MICRO, Palette.TEXT_FAINT))
-
-	var right := "TAKEN"
-	var tint := Palette.TEXT_FAINT
-	if not claimed:
-		right = "CLAIM" if done else "%s g  ·  %s xp" % [
-			UI.number(int(qv.get("gold", 0))), UI.number(int(qv.get("xp", 0)))]
-		tint = Palette.GOLD_INK if done else Palette.TEXT_DIM
-	row.add_child(UI.label(right, UI.F_CAPTION, tint))
-	return b
-
-
-func _claim_quest(slot: int) -> void:
-	if _quest_busy:
-		return
-	_quest_busy = true
-	var seq := int(GameState.player().get("action_seq", 0)) + 1
-	var res: Api.Response = await Api.post_json("/v1/quests/claim",
-		{"slot": slot, "action_seq": seq})
-	_quest_busy = false
-	if not res.ok:
-		GameState.action_failed.emit(res.error)
-	await GameState.refresh()
-	await _reload_quests()
-
-
-func _maybe_reload_quests() -> void:
-	var now := Time.get_ticks_msec()
-	if now - _quests_at_ms < QUEST_REFRESH_MS:
-		return
-	_quests_at_ms = now
-	await _reload_quests()
+func _seconds_to_local_midnight() -> int:
+	var now := Time.get_datetime_dict_from_system()
+	var passed := int(now.get("hour", 0)) * 3600 + int(now.get("minute", 0)) * 60 + int(now.get("second", 0))
+	return 86400 - passed

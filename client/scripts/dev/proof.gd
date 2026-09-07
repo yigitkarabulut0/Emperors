@@ -1,92 +1,51 @@
 extends Node
-## Screenshot capture for the milestone proof ritual.
+## Dev-only screenshot capture: --capture <path> --capture-after <seconds>.
 ##
-## The build plan requires evidence from a running build at every milestone, not
-## a claim that it works. Rather than depend on OS screenshot tools (which need
-## permissions on macOS and do not exist on a device), the game captures its own
-## viewport.
-##
-## Usage:
-##   godot --path client -- --capture proof/M0/boot.png [--capture-after 2.0]
-##
-## Runs on desktop and on device. On device the file lands in user://, which
-## `xcrun devicectl` can pull back.
-
-const DEFAULT_DELAY := 2.0
-## Longest we will wait for a drawn frame before capturing anyway. macOS stops
-## delivering draw callbacks to an occluded window, so awaiting
-## RenderingServer.frame_post_draw unconditionally hangs forever whenever the
-## terminal is in front — which is exactly how this gets run.
-const DRAW_WAIT_TIMEOUT := 2.0
+## The game screenshots itself, so this works on the desktop and on the device
+## without OS screenshot permissions. In a capture run the scenes are mounted in
+## a 941x1672 SubViewport (Nav.host), so the saved image is the design grid 1:1
+## no matter how the window was clamped. Input is disabled so a stray click
+## cannot fire a button under an always-on-top window.
 
 var _path := ""
-var _delay := DEFAULT_DELAY
+var _after := 2.0
+
 
 func _ready() -> void:
-	var args := OS.get_cmdline_user_args()
-	for i in args.size():
-		match args[i]:
-			"--capture":
-				if i + 1 < args.size():
-					_path = args[i + 1]
-			"--capture-after":
-				if i + 1 < args.size():
-					_delay = float(args[i + 1])
-	if _path.is_empty():
+	if not Env.is_dev() or not Env.args.has("capture"):
 		return
-	# Keep the window drawing even when the terminal has focus. ALWAYS_ON_TOP is
-	# enough; do NOT call window_move_to_foreground() — raising the window under
-	# the mouse pointer makes macOS deliver a click-through, which lands on
-	# whatever button is under the cursor and fires a phantom press.
+	_path = Env.args["capture"]
+	_after = float(Env.args.get("capture_after", 2.0))
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
-	# ...but get out of the way. A capture run has to stay on top to keep
-	# drawing, and a run takes a few seconds, so a series of them was flashing
-	# windows over the middle of whatever the owner was doing. Bottom-right
-	# corner instead: still composited, still drawn, no longer in the way.
-	var screen := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
-	var size := DisplayServer.window_get_size()
-	DisplayServer.window_set_position(Vector2i(
-		screen.position.x + screen.size.x - size.x - 24,
-		screen.position.y + screen.size.y - size.y - 24))
-	# A capture run is non-interactive by definition. Ignoring input also stops
-	# the pointer, which now sits over an always-on-top window, from pressing
-	# whatever button happens to be under it.
-	get_viewport().set_disable_input(true)
-	_run()
+	get_viewport().gui_disable_input = true
+	_mount_viewport.call_deferred()
+	print("[proof] capture in %.1fs -> %s" % [_after, _path])
+	get_tree().create_timer(_after).timeout.connect(_capture)
 
-func _run() -> void:
-	# Wait in wall-clock time, not frames: what we are proving is usually a
-	# network round trip, and a frame count says nothing about whether it landed.
-	await get_tree().create_timer(_delay).timeout
-	await _next_drawn_frame()
 
-	var image := get_viewport().get_texture().get_image()
-	var dir := _path.get_base_dir()
-	if not dir.is_empty() and not dir.begins_with("user://") and not dir.begins_with("res://"):
-		DirAccess.make_dir_recursive_absolute(dir)
+func _mount_viewport() -> void:
+	var container := SubViewportContainer.new()
+	container.stretch = true
+	container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var vp := SubViewport.new()
+	vp.size = Vector2i(941, 1672)
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vp.gui_disable_input = true
+	container.add_child(vp)
+	get_tree().root.add_child(container)
+	Nav.host = vp
+	# The boot scene is already running under the root; move it in so it is drawn
+	# at the grid size too.
+	var cur := get_tree().current_scene
+	if cur != null:
+		cur.get_parent().remove_child(cur)
+		vp.add_child(cur)
 
-	var err := image.save_png(_path)
-	if err == OK:
-		print("[proof] captured %dx%d -> %s" % [image.get_width(), image.get_height(), _path])
-	else:
-		push_error("[proof] save failed (%d) -> %s" % [err, _path])
-	get_tree().quit(0 if err == OK else 1)
 
-## Waits for one fully drawn frame, but never longer than DRAW_WAIT_TIMEOUT.
-## A slightly stale capture beats a hung CI job.
-func _next_drawn_frame() -> void:
-	var guard := get_tree().create_timer(DRAW_WAIT_TIMEOUT)
-	var drawn := false
-	var on_draw := func() -> void: drawn = true
-	RenderingServer.frame_post_draw.connect(on_draw, CONNECT_ONE_SHOT)
-
-	while not drawn and guard.time_left > 0.0:
-		await get_tree().process_frame
-
-	if not drawn:
-		if RenderingServer.frame_post_draw.is_connected(on_draw):
-			RenderingServer.frame_post_draw.disconnect(on_draw)
-		# Expected on macOS whenever the terminal has focus. The viewport texture
-		# still holds the last drawn frame and has been verified current, so this
-		# is a note, not a problem.
-		print("[proof] no fresh frame within %.1fs; using last drawn frame" % DRAW_WAIT_TIMEOUT)
+func _capture() -> void:
+	await RenderingServer.frame_post_draw
+	var img: Image = Nav.host.get_texture().get_image() if Nav.host != null else get_viewport().get_texture().get_image()
+	var err := img.save_png(_path)
+	print("[proof] saved %s (%dx%d) err=%d" % [_path, img.get_width(), img.get_height(), err])
+	get_tree().quit()

@@ -1,115 +1,106 @@
 extends Control
-## Sign in / create account.
-##
-## Username and password, because the owner wants players to be able to recover
-## an account from a new device on day one. iOS rotates identifierForVendor on
-## reinstall, so a device-only account would silently lose everyone's progress.
+## Sign in / create account. No reference painting exists for this screen, so it
+## is set in the same type and colours as the rest, on the plain navy ground.
 
-signal authenticated
-
-var _mode_register := true
-var _username: LineEdit
-var _password: LineEdit
-var _submit: Button
-var _switch: Button
-var _error: Label
+var _user: LineEdit
+var _pass: LineEdit
+var _msg: Label
 var _busy := false
 
 
 func _ready() -> void:
 	var bg := ColorRect.new()
-	# Parchment, the same ground the game itself is on -- so the launch runs
-	# splash, sign-in and shell without a single change of surface.
-	#
-	# This was briefly the imperial red instead, on the argument that the gold
-	# wordmark needs a dark field. It does, and the answer is not to darken the
-	# whole screen: every other line here is ink, and ink on red is unreadable.
-	# The wordmark is set in red on parchment now, which is what the reference
-	# does with a title and measures 6.57:1.
-	bg.color = Palette.BG
+	bg.color = UI.GROUND
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	SafeArea.apply(margin, Vector4(UI.GUTTER, UI.GAP_M, UI.GUTTER, UI.GAP_M))
-	add_child(margin)
+	var title := UI.label("EMPERORS", 84, UI.GOLD, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(title, Rect2(0, 420, 941, 120))
+	add_child(title)
+	var sub := UI.label("Rule your realm", 30, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(sub, Rect2(0, 530, 941, 40))
+	add_child(sub)
 
-	var col := VBoxContainer.new()
-	col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	col.add_theme_constant_override("separation", 14)
-	margin.add_child(col)
+	_user = _field("Username", Rect2(220, 660, 500, 72), false)
+	_pass = _field("Password", Rect2(220, 760, 500, 72), true)
+	add_child(_user)
+	add_child(_pass)
 
-	col.add_child(UI.caps("EMPERORS", 88, Palette.BANNER, HORIZONTAL_ALIGNMENT_CENTER))
-	col.add_child(UI.label("Rise, and let the realm remember your name.", UI.F_CAPTION,
-		Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER))
-	col.add_child(UI.spacer(24))
+	add_child(_button("SIGN IN", Rect2(220, 880, 500, 84), Color("#1F7A2E"), _sign_in))
+	add_child(_button("CREATE ACCOUNT", Rect2(220, 990, 500, 84), Color("#7A1F1F"), _create))
 
-	_username = UI.line_edit("Username")
-	_username.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
-	col.add_child(_username)
-
-	_password = UI.line_edit("Password", true)
-	_password.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
-	_password.text_submitted.connect(func(_t: String) -> void: _submit_pressed())
-	col.add_child(_password)
-
-	_error = UI.label("", UI.F_CAPTION, Palette.DANGER, HORIZONTAL_ALIGNMENT_CENTER)
-	_error.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_error.custom_minimum_size = Vector2(0, 44)
-	col.add_child(_error)
-
-	_submit = UI.button("CREATE ACCOUNT", UI.F_H2)
-	_submit.custom_minimum_size = Vector2(0, 60)
-	_submit.pressed.connect(_submit_pressed)
-	col.add_child(_submit)
-
-	_switch = UI.ghost_button("Already have an account? Sign in")
-	_switch.pressed.connect(_toggle_mode)
-	col.add_child(_switch)
+	_msg = UI.label("", 26, UI.RED, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(_msg, Rect2(120, 1100, 700, 60))
+	_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	add_child(_msg)
 
 
-func _toggle_mode() -> void:
-	_mode_register = not _mode_register
-	_submit.text = "CREATE ACCOUNT" if _mode_register else "SIGN IN"
-	_switch.text = "Already have an account? Sign in" if _mode_register \
-		else "New here? Create an account"
-	_error.text = ""
+func _field(placeholder: String, rect: Rect2, secret: bool) -> LineEdit:
+	var e := LineEdit.new()
+	e.placeholder_text = placeholder
+	e.secret = secret
+	UI.place(e, rect)
+	e.add_theme_font_override("font", UI.font("body", 500))
+	e.add_theme_font_size_override("font_size", 30)
+	e.add_theme_color_override("font_color", UI.INK)
+	e.add_theme_color_override("font_placeholder_color", UI.DIM)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("#101C28")
+	sb.border_color = UI.GOLD_DIM
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 20
+	e.add_theme_stylebox_override("normal", sb)
+	e.add_theme_stylebox_override("focus", sb)
+	return e
 
 
-func _submit_pressed() -> void:
+func _button(text: String, rect: Rect2, color: Color, cb: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	UI.place(b, rect)
+	b.add_theme_font_override("font", UI.font("title", 700))
+	b.add_theme_font_size_override("font_size", 30)
+	b.add_theme_color_override("font_color", UI.INK)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = color
+	sb.border_color = UI.GOLD_DIM
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(6)
+	b.add_theme_stylebox_override("normal", sb)
+	var pressed := sb.duplicate()
+	pressed.bg_color = color.darkened(0.25)
+	b.add_theme_stylebox_override("pressed", pressed)
+	b.add_theme_stylebox_override("hover", sb)
+	b.pressed.connect(cb)
+	return b
+
+
+func _sign_in() -> void:
+	await _submit(false)
+
+
+func _create() -> void:
+	await _submit(true)
+
+
+func _submit(create: bool) -> void:
 	if _busy:
 		return
-	var user := _username.text.strip_edges()
-	var pw := _password.text
-
-	# Check locally first so the obvious mistakes cost no round trip, but the
-	# server validates independently — this is convenience, never enforcement.
-	if user.length() < 3:
-		_error.text = "Username must be at least 3 characters."
-		return
-	if pw.length() < 8:
-		_error.text = "Password must be at least 8 characters."
-		return
-
-	_set_busy(true)
-	# Each branch needs its own await: GDScript cannot await a ternary whose
-	# arms are coroutines.
-	var err := ""
-	if _mode_register:
-		err = await Session.register(user, pw)
+	_busy = true
+	_msg.text = ""
+	var err: String
+	if create:
+		err = await Session.register(_user.text.strip_edges(), _pass.text)
 	else:
-		err = await Session.login(user, pw)
-	_set_busy(false)
-
+		err = await Session.login(_user.text.strip_edges(), _pass.text)
 	if err != "":
-		_error.text = err
+		_msg.text = err
+		_busy = false
 		return
-	_error.text = ""
-	authenticated.emit()
-
-
-func _set_busy(busy: bool) -> void:
-	_busy = busy
-	_submit.disabled = busy
-	_submit.text = "…" if busy else ("CREATE ACCOUNT" if _mode_register else "SIGN IN")
+	await GameState.refresh()
+	_busy = false
+	if GameState.has_state():
+		Nav.go("res://scenes/shell/shell.tscn")
+	else:
+		_msg.text = "Signed in, but the realm did not answer."

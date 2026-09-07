@@ -1,14 +1,8 @@
-; Emperors — Godot 4.7 project configuration.
+; Emperors — Godot 4.7 project configuration (rebuild).
 ;
-; Portrait mobile first, desktop later. Settings chosen in the client design:
-;   720x1280 base            — designed-for size; everything essential must fit
-;                              inside 720x1140 so tall phones gain room rather
-;                              than losing it.
-;   canvas_items + expand    — expand gives taller phones MORE vertical canvas
-;                              instead of letterboxing them.
-;   mobile renderer          — Metal-backed on iOS; gl_compatibility only on web.
-;   etc2_astc                — required or the Android export later fails with a
-;                              blank configuration error.
+; The reference paintings are 941x1672, so the game runs at exactly that base size:
+; a pixel in art/reference/ is a layout unit here, and every crop is drawn 1:1.
+; canvas_items + expand: taller phones get more vertical canvas, never letterboxing.
 
 config_version=5
 
@@ -17,50 +11,36 @@ config_version=5
 config/name="Emperors"
 config/description="A 2D idle/RPG kingdom game."
 run/main_scene="res://scenes/boot/boot.tscn"
-config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.png"
-
-; The studio mark, on our own background, instead of the engine's logo.
-;
-; bg_color here, default_clear_color below and storyboard/custom_bg_color in
-; export_presets.cfg must all carry the SAME colour. They are three different
-; screens shown back to back during launch -- the iOS launch storyboard, the
-; engine splash, then the first frame we draw -- and any mismatch is a visible
-; flash on every single launch.
-boot_splash/bg_color=Color(0.9098039, 0.8627451, 0.7529412, 1)
-boot_splash/image="res://assets/branding/miav_splash.png"
-boot_splash/stretch_mode=0
-boot_splash/use_filter=true
-boot_splash/show_image=true
-boot_splash/minimum_display_time=800
+config/features=PackedStringArray("4.7", "Mobile")
+config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.043, 0.082, 0.122, 1)
+boot_splash/show_image=false
+boot_splash/minimum_display_time=0
 
 [autoload]
 
-; Order matters: each autoload's _ready() runs as it is added, so a singleton
-; may only reference ones listed above it. Session connects to Api at _ready,
-; and GameState uses both.
+; Load order matters: each may only reference the ones above it.
 Env="*res://scripts/autoload/env.gd"
+Nav="*res://scripts/autoload/nav.gd"
 Api="*res://scripts/autoload/api.gd"
 Session="*res://scripts/autoload/session.gd"
 GameState="*res://scripts/autoload/game_state.gd"
-ArtRegistry="*res://scripts/autoload/art_registry.gd"
+Art="*res://scripts/autoload/art.gd"
 Proof="*res://scripts/dev/proof.gd"
 
 [display]
 
-window/size/viewport_width=720
-window/size/viewport_height=1280
-window/size/window_width_override=405
-window/size/window_height_override=720
+window/size/viewport_width=941
+window/size/viewport_height=1672
+window/size/window_width_override=470
+window/size/window_height_override=836
 window/handheld/orientation=1
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
 [rendering]
 
-; The same colour as the boot splash. Without this the frame between the splash
-; and our first drawn frame is Godot's grey-blue.
-environment/defaults/default_clear_color=Color(0.9098039, 0.8627451, 0.7529412, 1)
+environment/defaults/default_clear_color=Color(0.043, 0.082, 0.122, 1)
 renderer/rendering_method="mobile"
 renderer/rendering_method.web="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true

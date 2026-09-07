@@ -1,0 +1,534 @@
+{
+ "screen": "shop",
+ "source": "shop.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "content_height": 1694,
+ "ground": "#0b161f",
+ "notes": [
+  "Reference cards are unequal: col1 361 wide, col2 376 wide; row-1 cards 247 tall, rows 2-3 only 233-235 tall. One template (card 1, LEGENDARY geometry, 361x247) is used for all six; instances sit on a uniform 252 px pitch, so the diamond panel and footer are 22 px lower than the reference (content_height 1694, scrolls).",
+  "Frames from other cards are stitched to 361x247 without scaling: epic drops a 15 px band inside the painting region (horizontal stitch); rare/uncommon duplicate a plain 12/14-row band of the text column (vertical stitch). Seams lie in covered or plain areas.",
+  "Painting region is 192x216 (the smallest inner height across the six cards). Every frame's inner painting region is fully inpainted, so a 12-18 px band of blurred tier haze shows under the painting in the row-1 frames.",
+  "Legendary frame keeps its own price pill and BUY baked (they are the template's); epic/rare/uncommon frames have pill+BUY rows erased because their baked ones sit 8-16 px off the template; the template's shop/price_pill and shop/buy parts are drawn for every tier.",
+  "Badges MYSTIC, SPECIAL, COMMON are not on this screen: reuse the inventory screen's. All six paintings carry their rarity badge baked in at rel [12,9].",
+  "Type icons (sword/armor/horse) are darkkey crops; name, type, tier, price are live text."
+ ],
+ "fonts": {
+  "title": "Cinzel",
+  "body": "transitional serif (CrimsonPro/EBGaramond)"
+ },
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "shop/header",
+   "rect": [
+    155,
+    0,
+    786,
+    636
+   ]
+  },
+  {
+   "id": "refresh_time",
+   "kind": "text",
+   "rect": [
+    518,
+    580,
+    80,
+    34
+   ],
+   "font": "body",
+   "size": 28,
+   "weight": 500,
+   "color": "#F1EEE8",
+   "align": "left",
+   "valign": "center",
+   "sample": "04:37"
+  },
+  {
+   "id": "reroll",
+   "kind": "button",
+   "asset": "shop/reroll_button",
+   "rect": [
+    664,
+    558,
+    260,
+    74
+   ],
+   "action": "reroll"
+  },
+  {
+   "id": "reroll_cost",
+   "kind": "text",
+   "rect": [
+    816,
+    592,
+    50,
+    28
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 700,
+   "color": "#F7F4EE",
+   "align": "left",
+   "valign": "center",
+   "sample": "100"
+  },
+  {
+   "id": "offer_card",
+   "kind": "template",
+   "rect": [
+    174,
+    636,
+    361,
+    247
+   ],
+   "pitch": 252,
+   "instances": [
+    [
+     174,
+     636
+    ],
+    [
+     544,
+     636
+    ],
+    [
+     174,
+     888
+    ],
+    [
+     544,
+     888
+    ],
+    [
+     174,
+     1140
+    ],
+    [
+     544,
+     1140
+    ]
+   ],
+   "instance_samples": [
+    {
+     "tier": "legendary",
+     "item": "dragonblade",
+     "name": "Dragonblade",
+     "type": "sword",
+     "type_text": "SWORD",
+     "tier_text": "TIER 5",
+     "price": "12.0M"
+    },
+    {
+     "tier": "epic",
+     "item": "lionheart_armor_shop",
+     "name": "Lionheart Armor",
+     "type": "armor",
+     "type_text": "ARMOR",
+     "tier_text": "TIER 4",
+     "price": "5.0M"
+    },
+    {
+     "tier": "rare",
+     "item": "royal_charger",
+     "name": "Royal Charger",
+     "type": "horse",
+     "type_text": "HORSE",
+     "tier_text": "TIER 3",
+     "price": "1.8M"
+    },
+    {
+     "tier": "epic",
+     "item": "knights_oath",
+     "name": "Knight's Oath",
+     "type": "sword",
+     "type_text": "SWORD",
+     "tier_text": "TIER 4",
+     "price": "4.5M"
+    },
+    {
+     "tier": "uncommon",
+     "item": "valiant_armor",
+     "name": "Valiant Armor",
+     "type": "armor",
+     "type_text": "ARMOR",
+     "tier_text": "TIER 2",
+     "price": "600K"
+    },
+    {
+     "tier": "rare",
+     "item": "warhorse",
+     "name": "Warhorse",
+     "type": "horse",
+     "type_text": "HORSE",
+     "tier_text": "TIER 3",
+     "price": "1.9M"
+    }
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "shop/card_frame_{tier}",
+     "rect": [
+      0,
+      0,
+      361,
+      247
+     ],
+     "variants": {
+      "epic": [
+       {
+        "asset": "shop/card_frame_epic_l",
+        "rect": [
+         0,
+         0,
+         150,
+         247
+        ]
+       },
+       {
+        "asset": "shop/card_frame_epic_r",
+        "rect": [
+         150,
+         0,
+         211,
+         247
+        ]
+       }
+      ],
+      "rare": [
+       {
+        "asset": "shop/card_frame_rare_t",
+        "rect": [
+         0,
+         0,
+         361,
+         62
+        ]
+       },
+       {
+        "asset": "shop/card_frame_rare_b",
+        "rect": [
+         0,
+         62,
+         361,
+         185
+        ]
+       }
+      ],
+      "uncommon": [
+       {
+        "asset": "shop/card_frame_uncommon_t",
+        "rect": [
+         0,
+         0,
+         361,
+         56
+        ]
+       },
+       {
+        "asset": "shop/card_frame_uncommon_b",
+        "rect": [
+         0,
+         56,
+         361,
+         191
+        ]
+       }
+      ]
+     },
+     "note": "legendary is one crop; epic/rare/uncommon are two crops placed adjacently (see variants). Interior below the painting (rel y 221..239) is inpainted haze in every frame."
+    },
+    {
+     "id": "painting",
+     "kind": "image",
+     "asset": "items/{item}",
+     "rect": [
+      5,
+      5,
+      192,
+      216
+     ]
+    },
+    {
+     "id": "badge",
+     "kind": "image",
+     "asset": "shop/badge_{tier}",
+     "rect": [
+      12,
+      9,
+      158,
+      40
+     ],
+     "note": "already baked into every painting; only needed when a painting lacks one"
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      200,
+      30,
+      158,
+      36
+     ],
+     "font": "body",
+     "size": 26,
+     "weight": 600,
+     "color": "#F3F1EC",
+     "align": "left",
+     "valign": "center",
+     "sample": "Dragonblade",
+     "wrap": true
+    },
+    {
+     "id": "type_icon",
+     "kind": "image",
+     "asset": "shop/type_{type}",
+     "rect": [
+      202,
+      63,
+      44,
+      40
+     ],
+     "note": "sword 44x36, armor 40x38, horse 44x40; anchor top-left"
+    },
+    {
+     "id": "type",
+     "kind": "text",
+     "rect": [
+      244,
+      70,
+      112,
+      24
+     ],
+     "font": "title",
+     "size": 21,
+     "weight": 500,
+     "color": "#B9C7D7",
+     "align": "left",
+     "valign": "center",
+     "sample": "SWORD"
+    },
+    {
+     "id": "tier",
+     "kind": "text",
+     "rect": [
+      244,
+      100,
+      112,
+      22
+     ],
+     "font": "title",
+     "size": 19,
+     "weight": 500,
+     "color": "#B9C7D7",
+     "align": "left",
+     "valign": "center",
+     "sample": "TIER 5"
+    },
+    {
+     "id": "price_pill",
+     "kind": "image",
+     "asset": "shop/price_pill",
+     "rect": [
+      193,
+      125,
+      148,
+      48
+     ]
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      246,
+      131,
+      92,
+      36
+     ],
+     "font": "body",
+     "size": 32,
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "left",
+     "valign": "center",
+     "sample": "12.0M"
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "shop/buy",
+     "rect": [
+      176,
+      175,
+      172,
+      58
+     ],
+     "action": "buy"
+    }
+   ]
+  },
+  {
+   "id": "diamond_panel",
+   "kind": "image",
+   "asset": "shop/diamond_panel",
+   "rect": [
+    172,
+    1392,
+    750,
+    238
+   ],
+   "parts": [
+    {
+     "id": "energy_potion",
+     "kind": "image",
+     "asset": "icons/energy_potion",
+     "rect": [
+      25,
+      63,
+      116,
+      162
+     ],
+     "note": "baked into the panel; standalone copy"
+    },
+    {
+     "id": "energy_desc",
+     "kind": "text",
+     "rect": [
+      158,
+      106,
+      180,
+      22
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 500,
+     "color": "#E5E1D8",
+     "align": "left",
+     "valign": "center",
+     "sample": "Restore 513 Energy"
+    },
+    {
+     "id": "energy_amount",
+     "kind": "text",
+     "rect": [
+      226,
+      133,
+      60,
+      26
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 700,
+     "color": "#F4F1EA",
+     "align": "left",
+     "valign": "center",
+     "sample": "513"
+    },
+    {
+     "id": "energy_price",
+     "kind": "text",
+     "rect": [
+      182,
+      178,
+      50,
+      28
+     ],
+     "font": "body",
+     "size": 26,
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "left",
+     "valign": "center",
+     "sample": "200"
+    },
+    {
+     "id": "energy_buy",
+     "kind": "button",
+     "asset": "shop/buy_small",
+     "rect": [
+      238,
+      164,
+      110,
+      52
+     ],
+     "action": "buy_energy"
+    },
+    {
+     "id": "city_shield",
+     "kind": "image",
+     "asset": "icons/city_shield",
+     "rect": [
+      375,
+      63,
+      142,
+      162
+     ],
+     "note": "baked into the panel; standalone copy"
+    },
+    {
+     "id": "shield_desc",
+     "kind": "text",
+     "rect": [
+      532,
+      104,
+      160,
+      44
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 500,
+     "color": "#E5E1D8",
+     "align": "left",
+     "valign": "center",
+     "sample": "Protects your city\nfor 30 minutes"
+    },
+    {
+     "id": "shield_price",
+     "kind": "text",
+     "rect": [
+      557,
+      178,
+      50,
+      28
+     ],
+     "font": "body",
+     "size": 26,
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "left",
+     "valign": "center",
+     "sample": "500"
+    },
+    {
+     "id": "shield_buy",
+     "kind": "button",
+     "asset": "shop/buy_small",
+     "rect": [
+      613,
+      164,
+      110,
+      52
+     ],
+     "action": "buy_shield"
+    }
+   ]
+  },
+  {
+   "id": "footer",
+   "kind": "image",
+   "asset": "shop/footer",
+   "rect": [
+    155,
+    1630,
+    786,
+    64
+   ]
+  }
+ ]
+}

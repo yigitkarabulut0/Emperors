@@ -1,0 +1,604 @@
+{
+ "screen": "family",
+ "source": "family.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0b151f",
+ "notes": [
+  "All rects are source pixels = layout units. Top-level rects absolute; template parts relative.",
+  "header carries the throne painting only; the three currency pills are inpainted out and come from chrome/.",
+  "identity_plate has name, level and xp text erased; the lion crest and quill button stay baked.",
+  "stats_strip is one image holding the three cells; only the numbers are erased.",
+  "gear_panel keeps YOUR GEAR, the ornament line, EQUIP BEST and the three tiles baked; the tiles are re-drawn over the same rects from items/ so an equipped item can change. gear_tile_empty is an inpainted frame for an empty slot (not in the reference).",
+  "upgrade_card is the GRANARY card with painting, name, level and bonus text erased so any upgrade can be shown; granary_art is the painting. Only a MAX LEVEL button exists in the reference \u2014 a purchasable upgrade has no button art here; reuse btn_max_level's plate with live text if needed (its label is baked).",
+  "family_sword/armor/horse under items/ include their gold frame, red gem and the Lv badge plate; the badge number is erased."
+ ],
+ "fonts": {
+  "title": "Cinzel \u2014 caps with flared serifs (name, LEVEL, GRANARY, stat labels)",
+  "body": "transitional serif (XP text, stat numbers, bonus line, Lv. badges)"
+ },
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "family/header",
+   "rect": [
+    155,
+    0,
+    786,
+    660
+   ]
+  },
+  {
+   "id": "identity",
+   "kind": "template",
+   "rect": [
+    168,
+    640,
+    760,
+    198
+   ],
+   "instances": [
+    [
+     168,
+     640
+    ]
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "family/identity_plate",
+     "rect": [
+      0,
+      0,
+      760,
+      198
+     ]
+    },
+    {
+     "id": "crest",
+     "kind": "image",
+     "asset": "icons/crest_lion_family",
+     "rect": [
+      32,
+      0,
+      128,
+      156
+     ],
+     "note": "already baked in plate; separate asset for reuse"
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      198,
+      15,
+      470,
+      58
+     ],
+     "font": "title",
+     "size": 60,
+     "weight": 700,
+     "color": "#F0F2F8",
+     "align": "left",
+     "valign": "center",
+     "uppercase": true,
+     "sample": "YIGIT"
+    },
+    {
+     "id": "crown",
+     "kind": "image",
+     "asset": "icons/crown_small",
+     "rect": [
+      180,
+      68,
+      56,
+      44
+     ],
+     "note": "baked in plate"
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "rect": [
+      244,
+      82,
+      150,
+      26
+     ],
+     "font": "title",
+     "size": 25,
+     "weight": 700,
+     "color": "#E7BA4D",
+     "align": "left",
+     "valign": "center",
+     "sample": "LEVEL 33"
+    },
+    {
+     "id": "xp_track",
+     "kind": "image",
+     "asset": "family/xp_track",
+     "rect": [
+      185,
+      119,
+      532,
+      24
+     ]
+    },
+    {
+     "id": "xp_fill",
+     "kind": "image",
+     "asset": "family/xp_fill",
+     "rect": [
+      190,
+      121,
+      472,
+      20
+     ],
+     "fill": "left",
+     "note": "full-width fill sample; draw a region 0..progress*472 wide"
+    },
+    {
+     "id": "xp_text",
+     "kind": "text",
+     "rect": [
+      190,
+      150,
+      240,
+      28
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 500,
+     "color": "#DBE5EE",
+     "align": "left",
+     "valign": "center",
+     "sample": "3,906 / 4,060 XP"
+    },
+    {
+     "id": "edit",
+     "kind": "button",
+     "asset": "family/btn_edit",
+     "rect": [
+      697,
+      26,
+      36,
+      57
+     ],
+     "action": "rename"
+    }
+   ]
+  },
+  {
+   "id": "stats",
+   "kind": "template",
+   "rect": [
+    172,
+    836,
+    752,
+    190
+   ],
+   "instances": [
+    [
+     172,
+     836
+    ]
+   ],
+   "parts": [
+    {
+     "id": "strip",
+     "kind": "image",
+     "asset": "family/stats_strip",
+     "rect": [
+      0,
+      0,
+      752,
+      190
+     ]
+    },
+    {
+     "id": "attack",
+     "kind": "text",
+     "rect": [
+      18,
+      132,
+      226,
+      42
+     ],
+     "font": "body",
+     "size": 52,
+     "weight": 700,
+     "color": "#FFFFFF",
+     "align": "center",
+     "valign": "center",
+     "sample": "844"
+    },
+    {
+     "id": "defence",
+     "kind": "text",
+     "rect": [
+      266,
+      132,
+      222,
+      42
+     ],
+     "font": "body",
+     "size": 52,
+     "weight": 700,
+     "color": "#FFFFFF",
+     "align": "center",
+     "valign": "center",
+     "sample": "321"
+    },
+    {
+     "id": "power",
+     "kind": "text",
+     "rect": [
+      508,
+      132,
+      232,
+      42
+     ],
+     "font": "body",
+     "size": 52,
+     "weight": 700,
+     "color": "#FFFFFF",
+     "align": "center",
+     "valign": "center",
+     "sample": "3,350"
+    }
+   ]
+  },
+  {
+   "id": "gear",
+   "kind": "template",
+   "rect": [
+    172,
+    1038,
+    752,
+    280
+   ],
+   "instances": [
+    [
+     172,
+     1038
+    ]
+   ],
+   "parts": [
+    {
+     "id": "panel",
+     "kind": "image",
+     "asset": "family/gear_panel",
+     "rect": [
+      0,
+      0,
+      752,
+      280
+     ]
+    },
+    {
+     "id": "equip_best",
+     "kind": "button",
+     "asset": "family/btn_equip_best",
+     "rect": [
+      482,
+      8,
+      248,
+      68
+     ],
+     "action": "equip_best"
+    },
+    {
+     "id": "tile_weapon",
+     "kind": "template",
+     "rect": [
+      28,
+      75,
+      220,
+      192
+     ],
+     "instances": [
+      [
+       28,
+       75
+      ]
+     ],
+     "parts": [
+      {
+       "id": "art",
+       "kind": "image",
+       "asset": "items/family_sword",
+       "rect": [
+        0,
+        0,
+        220,
+        192
+       ],
+       "empty_asset": "family/gear_tile_empty"
+      },
+      {
+       "id": "lv",
+       "kind": "text",
+       "rect": [
+        140,
+        160,
+        70,
+        20
+       ],
+       "font": "body",
+       "size": 20,
+       "weight": 600,
+       "color": "#E8EAF0",
+       "align": "center",
+       "valign": "center",
+       "sample": "Lv. 30"
+      }
+     ]
+    },
+    {
+     "id": "tile_armor",
+     "kind": "template",
+     "rect": [
+      263,
+      75,
+      220,
+      192
+     ],
+     "instances": [
+      [
+       263,
+       75
+      ]
+     ],
+     "parts": [
+      {
+       "id": "art",
+       "kind": "image",
+       "asset": "items/family_armor",
+       "rect": [
+        0,
+        0,
+        220,
+        192
+       ],
+       "empty_asset": "family/gear_tile_empty"
+      },
+      {
+       "id": "lv",
+       "kind": "text",
+       "rect": [
+        143,
+        160,
+        70,
+        20
+       ],
+       "font": "body",
+       "size": 20,
+       "weight": 600,
+       "color": "#E8EAF0",
+       "align": "center",
+       "valign": "center",
+       "sample": "Lv. 28"
+      }
+     ]
+    },
+    {
+     "id": "tile_horse",
+     "kind": "template",
+     "rect": [
+      501,
+      75,
+      226,
+      192
+     ],
+     "instances": [
+      [
+       501,
+       75
+      ]
+     ],
+     "parts": [
+      {
+       "id": "art",
+       "kind": "image",
+       "asset": "items/family_horse",
+       "rect": [
+        0,
+        0,
+        226,
+        192
+       ],
+       "empty_asset": "family/gear_tile_empty"
+      },
+      {
+       "id": "lv",
+       "kind": "text",
+       "rect": [
+        153,
+        160,
+        64,
+        20
+       ],
+       "font": "body",
+       "size": 20,
+       "weight": 600,
+       "color": "#E8EAF0",
+       "align": "center",
+       "valign": "center",
+       "sample": "Lv. 25"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "upgrades",
+   "kind": "scroll",
+   "rect": [
+    172,
+    1323,
+    748,
+    253
+   ],
+   "content": [
+    {
+     "id": "upgrade_card",
+     "kind": "template",
+     "rect": [
+      172,
+      1323,
+      748,
+      253
+     ],
+     "pitch": 262,
+     "instances": [
+      [
+       172,
+       1323
+      ]
+     ],
+     "parts": [
+      {
+       "id": "card",
+       "kind": "image",
+       "asset": "family/upgrade_card",
+       "rect": [
+        0,
+        0,
+        748,
+        253
+       ]
+      },
+      {
+       "id": "art",
+       "kind": "image",
+       "asset": "family/granary_art",
+       "rect": [
+        21,
+        13,
+        364,
+        216
+       ]
+      },
+      {
+       "id": "name",
+       "kind": "text",
+       "rect": [
+        412,
+        23,
+        300,
+        38
+       ],
+       "font": "title",
+       "size": 36,
+       "weight": 700,
+       "color": "#EEF0F5",
+       "align": "left",
+       "valign": "center",
+       "uppercase": true,
+       "sample": "GRANARY"
+      },
+      {
+       "id": "icon",
+       "kind": "image",
+       "asset": "icons/gold_stack",
+       "rect": [
+        406,
+        75,
+        70,
+        78
+       ],
+       "note": "baked in card"
+      },
+      {
+       "id": "level",
+       "kind": "text",
+       "rect": [
+        478,
+        73,
+        246,
+        30
+       ],
+       "font": "title",
+       "size": 24,
+       "weight": 600,
+       "color": "#F5C542",
+       "align": "left",
+       "valign": "center",
+       "sample": "LEVEL 20"
+      },
+      {
+       "id": "bonus",
+       "kind": "text",
+       "rect": [
+        478,
+        115,
+        258,
+        30
+       ],
+       "font": "body",
+       "size": 22,
+       "weight": 600,
+       "color": "#E4E9F0",
+       "align": "left",
+       "valign": "center",
+       "uppercase": true,
+       "sample": "+60% COLLECT INCOME"
+      },
+      {
+       "id": "button",
+       "kind": "button",
+       "asset": "family/btn_max_level",
+       "rect": [
+        401,
+        147,
+        326,
+        90
+       ],
+       "action": "upgrade",
+       "note": "label MAX LEVEL is baked in the button; the card has the button region erased, so a buyable level can carry a different plate/text there (no separate art in reference)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "footer",
+   "kind": "image",
+   "asset": "family/footer",
+   "rect": [
+    265,
+    1592,
+    566,
+    36
+   ]
+  },
+  {
+   "id": "ground_bottom",
+   "kind": "image",
+   "asset": "family/ground_bottom",
+   "rect": [
+    155,
+    1574,
+    786,
+    98
+   ],
+   "z": "behind footer"
+  },
+  {
+   "id": "portrait_source",
+   "kind": "image",
+   "asset": "portraits/hero_throne",
+   "rect": [
+    300,
+    60,
+    480,
+    560
+   ],
+   "note": "not drawn on this screen; avatar source"
+  }
+ ]
+}

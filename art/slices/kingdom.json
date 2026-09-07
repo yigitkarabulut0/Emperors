@@ -1,0 +1,1081 @@
+{
+ "source": "kingdom.png",
+ "crops": [
+  {
+   "name": "kingdom/header",
+   "rect": [
+    150,
+    0,
+    791,
+    452
+   ],
+   "inpaint": [
+    [
+     169,
+     14,
+     224,
+     60
+    ],
+    [
+     400,
+     14,
+     208,
+     60
+    ],
+    [
+     615,
+     14,
+     246,
+     61
+    ],
+    [
+     416,
+     416,
+     118,
+     36
+    ]
+   ],
+   "erase": [
+    {
+     "rect": [
+      370,
+      340,
+      302,
+      44
+     ],
+     "sample_x": [
+      770,
+      790
+     ]
+    },
+    {
+     "rect": [
+      370,
+      383,
+      376,
+      26
+     ],
+     "sample_x": [
+      770,
+      790
+     ]
+    },
+    {
+     "rect": [
+      538,
+      424,
+      300,
+      18
+     ],
+     "sample_x": [
+      850,
+      880
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/level_bar_fill",
+   "rect": [
+    535,
+    424,
+    304,
+    18
+   ]
+  },
+  {
+   "name": "icons/crest_kingdom",
+   "rect": [
+    160,
+    178,
+    220,
+    266
+   ]
+  },
+  {
+   "name": "kingdom/stat_renown",
+   "rect": [
+    165,
+    452,
+    246,
+    99
+   ],
+   "erase": [
+    {
+     "rect": [
+      283,
+      497,
+      120,
+      40
+     ],
+     "sample_x": [
+      397,
+      404
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/stat_treasury",
+   "rect": [
+    414,
+    452,
+    258,
+    99
+   ],
+   "erase": [
+    {
+     "rect": [
+      526,
+      497,
+      132,
+      40
+     ],
+     "sample_x": [
+      660,
+      666
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/stat_members",
+   "rect": [
+    676,
+    452,
+    252,
+    99
+   ],
+   "erase": [
+    {
+     "rect": [
+      793,
+      497,
+      128,
+      40
+     ],
+     "sample_x": [
+      786,
+      792
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/tab_realm_active",
+   "rect": [
+    151,
+    556,
+    206,
+    68
+   ]
+  },
+  {
+   "name": "kingdom/tab_lords",
+   "rect": [
+    356,
+    558,
+    186,
+    63
+   ]
+  },
+  {
+   "name": "kingdom/tab_works",
+   "rect": [
+    543,
+    558,
+    197,
+    63
+   ]
+  },
+  {
+   "name": "kingdom/tab_ranks",
+   "rect": [
+    739,
+    558,
+    192,
+    63
+   ]
+  },
+  {
+   "name": "kingdom/tab_active_empty",
+   "rect": [
+    151,
+    556,
+    206,
+    68
+   ],
+   "erase": [
+    {
+     "rect": [
+      205,
+      574,
+      100,
+      32
+     ],
+     "sample_x": [
+      175,
+      195
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/tab_inactive_empty",
+   "rect": [
+    356,
+    558,
+    186,
+    63
+   ],
+   "erase": [
+    {
+     "rect": [
+      405,
+      574,
+      90,
+      32
+     ],
+     "sample_x": [
+      370,
+      395
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/tab_label_realm",
+   "rect": [
+    210,
+    578,
+    86,
+    24
+   ],
+   "mode": "darkkey",
+   "k": 140
+  },
+  {
+   "name": "kingdom/tab_label_lords",
+   "rect": [
+    410,
+    578,
+    78,
+    24
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/tab_label_works",
+   "rect": [
+    597,
+    578,
+    84,
+    24
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/tab_label_ranks",
+   "rect": [
+    792,
+    578,
+    82,
+    24
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/realm_card",
+   "rect": [
+    155,
+    614,
+    396,
+    266
+   ]
+  },
+  {
+   "name": "kingdom/realm_bonuses",
+   "rect": [
+    586,
+    612,
+    345,
+    190
+   ],
+   "erase": [
+    {
+     "rect": [
+      680,
+      682,
+      66,
+      24
+     ],
+     "sample_x": [
+      880,
+      900
+     ]
+    },
+    {
+     "rect": [
+      680,
+      743,
+      64,
+      22
+     ],
+     "sample_x": [
+      880,
+      900
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/realm_notice",
+   "rect": [
+    586,
+    804,
+    345,
+    76
+   ]
+  },
+  {
+   "name": "kingdom/treasury_card",
+   "rect": [
+    155,
+    872,
+    377,
+    258
+   ]
+  },
+  {
+   "name": "kingdom/btn_donate",
+   "rect": [
+    228,
+    1071,
+    254,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
+  },
+  {
+   "name": "kingdom/reputation_card",
+   "rect": [
+    534,
+    872,
+    396,
+    258
+   ],
+   "erase": [
+    {
+     "rect": [
+      668,
+      928,
+      150,
+      26
+     ],
+     "sample_x": [
+      880,
+      900
+     ]
+    },
+    {
+     "rect": [
+      668,
+      982,
+      140,
+      20
+     ],
+     "sample_x": [
+      880,
+      900
+     ]
+    },
+    {
+     "rect": [
+      673,
+      962,
+      125,
+      17
+     ],
+     "sample_x": [
+      820,
+      880
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/rep_bar_fill",
+   "rect": [
+    671,
+    961,
+    126,
+    19
+   ]
+  },
+  {
+   "name": "kingdom/rep_hex_1",
+   "rect": [
+    574,
+    1028,
+    47,
+    59
+   ]
+  },
+  {
+   "name": "kingdom/rep_hex_2_lit",
+   "rect": [
+    656,
+    1024,
+    56,
+    66
+   ]
+  },
+  {
+   "name": "kingdom/rep_hex_3",
+   "rect": [
+    752,
+    1028,
+    49,
+    60
+   ]
+  },
+  {
+   "name": "kingdom/rep_hex_4",
+   "rect": [
+    847,
+    1028,
+    49,
+    60
+   ]
+  },
+  {
+   "name": "kingdom/rep_label_neutral",
+   "rect": [
+    562,
+    1090,
+    68,
+    22
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/rep_label_respected",
+   "rect": [
+    644,
+    1090,
+    78,
+    22
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/rep_label_honored",
+   "rect": [
+    744,
+    1090,
+    68,
+    22
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/rep_label_legendary",
+   "rect": [
+    830,
+    1090,
+    82,
+    22
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/lords_panel",
+   "rect": [
+    155,
+    1131,
+    377,
+    348
+   ],
+   "erase": [
+    {
+     "rect": [
+      245,
+      1201,
+      14,
+      14
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      266,
+      1196,
+      150,
+      24
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      264,
+      1221,
+      28,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      296,
+      1224,
+      110,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      468,
+      1214,
+      56,
+      22
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      245,
+      1270,
+      14,
+      14
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      266,
+      1265,
+      150,
+      24
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      264,
+      1290,
+      28,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      296,
+      1293,
+      110,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      468,
+      1283,
+      56,
+      22
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      245,
+      1339,
+      14,
+      14
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      266,
+      1334,
+      150,
+      24
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      264,
+      1359,
+      28,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      296,
+      1362,
+      110,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      468,
+      1352,
+      56,
+      22
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      245,
+      1408,
+      14,
+      14
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      266,
+      1403,
+      150,
+      24
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      264,
+      1428,
+      28,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      296,
+      1431,
+      110,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      468,
+      1421,
+      56,
+      22
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/lord_row",
+   "rect": [
+    167,
+    1396,
+    354,
+    63
+   ],
+   "erase": [
+    {
+     "rect": [
+      168,
+      1397,
+      74,
+      61
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      245,
+      1408,
+      14,
+      14
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      266,
+      1403,
+      150,
+      24
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      264,
+      1428,
+      28,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      296,
+      1431,
+      110,
+      20
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      468,
+      1421,
+      56,
+      22
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    },
+    {
+     "rect": [
+      436,
+      1406,
+      34,
+      40
+     ],
+     "sample_x": [
+      365,
+      430
+     ]
+    }
+   ]
+  },
+  {
+   "name": "portraits/lord_yigit",
+   "rect": [
+    166,
+    1178,
+    76,
+    76
+   ]
+  },
+  {
+   "name": "portraits/lord_aldric",
+   "rect": [
+    166,
+    1255,
+    76,
+    68
+   ]
+  },
+  {
+   "name": "portraits/lord_seraphine",
+   "rect": [
+    166,
+    1324,
+    76,
+    68
+   ]
+  },
+  {
+   "name": "portraits/lord_darian",
+   "rect": [
+    166,
+    1393,
+    76,
+    68
+   ]
+  },
+  {
+   "name": "icons/crown_king_small",
+   "rect": [
+    193,
+    1176,
+    36,
+    22
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/dot_online",
+   "rect": [
+    244,
+    1200,
+    16,
+    16
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/dot_offline",
+   "rect": [
+    244,
+    1404,
+    16,
+    16
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/role_king",
+   "rect": [
+    262,
+    1219,
+    32,
+    24
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/role_captain",
+   "rect": [
+    262,
+    1288,
+    32,
+    24
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/role_lord",
+   "rect": [
+    262,
+    1357,
+    32,
+    24
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/might_swords",
+   "rect": [
+    436,
+    1209,
+    32,
+    32
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "kingdom/works_panel",
+   "rect": [
+    536,
+    1131,
+    394,
+    348
+   ],
+   "erase": [
+    {
+     "rect": [
+      648,
+      1184,
+      160,
+      60
+     ],
+     "sample_x": [
+      640,
+      647
+     ]
+    },
+    {
+     "rect": [
+      648,
+      1259,
+      160,
+      60
+     ],
+     "sample_x": [
+      640,
+      647
+     ]
+    },
+    {
+     "rect": [
+      648,
+      1333,
+      160,
+      60
+     ],
+     "sample_x": [
+      640,
+      647
+     ]
+    },
+    {
+     "rect": [
+      648,
+      1408,
+      160,
+      60
+     ],
+     "sample_x": [
+      640,
+      647
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kingdom/work_banner_hall",
+   "rect": [
+    552,
+    1178,
+    86,
+    69
+   ]
+  },
+  {
+   "name": "kingdom/work_training_grounds",
+   "rect": [
+    552,
+    1253,
+    86,
+    69
+   ]
+  },
+  {
+   "name": "kingdom/work_granary_law",
+   "rect": [
+    552,
+    1327,
+    86,
+    69
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_archives",
+   "rect": [
+    552,
+    1402,
+    86,
+    69
+   ]
+  },
+  {
+   "name": "kingdom/btn_upgrade",
+   "rect": [
+    811,
+    1186,
+    110,
+    50
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
+  },
+  {
+   "name": "kingdom/ranking_card",
+   "rect": [
+    157,
+    1483,
+    773,
+    136
+   ],
+   "inpaint": [
+    [
+     276,
+     1536,
+     70,
+     36
+    ]
+   ]
+  },
+  {
+   "name": "kingdom/foliage_bottom",
+   "rect": [
+    155,
+    1618,
+    786,
+    54
+   ]
+  }
+ ]
+}

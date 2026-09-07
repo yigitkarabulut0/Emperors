@@ -1,605 +1,170 @@
 class_name UI
 extends RefCounted
-## Small builders for the widgets this game repeats everywhere.
+## Fonts, text and the small helpers every screen uses.
 ##
-## Built in code rather than as .tscn files because almost every screen is a
-## data-driven list: the rows come from the server, so there is no fixed
-## hierarchy for the editor to hold.
+## The reference paintings set the type: Cinzel for anything in flared capitals
+## (titles, nav labels, card names), EB Garamond for sentences and numbers. Sizes
+## are recorded per element in the layout files, measured off the paintings.
 
-## The type scale, in stretch units. docs/design/client.md sec 9.3 specified it and
-## the client was built at roughly 55% of it -- the most-used label in the game
-## was 12 units, which is 7.3 pt on the owner's phone against iOS body text of 17.
-##
-## Why fixed units and not a per-device multiplier: with canvas_items + expand the
-## viewport is never narrower than 720, so a unit is worth between 0.52 pt (an SE)
-## and 0.92 pt (an iPad) -- a spread of 17% across the phones, which is small
-## enough that sizing for the smallest device and letting larger ones scale up is
-## both correct and keeps 720 a real design grid. A runtime scalar would reflow
-## the layout differently on every device and there would be no single truth to
-## test against.
-const F_DISPLAY := 58
-const F_H1 := 40
-const F_H2 := 32
-const F_NUMBER := 30
-const F_BODY := 26
-const F_CAPTION := 22
-const F_MICRO := 19
+const TITLE_FONT := "res://assets/fonts/Cinzel-Variable.ttf"
+const BODY_FONT := "res://assets/fonts/EBGaramond[wght].ttf"
 
-## Touch targets, in units, calibrated on an iPhone 16 Pro Max where a unit is
-## 0.611 pt.
-##
-## These were once sized so that the SMALLEST supported device cleared 44 pt,
-## which sounds right and is not: it inflates every dimension by 20% on every
-## other phone, and on a modern one the result reads as a zoomed-in, low
-## resolution UI -- list rows at 81 pt where iOS uses 44 to 60, and a top bar
-## eating a sixth of the screen. Fitting the device in the player's hand and
-## accepting 40 pt on an iPhone SE is the better trade: 40 pt is still a
-## comfortable target, and the SE is not what this is played on.
-const TAP_MIN := 76        ## 46 pt here, 40 pt on an SE
-const TAP_PRIMARY := 96    ## the one button a screen is about
-const TAP_ROW := 104       ## a list row: 64 pt, the top of Apple's own range
-const TAP_ROW_TIGHT := 88
+const INK := Color("#F1E9DA")          ## the parchment-white of body text
+const GOLD := Color("#E9C46A")         ## gold titles
+const GOLD_DIM := Color("#C9A24E")
+const DIM := Color("#B8AE9C")          ## secondary text
+const GREEN := Color("#6EE07A")
+const RED := Color("#F0524F")
+const GROUND := Color("#09151E")       ## the navy behind everything
 
-const ICON_SM := 24
-const ICON_MD := 40
-const ICON_LG := 56
-const ICON_XL := 80
-
-## Spacing on a 4-unit grid.
-const GAP_XS := 4
-const GAP_S := 8
-const GAP_M := 16
-const GAP_L := 24
-const GAP_XL := 32
-const GUTTER := 24
-
-
-## Nine-slice margins for the generated skins. The source art is 128 square: a
-## 14-unit shadow margin, then a body with a 22-unit corner radius. The slice has
-## to contain the shadow and the whole corner, and SKIN_BLEED pushes the drawn
-## area back out by the shadow margin so the BODY lines up with the control's
-## rect -- without it every button would render inset by its own shadow and look
-## smaller than the space it occupies.
-## Clearance for a rounded display corner. Lives here rather than on SafeArea so
-## that a test can reference it: SafeArea reads the Env autoload, and anything
-## depending on it fails a --check-only parse.
-const CORNER := 12
-
-const SKIN_SLICE := 42
-const SKIN_BLEED := 14
-
-## Per-skin geometry, because the small stamped things are shorter than two
-## slices. A currency cartouche is about 36 units tall; a 42-unit top slice plus
-## a 42-unit bottom slice is 84, and Godot resolves that overlap by squashing
-## both into mush. The small family is drawn at 64 square with PAD 6 and
-## RADIUS 10, so its slice is 22 and its bleed 6.
-const SKIN_GEOM := {
-	"chip": [15, 0],
-	"plaque": [15, 0],
-	"rail_active": [15, 0],
-	"nav": [15, 0],
-	"nav_active": [15, 0],
-}
-
-static var _skins: Dictionary = {}
 static var _fonts: Dictionary = {}
 
 
-## The autoload, fetched through the tree.
-##
-## UI is a static helper and a static function cannot resolve an autoload at
-## compile time -- the same reason skin() does this. Returns null before the
-## tree exists, which is only ever during a --check-only parse.
-static func _registry() -> Node:
-	var loop := Engine.get_main_loop()
-	if loop is SceneTree:
-		return (loop as SceneTree).root.get_node_or_null("/root/ArtRegistry")
-	return null
+static func font(role: String = "body", weight: int = 500) -> Font:
+	var key := "%s:%d" % [role, weight]
+	if _fonts.has(key):
+		return _fonts[key]
+	var base: Font = load(TITLE_FONT if role == "title" else BODY_FONT)
+	var fv := FontVariation.new()
+	fv.base_font = base
+	var tag := TextServerManager.get_primary_interface().name_to_tag("wght")
+	fv.variation_opentype = {tag: weight}
+	_fonts[key] = fv
+	return fv
 
 
-## One of the four type roles. See ArtRegistry.font().
-##
-## Null-safe on purpose: a build with no fonts renders in the engine default
-## rather than crashing, and every caller below already treats null as "leave the
-## inherited font alone".
-static func font(kind: String) -> Font:
-	if _fonts.has(kind):
-		return _fonts[kind]
-	var reg := _registry()
-	if reg == null:
-		return null
-	var f: Font = reg.call("font", kind)
-	_fonts[kind] = f
-	return f
-
-
-## One of the generated surfaces from scripts/gen-ui-skin.py.
-##
-## StyleBoxFlat can only draw a flat colour, which is why every panel and button
-## in this game used to read as a wireframe rather than a made object. These carry
-## a vertical gradient, a lit top edge and a shaded foot, so the same StyleBox
-## machinery draws surfaces that catch light.
-##
-## Falls back to a flat box when the art is missing, so a build without the skin
-## still renders rather than crashing.
-static func skin(name: String, fallback: Color, pad_h: int = 16, pad_v: int = 12) -> StyleBox:
-	var geom: Array = SKIN_GEOM.get(name, [SKIN_SLICE, SKIN_BLEED])
-	var slice: int = geom[0]
-	var bleed: int = geom[1]
-	var key := "%s|%d|%d|%d" % [name, pad_h, pad_v, slice]
-	if _skins.has(key):
-		return _skins[key]
-
-	# Fetched through the tree rather than by name: UI is a static helper, and a
-	# static function cannot resolve an autoload at compile time.
-	var tex: Texture2D = null
-	var registry := _registry()
-	if registry != null:
-		tex = registry.call("ui_icon", "skin/" + name)
-	if tex == null:
-		var flat := panel_box(fallback)
-		flat.content_margin_left = pad_h
-		flat.content_margin_right = pad_h
-		flat.content_margin_top = pad_v
-		flat.content_margin_bottom = pad_v
-		_skins[key] = flat
-		return flat
-
-	var s := StyleBoxTexture.new()
-	s.texture = tex
-	for side in ["left", "top", "right", "bottom"]:
-		s.set("texture_margin_" + side, slice)
-		s.set("expand_margin_" + side, bleed)
-	s.content_margin_left = pad_h
-	s.content_margin_right = pad_h
-	s.content_margin_top = pad_v
-	s.content_margin_bottom = pad_v
-	_skins[key] = s
+static func settings(size: int, color: Color, role: String = "body", weight: int = 500, shadow: bool = true) -> LabelSettings:
+	var s := LabelSettings.new()
+	s.font = font(role, weight)
+	s.font_size = size
+	s.font_color = color
+	if shadow:
+		s.shadow_color = Color(0, 0, 0, 0.55)
+		s.shadow_offset = Vector2(0, 2)
+		s.shadow_size = 2
 	return s
 
 
-static func panel_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 6) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.set_corner_radius_all(radius)
-	s.content_margin_left = 14
-	s.content_margin_right = 14
-	s.content_margin_top = 10
-	s.content_margin_bottom = 10
-	if border.a > 0.0:
-		s.set_border_width_all(2)
-		s.border_color = border
-	return s
-
-
-## A panel box with tight padding, for the small stamped things -- a level badge,
-## a currency chip -- where panel_box's 14/10 content margin is most of the width.
-## The surface for a row or card that can be selected.
-##
-## Selected reads as a lit panel with a gold edge rather than a different colour,
-## and locked as a sunk one -- both of which say "this is the same kind of thing,
-## in a different state", which a flat colour swap does not.
-static func card_box(selected: bool = false, locked: bool = false) -> StyleBox:
-	if locked:
-		return skin("panel_sunk", Palette.RAIL, 14, 10)
-	return skin("panel_gold" if selected else "panel", Palette.PANEL, 14, 10)
-
-
-static func chip_box(bg: Color, border: Color = Color.TRANSPARENT, radius: int = 12) -> StyleBoxFlat:
-	var s := panel_box(bg, border, radius)
-	s.content_margin_left = 10
-	s.content_margin_right = 10
-	s.content_margin_top = 2
-	s.content_margin_bottom = 2
-	return s
-
-
-static func label(text: String, size: int, color: Color, align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+static func label(text: String, size: int, color: Color = INK, role: String = "body", weight: int = 500,
+		align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
+	l.label_settings = settings(size, color, role, weight)
 	l.horizontal_alignment = align
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
 
 
-static func button(text: String, size: int = F_H2) -> Button:
-	var b := Button.new()
-	b.text = text
-	# A floor, not a fixed height: four buttons in the overlays set no size at all
-	# and fell back to about 18 pt, and every explicit height in the client was
-	# below Apple's 44 pt minimum on every device we ship to.
-	b.custom_minimum_size.y = TAP_MIN
-	b.add_theme_font_size_override("font_size", size)
-	# Roman capitals on the one button a screen is about.
-	var display := font("display")
-	if display != null:
-		b.add_theme_font_override("font", display)
-	# Light ink, because the primary button is now a deep red field rather than
-	# the pale gold one these three lines were written for -- they set
-	# Palette.BG, which on this palette is parchment, and the caption vanished.
-	b.add_theme_color_override("font_color", Palette.BANNER_INK)
-	b.add_theme_color_override("font_hover_color", Palette.BANNER_INK)
-	b.add_theme_color_override("font_pressed_color", Palette.BANNER_INK)
-	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
-	# A dark rim under light text. The comment here used to promise "a dark rim on
-	# light text and a light one on dark" and only ever wrote the light one, which
-	# was invisible on gold and would have been a white halo on red.
-	b.add_theme_constant_override("outline_size", 0)
-	b.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.42))
-	b.add_theme_constant_override("shadow_offset_x", 0)
-	b.add_theme_constant_override("shadow_offset_y", 1)
-	# Named for the ROLE, not the colour. These were gold/gold_hover/gold_press
-	# back when the primary button was gold; a file called gold.png that draws a
-	# red button is the kind of lie that costs someone an afternoon.
-	b.add_theme_stylebox_override("normal", skin("primary", Palette.BANNER))
-	b.add_theme_stylebox_override("hover", skin("primary_hover", Color("#9C2626")))
-	b.add_theme_stylebox_override("pressed", skin("primary_press", Color("#5E1414")))
-	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.RAIL))
-	b.focus_mode = Control.FOCUS_NONE
-	return b
-
-
-## A commit button for something irreversible. Same shape as button(), in the
-## danger colour, so "sell this" and "buy this" never look like the same tap.
-static func danger_button(text: String, size: int = F_H2) -> Button:
-	var b := button(text, size)
-	b.add_theme_stylebox_override("normal", skin("danger", Palette.DANGER))
-	b.add_theme_stylebox_override("hover", skin("danger", Color("#A33A32")))
-	b.add_theme_stylebox_override("pressed", skin("danger_press", Color("#6B1A1A")))
-	# Light ink again: Palette.TEXT is now near-black, and near-black on a dark
-	# red plate is unreadable.
-	b.add_theme_color_override("font_color", Palette.BANNER_INK)
-	b.add_theme_color_override("font_hover_color", Palette.BANNER_INK)
-	b.add_theme_color_override("font_pressed_color", Palette.BANNER_INK)
-	return b
-
-
-static func ghost_button(text: String, size: int = F_BODY) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.custom_minimum_size.y = TAP_MIN
-	b.add_theme_font_size_override("font_size", size)
-	b.add_theme_color_override("font_color", Palette.TEXT_DIM)
-	b.add_theme_color_override("font_hover_color", Palette.TEXT)
-	# A visible edge, because a fully transparent "button" sitting on a card reads
-	# as a caption and nobody taps it.
-	b.add_theme_stylebox_override("normal", skin("ghost", Palette.PANEL_HIGH))
-	b.add_theme_stylebox_override("hover", skin("panel_gold", Palette.PANEL_HIGH))
-	b.add_theme_stylebox_override("pressed", skin("ghost_press", Palette.PANEL))
-	b.add_theme_stylebox_override("disabled", skin("disabled", Palette.RAIL))
-	b.add_theme_color_override("font_disabled_color", Palette.TEXT_FAINT)
-	b.focus_mode = Control.FOCUS_NONE
-	return b
-
-
-static func line_edit(placeholder: String, secret: bool = false) -> LineEdit:
-	var e := LineEdit.new()
-	e.placeholder_text = placeholder
-	e.secret = secret
-	e.custom_minimum_size.y = TAP_PRIMARY
-	e.add_theme_font_size_override("font_size", F_H2)
-	e.add_theme_color_override("font_color", Palette.TEXT)
-	e.add_theme_color_override("font_placeholder_color", Palette.TEXT_FAINT)
-	e.add_theme_stylebox_override("normal", panel_box(Palette.PANEL, Palette.LINE))
-	e.add_theme_stylebox_override("focus", panel_box(Palette.PANEL, Palette.GOLD_DEEP))
-	return e
-
-
-static func spacer(height: int) -> Control:
-	var c := Control.new()
-	c.custom_minimum_size = Vector2(0, height)
-	return c
-
-
-## Roman capitals: the display face, for a heading or a button caption.
-##
-## Cinzel draws capitals for lowercase input too, so the text does not need to be
-## upper-cased by the caller -- but it IS upper-cased anyway, so the layout is
-## the same width when the font is missing and the engine default steps in.
-static func caps(text: String, size: int, color: Color,
-		align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
-	var l := label(text.to_upper(), size, color, align)
-	var f := font("display")
-	if f != null:
-		l.add_theme_font_override("font", f)
-	return l
-
-
-## Anything that counts: tabular, lining figures.
-##
-## Without this the gold counter reflows horizontally every time it rolls
-## 1,199 -> 1,200, and it is re-rendered four times a second.
-static func number_label(text: String, size: int, color: Color,
-		align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
-	var l := label(text, size, color, align)
-	var f := font("number")
-	if f != null:
-		l.add_theme_font_override("font", f)
-	return l
-
-
-## Letter-spacing was tried here and cut.
-##
-## Godot has no letter-spacing for Label, so it was faked with U+2009 THIN SPACE
-## between the glyphs. Cinzel does not carry that codepoint. It fell through to
-## a fallback face whose space is nothing like thin, so "E S T A T E S" measured
-## 487 units instead of the ~350 it was drawn as -- which made the title row the
-## widest thing on the screen, grew the content column past the viewport, and
-## drew every card on Estates off the right-hand edge.
-##
-## The face is inscriptional capitals already. It does not need the help.
-
-
-## A screen title in spaced Roman capitals between two laurel branches.
-##
-## The tabs had no title at all before this: the shell knew which section was
-## open and the screen never said so. It is built here rather than in each of the
-## nine tabs so the wording has one source -- the shell's own SECTIONS table.
-static func screen_title(text: String) -> Control:
-	var row := HBoxContainer.new()
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", GAP_M)
-	row.add_child(_laurel("orn/laurel_l"))
-	# F_DISPLAY, not F_H1. The reference sets its screen title at roughly 62 units
-	# on this grid and it is the loudest thing on the page; at F_H1 it was 36 and
-	# read as a section header rather than as the name of the room.
-	var l := caps(text, F_DISPLAY, Palette.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
-	l.name = "TitleText"
-	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	row.add_child(l)
-	row.add_child(_laurel("orn/laurel_r"))
-	return row
-
-
-## Retitles a control built by screen_title() without rebuilding it.
-static func set_screen_title(row: Control, text: String) -> void:
-	var l: Label = row.get_node_or_null("TitleText")
-	if l != null:
-		l.text = text.to_upper()
-
-
-static func _laurel(key: String) -> Control:
+static func image(asset: String, rect: Rect2) -> TextureRect:
 	var t := TextureRect.new()
-	var reg := _registry()
-	if reg != null:
-		t.texture = reg.call("ui_icon", key)
-	# expand_mode first: without it a TextureRect reports the SOURCE texture's
-	# size as its minimum and a 192 px branch forces the title row to 192 tall.
-	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	# 112 x 42 matches the branch's own 64:24, so it is drawn at its aspect and
-	# large enough for a leaf to be a leaf. At ICON_XL x ICON_MD it came out 45 px
-	# wide on a phone and the branch read as a row of chevrons.
-	# Sized to the title beside it: the reference's branches are about 78 units
-	# wide and 57 tall, and they read as laurel rather than as chevrons only
-	# because they are given that room.
-	t.custom_minimum_size = Vector2(124, 54)
-	t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	t.modulate = Palette.GOLD
+	t.texture = Art.tex(asset)
+	t.position = rect.position
+	t.size = rect.size
+	t.stretch_mode = TextureRect.STRETCH_SCALE
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return t
 
 
-## A section header: the name in Roman capitals, a laurel sprig, a gold rule
-## running out to the right, and optionally a button on the end of it.
-##
-## The reference uses this shape for every band on a screen -- YOUR SOLDIERS with
-## MANAGE beside it, HOUSE UPGRADE without. It is the thing that makes a page
-## read as a set of named parts rather than as a stack of cards.
-static func section_header(text: String, action: Button = null) -> Control:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", GAP_S)
-
-	row.add_child(caps(text, F_H2, Palette.TEXT))
-
-	var sprig := TextureRect.new()
-	var reg := _registry()
-	if reg != null:
-		sprig.texture = reg.call("ui_icon", "orn/sprig")
-	sprig.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	sprig.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	sprig.custom_minimum_size = Vector2(ICON_MD, ICON_SM)
-	sprig.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	sprig.modulate = Palette.GOLD
-	sprig.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(sprig)
-
-	# The rule takes whatever width is left, which is what carries the eye across
-	# to the button when there is one.
-	# A ColorRect, not a PanelContainer. panel_box carries fourteen units of
-	# content margin because it is built for cards, and a two-unit rule asked
-	# through it comes out as a thirty-unit slab.
-	var line := ColorRect.new()
-	# STONE_EDGE rather than LINE: a rule has to be seen from across the screen,
-	# and LINE on parchment is 1.9:1 -- right for a card's own border, invisible
-	# as the thing that carries the eye from a heading to its button.
-	line.color = Palette.STONE_EDGE
-	line.custom_minimum_size = Vector2(0, 2)
-	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(line)
-
-	if action != null:
-		action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(action)
-	return row
+static func place(node: Control, rect: Rect2) -> void:
+	node.position = rect.position
+	node.size = rect.size
+	# A Label grows to its text, so the intended width is kept for fitting.
+	node.set_meta("box_w", rect.size.x)
 
 
-## The reference's 2x2 panel: four figures, each an icon beside a label over a
-## number, quartered by gold rules with a lozenge where they cross.
-##
-## `entries` is four [icon_key, label, value] triples, with an optional fourth
-## element giving a tint. Painted icons carry their own colour and take none;
-## the flat one-path glyphs MUST be given one, because white on parchment is not
-## a faint icon, it is no icon. Fewer than four entries leaves the grid short;
-## more are ignored, because the crossing rule only makes sense on a quarter.
-static func stat_grid(entries: Array) -> Control:
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", card_box())
-
-	# A plain Control so the rules can be anchored across the whole panel rather
-	# than laid out as cells of it.
-	var host := Control.new()
-	host.custom_minimum_size = Vector2(0, 236)
-	card.add_child(host)
-
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.set_anchors_preset(Control.PRESET_FULL_RECT)
-	grid.add_theme_constant_override("h_separation", GAP_L)
-	grid.add_theme_constant_override("v_separation", GAP_S)
-	host.add_child(grid)
-
-	for e in entries.slice(0, 4):
-		var tint: Variant = e[3] if e.size() > 3 else null
-		grid.add_child(_stat_cell(str(e[0]), str(e[1]), str(e[2]), tint))
-
-	# The quartering rules, and the lozenge at their crossing. Anchored and
-	# mouse-transparent, so they cost the cells nothing and never take a tap.
-	var v := ColorRect.new()
-	v.color = Palette.LINE
-	v.anchor_left = 0.5
-	v.anchor_right = 0.5
-	v.anchor_bottom = 1.0
-	v.offset_left = -1
-	v.offset_right = 1
-	v.offset_top = 6
-	v.offset_bottom = -6
-	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	host.add_child(v)
-
-	var h := ColorRect.new()
-	h.color = Palette.LINE
-	h.anchor_top = 0.5
-	h.anchor_bottom = 0.5
-	h.anchor_right = 1.0
-	h.offset_top = -1
-	h.offset_bottom = 1
-	h.offset_left = 6
-	h.offset_right = -6
-	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	host.add_child(h)
-
-	var pip := TextureRect.new()
-	var reg2 := _registry()
-	if reg2 != null:
-		pip.texture = reg2.call("ui_icon", "orn/diamond")
-	pip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	pip.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	pip.anchor_left = 0.5
-	pip.anchor_top = 0.5
-	pip.anchor_right = 0.5
-	pip.anchor_bottom = 0.5
-	pip.offset_left = -9
-	pip.offset_top = -9
-	pip.offset_right = 9
-	pip.offset_bottom = 9
-	pip.modulate = Palette.GOLD
-	pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	host.add_child(pip)
-
-	return card
+## A tappable painted button: the crop is the whole look; pressing dims it.
+static func tex_button(asset: String, rect: Rect2) -> TextureButton:
+	var b := TextureButton.new()
+	b.texture_normal = Art.tex(asset)
+	b.ignore_texture_size = true
+	b.stretch_mode = TextureButton.STRETCH_SCALE
+	place(b, rect)
+	b.button_down.connect(func() -> void: b.modulate = Color(0.75, 0.75, 0.75))
+	b.button_up.connect(func() -> void: b.modulate = Color.WHITE)
+	b.mouse_exited.connect(func() -> void: b.modulate = Color.WHITE)
+	return b
 
 
-static func _stat_cell(icon_key: String, label_text: String, value: String,
-		tint: Variant = null) -> Control:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", GAP_M)
-	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	# The icon and its figure are one group, centred in the quarter. Left-packed
-	# with the text expanding, the number ends up hard against the icon with the
-	# rest of the cell empty beside it.
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-
-	var icon := TextureRect.new()
-	var reg := _registry()
-	if reg != null:
-		icon.texture = reg.call("ui_icon", icon_key)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(ICON_LG, ICON_LG)
-	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if tint != null:
-		icon.modulate = tint
-	row.add_child(icon)
-
-	var col := VBoxContainer.new()
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 0)
-	col.add_child(caps(label_text, F_CAPTION, Palette.TEXT_DIM))
-	# The figure is the point of the cell and the word above it is the caption --
-	# which is the proportion the reference draws, where the number is nearly
-	# twice the label.
-	col.add_child(number_label(value, F_DISPLAY, Palette.TEXT))
-	row.add_child(col)
-	return row
+## An invisible tap target over a baked-in control (the "+" on a pill).
+static func hotspot(rect: Rect2) -> Button:
+	var b := Button.new()
+	b.flat = true
+	b.focus_mode = Control.FOCUS_NONE
+	place(b, rect)
+	b.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	b.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	b.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	return b
 
 
-## A gold rule with a diamond at its centre, for dividing a card.
-##
-## A plain TextureRect and NOT a nine-slice: the diamond has to stay in the
-## middle, and a stretched centre slice would smear it across the whole width.
-static func rule() -> Control:
-	var t := TextureRect.new()
-	var reg := _registry()
-	if reg != null:
-		t.texture = reg.call("ui_icon", "orn/rule")
-	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t.custom_minimum_size = Vector2(0, ICON_SM)
-	t.modulate = Palette.GOLD
-	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return t
+## Shrinks a label's font until its text fits its width (never below min_size).
+static func fit_label(l: Label, max_size: int, min_size: int = 14) -> void:
+	var s := l.label_settings
+	var box: float = float(l.get_meta("box_w", l.size.x))
+	var size := max_size
+	while size > min_size:
+		var w := s.font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		if w <= box:
+			break
+		size -= 1
+	s.font_size = size
 
 
-## Formats a number the way a game should: thousands separated below 100k, then
-## compact so a seven-figure balance never breaks the layout.
-static func number(v: int) -> String:
-	if v < 100000:
-		return grouped(v)
-	const UNITS := ["", "K", "M", "B", "T", "Q"]
-	var f := float(v)
-	var i := 0
-	while f >= 1000.0 and i < UNITS.size() - 1:
-		f /= 1000.0
-		i += 1
-	return ("%.2f" % f).trim_suffix("0").trim_suffix("0").trim_suffix(".") + UNITS[i]
-
+# --- number formatting -----------------------------------------------------------
 
 static func grouped(v: int) -> String:
 	var s := str(absi(v))
 	var out := ""
-	var c := 0
+	var n := 0
 	for i in range(s.length() - 1, -1, -1):
 		out = s[i] + out
-		c += 1
-		if c % 3 == 0 and i > 0:
+		n += 1
+		if n % 3 == 0 and i > 0:
 			out = "," + out
 	return ("-" if v < 0 else "") + out
 
 
-## A countdown that has to fit beside a number and be read at a glance: "0:23",
-## "4:07", "1:02:30". duration() is for spans you plan around, this is for spans
-## you wait out.
-static func short_duration(seconds: int) -> String:
-	var s := maxi(seconds, 0)
-	if s >= 3600:
-		return "%d:%02d:%02d" % [s / 3600, (s % 3600) / 60, s % 60]
-	return "%d:%02d" % [s / 60, s % 60]
+## 493.48M / 12.0M / 600K / 1,420 — the way the paintings write money.
+static func short_number(v: int) -> String:
+	var a := absi(v)
+	var sign := "-" if v < 0 else ""
+	if a >= 1_000_000_000:
+		return sign + _trim("%.2f" % (a / 1_000_000_000.0)) + "B"
+	if a >= 1_000_000:
+		return sign + _trim("%.2f" % (a / 1_000_000.0)) + "M"
+	if a >= 100_000:
+		return sign + str(int(a / 1000.0)) + "K"
+	return sign + grouped(a)
+
+
+static func _trim(s: String) -> String:
+	if s.contains("."):
+		s = s.rstrip("0").rstrip(".")
+	return s
 
 
 static func duration(seconds: int) -> String:
-	if seconds <= 0:
-		return "full"
 	var h := seconds / 3600
 	var m := (seconds % 3600) / 60
 	var s := seconds % 60
-	if h > 0:
-		return "%dh %02dm" % [h, m]
-	if m > 0:
-		return "%dm %02ds" % [m, s]
-	return "%ds" % s
+	return "%02d:%02d:%02d" % [h, m, s]
+
+
+static func short_duration(seconds: int) -> String:
+	if seconds >= 3600:
+		return "%dh %02dm" % [seconds / 3600, (seconds % 3600) / 60]
+	if seconds >= 60:
+		return "%dm %02ds" % [seconds / 60, seconds % 60]
+	return "%ds" % seconds
+
+
+static func ago(seconds: int) -> String:
+	if seconds < 60:
+		return "just now"
+	if seconds < 3600:
+		return "%dm ago" % (seconds / 60)
+	if seconds < 86400:
+		return "%dh ago" % (seconds / 3600)
+	return "%dd ago" % (seconds / 86400)

@@ -1,0 +1,495 @@
+{
+ "source": "family.png",
+ "crops": [
+  {
+   "name": "family/header",
+   "rect": [
+    155,
+    0,
+    786,
+    660
+   ],
+   "inpaint": [
+    [
+     183,
+     18,
+     235,
+     68
+    ],
+    [
+     434,
+     18,
+     217,
+     68
+    ],
+    [
+     669,
+     18,
+     236,
+     68
+    ]
+   ]
+  },
+  {
+   "name": "family/identity_plate",
+   "rect": [
+    168,
+    640,
+    760,
+    198
+   ],
+   "erase": [
+    {
+     "rect": [
+      355,
+      655,
+      490,
+      58
+     ],
+     "sample_x": [
+      600,
+      610
+     ]
+    },
+    {
+     "rect": [
+      405,
+      722,
+      160,
+      26
+     ],
+     "sample_x": [
+      600,
+      610
+     ]
+    },
+    {
+     "rect": [
+      355,
+      790,
+      250,
+      28
+     ],
+     "sample_x": [
+      600,
+      610
+     ]
+    }
+   ]
+  },
+  {
+   "name": "family/xp_track",
+   "rect": [
+    353,
+    759,
+    532,
+    24
+   ],
+   "erase": [
+    {
+     "rect": [
+      355,
+      761,
+      486,
+      20
+     ],
+     "sample_x": [
+      850,
+      875
+     ]
+    }
+   ]
+  },
+  {
+   "name": "family/xp_fill",
+   "rect": [
+    358,
+    761,
+    472,
+    20
+   ]
+  },
+  {
+   "name": "family/btn_edit",
+   "rect": [
+    865,
+    666,
+    36,
+    57
+   ]
+  },
+  {
+   "name": "icons/crest_lion_family",
+   "rect": [
+    200,
+    640,
+    128,
+    156
+   ]
+  },
+  {
+   "name": "icons/crown_small",
+   "rect": [
+    348,
+    708,
+    56,
+    44
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "family/stats_strip",
+   "rect": [
+    172,
+    836,
+    752,
+    190
+   ],
+   "erase": [
+    {
+     "rect": [
+      190,
+      968,
+      226,
+      42
+     ],
+     "sample_x": [
+      192,
+      200
+     ]
+    },
+    {
+     "rect": [
+      438,
+      968,
+      222,
+      42
+     ],
+     "sample_x": [
+      440,
+      448
+     ]
+    },
+    {
+     "rect": [
+      680,
+      968,
+      232,
+      42
+     ],
+     "sample_x": [
+      682,
+      690
+     ]
+    }
+   ]
+  },
+  {
+   "name": "icons/stat_attack",
+   "rect": [
+    256,
+    850,
+    92,
+    88
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/stat_defence",
+   "rect": [
+    508,
+    850,
+    84,
+    88
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/stat_power",
+   "rect": [
+    750,
+    848,
+    100,
+    90
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "family/gear_panel",
+   "rect": [
+    172,
+    1038,
+    752,
+    280
+   ]
+  },
+  {
+   "name": "family/btn_equip_best",
+   "rect": [
+    654,
+    1046,
+    248,
+    68
+   ]
+  },
+  {
+   "name": "items/family_sword",
+   "rect": [
+    200,
+    1113,
+    220,
+    192
+   ],
+   "erase": [
+    {
+     "rect": [
+      340,
+      1273,
+      70,
+      20
+     ],
+     "sample_x": [
+      326,
+      336
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/family_armor",
+   "rect": [
+    435,
+    1113,
+    220,
+    192
+   ],
+   "erase": [
+    {
+     "rect": [
+      578,
+      1273,
+      70,
+      20
+     ],
+     "sample_x": [
+      563,
+      573
+     ]
+    }
+   ]
+  },
+  {
+   "name": "items/family_horse",
+   "rect": [
+    673,
+    1113,
+    226,
+    192
+   ],
+   "erase": [
+    {
+     "rect": [
+      826,
+      1273,
+      64,
+      20
+     ],
+     "sample_x": [
+      811,
+      821
+     ]
+    }
+   ]
+  },
+  {
+   "name": "family/gear_tile_empty",
+   "rect": [
+    200,
+    1113,
+    220,
+    192
+   ],
+   "erase": [
+    {
+     "rect": [
+      207,
+      1123,
+      205,
+      150
+     ],
+     "sample_x": [
+      214,
+      220
+     ]
+    },
+    {
+     "rect": [
+      207,
+      1266,
+      70,
+      30
+     ],
+     "sample_x": [
+      274,
+      280
+     ]
+    },
+    {
+     "rect": [
+      338,
+      1272,
+      74,
+      23
+     ],
+     "sample_x": [
+      326,
+      336
+     ]
+    }
+   ]
+  },
+  {
+   "name": "family/upgrade_card",
+   "rect": [
+    172,
+    1323,
+    748,
+    253
+   ],
+   "erase": [
+    {
+     "rect": [
+      578,
+      1346,
+      300,
+      38
+     ],
+     "sample_x": [
+      880,
+      900
+     ]
+    },
+    {
+     "rect": [
+      634,
+      1396,
+      262,
+      30
+     ],
+     "sample_x": [
+      880,
+      900
+     ]
+    },
+    {
+     "rect": [
+      634,
+      1438,
+      274,
+      30
+     ],
+     "sample_x": [
+      895,
+      910
+     ]
+    },
+    {
+     "rect": [
+      193,
+      1336,
+      364,
+      216
+     ],
+     "sample_x": [
+      904,
+      912
+     ]
+    },
+    {
+     "rect": [
+      573,
+      1470,
+      326,
+      90
+     ],
+     "sample_x": [
+      904,
+      912
+     ]
+    }
+   ]
+  },
+  {
+   "name": "family/granary_art",
+   "rect": [
+    193,
+    1336,
+    364,
+    216
+   ]
+  },
+  {
+   "name": "icons/gold_stack",
+   "rect": [
+    578,
+    1398,
+    70,
+    78
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "family/btn_max_level",
+   "rect": [
+    573,
+    1470,
+    326,
+    90
+   ]
+  },
+  {
+   "name": "family/footer",
+   "rect": [
+    265,
+    1592,
+    566,
+    36
+   ]
+  },
+  {
+   "name": "family/ground_bottom",
+   "rect": [
+    155,
+    1574,
+    786,
+    98
+   ]
+  },
+  {
+   "name": "portraits/hero_throne",
+   "rect": [
+    300,
+    60,
+    480,
+    560
+   ]
+  },
+  {
+   "name": "family/btn_upgrade_plate",
+   "rect": [
+    573,
+    1470,
+    326,
+    90
+   ],
+   "inpaint": [
+    [
+     641,
+     1490,
+     190,
+     50
+    ]
+   ]
+  }
+ ]
+}

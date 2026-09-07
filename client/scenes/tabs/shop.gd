@@ -1,384 +1,205 @@
-extends VBoxContainer
-## The Shop: two shops on one screen, side by side.
-##
-## The Market sells gear for gold and restocks every five minutes. The Diamond
-## store sells the two things diamonds are allowed to buy -- convenience and
-## protection, never gold and never power. They belong together because they
-## answer the same question: "I have currency, what can I get for it."
-##
-## Offers are re-read rather than predicted. A purchase has a random-ish outcome
-## from the player's point of view (which item, what quality), and predicting
-## those would mean showing something that might not be what arrives — so this
-## sits in the pessimistic lane: tap, wait for the server, then reveal.
+extends Control
+## SHOP — the Royal Market (six offers on a 5-minute window, reroll for
+## diamonds) and the Diamond Goods. Layout: layout/shop.json.
 
-var _list: VBoxContainer
-var _header: Label
-var _cards: Array[ItemCard] = []
+const SCREEN := "shop"
+## Each tier's card frame is stitched from the reference pieces without scaling.
+const FRAMES := {
+	"legendary": [["shop/card_frame_legendary", 0, 0]],
+	"epic": [["shop/card_frame_epic_l", 0, 0], ["shop/card_frame_epic_r", 150, 0]],
+	"rare": [["shop/card_frame_rare_t", 0, 0], ["shop/card_frame_rare_b", 0, 62]],
+	"uncommon": [["shop/card_frame_uncommon_t", 0, 0], ["shop/card_frame_uncommon_b", 0, 56]],
+}
+const FRAME_FALLBACK := {"common": "uncommon", "mystic": "epic", "special": "legendary"}
+const BADGES := {"legendary": "shop/badge_legendary", "epic": "shop/badge_epic", "rare": "shop/badge_rare",
+	"uncommon": "shop/badge_uncommon", "common": "inventory/badge_common", "mystic": "inventory/badge_mystic",
+	"special": "inventory/badge_special"}
+const TIER_NUMBER := {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5, "mystic": 6, "special": 7}
+const TYPE_WORD := {"weapon": "SWORD", "armor": "ARMOR", "horse": "HORSE"}
+
+var _scroll: ScrollContainer
+var _content: Control
+var _ui: Dictionary = {}
+var _cards: Array = []
 var _shop: Dictionary = {}
-var _busy := false
-var _seconds_left := 0
-var _reroll: Button
-var _reroll_sub: Label
-var _mode: int = Mode.MARKET
-var _tabs: HBoxContainer
-var _tab_buttons: Array[Button] = []
 var _store: Dictionary = {}
+var _loaded_ms := -100000
+var _busy := false
 
-
-enum Mode { MARKET, DIAMONDS }
 
 func _ready() -> void:
-	add_theme_constant_override("separation", 8)
-
-	_tabs = HBoxContainer.new()
-	_tabs.add_theme_constant_override("separation", 4)
-	add_child(_tabs)
-	for entry in [[Mode.MARKET, "Market", "currency/coin"], [Mode.DIAMONDS, "Diamonds", "currency/gem"]]:
-		var b := UI.ghost_button(str(entry[1]), UI.F_BODY)
-		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.icon = ArtRegistry.ui_icon(str(entry[2]))
-		b.expand_icon = true
-		var m: int = int(entry[0])
-		b.pressed.connect(func() -> void:
-			_mode = m
-			_rebuild()
-			_reload())
-		_tabs.add_child(b)
-		_tab_buttons.append(b)
-
-	_header = UI.label("Loading the market…", UI.F_CAPTION, Palette.TEXT_DIM)
-	add_child(_header)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-
-	# Lists follow your finger. Godot's own touch scrolling is gated behind
-
-	# is_touchscreen_available() and is eaten by the buttons the list is made of.
-
-	DragScroll.install(scroll)
-	add_child(scroll)
-
-	_list = VBoxContainer.new()
-	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_list.add_theme_constant_override("separation", 6)
-	scroll.add_child(_list)
-
-	var t := Timer.new()
-	t.wait_time = 1.0
-	t.autostart = true
-	t.timeout.connect(_tick)
-	add_child(t)
-
-	GameState.changed.connect(_update_affordability)
-
-	# Dev-only: a capture run disables input, so open a half on request.
-	if OS.get_cmdline_user_args().has("--dev-diamonds"):
-		_mode = Mode.DIAMONDS
-	_reload()
+	_scroll = ScrollContainer.new()
+	_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	_scroll.scroll_deadzone = 14
+	add_child(_scroll)
+	_content = Control.new()
+	_content.custom_minimum_size = Vector2(941, 1694)
+	_content.mouse_filter = Control.MOUSE_FILTER_PASS
+	_scroll.add_child(_content)
+	_ui = Layout.build(SCREEN, _content)
+	_cards = _ui["offer_card"]
+	for i in _cards.size():
+		var parts: Dictionary = _cards[i]["parts"]
+		parts["buy"].pressed.connect(_buy.bind(i))
+		# The frame is stitched per tier; the template's single frame image is replaced.
+		parts["frame"].visible = false
+		_cards[i]["frame_pieces"] = []
+	_ui["reroll"].pressed.connect(_reroll)
+	var dp: Dictionary = _ui["diamond_panel"].get_meta("parts")
+	dp["energy_buy"].pressed.connect(_buy_good.bind("energy_refill"))
+	dp["shield_buy"].pressed.connect(_buy_good.bind("shield"))
+	set_process(true)
 
 
-func mount_action_bar(host: Control) -> void:
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
-	host.add_child(col)
-
-	# Diamonds had no sink at all: the counter sat at zero and nothing spent it.
-	# A reroll is the design's own listed use, and it buys a CHANCE rather than
-	# an item -- you still pay gold for whatever it turns up.
-	_reroll = UI.button("REROLL", UI.F_BODY)
-	_reroll.custom_minimum_size = Vector2(0, UI.TAP_MIN)
-	_reroll.pressed.connect(_do_reroll)
-	col.add_child(_reroll)
-
-	_reroll_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
-	col.add_child(_reroll_sub)
-	_update_reroll()
+func refresh() -> void:
+	if Time.get_ticks_msec() - _loaded_ms > 3000:
+		_load()
+	else:
+		_paint()
 
 
-func _reload() -> void:
-	if _mode == Mode.DIAMONDS:
-		var sres: Api.Response = await Api.get_json("/v1/store")
-		if not sres.ok:
-			_header.text = sres.error
-			return
-		_store = sres.data
-		_rebuild()
+func _process(_dt: float) -> void:
+	if not visible or _shop.is_empty():
 		return
+	var left := int(_shop.get("seconds_left", 0)) - (Time.get_ticks_msec() - _loaded_ms) / 1000
+	if left < 0:
+		_load()
+		return
+	_ui["refresh_time"].text = "%02d:%02d" % [left / 60, left % 60]
 
+
+func _load() -> void:
+	_loaded_ms = Time.get_ticks_msec()
 	var res: Api.Response = await Api.get_json("/v1/shop")
-	if not res.ok:
-		_header.text = res.error
+	if res.ok:
+		_shop = res.data
+	var st: Api.Response = await Api.get_json("/v1/store")
+	if st.ok:
+		_store = st.data
+	_paint()
+
+
+func _paint() -> void:
+	if _shop.is_empty():
 		return
-	_shop = res.data
-	_seconds_left = int(_shop.get("seconds_left", 0))
-	_rebuild()
-
-
-func _rebuild() -> void:
-	for c in _list.get_children():
-		c.queue_free()
-	_cards.clear()
-	_style_tabs()
-
-	if _mode == Mode.DIAMONDS:
-		_build_store()
-		_update_reroll()
-		return
-
-	for offer in _shop.get("offers", []):
+	_ui["reroll_cost"].text = str(int(_shop.get("reroll_cost", 0)))
+	var offers: Array = _shop.get("offers", [])
+	for i in _cards.size():
+		var c: Dictionary = _cards[i]
+		var p: Dictionary = c["parts"]
+		if i >= offers.size():
+			c["node"].visible = false
+			continue
+		c["node"].visible = true
+		var offer: Dictionary = offers[i]
 		var item: Dictionary = offer.get("item", {})
-		var card := ItemCard.new(item)
-		card.pressed.connect(_buy.bind(int(offer.get("slot", 0))))
-		card.set_meta("offer", offer)
-		_list.add_child(card)
-		_cards.append(card)
-
-	_update_header()
-	_update_reroll()
-	# No frame await needed: add_child runs _ready synchronously, so every card's
-	# children are already built by the time this returns.
-	_update_affordability()
-
-
-## The diamond good behind a row, for the confirmation that quotes its price.
-func _good_for(id: String) -> Dictionary:
-	for g in _store.get("goods", []):
-		if str(g.get("id", "")) == id:
-			return g
-	return {}
-
-
-## The offer sitting in a shelf slot, for the confirmation that quotes its price.
-func _offer_for(slot: int) -> Dictionary:
-	for offer in _shop.get("offers", []):
-		if int(offer.get("slot", 0)) == slot:
-			return offer
-	return {}
-
-
-func _style_tabs() -> void:
-	for i in _tab_buttons.size():
-		var b: Button = _tab_buttons[i]
-		var active: bool = i == _mode
-		b.add_theme_stylebox_override("normal",
-			UI.panel_box(Palette.PANEL_HIGH if active else Palette.PANEL,
-				Palette.GOLD_DEEP if active else Palette.LINE))
-		b.add_theme_color_override("font_color", Palette.GOLD_INK if active else Palette.TEXT_DIM)
+		var tier := str(item.get("tier", "common"))
+		_set_frame(c, tier)
+		p["painting"].texture = Art.item(str(item.get("art", "")), "shop")
+		p["badge"].texture = Art.tex(BADGES.get(tier, "shop/badge_uncommon"))
+		p["badge"].size = p["badge"].texture.get_size()
+		p["name"].text = str(item.get("name", ""))
+		UI.fit_label(p["name"], 26, 15)
+		var slot := str(item.get("slot", "weapon"))
+		p["type_icon"].texture = Art.tex("shop/type_" + ("sword" if slot == "weapon" else slot))
+		p["type"].text = TYPE_WORD.get(slot, slot.to_upper())
+		p["tier"].text = "TIER %d" % int(TIER_NUMBER.get(tier, 1))
+		p["price"].text = UI.short_number(int(offer.get("price", 0)))
+		var sold := bool(offer.get("purchased", false))
+		c["node"].modulate = Color(0.45, 0.45, 0.45) if sold else Color.WHITE
+		p["buy"].disabled = sold
+	var dp: Dictionary = _ui["diamond_panel"].get_meta("parts")
+	var goods: Array = _store.get("goods", [])
+	for g in goods:
+		var id := str(g.get("id", ""))
+		if id == "energy_refill":
+			dp["energy_desc"].text = "Restore %d Energy" % GameState.max_energy()
+			dp["energy_amount"].text = str(GameState.max_energy())
+			dp["energy_price"].text = str(int(g.get("diamonds", 0)))
+			dp["energy_buy"].modulate = Color.WHITE if bool(g.get("useful", true)) else Color(0.5, 0.5, 0.5)
+		elif id == "shield":
+			dp["shield_desc"].text = _shield_blurb(str(g.get("blurb", "")))
+			dp["shield_price"].text = str(int(g.get("diamonds", 0)))
+			dp["shield_buy"].modulate = Color.WHITE if bool(g.get("useful", true)) else Color(0.5, 0.5, 0.5)
 
 
-## The diamond half. Each good says plainly what it does and, when buying it
-## would change nothing, why it is greyed out -- a premium currency you cannot
-## waste by accident is one people trust.
-func _build_store() -> void:
-	_header.text = "You have %s diamonds" % UI.number(int(_store.get("diamonds", 0)))
-	var have := int(_store.get("diamonds", 0))
+## "No one can raid you for 8 hours." -> "Protects your city\nfor 8 hours"
+func _shield_blurb(blurb: String) -> String:
+	var m := RegEx.new()
+	m.compile("for ([0-9]+ [a-z]+)")
+	var hit := m.search(blurb)
+	if hit:
+		return "Protects your city\nfor " + hit.get_string(1)
+	return "Protects your city\nfor a while"
 
-	for g in _store.get("goods", []):
-		var affordable: bool = have >= int(g.get("diamonds", 0))
-		var useful := bool(g.get("useful", true))
 
-		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
-		b.focus_mode = Control.FOCUS_NONE
-		b.disabled = _busy or not useful or not affordable
-		var accent := Palette.DIAMOND if (useful and affordable) else Palette.LINE
-		b.add_theme_stylebox_override("normal", UI.card_box(useful and affordable))
-		b.add_theme_stylebox_override("hover", UI.card_box(true))
-		b.add_theme_stylebox_override("disabled", UI.card_box(false, true))
-		b.pressed.connect(_buy_good.bind(str(g.get("id", ""))))
+func _set_frame(c: Dictionary, tier: String) -> void:
+	for n in c["frame_pieces"]:
+		n.queue_free()
+	c["frame_pieces"] = []
+	var key: String = tier if FRAMES.has(tier) else FRAME_FALLBACK.get(tier, "uncommon")
+	var root: Control = c["node"]
+	for piece in FRAMES[key]:
+		var tex: Texture2D = Art.tex(piece[0])
+		var img := UI.image(piece[0], Rect2(piece[1], piece[2], tex.get_width(), tex.get_height()))
+		root.add_child(img)
+		root.move_child(img, 0)
+		c["frame_pieces"].append(img)
 
-		var pad := MarginContainer.new()
-		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pad.set_anchors_preset(Control.PRESET_FULL_RECT)
-		for side in ["left", "right"]:
-			pad.add_theme_constant_override("margin_" + side, 12)
-		b.add_child(pad)
 
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
-		pad.add_child(row)
+func _buy(i: int) -> void:
+	if _busy:
+		return
+	var offers: Array = _shop.get("offers", [])
+	if i >= offers.size():
+		return
+	var offer: Dictionary = offers[i]
+	var item: Dictionary = offer.get("item", {})
+	if not await Dialog.ask(self, {"title": "Buy %s?" % str(item.get("name", "")),
+			"body": "%s %s for %s gold." % [str(item.get("tier", "")).capitalize(), str(item.get("slot", "")), UI.grouped(int(offer.get("price", 0)))],
+			"confirm_text": "Buy"}):
+		return
+	_busy = true
+	var res: Api.Response = await GameState.act("/v1/shop/buy", {"slot": int(offer.get("slot", i))})
+	_busy = false
+	if res.ok:
+		GameState.action_failed.emit("Bought %s" % str(item.get("name", "")))
+		await _load()
+	elif res.code == "shop_stale":
+		await _load()
 
-		var icon := TextureRect.new()
-		icon.texture = ArtRegistry.ui_icon(str(g.get("icon", "currency/gem")))
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = Vector2(44, 44)
-		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		icon.modulate = Palette.DIAMOND if useful else Palette.EMPTY_SLOT
-		row.add_child(icon)
 
-		var col := VBoxContainer.new()
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.alignment = BoxContainer.ALIGNMENT_CENTER
-		col.add_theme_constant_override("separation", 2)
-		col.add_child(UI.label(str(g.get("name", "")), UI.F_BODY, Palette.TEXT if useful else Palette.TEXT_FAINT))
-		var blurb := UI.label(str(g.get("blurb", "")), UI.F_MICRO, Palette.TEXT_DIM)
-		blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		col.add_child(blurb)
-		if not useful:
-			col.add_child(UI.label(str(g.get("note", "")), UI.F_MICRO, Palette.SUCCESS))
-		elif not affordable:
-			col.add_child(UI.label("you need %d more" % (int(g.get("diamonds", 0)) - have),
-				UI.F_MICRO, Palette.DANGER))
-		row.add_child(col)
-
-		var price := HBoxContainer.new()
-		price.add_theme_constant_override("separation", 5)
-		price.alignment = BoxContainer.ALIGNMENT_END
-		var gem := TextureRect.new()
-		gem.texture = ArtRegistry.ui_icon("currency/gem")
-		gem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		gem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		gem.custom_minimum_size = Vector2(16, 16)
-		gem.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		gem.modulate = Palette.DIAMOND
-		price.add_child(gem)
-		price.add_child(UI.label(str(int(g.get("diamonds", 0))), UI.F_H2, Palette.DIAMOND))
-		price.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(price)
-
-		_list.add_child(b)
+func _reroll() -> void:
+	if _busy or _shop.is_empty():
+		return
+	var cost := int(_shop.get("reroll_cost", 0))
+	if not await Dialog.ask(self, {"title": "Reroll the market?", "body": "New offers for %d diamonds." % cost, "confirm_text": "Reroll"}):
+		return
+	_busy = true
+	var res: Api.Response = await GameState.act("/v1/shop/reroll", {})
+	_busy = false
+	if res.ok:
+		await _load()
 
 
 func _buy_good(id: String) -> void:
 	if _busy:
 		return
-	var good := _good_for(id)
-	if not await Confirm.ask(self, {
-			"title": "Buy %s?" % str(good.get("name", "this")),
-			"body": str(good.get("blurb", "")),
-			"cost": {"amount": int(good.get("diamonds", 0)), "currency": "gem"},
-			"confirm_text": "Buy"}):
+	var good: Dictionary = {}
+	for g in _store.get("goods", []):
+		if str(g.get("id", "")) == id:
+			good = g
+	if good.is_empty():
+		return
+	if not bool(good.get("useful", true)):
+		GameState.action_failed.emit("Nothing to gain from that right now")
+		return
+	if not await Dialog.ask(self, {"title": str(good.get("name", "")), "body": "%s\n%d diamonds." % [str(good.get("blurb", "")), int(good.get("diamonds", 0))], "confirm_text": "Buy"}):
 		return
 	_busy = true
-	_rebuild()
-	var res: Api.Response = await Api.post_json("/v1/store/buy",
-		{"good": id, "action_seq": int(GameState.player().get("action_seq", 0)) + 1})
+	var res: Api.Response = await GameState.act("/v1/store/buy", {"good": id})
 	_busy = false
 	if res.ok:
-		GameState.adopt(res.data)
-		GameState.changed.emit()
-	else:
-		GameState.action_failed.emit(res.error)
-	await _reload()
-
-
-func _update_header() -> void:
-	if _mode != Mode.MARKET:
-		return
-	var used := int(_shop.get("inventory_used", 0))
-	var cap := int(_shop.get("inventory_cap", 0))
-	_header.text = "Restocks in %s   ·   your armory holds %d of %d" % [
-		UI.duration(_seconds_left), used, cap]
-
-
-## The price escalates within a window and resets when the window turns, so it
-## has to be read back from the server rather than counted locally.
-func _update_reroll() -> void:
-	if _reroll == null:
-		return
-	# The reroll belongs to the Market. On the diamond side every purchase is its
-	# own row, so the bar has nothing to say.
-	_reroll.visible = _mode == Mode.MARKET
-	_reroll_sub.visible = _mode == Mode.MARKET
-	if _mode != Mode.MARKET:
-		return
-	var cost := int(_shop.get("reroll_cost", 0))
-	var used := int(_shop.get("rerolls_used", 0))
-	var have := int(GameState.player().get("diamonds", 0))
-	_reroll.text = "REROLL — %d ◆" % cost
-	_reroll.disabled = _busy or have < cost
-	if have < cost:
-		_reroll_sub.text = "you have %d diamonds — level up to earn more" % have
-	elif used > 0:
-		_reroll_sub.text = "%d this window · the price rises each time" % used
-	else:
-		_reroll_sub.text = "a fresh set of offers, same window"
-
-
-func _do_reroll() -> void:
-	if _busy:
-		return
-	if not await Confirm.ask(self, {
-			"title": "Reroll the shelf?",
-			"body": "A fresh set of offers in the same window. The price rises each time.",
-			"cost": {"amount": int(_shop.get("reroll_cost", 0)), "currency": "gem"},
-			"confirm_text": "Reroll"}):
-		return
-	_busy = true
-	_update_reroll()
-	var res: Api.Response = await Api.post_json("/v1/shop/reroll",
-		{"action_seq": int(GameState.player().get("action_seq", 0)) + 1})
-	_busy = false
-	if res.ok:
-		_shop = res.data
-		_seconds_left = int(_shop.get("seconds_left", 0))
-		await GameState.refresh()
-		_rebuild()
-	else:
-		GameState.action_failed.emit(res.error)
-		_update_reroll()
-
-
-func _update_affordability() -> void:
-	var gold := GameState.display_gold()
-	for card in _cards:
-		if not is_instance_valid(card):
-			continue
-		var offer: Dictionary = card.get_meta("offer", {})
-		var price := int(offer.get("price", 0))
-		if bool(offer.get("purchased", false)):
-			card.set_footer("SOLD", Palette.TEXT_FAINT)
-			card.disabled = true
-			card.modulate.a = 0.45
-		else:
-			var afford := gold >= price
-			card.set_footer(UI.number(price), Palette.GOLD_INK if afford else Palette.DANGER)
-			card.disabled = not afford or _busy
-			card.modulate.a = 1.0 if afford else 0.7
-
-
-func _tick() -> void:
-	if _seconds_left <= 0:
-		return
-	_seconds_left -= 1
-	_update_header()
-	if _seconds_left <= 0:
-		# The window rolled. Re-read rather than guess: the server owns the shelf.
-		_header.text = "Restocking…"
-		_reload()
-
-
-func _buy(slot: int) -> void:
-	if _busy:
-		return
-	var offer := _offer_for(slot)
-	var item: Dictionary = offer.get("item", {})
-	if not await Confirm.ask(self, {
-			"title": "Buy %s?" % str(item.get("name", "this")),
-			"body": "%s   ATK %d   DEF %d" % [str(item.get("tier", "")).to_upper(),
-				int(item.get("attack", 0)), int(item.get("defense", 0))],
-			"cost": {"amount": int(offer.get("price", 0)), "currency": "gold"},
-			"confirm_text": "Buy"}):
-		return
-	_busy = true
-	_update_affordability()
-
-	var seq := int(GameState.player().get("action_seq", 0)) + 1
-	var res: Api.Response = await Api.post_json("/v1/shop/buy", {"slot": slot, "action_seq": seq})
-	_busy = false
-
-	if not res.ok:
-		GameState.action_failed.emit(res.error)
-		# A stale shop or a lost race both mean the shelf we drew is wrong.
-		await GameState.refresh()
-		await _reload()
-		return
-
-	GameState.action_failed.emit("Bought %s for %s gold" %
-		[str(res.data.get("item", {}).get("name", "it")), UI.number(int(res.data.get("paid", 0)))])
-	await GameState.refresh()
-	await _reload()
+		await _load()

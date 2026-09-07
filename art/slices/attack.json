@@ -1,0 +1,643 @@
+{
+ "source": "attack.png",
+ "crops": [
+  {
+   "name": "attack/header",
+   "rect": [
+    155,
+    0,
+    786,
+    366
+   ],
+   "inpaint": [
+    [
+     183,
+     17,
+     228,
+     76
+    ],
+    [
+     433,
+     17,
+     217,
+     76
+    ],
+    [
+     665,
+     17,
+     230,
+     76
+    ]
+   ]
+  },
+  {
+   "name": "attack/tab_revenge",
+   "rect": [
+    183,
+    284,
+    368,
+    78
+   ],
+   "inpaint": [
+    [
+     458,
+     288,
+     20,
+     30
+    ]
+   ]
+  },
+  {
+   "name": "attack/tab_targets",
+   "rect": [
+    553,
+    288,
+    368,
+    68
+   ]
+  },
+  {
+   "name": "attack/tab_active_frame",
+   "rect": [
+    183,
+    284,
+    368,
+    78
+   ],
+   "inpaint": [
+    [
+     284,
+     298,
+     156,
+     44
+    ]
+   ],
+   "erase": [
+    {
+     "rect": [
+      442,
+      284,
+      54,
+      46
+     ],
+     "sample_x": [
+      500,
+      530
+     ]
+    }
+   ]
+  },
+  {
+   "name": "attack/tab_inactive_frame",
+   "rect": [
+    553,
+    288,
+    368,
+    68
+   ],
+   "inpaint": [
+    [
+     672,
+     298,
+     132,
+     38
+    ]
+   ]
+  },
+  {
+   "name": "attack/revenge_card",
+   "rect": [
+    178,
+    364,
+    750,
+    224
+   ],
+   "inpaint": [
+    [
+     440,
+     424,
+     250,
+     44
+    ],
+    [
+     440,
+     464,
+     170,
+     30
+    ],
+    [
+     488,
+     498,
+     140,
+     46
+    ],
+    [
+     762,
+     452,
+     120,
+     42
+    ]
+   ]
+  },
+  {
+   "name": "attack/target_card",
+   "rect": [
+    178,
+    647,
+    748,
+    228
+   ],
+   "inpaint": [
+    [
+     440,
+     662,
+     250,
+     44
+    ],
+    [
+     440,
+     700,
+     170,
+     30
+    ],
+    [
+     488,
+     740,
+     140,
+     44
+    ],
+    [
+     762,
+     686,
+     120,
+     42
+    ],
+    [
+     222,
+     826,
+     110,
+     28
+    ],
+    [
+     790,
+     826,
+     120,
+     28
+    ],
+    [
+     672,
+     727,
+     242,
+     76
+    ]
+   ]
+  },
+  {
+   "name": "attack/btn_attack_red",
+   "rect": [
+    662,
+    499,
+    248,
+    68
+   ]
+  },
+  {
+   "name": "attack/btn_attack_green",
+   "rect": [
+    676,
+    732,
+    233,
+    66
+   ]
+  },
+  {
+   "name": "attack/shield_pill",
+   "rect": [
+    677,
+    1172,
+    237,
+    62
+   ],
+   "inpaint": [
+    [
+     736,
+     1184,
+     156,
+     38
+    ]
+   ]
+  },
+  {
+   "name": "attack/bar_left",
+   "rect": [
+    315,
+    814,
+    40,
+    26
+   ]
+  },
+  {
+   "name": "attack/bar_green",
+   "rect": [
+    400,
+    814,
+    20,
+    26
+   ]
+  },
+  {
+   "name": "attack/bar_split",
+   "rect": [
+    528,
+    814,
+    20,
+    26
+   ]
+  },
+  {
+   "name": "attack/bar_red",
+   "rect": [
+    600,
+    814,
+    20,
+    26
+   ]
+  },
+  {
+   "name": "attack/bar_right",
+   "rect": [
+    743,
+    814,
+    41,
+    26
+   ]
+  },
+  {
+   "name": "attack/divider_targets",
+   "rect": [
+    180,
+    596,
+    745,
+    42
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "attack/history_panel",
+   "rect": [
+    180,
+    1317,
+    744,
+    206
+   ],
+   "inpaint": [
+    [
+     198,
+     1373,
+     706,
+     44
+    ],
+    [
+     198,
+     1424,
+     706,
+     44
+    ],
+    [
+     198,
+     1475,
+     706,
+     44
+    ]
+   ]
+  },
+  {
+   "name": "attack/notice_bar",
+   "rect": [
+    180,
+    1541,
+    744,
+    64
+   ]
+  },
+  {
+   "name": "attack/notice_bar_blank",
+   "rect": [
+    180,
+    1541,
+    744,
+    64
+   ],
+   "inpaint": [
+    [
+     258,
+     1556,
+     600,
+     36
+    ]
+   ]
+  },
+  {
+   "name": "icons/sword_victory",
+   "rect": [
+    198,
+    1375,
+    46,
+    42
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "icons/sword_defeat",
+   "rect": [
+    198,
+    1426,
+    46,
+    42
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "icons/coin_small",
+   "rect": [
+    564,
+    1377,
+    38,
+    37
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "icons/chevron_gold",
+   "rect": [
+    882,
+    1381,
+    24,
+    30
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "icons/swords_small",
+   "rect": [
+    442,
+    732,
+    52,
+    56
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "icons/gold_pile",
+   "rect": [
+    712,
+    690,
+    56,
+    40
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "icons/bolt_small",
+   "rect": [
+    744,
+    377,
+    32,
+    36
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "icons/shield_small",
+   "rect": [
+    686,
+    1178,
+    42,
+    50
+   ],
+   "mode": "darkkey",
+   "k": 80
+  },
+  {
+   "name": "portraits/rival_darius",
+   "rect": [
+    200,
+    428,
+    136,
+    136
+   ]
+  },
+  {
+   "name": "portraits/rival_seraphine",
+   "rect": [
+    200,
+    661,
+    136,
+    136
+   ]
+  },
+  {
+   "name": "portraits/rival_keldric",
+   "rect": [
+    200,
+    882,
+    136,
+    136
+   ]
+  },
+  {
+   "name": "portraits/rival_malric",
+   "rect": [
+    200,
+    1100,
+    136,
+    136
+   ]
+  },
+  {
+   "name": "icons/crest_wolf",
+   "rect": [
+    346,
+    427,
+    91,
+    120
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      3
+     ],
+     [
+      91,
+      3
+     ],
+     [
+      91,
+      66
+     ],
+     [
+      76,
+      96
+     ],
+     [
+      46,
+      120
+     ],
+     [
+      15,
+      96
+     ],
+     [
+      0,
+      66
+     ]
+    ]
+   }
+  },
+  {
+   "name": "icons/crest_lion",
+   "rect": [
+    346,
+    663,
+    91,
+    120
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      3
+     ],
+     [
+      91,
+      3
+     ],
+     [
+      91,
+      66
+     ],
+     [
+      76,
+      96
+     ],
+     [
+      46,
+      120
+     ],
+     [
+      15,
+      96
+     ],
+     [
+      0,
+      66
+     ]
+    ]
+   }
+  },
+  {
+   "name": "icons/crest_stag",
+   "rect": [
+    346,
+    885,
+    91,
+    120
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      3
+     ],
+     [
+      91,
+      3
+     ],
+     [
+      91,
+      66
+     ],
+     [
+      76,
+      96
+     ],
+     [
+      46,
+      120
+     ],
+     [
+      15,
+      96
+     ],
+     [
+      0,
+      66
+     ]
+    ]
+   }
+  },
+  {
+   "name": "icons/crest_eagle",
+   "rect": [
+    346,
+    1102,
+    91,
+    120
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      3
+     ],
+     [
+      91,
+      3
+     ],
+     [
+      91,
+      66
+     ],
+     [
+      76,
+      96
+     ],
+     [
+      46,
+      120
+     ],
+     [
+      15,
+      96
+     ],
+     [
+      0,
+      66
+     ]
+    ]
+   }
+  },
+  {
+   "name": "attack/ground_bottom",
+   "rect": [
+    155,
+    1470,
+    786,
+    202
+   ]
+  }
+ ]
+}

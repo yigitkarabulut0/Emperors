@@ -1,0 +1,743 @@
+{
+ "screen": "attack",
+ "source": "attack.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0b1620",
+ "notes": [
+  "All top-level rects are absolute source pixels; every rect inside 'parts' is relative to its template origin.",
+  "Text 'size' is cap-height x 1.4 (cap recorded too) so the real font can be calibrated against the reference.",
+  "Tabs: both frames are 368 px wide, so active/inactive swap without scaling. The active frame is 78 tall at y 284 (with its bottom ornament); the inactive one 68 tall at y 288.",
+  "attack/tab_revenge keeps the baked REVENGE label and an emptied badge circle; draw the count text over it. tab_active_frame has label and badge removed (for TARGETS-active). No badge-less variant of the labelled revenge tab exists: with zero revenge available render '0' or use tab_active_frame + label.",
+  "Target card frame has name/level/power/amount/your+their numbers AND the button area removed, so either btn_attack_green or shield_pill can sit there. Portrait and crest regions are kept baked (Seraphine/lion) and are always fully covered by a 136x136 portrait and a 91x120 crest at the same offsets.",
+  "Power bar is assembled from five pieces: bar_left (green cap), bar_green (stretch), bar_split (green->red seam), bar_red (stretch), bar_right (red cap). Total width 468, height 26.",
+  "Header crop includes the painting behind the tabs (y 284..366) with this screen's own currency pills inpainted; the shared chrome pills draw over it at the chrome positions.",
+  "The shield notice text is baked in attack/notice_bar ('30-minute'); attack/notice_bar_blank has the sentence removed for a server-driven duration.",
+  "Reference cards are 225/213/206 px tall (each generated slightly differently); the template is card 1 (228 incl. 3 px of ground) with pitch 229, which puts card 2 exactly at its reference y and card 3 11 px lower than the reference."
+ ],
+ "fonts": {
+  "title": "Cinzel",
+  "body": "transitional serif (Crimson Pro / EB Garamond class)"
+ },
+ "elements": [
+  {
+   "id": "ground_bottom",
+   "kind": "image",
+   "asset": "attack/ground_bottom",
+   "rect": [
+    155,
+    1470,
+    786,
+    202
+   ],
+   "note": "blurred foliage behind the bottom panels; draw first, panels cover it"
+  },
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "attack/header",
+   "rect": [
+    155,
+    0,
+    786,
+    366
+   ]
+  },
+  {
+   "id": "tab_revenge",
+   "kind": "button",
+   "action": "tab:revenge",
+   "rect": [
+    183,
+    284,
+    368,
+    78
+   ],
+   "states": {
+    "active": {
+     "asset": "attack/tab_revenge",
+     "rect": [
+      183,
+      284,
+      368,
+      78
+     ]
+    },
+    "inactive": {
+     "asset": "attack/tab_inactive_frame",
+     "rect": [
+      183,
+      288,
+      368,
+      68
+     ],
+     "label": {
+      "kind": "text",
+      "rect": [
+       183,
+       288,
+       368,
+       68
+      ],
+      "font": "title",
+      "size": 31,
+      "cap": 22,
+      "weight": 600,
+      "color": "#C9CDD3",
+      "align": "center",
+      "valign": "center",
+      "sample": "REVENGE"
+     }
+    }
+   },
+   "badge_count": {
+    "kind": "text",
+    "rect": [
+     446,
+     281,
+     46,
+     46
+    ],
+    "font": "body",
+    "size": 34,
+    "cap": 24,
+    "weight": 500,
+    "color": "#F6F1EA",
+    "align": "center",
+    "valign": "center",
+    "sample": "1",
+    "only_when": "active"
+   }
+  },
+  {
+   "id": "tab_targets",
+   "kind": "button",
+   "action": "tab:targets",
+   "rect": [
+    553,
+    288,
+    368,
+    68
+   ],
+   "states": {
+    "inactive": {
+     "asset": "attack/tab_targets",
+     "rect": [
+      553,
+      288,
+      368,
+      68
+     ]
+    },
+    "active": {
+     "asset": "attack/tab_active_frame",
+     "rect": [
+      553,
+      284,
+      368,
+      78
+     ],
+     "label": {
+      "kind": "text",
+      "rect": [
+       553,
+       284,
+       368,
+       68
+      ],
+      "font": "title",
+      "size": 31,
+      "cap": 22,
+      "weight": 700,
+      "color": "#F4F0EA",
+      "align": "center",
+      "valign": "center",
+      "sample": "TARGETS"
+     }
+    }
+   }
+  },
+  {
+   "id": "revenge_card",
+   "kind": "template",
+   "rect": [
+    178,
+    364,
+    750,
+    224
+   ],
+   "instances": [
+    [
+     178,
+     364
+    ]
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "attack/revenge_card",
+     "rect": [
+      0,
+      0,
+      750,
+      224
+     ]
+    },
+    {
+     "id": "portrait",
+     "kind": "image",
+     "asset": "portraits/rival_darius",
+     "rect": [
+      22,
+      64,
+      136,
+      136
+     ],
+     "dynamic": "portrait"
+    },
+    {
+     "id": "crest",
+     "kind": "image",
+     "asset": "icons/crest_wolf",
+     "rect": [
+      168,
+      63,
+      91,
+      120
+     ],
+     "dynamic": "crest"
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      270,
+      62,
+      260,
+      36
+     ],
+     "font": "body",
+     "size": 30,
+     "cap": 21,
+     "weight": 600,
+     "color": "#F3EEE6",
+     "align": "left",
+     "valign": "center",
+     "sample": "Lord Darius"
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "rect": [
+      270,
+      100,
+      170,
+      26
+     ],
+     "font": "title",
+     "size": 20,
+     "cap": 14,
+     "weight": 600,
+     "color": "#E4B13C",
+     "align": "left",
+     "valign": "center",
+     "sample": "LEVEL 31"
+    },
+    {
+     "id": "power",
+     "kind": "text",
+     "rect": [
+      316,
+      137,
+      150,
+      40
+     ],
+     "font": "body",
+     "size": 30,
+     "cap": 21,
+     "weight": 600,
+     "color": "#F3EEE6",
+     "align": "left",
+     "valign": "center",
+     "sample": "2,980"
+    },
+    {
+     "id": "amount",
+     "kind": "text",
+     "rect": [
+      592,
+      92,
+      120,
+      36
+     ],
+     "font": "body",
+     "size": 27,
+     "cap": 19,
+     "weight": 600,
+     "color": "#F3EEE6",
+     "align": "left",
+     "valign": "center",
+     "sample": "278,000"
+    },
+    {
+     "id": "attack",
+     "kind": "button",
+     "asset": "attack/btn_attack_red",
+     "rect": [
+      484,
+      135,
+      248,
+      68
+     ],
+     "action": "attack_revenge"
+    }
+   ]
+  },
+  {
+   "id": "divider_targets",
+   "kind": "image",
+   "asset": "attack/divider_targets",
+   "rect": [
+    180,
+    596,
+    745,
+    42
+   ]
+  },
+  {
+   "id": "target_card",
+   "kind": "template",
+   "rect": [
+    178,
+    647,
+    748,
+    228
+   ],
+   "pitch": 229,
+   "instances": [
+    [
+     178,
+     647
+    ],
+    [
+     178,
+     876
+    ],
+    [
+     178,
+     1105
+    ]
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "attack/target_card",
+     "rect": [
+      0,
+      0,
+      748,
+      228
+     ]
+    },
+    {
+     "id": "portrait",
+     "kind": "image",
+     "asset": "portraits/rival_seraphine",
+     "rect": [
+      22,
+      14,
+      136,
+      136
+     ],
+     "dynamic": "portrait"
+    },
+    {
+     "id": "crest",
+     "kind": "image",
+     "asset": "icons/crest_lion",
+     "rect": [
+      168,
+      16,
+      91,
+      120
+     ],
+     "dynamic": "crest"
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      270,
+      14,
+      260,
+      40
+     ],
+     "font": "body",
+     "size": 30,
+     "cap": 21,
+     "weight": 600,
+     "color": "#F3EEE6",
+     "align": "left",
+     "valign": "center",
+     "sample": "Lady Seraphine"
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "rect": [
+      270,
+      52,
+      170,
+      28
+     ],
+     "font": "title",
+     "size": 20,
+     "cap": 14,
+     "weight": 600,
+     "color": "#E4B13C",
+     "align": "left",
+     "valign": "center",
+     "sample": "LEVEL 32"
+    },
+    {
+     "id": "power",
+     "kind": "text",
+     "rect": [
+      316,
+      88,
+      150,
+      42
+     ],
+     "font": "body",
+     "size": 30,
+     "cap": 21,
+     "weight": 600,
+     "color": "#F3EEE6",
+     "align": "left",
+     "valign": "center",
+     "sample": "3,120"
+    },
+    {
+     "id": "amount",
+     "kind": "text",
+     "rect": [
+      592,
+      42,
+      120,
+      38
+     ],
+     "font": "body",
+     "size": 27,
+     "cap": 19,
+     "weight": 600,
+     "color": "#F3EEE6",
+     "align": "left",
+     "valign": "center",
+     "sample": "412,000"
+    },
+    {
+     "id": "attack",
+     "kind": "button",
+     "asset": "attack/btn_attack_green",
+     "rect": [
+      498,
+      85,
+      233,
+      66
+     ],
+     "action": "attack",
+     "only_when": "not shielded"
+    },
+    {
+     "id": "shield",
+     "kind": "image",
+     "asset": "attack/shield_pill",
+     "rect": [
+      499,
+      87,
+      237,
+      62
+     ],
+     "only_when": "shielded",
+     "parts": [
+      {
+       "id": "time",
+       "kind": "text",
+       "rect": [
+        73,
+        12,
+        150,
+        38
+       ],
+       "font": "body",
+       "size": 23,
+       "cap": 16,
+       "weight": 500,
+       "color": "#CBD3DC",
+       "align": "left",
+       "valign": "center",
+       "sample": "Shield  12m 14s"
+      }
+     ]
+    },
+    {
+     "id": "your_num",
+     "kind": "text",
+     "rect": [
+      40,
+      181,
+      120,
+      28
+     ],
+     "font": "body",
+     "size": 22,
+     "cap": 15,
+     "weight": 500,
+     "color": "#EDE7DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "3,350"
+    },
+    {
+     "id": "their_num",
+     "kind": "text",
+     "rect": [
+      608,
+      181,
+      126,
+      28
+     ],
+     "font": "body",
+     "size": 22,
+     "cap": 15,
+     "weight": 500,
+     "color": "#EDE7DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "3,120"
+    },
+    {
+     "id": "bar",
+     "kind": "bar",
+     "rect": [
+      137,
+      167,
+      468,
+      26
+     ],
+     "ratio_sample": 0.47,
+     "pieces": {
+      "left": "attack/bar_left",
+      "fill_a": "attack/bar_green",
+      "split": "attack/bar_split",
+      "fill_b": "attack/bar_red",
+      "right": "attack/bar_right"
+     }
+    }
+   ]
+  },
+  {
+   "id": "history_panel",
+   "kind": "template",
+   "rect": [
+    180,
+    1317,
+    744,
+    206
+   ],
+   "instances": [
+    [
+     180,
+     1317
+    ]
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "attack/history_panel",
+     "rect": [
+      0,
+      0,
+      744,
+      206
+     ]
+    },
+    {
+     "id": "view_all",
+     "kind": "button",
+     "rect": [
+      610,
+      18,
+      120,
+      36
+     ],
+     "action": "history_all",
+     "note": "label 'View All >' is baked"
+    },
+    {
+     "id": "row",
+     "kind": "template",
+     "rect": [
+      18,
+      56,
+      708,
+      48
+     ],
+     "pitch": 51,
+     "instances": [
+      [
+       18,
+       56
+      ],
+      [
+       18,
+       107
+      ],
+      [
+       18,
+       158
+      ]
+     ],
+     "parts": [
+      {
+       "id": "icon",
+       "kind": "image",
+       "asset": "icons/sword_victory",
+       "rect": [
+        0,
+        2,
+        46,
+        42
+       ],
+       "dynamic": "victory|defeat -> icons/sword_victory|icons/sword_defeat"
+      },
+      {
+       "id": "result",
+       "kind": "text",
+       "rect": [
+        47,
+        5,
+        320,
+        36
+       ],
+       "font": "body",
+       "size": 24,
+       "cap": 17,
+       "weight": 500,
+       "align": "left",
+       "valign": "center",
+       "rich": [
+        {
+         "text": "Victory",
+         "color": "#6FD35A"
+        },
+        {
+         "text": " vs. Lord Kaelen",
+         "color": "#EDE7DA"
+        }
+       ],
+       "defeat_color": "#E7413F",
+       "sample": "Victory vs. Lord Kaelen"
+      },
+      {
+       "id": "coin",
+       "kind": "image",
+       "asset": "icons/coin_small",
+       "rect": [
+        368,
+        4,
+        38,
+        37
+       ],
+       "only_when": "gold != 0"
+      },
+      {
+       "id": "gold",
+       "kind": "text",
+       "rect": [
+        420,
+        5,
+        140,
+        36
+       ],
+       "font": "body",
+       "size": 24,
+       "cap": 17,
+       "weight": 600,
+       "color": "#EFC53A",
+       "align": "left",
+       "valign": "center",
+       "sample": "+186,000",
+       "zero_sample": "-"
+      },
+      {
+       "id": "time",
+       "kind": "text",
+       "rect": [
+        560,
+        5,
+        110,
+        36
+       ],
+       "font": "body",
+       "size": 21,
+       "cap": 15,
+       "weight": 500,
+       "color": "#B9BEC5",
+       "align": "left",
+       "valign": "center",
+       "sample": "2h ago"
+      },
+      {
+       "id": "chevron",
+       "kind": "image",
+       "asset": "icons/chevron_gold",
+       "rect": [
+        684,
+        8,
+        24,
+        30
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "notice_bar",
+   "kind": "image",
+   "asset": "attack/notice_bar",
+   "rect": [
+    180,
+    1541,
+    744,
+    64
+   ],
+   "alt": {
+    "asset": "attack/notice_bar_blank",
+    "text": {
+     "kind": "text",
+     "rect": [
+      258,
+      1556,
+      600,
+      36
+     ],
+     "font": "body",
+     "size": 25,
+     "cap": 18,
+     "weight": 500,
+     "color": "#E9E3D8",
+     "align": "left",
+     "valign": "center",
+     "sample": "Defeated players gain a 30-minute shield and cannot be attacked."
+    }
+   }
+  }
+ ]
+}

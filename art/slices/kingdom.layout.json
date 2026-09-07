@@ -1,0 +1,891 @@
+{
+ "screen": "kingdom",
+ "source": "kingdom.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0B151F",
+ "content_x": 150,
+ "shared_pills_note": "this reference's own pills sit at gold [172,17,218,55] diamond [403,17,200,55] energy [618,17,238,56]; they are inpainted in kingdom/header so the shared chrome pills (collect.png positions) can be drawn over. The strips 172-180, 403-439 and 618-666 remain inpainted (smeared) and visible.",
+ "fonts": {
+  "title": "Cinzel",
+  "body": "Crimson Pro (transitional serif); numbers use tabular figures"
+ },
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "kingdom/header",
+   "rect": [
+    150,
+    0,
+    791,
+    452
+   ],
+   "note": "header painting + identity plate; pills inpainted, name/motto/level/bar-fill erased; crest and quill button baked"
+  },
+  {
+   "id": "kingdom_name",
+   "kind": "text",
+   "rect": [
+    372,
+    340,
+    300,
+    44
+   ],
+   "font": "title",
+   "size": 48,
+   "weight": 700,
+   "color": "#EDEFF3",
+   "align": "left",
+   "valign": "center",
+   "sample": "LION BANNER"
+  },
+  {
+   "id": "edit_name",
+   "kind": "button",
+   "rect": [
+    678,
+    346,
+    38,
+    37
+   ],
+   "action": "kingdom_rename",
+   "note": "quill box is baked into header"
+  },
+  {
+   "id": "motto",
+   "kind": "text",
+   "rect": [
+    372,
+    383,
+    376,
+    26
+   ],
+   "font": "body",
+   "size": 22,
+   "weight": 500,
+   "color": "#AEB6C0",
+   "align": "left",
+   "valign": "center",
+   "sample": "Kingdom of Unity, Strength, and Glory."
+  },
+  {
+   "id": "level",
+   "kind": "text",
+   "rect": [
+    418,
+    418,
+    116,
+    32
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#F0D27A",
+   "align": "left",
+   "valign": "center",
+   "sample": "LEVEL 5"
+  },
+  {
+   "id": "level_bar_fill",
+   "kind": "image",
+   "asset": "kingdom/level_bar_fill",
+   "rect": [
+    535,
+    424,
+    304,
+    18
+   ],
+   "fill": "left",
+   "track": [
+    535,
+    424,
+    359,
+    18
+   ],
+   "note": "track (empty) is baked into header at track rect; clip fill width by progress"
+  },
+  {
+   "id": "stat_renown",
+   "kind": "image",
+   "asset": "kingdom/stat_renown",
+   "rect": [
+    165,
+    452,
+    246,
+    99
+   ]
+  },
+  {
+   "id": "stat_renown_value",
+   "kind": "text",
+   "rect": [
+    283,
+    497,
+    120,
+    40
+   ],
+   "font": "body",
+   "size": 30,
+   "weight": 700,
+   "color": "#F4F5F7",
+   "align": "center",
+   "valign": "center",
+   "sample": "25,680"
+  },
+  {
+   "id": "stat_treasury",
+   "kind": "image",
+   "asset": "kingdom/stat_treasury",
+   "rect": [
+    414,
+    452,
+    258,
+    99
+   ]
+  },
+  {
+   "id": "stat_treasury_value",
+   "kind": "text",
+   "rect": [
+    526,
+    497,
+    132,
+    40
+   ],
+   "font": "body",
+   "size": 30,
+   "weight": 700,
+   "color": "#F4F5F7",
+   "align": "center",
+   "valign": "center",
+   "sample": "142.6M"
+  },
+  {
+   "id": "stat_members",
+   "kind": "image",
+   "asset": "kingdom/stat_members",
+   "rect": [
+    676,
+    452,
+    252,
+    99
+   ]
+  },
+  {
+   "id": "stat_members_value",
+   "kind": "text",
+   "rect": [
+    793,
+    497,
+    128,
+    40
+   ],
+   "font": "body",
+   "size": 30,
+   "weight": 700,
+   "color": "#F4F5F7",
+   "align": "center",
+   "valign": "center",
+   "sample": "48/50"
+  },
+  {
+   "id": "tabs",
+   "kind": "template",
+   "rect": [
+    151,
+    556,
+    780,
+    68
+   ],
+   "instances": [
+    [
+     151,
+     556
+    ],
+    [
+     356,
+     558
+    ],
+    [
+     543,
+     558
+    ],
+    [
+     739,
+     558
+    ]
+   ],
+   "note": "per-tab: chip = kingdom/tab_active_empty (206x68, nine margins [14,10,14,10]) when selected else kingdom/tab_inactive_empty (186x63, nine [12,8,12,8]) stretched to the instance width; label image centred. Reference state (REALM selected) is also available as the four baked crops kingdom/tab_realm_active, tab_lords, tab_works, tab_ranks at these rects.",
+   "parts": [
+    {
+     "id": "chip",
+     "kind": "image",
+     "asset": "kingdom/tab_inactive_empty",
+     "asset_selected": "kingdom/tab_active_empty",
+     "rect": [
+      0,
+      0,
+      186,
+      63
+     ]
+    },
+    {
+     "id": "label",
+     "kind": "image",
+     "asset": "kingdom/tab_label_<name>",
+     "rect": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "align": "center"
+    }
+   ],
+   "widths": [
+    206,
+    186,
+    197,
+    192
+   ],
+   "labels": {
+    "realm": {
+     "asset": "kingdom/tab_label_realm",
+     "rect": [
+      210,
+      578,
+      86,
+      24
+     ]
+    },
+    "lords": {
+     "asset": "kingdom/tab_label_lords",
+     "rect": [
+      410,
+      578,
+      78,
+      24
+     ]
+    },
+    "works": {
+     "asset": "kingdom/tab_label_works",
+     "rect": [
+      597,
+      578,
+      84,
+      24
+     ]
+    },
+    "ranks": {
+     "asset": "kingdom/tab_label_ranks",
+     "rect": [
+      792,
+      578,
+      82,
+      24
+     ]
+    }
+   }
+  },
+  {
+   "id": "realm_card",
+   "kind": "image",
+   "asset": "kingdom/realm_card",
+   "rect": [
+    155,
+    614,
+    396,
+    266
+   ]
+  },
+  {
+   "id": "realm_bonuses",
+   "kind": "image",
+   "asset": "kingdom/realm_bonuses",
+   "rect": [
+    586,
+    612,
+    345,
+    190
+   ]
+  },
+  {
+   "id": "bonus_income",
+   "kind": "text",
+   "rect": [
+    680,
+    682,
+    66,
+    24
+   ],
+   "font": "body",
+   "size": 25,
+   "weight": 700,
+   "color": "#4EE0A8",
+   "align": "left",
+   "valign": "center",
+   "sample": "+60%"
+  },
+  {
+   "id": "bonus_xp",
+   "kind": "text",
+   "rect": [
+    680,
+    743,
+    64,
+    22
+   ],
+   "font": "body",
+   "size": 25,
+   "weight": 700,
+   "color": "#A8E070",
+   "align": "left",
+   "valign": "center",
+   "sample": "+30%"
+  },
+  {
+   "id": "realm_notice",
+   "kind": "image",
+   "asset": "kingdom/realm_notice",
+   "rect": [
+    586,
+    804,
+    345,
+    76
+   ]
+  },
+  {
+   "id": "treasury_card",
+   "kind": "image",
+   "asset": "kingdom/treasury_card",
+   "rect": [
+    155,
+    872,
+    377,
+    258
+   ],
+   "note": "DONATE baked at [228,1071,254,58]; kingdom/btn_donate is the same button cut out for pressed/disabled states"
+  },
+  {
+   "id": "donate",
+   "kind": "button",
+   "rect": [
+    228,
+    1071,
+    254,
+    58
+   ],
+   "action": "kingdom_donate",
+   "asset": "kingdom/btn_donate"
+  },
+  {
+   "id": "reputation_card",
+   "kind": "image",
+   "asset": "kingdom/reputation_card",
+   "rect": [
+    534,
+    872,
+    396,
+    258
+   ],
+   "note": "RESPECTED text, progress numbers and bar fill erased (empty track baked at [671,961,236,19]); compass emblem, the two sub-panels, the four hexes and their labels stay baked in the reference state (tier II lit). Overlay kingdom/rep_hex_* and rep_label_* crops to change which tier is shown lit."
+  },
+  {
+   "id": "rep_rank_name",
+   "kind": "text",
+   "rect": [
+    668,
+    928,
+    150,
+    26
+   ],
+   "font": "title",
+   "size": 24,
+   "weight": 700,
+   "color": "#F2C94C",
+   "align": "left",
+   "valign": "center",
+   "sample": "RESPECTED"
+  },
+  {
+   "id": "rep_bar_fill",
+   "kind": "image",
+   "asset": "kingdom/rep_bar_fill",
+   "rect": [
+    671,
+    961,
+    126,
+    19
+   ],
+   "fill": "left",
+   "track": [
+    671,
+    961,
+    236,
+    19
+   ]
+  },
+  {
+   "id": "rep_progress",
+   "kind": "text",
+   "rect": [
+    668,
+    982,
+    140,
+    20
+   ],
+   "font": "body",
+   "size": 17,
+   "weight": 500,
+   "color": "#C9D0D8",
+   "align": "left",
+   "valign": "center",
+   "sample": "25,680 / 50,000"
+  },
+  {
+   "id": "rep_tiers",
+   "kind": "template",
+   "rect": [
+    556,
+    1024,
+    366,
+    98
+   ],
+   "instances": [
+    [
+     574,
+     1028
+    ],
+    [
+     656,
+     1024
+    ],
+    [
+     752,
+     1028
+    ],
+    [
+     847,
+     1028
+    ]
+   ],
+   "note": "only tier II exists in the lit state (gold glow, gold label); tiers I/III/IV exist unlit only. To light another tier there is no source art \u2014 reuse rep_hex_2_lit's glow is not possible without redraw; report says so.",
+   "tiers": [
+    {
+     "name": "neutral",
+     "hex": "kingdom/rep_hex_1",
+     "hex_rect": [
+      574,
+      1028,
+      47,
+      59
+     ],
+     "label": "kingdom/rep_label_neutral",
+     "label_rect": [
+      562,
+      1090,
+      68,
+      22
+     ]
+    },
+    {
+     "name": "respected",
+     "hex": "kingdom/rep_hex_2_lit",
+     "hex_rect": [
+      656,
+      1024,
+      56,
+      66
+     ],
+     "label": "kingdom/rep_label_respected",
+     "label_rect": [
+      644,
+      1090,
+      78,
+      22
+     ]
+    },
+    {
+     "name": "honored",
+     "hex": "kingdom/rep_hex_3",
+     "hex_rect": [
+      752,
+      1028,
+      49,
+      60
+     ],
+     "label": "kingdom/rep_label_honored",
+     "label_rect": [
+      744,
+      1090,
+      68,
+      22
+     ]
+    },
+    {
+     "name": "legendary",
+     "hex": "kingdom/rep_hex_4",
+     "hex_rect": [
+      847,
+      1028,
+      49,
+      60
+     ],
+     "label": "kingdom/rep_label_legendary",
+     "label_rect": [
+      830,
+      1090,
+      82,
+      22
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lords_panel",
+   "kind": "image",
+   "asset": "kingdom/lords_panel",
+   "rect": [
+    155,
+    1131,
+    377,
+    348
+   ],
+   "note": "header ROYAL LORDS + View All baked; 4 row plates baked with portraits+swords baked and all live parts erased"
+  },
+  {
+   "id": "lords_view_all",
+   "kind": "button",
+   "rect": [
+    440,
+    1155,
+    85,
+    30
+   ],
+   "action": "kingdom_lords"
+  },
+  {
+   "id": "lord_row",
+   "kind": "template",
+   "rect": [
+    167,
+    1189,
+    354,
+    63
+   ],
+   "pitch": 69,
+   "instances": [
+    [
+     167,
+     1189
+    ],
+    [
+     167,
+     1258
+    ],
+    [
+     167,
+     1327
+    ],
+    [
+     167,
+     1396
+    ]
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "kingdom/lord_row",
+     "rect": [
+      0,
+      0,
+      354,
+      63
+     ]
+    },
+    {
+     "id": "portrait",
+     "kind": "image",
+     "asset": "portraits/<lord>",
+     "rect": [
+      -1,
+      -3,
+      76,
+      68
+     ],
+     "note": "76x68 rect crops incl. gold ring; king row uses portraits/lord_yigit (76x76, y-11) which includes the crown; or overlay icons/crown_king_small at [26,-13]"
+    },
+    {
+     "id": "online",
+     "kind": "image",
+     "asset": "icons/dot_online",
+     "rect": [
+      77,
+      11,
+      16,
+      16
+     ],
+     "alt": "icons/dot_offline"
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      99,
+      7,
+      150,
+      24
+     ],
+     "font": "title",
+     "size": 24,
+     "weight": 700,
+     "color": "#D8DCE0",
+     "align": "left",
+     "valign": "center",
+     "sample": "YIGIT",
+     "note": "king name is set in caps title font; others body 24 mixed case"
+    },
+    {
+     "id": "role_icon",
+     "kind": "image",
+     "asset": "icons/role_<role>",
+     "rect": [
+      95,
+      30,
+      32,
+      24
+     ]
+    },
+    {
+     "id": "role",
+     "kind": "text",
+     "rect": [
+      129,
+      35,
+      110,
+      20
+     ],
+     "font": "title",
+     "size": 18,
+     "weight": 700,
+     "color": "#E2C46A",
+     "align": "left",
+     "valign": "center",
+     "sample": "KING"
+    },
+    {
+     "id": "might_icon",
+     "kind": "image",
+     "asset": "icons/might_swords",
+     "rect": [
+      269,
+      20,
+      32,
+      32
+     ],
+     "note": "also baked in the plate"
+    },
+    {
+     "id": "might",
+     "kind": "text",
+     "rect": [
+      301,
+      25,
+      56,
+      22
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 700,
+     "color": "#D5DADF",
+     "align": "left",
+     "valign": "center",
+     "sample": "5.2M"
+    }
+   ]
+  },
+  {
+   "id": "works_panel",
+   "kind": "image",
+   "asset": "kingdom/works_panel",
+   "rect": [
+    536,
+    1131,
+    394,
+    348
+   ],
+   "note": "header + View All baked; 4 building paintings and 4 UPGRADE buttons baked; name/level/bonus texts erased"
+  },
+  {
+   "id": "works_view_all",
+   "kind": "button",
+   "rect": [
+    850,
+    1155,
+    80,
+    30
+   ],
+   "action": "kingdom_works"
+  },
+  {
+   "id": "work_row",
+   "kind": "template",
+   "rect": [
+    552,
+    1178,
+    378,
+    69
+   ],
+   "pitch": 74.7,
+   "instances": [
+    [
+     552,
+     1178
+    ],
+    [
+     552,
+     1253
+    ],
+    [
+     552,
+     1327
+    ],
+    [
+     552,
+     1402
+    ]
+   ],
+   "parts": [
+    {
+     "id": "painting",
+     "kind": "image",
+     "asset": "kingdom/work_<slug>",
+     "rect": [
+      0,
+      0,
+      86,
+      69
+     ]
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      98,
+      8,
+      160,
+      20
+     ],
+     "font": "title",
+     "size": 18,
+     "weight": 700,
+     "color": "#DDE0E4",
+     "align": "left",
+     "valign": "center",
+     "sample": "BANNER HALL"
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "rect": [
+      98,
+      28,
+      60,
+      18
+     ],
+     "font": "body",
+     "size": 18,
+     "weight": 700,
+     "color": "#E5D48A",
+     "align": "left",
+     "valign": "center",
+     "sample": "Lv. 5"
+    },
+    {
+     "id": "bonus",
+     "kind": "text",
+     "rect": [
+      98,
+      48,
+      160,
+      18
+     ],
+     "font": "body",
+     "size": 18,
+     "weight": 500,
+     "color": "#B4BEC8",
+     "align": "left",
+     "valign": "center",
+     "sample": "+20% Army Attack"
+    },
+    {
+     "id": "upgrade",
+     "kind": "button",
+     "rect": [
+      259,
+      8,
+      110,
+      50
+     ],
+     "action": "kingdom_upgrade",
+     "asset": "kingdom/btn_upgrade"
+    }
+   ]
+  },
+  {
+   "id": "ranking_card",
+   "kind": "image",
+   "asset": "kingdom/ranking_card",
+   "rect": [
+    157,
+    1483,
+    773,
+    136
+   ],
+   "note": "trophy, title, subtitle, painting and 'View Rankings >' baked; #12 inpainted"
+  },
+  {
+   "id": "rank",
+   "kind": "text",
+   "rect": [
+    276,
+    1536,
+    70,
+    36
+   ],
+   "font": "title",
+   "size": 38,
+   "weight": 700,
+   "color": "#F4EFE2",
+   "align": "left",
+   "valign": "center",
+   "sample": "#12"
+  },
+  {
+   "id": "view_rankings",
+   "kind": "button",
+   "rect": [
+    795,
+    1585,
+    135,
+    30
+   ],
+   "action": "kingdom_rankings"
+  },
+  {
+   "id": "foliage_bottom",
+   "kind": "image",
+   "asset": "kingdom/foliage_bottom",
+   "rect": [
+    155,
+    1618,
+    786,
+    54
+   ]
+  }
+ ]
+}

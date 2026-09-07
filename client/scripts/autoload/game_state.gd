@@ -1,83 +1,25 @@
 extends Node
 ## The client's cache of server truth, plus the optimistic action queue.
 ##
-## The rule that keeps this honest: a prediction is NEVER written into the
-## snapshot. `snapshot` only ever holds what the server confirmed. What the UI
-## displays is `confirmed + replay(pending)`, computed on read. That way a failed
-## or reordered action cannot leave a phantom number behind — there is nothing to
-## roll back, because nothing was ever written.
+## A prediction is NEVER written into the snapshot. `snapshot` holds only what
+## the server confirmed; what the UI shows is confirmed + replay(pending),
+## computed on read. Nothing has to be rolled back because nothing was written.
 
-signal changed                      ## snapshot or pending queue moved
-## Energy crossed a whole number on its own.
-##
-## `changed` cannot carry this: regeneration is a pure projection computed on
-## read, so nothing writes to the snapshot and nothing fires. That is why an
-## action button stayed disabled while the energy to afford it was visibly
-## arriving, and why reselecting the job "fixed" it -- reselecting was the only
-## thing that re-ran the check.
+signal changed
 signal energy_changed(current: int)
 signal action_failed(message: String)
 signal level_up(new_level: int, levels: int, stat_points: int, diamonds: int)
-## A job crossed a mastery threshold. The server has been reporting this since
-## the milestones existed and nothing read it, so a permanent +20% payout landed
-## with no more ceremony than the row's counter ticking over.
 signal mastery_reached(job_id: String, collects: int, bonus_bp: int)
 
 var snapshot: Dictionary = {}
 var loading := false
 
-## Queued collects that have not been confirmed yet. Each is
-## {job_id, gold, xp, energy_cost}.
 var _pending: Array[Dictionary] = []
-
-## The most collects one request may carry. Matches the server's cap; more than a
-## human can tap between two round trips.
 const BATCH_MAX := 32
 var _sending := false
-
-## When the energy in `snapshot` was true, by the local clock. Energy is the one
-## value that moves on its own between polls, so it is projected forward from
-## here rather than sitting frozen until the next request.
-##
-## Gold has its own anchor for the same reason: estate income is continuous, so
-## the purse keeps filling between requests too.
 var _energy_at_ms: int = 0
 var _gold_at_ms: int = 0
-
-
-## Takes a snapshot and restamps the projection anchors.
-##
-## Every replacement of `snapshot` has to go through here. Setting it directly
-## leaves the anchors pointing at the PREVIOUS snapshot's arrival time, so both
-## projections carry the elapsed time forward twice and the bar and the purse run
-## ahead of the server -- which then looks like the server taking things away.
-func adopt(snap: Dictionary) -> void:
-	# Every snapshot replacement passes through here -- a collect batch, a raid,
-	# a purchase -- so this is the one place that can notice a level-up without
-	# each caller having to remember to look. It used to be checked in the
-	# collect batch only, which is why levelling from a raid celebrated nothing.
-	var before: Dictionary = snapshot.get("player", {})
-	var after: Dictionary = snap.get("player", {})
-	var levelled := not before.is_empty() \
-		and int(after.get("level", 1)) > int(before.get("level", 1))
-
-	# The deltas, taken from the snapshot rather than from a copy of the balance
-	# rules. A level-up quietly hands over stat points, diamonds and a full
-	# energy bar, and the player was told about none of it.
-	var levels := 0
-	var points := 0
-	var gems := 0
-	if levelled:
-		levels = int(after.get("level", 1)) - int(before.get("level", 1))
-		points = int(after.get("stat_points_unspent", 0)) - int(before.get("stat_points_unspent", 0))
-		gems = int(after.get("diamonds", 0)) - int(before.get("diamonds", 0))
-
-	snapshot = snap
-	_energy_at_ms = Time.get_ticks_msec()
-	_gold_at_ms = _energy_at_ms
-
-	if levelled:
-		level_up.emit(int(after.get("level", 1)), levels, points, gems)
+var _energy_emitted := -1
 
 
 func _ready() -> void:
@@ -85,6 +27,26 @@ func _ready() -> void:
 		snapshot = {}
 		_pending.clear()
 		changed.emit())
+
+
+## The single choke point for a snapshot replacement: restamps the projection
+## anchors and notices a level-up for every path (collect, raid, purchase...).
+func adopt(snap: Dictionary) -> void:
+	var before: Dictionary = snapshot.get("player", {})
+	var after: Dictionary = snap.get("player", {})
+	var levelled := not before.is_empty() and int(after.get("level", 1)) > int(before.get("level", 1))
+	var levels := 0
+	var points := 0
+	var gems := 0
+	if levelled:
+		levels = int(after.get("level", 1)) - int(before.get("level", 1))
+		points = int(after.get("stat_points_unspent", 0)) - int(before.get("stat_points_unspent", 0))
+		gems = int(after.get("diamonds", 0)) - int(before.get("diamonds", 0))
+	snapshot = snap
+	_energy_at_ms = Time.get_ticks_msec()
+	_gold_at_ms = _energy_at_ms
+	if levelled:
+		level_up.emit(int(after.get("level", 1)), levels, points, gems)
 
 
 func has_state() -> bool:
@@ -106,39 +68,43 @@ func refresh() -> void:
 
 # --- displayed values: confirmed + replay(pending) ----------------------------
 
+func player() -> Dictionary:
+	return snapshot.get("player", {})
+
+
+func jobs() -> Array:
+	return snapshot.get("jobs", [])
+
+
+func sections() -> Array:
+	return snapshot.get("sections", [])
+
+
+## Unlock level of a server section ("jobs", "hero", ...), 1 when unknown.
+func unlock_level(section_id: String) -> int:
+	for s in sections():
+		if str(s.get("id", "")) == section_id:
+			return int(s.get("unlock_level", 1))
+	return 1
+
+
 func display_gold() -> int:
-	var g := int(str(snapshot.get("player", {}).get("gold", "0")))
+	var g := int(str(player().get("gold", "0")))
 	for a in _pending:
 		g += int(a["gold"])
 	return g + accrued_tax()
 
 
-## Estate income earned since the snapshot arrived.
-##
-## The server credits the purse on every request, so `player.gold` is always
-## right at the moment it was read -- but income is continuous now, and a counter
-## that only moves when the server is asked would sit still while the number it
-## shows is quietly out of date. Same idea as the energy bar: carry the rate, and
-## project between polls.
 func accrued_tax() -> int:
-	var rate := int(snapshot.get("player", {}).get("tax_milli_per_hour", 0))
+	var rate := int(player().get("tax_milli_per_hour", 0))
 	if rate <= 0:
 		return 0
 	var elapsed_ms := Time.get_ticks_msec() - _gold_at_ms
 	return int(rate * elapsed_ms / 3600000 / 1000)
 
 
-## Experience toward the next level, including collects that have not landed yet.
-##
-## Deliberately clamped one point short of the level boundary. Level, xp_to_next,
-## the stat point a level grants and the new energy maximum are all confirmed-only
-## -- the server decides them -- so an optimistic value that crossed the boundary
-## would show a full bar next to a stale level number, and then appear to lose the
-## overflow when the real answer arrived. Pinning it just below the top reads as
-## "any moment now", which is true, and never has to be walked back.
 func display_xp() -> int:
-	var p: Dictionary = snapshot.get("player", {})
-	var xp := int(p.get("xp", 0))
+	var xp := int(player().get("xp", 0))
 	for a in _pending:
 		xp += int(a.get("xp", 0))
 	var need := xp_to_next()
@@ -147,20 +113,10 @@ func display_xp() -> int:
 	return mini(xp, maxi(0, need - 1))
 
 
-## Experience the current level needs in total. 0 at the level cap, where the bar
-## should read full rather than divide by nothing.
 func xp_to_next() -> int:
-	return int(snapshot.get("player", {}).get("xp_to_next", 0))
+	return int(player().get("xp_to_next", 0))
 
 
-## Energy accrued since the snapshot, in milliseconds of progress toward the next
-## whole point.
-##
-## The server sends the whole part only, but `seconds_to_full` encodes the
-## fraction it is already carrying: filling (max - current) points from an empty
-## remainder would take (max - current) * period, so whatever that overshoots
-## seconds_to_full by is the remainder already banked. Recovering it is what lets
-## the bar move in step with the server instead of a period out of phase.
 func _energy_progress_ms() -> int:
 	var e: Dictionary = snapshot.get("energy", {})
 	var cur := int(e.get("current", 0))
@@ -185,11 +141,6 @@ func display_energy() -> int:
 	return maxi(v, 0)
 
 
-## Seconds until the next whole point lands, rolling over each time one does.
-##
-## This is the number that answers "can I do one more thing yet". Time-to-full is
-## the wrong question for a pool that is nearly always partly drained: it reads
-## "1h 04m" when the answer the player wants is "23 seconds".
 func display_seconds_to_next() -> int:
 	var e: Dictionary = snapshot.get("energy", {})
 	var period := int(e.get("regen_period_ms", 0))
@@ -198,25 +149,8 @@ func display_seconds_to_next() -> int:
 	return int(ceil(float(period - _energy_progress_ms() % period) / 1000.0))
 
 
-## Seconds until the pool is full, counting down between polls.
-## Recomputes the projected energy and emits only when the whole number moves.
-##
-## Called from the shell's existing 4 Hz tick. Emitting on every tick would
-## repaint four times a second for a value that changes once a period.
-var _energy_emitted := -1
-
-func tick_projection() -> void:
-	if snapshot.is_empty():
-		return
-	var v := display_energy()
-	if v != _energy_emitted:
-		_energy_emitted = v
-		energy_changed.emit(v)
-
-
 func display_seconds_to_full() -> int:
-	var e: Dictionary = snapshot.get("energy", {})
-	var secs := int(e.get("seconds_to_full", 0))
+	var secs := int(snapshot.get("energy", {}).get("seconds_to_full", 0))
 	if secs <= 0:
 		return 0
 	var gone := (Time.get_ticks_msec() - _energy_at_ms) / 1000
@@ -227,12 +161,14 @@ func max_energy() -> int:
 	return int(snapshot.get("energy", {}).get("max", 0))
 
 
-func player() -> Dictionary:
-	return snapshot.get("player", {})
-
-
-func jobs() -> Array:
-	return snapshot.get("jobs", [])
+## Called from the shell's 4 Hz tick; emits only when the whole number moves.
+func tick_projection() -> void:
+	if snapshot.is_empty():
+		return
+	var v := display_energy()
+	if v != _energy_emitted:
+		_energy_emitted = v
+		energy_changed.emit(v)
 
 
 func pending_count() -> int:
@@ -241,19 +177,15 @@ func pending_count() -> int:
 
 # --- actions ------------------------------------------------------------------
 
-## Queues one collect. Returns false when it is not affordable right now, so the
-## caller can give immediate feedback without a round trip.
+## Queues one collect; false when it is not affordable right now.
 func collect(job: Dictionary) -> bool:
 	if not bool(job.get("unlocked", false)):
 		return false
 	var cost := int(job.get("energy_cost", 0))
 	if display_energy() < cost:
 		return false
-
 	_pending.append({
 		"job_id": job.get("id", ""),
-		# The server ships RESOLVED payouts, so predicting is a table lookup
-		# rather than a second implementation of the economy that could drift.
 		"gold": int(job.get("gold_payout", 0)),
 		"xp": int(job.get("xp_payout", 0)),
 		"energy_cost": cost,
@@ -263,41 +195,21 @@ func collect(job: Dictionary) -> bool:
 	return true
 
 
-## Sends the whole queue in one request.
-##
-## action_seq is a per-player monotonic counter, so two collects can never be in
-## flight at once -- this used to send them strictly one at a time, and ten taps
-## meant ten round trips. Even at 42 ms a piece that is visible, and it is what
-## the "N queued" counter existed to apologise for.
-##
-## Now one request carries the run and the server applies it in one transaction.
-## Whatever the player taps while a batch is in the air simply goes in the next
-## one, so the send rate settles at one request per round trip no matter how fast
-## they tap.
+## Sends the whole queue in one request; only the applied ones leave the queue.
 func _pump() -> void:
 	if _sending or _pending.is_empty() or snapshot.is_empty():
 		return
 	_sending = true
-
 	while not _pending.is_empty():
 		var batch: Array[String] = []
 		for a in _pending:
 			if batch.size() >= BATCH_MAX:
 				break
 			batch.append(str(a["job_id"]))
-
 		var seq := int(player().get("action_seq", 0)) + 1
-		var res: Api.Response = await Api.post_json("/v1/collect/batch", {
-			"job_ids": batch,
-			"action_seq": seq,
-		})
-
+		var res: Api.Response = await Api.post_json("/v1/collect/batch", {"job_ids": batch, "action_seq": seq})
 		if res.ok:
-			# The server says how many landed. A batch that stops early -- the
-			# energy ran out because regeneration was slower than predicted -- is
-			# a normal outcome, and only the applied ones leave the queue.
 			var applied: int = mini(int(res.data.get("applied", 0)), _pending.size())
-			# adopt() notices the level-up and announces it, for every path.
 			adopt(res.data.get("snapshot", snapshot))
 			for i in applied:
 				_pending.pop_front()
@@ -307,30 +219,41 @@ func _pump() -> void:
 				mastery_reached.emit(job_id, hit, _mastery_bonus_bp(job_id))
 			changed.emit()
 			if applied == 0:
-				# Nothing applied and no error: the prediction was ahead of the
-				# server. Drop the rest rather than spin.
 				_pending.clear()
 				changed.emit()
 				break
 			continue
-
-		# Any failure drops the whole queue and resyncs. Keeping the rest would
-		# mean sending actions the player may no longer be able to afford, and
-		# each would fail in turn.
 		_pending.clear()
 		changed.emit()
 		if res.code != "stale_action":
 			action_failed.emit(res.error)
 		await refresh()
 		break
-
 	_sending = false
 
 
-## The job's mastery bonus AFTER the milestone, read from the snapshot the same
-## response carried rather than from a client-side copy of the milestone table.
 func _mastery_bonus_bp(job_id: String) -> int:
-	for j in snapshot.get("jobs", []):
+	for j in jobs():
 		if str(j.get("id", "")) == job_id:
 			return int(j.get("mastery_bonus_bp", 0))
 	return 0
+
+
+## One authenticated action with the sequence number attached. Adopts the
+## returned snapshot when the server sends one, else refreshes.
+func act(path: String, body: Dictionary = {}) -> Api.Response:
+	var b := body.duplicate()
+	b["action_seq"] = int(player().get("action_seq", 0)) + 1
+	var res: Api.Response = await Api.post_json(path, b)
+	if res.ok:
+		if res.data.has("snapshot"):
+			adopt(res.data["snapshot"])
+			changed.emit()
+		else:
+			await refresh()
+	else:
+		if res.code == "stale_action":
+			await refresh()
+		else:
+			action_failed.emit(res.error)
+	return res

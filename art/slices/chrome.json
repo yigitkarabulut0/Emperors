@@ -1,0 +1,589 @@
+{
+ "source": "collect.png",
+ "crops": [
+  {
+   "name": "chrome/rail_band",
+   "rect": [
+    0,
+    220,
+    160,
+    12
+   ]
+  },
+  {
+   "name": "chrome/rail_bottom",
+   "rect": [
+    0,
+    1470,
+    160,
+    202
+   ]
+  },
+  {
+   "name": "chrome/rail_divider",
+   "rect": [
+    20,
+    208,
+    110,
+    8
+   ],
+   "mode": "darkkey",
+   "k": 70
+  },
+  {
+   "name": "chrome/avatar",
+   "rect": [
+    14,
+    6,
+    132,
+    190
+   ],
+   "erase": [
+    {
+     "rect": [
+      56,
+      150,
+      50,
+      32
+     ],
+     "sample_x": [
+      44,
+      49
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/family",
+   "rect": [
+    10,
+    232,
+    136,
+    123
+   ],
+   "mode": "darkkey",
+   "erase": [
+    {
+     "rect": [
+      143,
+      232,
+      5,
+      123
+     ],
+     "sample_x": [
+      136,
+      141
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/collect",
+   "src": "inventory.png",
+   "rect": [
+    10,
+    395,
+    136,
+    148
+   ],
+   "mode": "darkkey",
+   "erase": [
+    {
+     "rect": [
+      143,
+      395,
+      5,
+      148
+     ],
+     "sample_x": [
+      136,
+      141
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/inventory",
+   "rect": [
+    10,
+    562,
+    136,
+    150
+   ],
+   "mode": "darkkey",
+   "erase": [
+    {
+     "rect": [
+      143,
+      562,
+      5,
+      150
+     ],
+     "sample_x": [
+      136,
+      141
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/shop",
+   "rect": [
+    10,
+    742,
+    136,
+    163
+   ],
+   "mode": "darkkey",
+   "erase": [
+    {
+     "rect": [
+      143,
+      742,
+      5,
+      163
+     ],
+     "sample_x": [
+      136,
+      141
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/army",
+   "rect": [
+    10,
+    928,
+    136,
+    164
+   ],
+   "mode": "darkkey",
+   "erase": [
+    {
+     "rect": [
+      143,
+      928,
+      5,
+      164
+     ],
+     "sample_x": [
+      136,
+      141
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/attack",
+   "rect": [
+    10,
+    1118,
+    136,
+    160
+   ],
+   "mode": "darkkey",
+   "erase": [
+    {
+     "rect": [
+      143,
+      1118,
+      5,
+      160
+     ],
+     "sample_x": [
+      136,
+      141
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/kingdom",
+   "rect": [
+    10,
+    1305,
+    136,
+    160
+   ],
+   "mode": "darkkey",
+   "erase": [
+    {
+     "rect": [
+      143,
+      1305,
+      5,
+      160
+     ],
+     "sample_x": [
+      136,
+      141
+     ]
+    }
+   ]
+  },
+  {
+   "name": "nav/active_collect",
+   "rect": [
+    0,
+    368,
+    170,
+    190
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      155,
+      0
+     ],
+     [
+      155,
+      68
+     ],
+     [
+      170,
+      92
+     ],
+     [
+      155,
+      116
+     ],
+     [
+      155,
+      190
+     ],
+     [
+      0,
+      190
+     ]
+    ]
+   }
+  },
+  {
+   "name": "nav/active_inventory",
+   "src": "inventory.png",
+   "rect": [
+    0,
+    562,
+    170,
+    190
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      152,
+      0
+     ],
+     [
+      152,
+      74
+     ],
+     [
+      170,
+      98
+     ],
+     [
+      152,
+      122
+     ],
+     [
+      152,
+      190
+     ],
+     [
+      0,
+      190
+     ]
+    ]
+   }
+  },
+  {
+   "name": "nav/active_shop",
+   "src": "shop.png",
+   "rect": [
+    0,
+    748,
+    182,
+    200
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      164,
+      0
+     ],
+     [
+      164,
+      84
+     ],
+     [
+      182,
+      108
+     ],
+     [
+      164,
+      132
+     ],
+     [
+      164,
+      200
+     ],
+     [
+      0,
+      200
+     ]
+    ]
+   }
+  },
+  {
+   "name": "nav/active_army",
+   "src": "army.png",
+   "rect": [
+    0,
+    945,
+    178,
+    195
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      160,
+      0
+     ],
+     [
+      160,
+      86
+     ],
+     [
+      178,
+      110
+     ],
+     [
+      160,
+      134
+     ],
+     [
+      160,
+      195
+     ],
+     [
+      0,
+      195
+     ]
+    ]
+   }
+  },
+  {
+   "name": "nav/active_attack",
+   "src": "attack.png",
+   "rect": [
+    0,
+    995,
+    182,
+    198
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      165,
+      0
+     ],
+     [
+      165,
+      86
+     ],
+     [
+      182,
+      110
+     ],
+     [
+      165,
+      134
+     ],
+     [
+      165,
+      198
+     ],
+     [
+      0,
+      198
+     ]
+    ]
+   }
+  },
+  {
+   "name": "nav/active_family",
+   "src": "family.png",
+   "rect": [
+    0,
+    198,
+    182,
+    200
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      164,
+      0
+     ],
+     [
+      164,
+      84
+     ],
+     [
+      182,
+      108
+     ],
+     [
+      164,
+      132
+     ],
+     [
+      164,
+      200
+     ],
+     [
+      0,
+      200
+     ]
+    ]
+   }
+  },
+  {
+   "name": "nav/active_kingdom",
+   "src": "kingdom.png",
+   "rect": [
+    0,
+    1248,
+    165,
+    180
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      147,
+      0
+     ],
+     [
+      147,
+      64
+     ],
+     [
+      165,
+      88
+     ],
+     [
+      147,
+      112
+     ],
+     [
+      147,
+      180
+     ],
+     [
+      0,
+      180
+     ]
+    ]
+   }
+  },
+  {
+   "name": "chrome/pill_gold",
+   "rect": [
+    180,
+    21,
+    221,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   },
+   "inpaint": [
+    [
+     236,
+     26,
+     112,
+     46
+    ]
+   ]
+  },
+  {
+   "name": "chrome/pill_diamond",
+   "rect": [
+    439,
+    21,
+    209,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   },
+   "inpaint": [
+    [
+     500,
+     26,
+     94,
+     46
+    ]
+   ]
+  },
+  {
+   "name": "chrome/pill_energy",
+   "rect": [
+    666,
+    21,
+    225,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   },
+   "inpaint": [
+    [
+     732,
+     26,
+     110,
+     46
+    ]
+   ]
+  }
+ ]
+}

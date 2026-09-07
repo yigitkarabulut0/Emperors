@@ -1,0 +1,657 @@
+{
+ "screen": "inventory",
+ "source": "inventory.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#08131c",
+ "notes": [
+  "All top-level rects are absolute source/layout pixels; template part rects are relative to the instance origin.",
+  "Template instances carry {at, data}; a part with \"bind\" takes its asset or text from data[bind].",
+  "Tier frames (inventory/frame_<tier>) are the same 140x140 rect as the paintings: use as NinePatch with draw_center=false, margin per tier (legendary 18, others 10); the painting interior is rect [8,8,124,124] inside the crop (border ~5 px + 4 px glow margin; legendary border ~12 px).",
+  "Each items/<slug> painting from a card is 140x140 and carries its own tier frame and the Lv badge plate (text erased). The three equipped paintings are 221x194 landscape (y 320..514) with a gold frame, badge plate (text erased) and the red gem; they stop 1 px above the baked name's ascenders.",
+  "Filter chips: only ALL has an active state in the reference. To activate any chip, draw inventory/chip_frame_active (NinePatch, margin 14) at that chip's rect and render its label in white title font; draw inventory/chip_frame_idle (NinePatch, margin 14) + the label in its tier colour for an idle ALL.",
+  "Chip label colours (sampled): all #FFFFFF, common #FFFFFF, uncommon #BCFF7D, rare #B1ECFF, epic #FFD4FF, legendary #FFFFEA, mystic #EFD6FF, special #FFDAD0.",
+  "Card rows in the reference sit at y = 731, 941, 1151, 1362 (pitch 210); columns at x = 162 and 548. The list scrolls; the bottom foliage strip is static under it.",
+  "Text sizes are EB Garamond (body) / Cinzel (title) point sizes that reproduce the reference glyph widths; cap_h is the measured capital height in px (the invariant to match if another face is used).",
+  "Reference text extents: equipped name x218-377 y520-552 (centred in slot), equipped stat y553-575, card name x318-425 y748-769, card type y778-789, stat lines y812-825 / y840-854, Lv badge text x240-284 y849-861, chip label cap 14 px."
+ ],
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "inventory/header",
+   "rect": [
+    155,
+    0,
+    786,
+    228
+   ]
+  },
+  {
+   "id": "equipped_panel",
+   "kind": "image",
+   "asset": "inventory/equipped_panel",
+   "rect": [
+    155,
+    226,
+    786,
+    380
+   ]
+  },
+  {
+   "id": "equipped_slot",
+   "kind": "template",
+   "rect": [
+    185,
+    320,
+    221,
+    260
+   ],
+   "instances": [
+    {
+     "at": [
+      185,
+      320
+     ],
+     "data": {
+      "painting": "items/royal_longsword",
+      "name": "Royal Longsword",
+      "stat": "ATK +312",
+      "level": "Lv. 30"
+     }
+    },
+    {
+     "at": [
+      438,
+      320
+     ],
+     "data": {
+      "painting": "items/lionheart_armor",
+      "name": "Lionheart Armor",
+      "stat": "DEF +280",
+      "level": "Lv. 28"
+     }
+    },
+    {
+     "at": [
+      690,
+      320
+     ],
+     "data": {
+      "painting": "items/war_steed",
+      "name": "War Steed",
+      "stat": "POWER +420",
+      "level": "Lv. 25"
+     }
+    }
+   ],
+   "parts": [
+    {
+     "id": "painting",
+     "kind": "image",
+     "bind": "painting",
+     "rect": [
+      0,
+      0,
+      221,
+      194
+     ]
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "bind": "level",
+     "rect": [
+      140,
+      152,
+      66,
+      24
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 600,
+     "color": "#FFFFFF",
+     "align": "center",
+     "valign": "center",
+     "sample": "Lv. 30",
+     "cap_h": 14
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "bind": "name",
+     "rect": [
+      0,
+      191,
+      221,
+      30
+     ],
+     "font": "body",
+     "size": 21,
+     "weight": 600,
+     "color": "#FFFFFF",
+     "align": "center",
+     "valign": "center",
+     "sample": "Royal Longsword",
+     "cap_h": 15
+    },
+    {
+     "id": "stat",
+     "kind": "text",
+     "bind": "stat",
+     "rect": [
+      0,
+      221,
+      221,
+      26
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 500,
+     "color": "#E4E6E8",
+     "align": "center",
+     "valign": "center",
+     "sample": "ATK +312",
+     "cap_h": 13
+    }
+   ]
+  },
+  {
+   "id": "chip_all",
+   "kind": "button",
+   "asset": "inventory/chip_all_active",
+   "rect": [
+    171,
+    598,
+    136,
+    60
+   ],
+   "action": "filter:all",
+   "active": true
+  },
+  {
+   "id": "chip_common",
+   "kind": "button",
+   "asset": "inventory/chip_common",
+   "rect": [
+    302,
+    598,
+    156,
+    60
+   ],
+   "action": "filter:common"
+  },
+  {
+   "id": "chip_uncommon",
+   "kind": "button",
+   "asset": "inventory/chip_uncommon",
+   "rect": [
+    460,
+    598,
+    181,
+    60
+   ],
+   "action": "filter:uncommon"
+  },
+  {
+   "id": "chip_rare",
+   "kind": "button",
+   "asset": "inventory/chip_rare",
+   "rect": [
+    643,
+    598,
+    184,
+    60
+   ],
+   "action": "filter:rare"
+  },
+  {
+   "id": "chip_epic",
+   "kind": "button",
+   "asset": "inventory/chip_epic",
+   "rect": [
+    171,
+    658,
+    161,
+    60
+   ],
+   "action": "filter:epic"
+  },
+  {
+   "id": "chip_legendary",
+   "kind": "button",
+   "asset": "inventory/chip_legendary",
+   "rect": [
+    336,
+    658,
+    172,
+    60
+   ],
+   "action": "filter:legendary"
+  },
+  {
+   "id": "chip_mystic",
+   "kind": "button",
+   "asset": "inventory/chip_mystic",
+   "rect": [
+    511,
+    658,
+    152,
+    60
+   ],
+   "action": "filter:mystic"
+  },
+  {
+   "id": "chip_special",
+   "kind": "button",
+   "asset": "inventory/chip_special",
+   "rect": [
+    666,
+    658,
+    161,
+    60
+   ],
+   "action": "filter:special"
+  },
+  {
+   "id": "chip_label_style",
+   "kind": "text",
+   "rect": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "font": "title",
+   "size": 18,
+   "weight": 600,
+   "color": "#FFFFFF",
+   "align": "center",
+   "valign": "center",
+   "sample": "ALL",
+   "note": "style for labels rendered on chip_frame_active / chip_frame_idle; the label box is the chip rect inset by 6 px top/bottom",
+   "cap_h": 14
+  },
+  {
+   "id": "sliders",
+   "kind": "button",
+   "asset": "inventory/sliders_button",
+   "rect": [
+    832,
+    596,
+    100,
+    124
+   ],
+   "action": "sort"
+  },
+  {
+   "id": "list",
+   "kind": "scroll",
+   "rect": [
+    155,
+    725,
+    786,
+    835
+   ],
+   "content": [
+    {
+     "id": "item_card",
+     "kind": "template",
+     "rect": [
+      160,
+      729,
+      382,
+      203
+     ],
+     "pitch": 210,
+     "columns": [
+      160,
+      546
+     ],
+     "instances": [
+      {
+       "at": [
+        160,
+        729
+       ],
+       "data": {
+        "painting": "items/shadowfang",
+        "badge": "inventory/badge_epic",
+        "name": "Shadowfang",
+        "type": "WEAPON",
+        "level": "Lv. 40",
+        "icon1": "inventory/icon_attack",
+        "stat1": "ATK +520",
+        "icon2": "inventory/icon_power",
+        "stat2": "Power +780"
+       }
+      },
+      {
+       "at": [
+        546,
+        729
+       ],
+       "data": {
+        "painting": "items/dragonplate",
+        "badge": "inventory/badge_legendary",
+        "name": "Dragonplate",
+        "type": "ARMOR",
+        "level": "Lv. 38",
+        "icon1": "inventory/icon_defence",
+        "stat1": "DEF +620",
+        "icon2": "inventory/icon_power",
+        "stat2": "Power +910"
+       }
+      },
+      {
+       "at": [
+        160,
+        939
+       ],
+       "data": {
+        "painting": "items/knights_blade",
+        "badge": "inventory/badge_rare",
+        "name": "Knight's Blade",
+        "type": "WEAPON",
+        "level": "Lv. 28",
+        "icon1": "inventory/icon_attack",
+        "stat1": "ATK +290",
+        "icon2": "inventory/icon_power",
+        "stat2": "Power +430"
+       }
+      },
+      {
+       "at": [
+        546,
+        939
+       ],
+       "data": {
+        "painting": "items/forest_charger",
+        "badge": "inventory/badge_uncommon",
+        "name": "Forest Charger",
+        "type": "HORSE",
+        "level": "Lv. 22",
+        "icon1": "inventory/icon_defence",
+        "stat1": "POWER +360",
+        "icon2": "inventory/icon_speed",
+        "stat2": "Move Speed +12%"
+       }
+      },
+      {
+       "at": [
+        160,
+        1149
+       ],
+       "data": {
+        "painting": "items/recruit_armor",
+        "badge": "inventory/badge_common",
+        "name": "Recruit Armor",
+        "type": "ARMOR",
+        "level": "Lv. 15",
+        "icon1": "inventory/icon_defence",
+        "stat1": "DEF +140",
+        "icon2": "inventory/icon_power",
+        "stat2": "Power +210"
+       }
+      },
+      {
+       "at": [
+        546,
+        1149
+       ],
+       "data": {
+        "painting": "items/bloodcrown",
+        "badge": "inventory/badge_special",
+        "name": "Bloodcrown",
+        "type": "WEAPON",
+        "level": "Lv. 42",
+        "icon1": "inventory/icon_attack",
+        "stat1": "ATK +680",
+        "icon2": "inventory/icon_power",
+        "stat2": "Power +1,080"
+       }
+      },
+      {
+       "at": [
+        160,
+        1360
+       ],
+       "data": {
+        "painting": "items/nightmare",
+        "badge": "inventory/badge_mystic",
+        "name": "Nightmare",
+        "type": "HORSE",
+        "level": "Lv. 35",
+        "icon1": "inventory/icon_defence",
+        "stat1": "POWER +750",
+        "icon2": "inventory/icon_speed",
+        "stat2": "Move Speed +18%"
+       }
+      },
+      {
+       "at": [
+        546,
+        1360
+       ],
+       "data": {
+        "painting": "items/ranger_mail",
+        "badge": "inventory/badge_uncommon",
+        "name": "Ranger Mail",
+        "type": "ARMOR",
+        "level": "Lv. 26",
+        "icon1": "inventory/icon_defence",
+        "stat1": "DEF +260",
+        "icon2": "inventory/icon_power",
+        "stat2": "Power +390"
+       }
+      }
+     ],
+     "parts": [
+      {
+       "id": "frame",
+       "kind": "image",
+       "asset": "inventory/card_frame",
+       "rect": [
+        0,
+        0,
+        382,
+        203
+       ]
+      },
+      {
+       "id": "painting",
+       "kind": "image",
+       "bind": "painting",
+       "rect": [
+        6,
+        6,
+        140,
+        140
+       ]
+      },
+      {
+       "id": "level",
+       "kind": "text",
+       "bind": "level",
+       "rect": [
+        70,
+        115,
+        66,
+        20
+       ],
+       "font": "body",
+       "size": 17,
+       "weight": 600,
+       "color": "#FFFFFF",
+       "align": "center",
+       "valign": "center",
+       "sample": "Lv. 40",
+       "cap_h": 12
+      },
+      {
+       "id": "name",
+       "kind": "text",
+       "bind": "name",
+       "rect": [
+        158,
+        17,
+        122,
+        28
+       ],
+       "font": "body",
+       "size": 20,
+       "weight": 600,
+       "color": "#FFFFFF",
+       "align": "left",
+       "valign": "center",
+       "sample": "Shadowfang",
+       "cap_h": 15
+      },
+      {
+       "id": "type",
+       "kind": "text",
+       "bind": "type",
+       "rect": [
+        158,
+        46,
+        122,
+        18
+       ],
+       "font": "body",
+       "size": 16,
+       "weight": 500,
+       "color": "#C9D2DC",
+       "align": "left",
+       "valign": "center",
+       "sample": "WEAPON",
+       "cap_h": 11
+      },
+      {
+       "id": "badge",
+       "kind": "image",
+       "bind": "badge",
+       "rect": [
+        283,
+        7,
+        99,
+        47
+       ],
+       "anchor": "right",
+       "note": "badge widths differ (90 or 99); right edge sits at rel x 373"
+      },
+      {
+       "id": "icon1",
+       "kind": "image",
+       "bind": "icon1",
+       "rect": [
+        153,
+        74,
+        34,
+        34
+       ]
+      },
+      {
+       "id": "stat1",
+       "kind": "text",
+       "bind": "stat1",
+       "rect": [
+        185,
+        78,
+        190,
+        26
+       ],
+       "font": "body",
+       "size": 19,
+       "weight": 500,
+       "color": "#FFFFFF",
+       "align": "left",
+       "valign": "center",
+       "sample": "ATK +520",
+       "cap_h": 13
+      },
+      {
+       "id": "icon2",
+       "kind": "image",
+       "bind": "icon2",
+       "rect": [
+        153,
+        104,
+        34,
+        34
+       ]
+      },
+      {
+       "id": "stat2",
+       "kind": "text",
+       "bind": "stat2",
+       "rect": [
+        185,
+        108,
+        190,
+        26
+       ],
+       "font": "body",
+       "size": 19,
+       "weight": 500,
+       "color": "#FFFFFF",
+       "align": "left",
+       "valign": "center",
+       "sample": "Power +780",
+       "cap_h": 13
+      },
+      {
+       "id": "btn_equip",
+       "kind": "button",
+       "asset": "inventory/btn_equip",
+       "rect": [
+        14,
+        148,
+        122,
+        43
+       ],
+       "action": "equip"
+      },
+      {
+       "id": "btn_sell",
+       "kind": "button",
+       "asset": "inventory/btn_sell",
+       "rect": [
+        143,
+        148,
+        108,
+        43
+       ],
+       "action": "sell"
+      },
+      {
+       "id": "btn_reforge",
+       "kind": "button",
+       "asset": "inventory/btn_reforge",
+       "rect": [
+        259,
+        148,
+        110,
+        43
+       ],
+       "action": "reforge"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ground_bottom",
+   "kind": "image",
+   "asset": "inventory/ground_bottom",
+   "rect": [
+    155,
+    1560,
+    786,
+    112
+   ],
+   "note": "static, behind the list"
+  }
+ ]
+}

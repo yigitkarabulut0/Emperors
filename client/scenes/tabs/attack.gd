@@ -1,470 +1,256 @@
-extends VBoxContainer
-## The War Gate: pick a target, raid it, watch it resolve.
-##
-## Three targets, not a forced pairing. A perfectly fair matchmaker produces a
-## 50% win rate, which players experience as losing half the time; choosing from
-## a band makes every raid a decision they own.
+extends Control
+## ATTACK — revenge first, then matchmade targets, then the battle history.
+## Layout: layout/attack.json. The client never simulates a fight: the server
+## returns the outcome and the client shows it.
 
-enum Mode { RAID, HISTORY }
+const SCREEN := "attack"
 
-var _view: Dictionary = {}
-var _log: Dictionary = {}
-var _selected := ""
-var _mode := Mode.RAID
-var _tabs: HBoxContainer
-var _tab_buttons: Array[Button] = []
-var _list: VBoxContainer
-var _header: Label
-var _action: Button
-var _action_sub: Label
+var _ui: Dictionary = {}
+var _revenge_card: Dictionary
+var _targets: Array = []          ## built target cards
+var _history_rows: Array = []
+var _data: Dictionary = {}
+var _history: Array = []
+var _loaded_ms := -100000
 var _busy := false
+var _view := "revenge"            ## revenge | targets
+var _tab_labels: Dictionary = {}
+var _badge: Label
 
 
 func _ready() -> void:
-	add_theme_constant_override("separation", 8)
-
-	# Two views on one screen rather than a tenth rail section: the rail is full
-	# at nine and shell_fits.gd measures its column against an iPad, so a new
-	# entry there costs height every device has to find.
-	_tabs = HBoxContainer.new()
-	_tabs.add_theme_constant_override("separation", 4)
-	add_child(_tabs)
-	for entry in [[Mode.RAID, "Raid"], [Mode.HISTORY, "History"]]:
-		var b := UI.ghost_button(str(entry[1]), UI.F_BODY)
-		b.custom_minimum_size = Vector2(0, UI.TAP_MIN)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var m: int = int(entry[0])
-		b.pressed.connect(func() -> void:
-			_mode = m
-			_reload())
-		_tabs.add_child(b)
-		_tab_buttons.append(b)
-
-	_header = UI.label("Scouting…", UI.F_CAPTION, Palette.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER)
-	add_child(_header)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-
-	# Lists follow your finger. Godot's own touch scrolling is gated behind
-
-	# is_touchscreen_available() and is eaten by the buttons the list is made of.
-
-	DragScroll.install(scroll)
-	add_child(scroll)
-
-	_list = VBoxContainer.new()
-	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_list.add_theme_constant_override("separation", 6)
-	scroll.add_child(_list)
-
-	# Raiding is gated on energy the same way collecting is, and regeneration
-	# never touches the snapshot, so the button needs its own signal to re-arm.
-	GameState.energy_changed.connect(func(_v: int) -> void: _refresh_action())
-
-	_reload()
+	_ui = Layout.build(SCREEN, self)
+	_revenge_card = _ui["revenge_card"][0]
+	_revenge_card["parts"]["attack"].pressed.connect(_attack_revenge)
+	_targets = _ui["target_card"]
+	for i in _targets.size():
+		_targets[i]["parts"]["attack"].pressed.connect(_attack_target.bind(i))
+		_build_bar(_targets[i])
+	var hp: Dictionary = _ui["history_panel"][0]["parts"]
+	_history_rows = hp["row"].get_meta("instances", []) if hp.has("row") else []
+	hp["view_all"].pressed.connect(_view_all_history)
+	# Tabs: the painted labelled tabs for the reference state; frames + live labels otherwise.
+	for id in ["tab_revenge", "tab_targets"]:
+		var b: TextureButton = _ui[id]
+		b.pressed.connect(_set_view.bind(id.trim_prefix("tab_")))
+		var l := UI.label(id.trim_prefix("tab_").to_upper(), 31, Color("#F4F0EA"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
+		l.visible = false
+		add_child(l)
+		_tab_labels[id] = l
+	_badge = UI.label("", 22, UI.INK, "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(_badge, Rect2(183 + 268, 284 + 14, 40, 34))
+	add_child(_badge)
+	_apply_tabs()
 
 
-func mount_action_bar(host: Control) -> void:
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
-	host.add_child(col)
-	_action = UI.button("SELECT A TARGET", UI.F_H2)
-	_action.custom_minimum_size = Vector2(0, UI.TAP_PRIMARY)
-	_action.pressed.connect(_raid)
-	col.add_child(_action)
-	_action_sub = UI.label("", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
-	col.add_child(_action_sub)
-	_refresh_action()
+func refresh() -> void:
+	if Time.get_ticks_msec() - _loaded_ms > 3000:
+		_load()
+	else:
+		_paint()
 
 
-func _reload() -> void:
-	_style_tabs()
-	if _mode == Mode.HISTORY:
-		var h: Api.Response = await Api.get_json("/v1/attack/history")
-		if not h.ok:
-			_header.text = h.error
-			return
-		_log = h.data
-		_build_history()
-		return
-
+func _load() -> void:
+	_loaded_ms = Time.get_ticks_msec()
 	var res: Api.Response = await Api.get_json("/v1/attack/targets")
-	if not res.ok:
-		_header.text = res.error
+	if res.ok:
+		_data = res.data
+	var h: Api.Response = await Api.get_json("/v1/attack/history")
+	if h.ok:
+		_history = h.data.get("entries", [])
+	_paint()
+
+
+func _set_view(v: String) -> void:
+	_view = v
+	_apply_tabs()
+	_paint()
+
+
+func _apply_tabs() -> void:
+	var spec_r := Layout.element(SCREEN, "tab_revenge")
+	var spec_t := Layout.element(SCREEN, "tab_targets")
+	var rs: Dictionary = spec_r["states"]["active" if _view == "revenge" else "inactive"]
+	var ts: Dictionary = spec_t["states"]["active" if _view == "targets" else "inactive"]
+	for pair in [[_ui["tab_revenge"], rs, "tab_revenge"], [_ui["tab_targets"], ts, "tab_targets"]]:
+		var b: TextureButton = pair[0]
+		var st: Dictionary = pair[1]
+		b.texture_normal = Art.tex(str(st["asset"]))
+		UI.place(b, Layout.rect_of(st))
+		var l: Label = _tab_labels[pair[2]]
+		l.visible = st.has("label")
+		if st.has("label"):
+			var ls: Dictionary = st["label"]
+			UI.place(l, Layout.rect_of(ls))
+			l.label_settings.font_color = Color(str(ls.get("color", "#F4F0EA")))
+			l.label_settings.font_size = int(ls.get("size", 31))
+	_badge.visible = _view == "revenge"
+
+
+func _paint() -> void:
+	var revenge: Array = _data.get("revenge", [])
+	var targets: Array = _data.get("targets", [])
+	var my_might := int(_data.get("might", 0))
+	_badge.text = str(revenge.size())
+	var show_revenge := _view == "revenge" and not revenge.is_empty()
+	_revenge_card["node"].visible = show_revenge
+	_ui["divider_targets"].visible = true
+	if show_revenge:
+		_paint_card(_revenge_card, revenge[0], my_might, true)
+	# In the targets view (or with no revenge) the target list moves up into the revenge card's place.
+	var list: Array = targets if _view == "targets" or revenge.is_empty() else targets
+	var shift := 0.0 if show_revenge else -(Layout.rect_of(Layout.element(SCREEN, "divider_targets")).position.y - 364.0) + 12.0
+	_ui["divider_targets"].position.y = Layout.rect_of(Layout.element(SCREEN, "divider_targets")).position.y + shift
+	var base := Layout.rect_of(Layout.element(SCREEN, "target_card")).position.y
+	var pitch := float(Layout.element(SCREEN, "target_card").get("pitch", 229))
+	for i in _targets.size():
+		var c: Dictionary = _targets[i]
+		if i >= list.size():
+			c["node"].visible = false
+			continue
+		c["node"].visible = true
+		c["node"].position.y = base + shift + i * pitch
+		_paint_card(c, list[i], my_might, false)
+	_paint_history()
+
+
+func _paint_card(c: Dictionary, t: Dictionary, my_might: int, is_revenge: bool) -> void:
+	var p: Dictionary = c["parts"]
+	p["portrait"].texture = Art.tex(_portrait_for(t))
+	p["crest"].texture = Art.tex(_crest_for(t))
+	p["name"].text = str(t.get("name", ""))
+	UI.fit_label(p["name"], 30, 18)
+	p["level"].text = "LEVEL %d" % int(t.get("level", 1))
+	var their := int(t.get("might", 0))
+	p["power"].text = UI.grouped(their)
+	p["amount"].text = UI.grouped(int(t.get("estimated_steal", 0)))
+	if not is_revenge:
+		p["your_num"].text = UI.grouped(my_might)
+		p["their_num"].text = UI.grouped(their)
+		var shielded := t.has("shield_seconds") and int(t.get("shield_seconds", 0)) > 0
+		p["attack"].visible = not shielded
+		p["shield"].visible = shielded
+		if shielded:
+			p["shield"].get_meta("parts")["time"].text = "Shield  " + UI.short_duration(int(t.get("shield_seconds", 0)))
+		_set_bar(c, float(my_might) / maxf(1.0, float(my_might + their)))
+
+
+## Five reference pieces: green cap, green stretch, seam, red stretch, red cap.
+func _build_bar(c: Dictionary) -> void:
+	var host: Control = c["parts"]["bar"] if c["parts"].has("bar") else null
+	if host == null:
 		return
-	_view = res.data
-	if _selected == "" and not _view.get("targets", []).is_empty():
-		_selected = str(_view["targets"][0].get("player_id", ""))
-	_rebuild()
+	var pieces := {}
+	for n in ["bar_left", "bar_green", "bar_split", "bar_red", "bar_right"]:
+		var img := UI.image("attack/" + n, Rect2(0, 0, 20, 26))
+		host.add_child(img)
+		pieces[n] = img
+	c["bar"] = pieces
 
 
-func _style_tabs() -> void:
-	for i in _tab_buttons.size():
-		var b: Button = _tab_buttons[i]
-		var active: bool = i == _mode
-		b.add_theme_stylebox_override("normal",
-			UI.panel_box(Palette.PANEL_HIGH if active else Palette.PANEL,
-				Palette.GOLD_DEEP if active else Palette.LINE))
-		b.add_theme_color_override("font_color", Palette.GOLD_INK if active else Palette.TEXT_DIM)
-
-
-func _rebuild() -> void:
-	for c in _list.get_children():
-		c.queue_free()
-
-	_header.text = "Your Might %s     %d energy per raid" % [
-		UI.number(int(_view.get("might", 0))), int(_view.get("energy_cost", 0))]
-
-	var shield: Variant = _view.get("shield_until")
-	if shield != null:
-		_list.add_child(_banner("You are under protection — nobody can raid you", Palette.SUCCESS))
-
-	# Scores to settle come first. A raid you did not choose is the one the
-	# player came here to answer, and the token expires in a day.
-	var revenge: Array = _view.get("revenge", [])
-	if not revenge.is_empty():
-		_list.add_child(UI.section_header("SCORES TO SETTLE"))
-		for rv in revenge:
-			_list.add_child(_revenge_row(rv))
-
-	var targets: Array = _view.get("targets", [])
-	if targets.is_empty():
-		_list.add_child(_banner("No lords within reach. Try again shortly.", Palette.TEXT_DIM))
-
-	for t in targets:
-		_list.add_child(_target_row(t))
-	_refresh_action()
-
-
-func _banner(text: String, colour: Color) -> Control:
-	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", UI.panel_box(Palette.PANEL, colour))
-	var l := UI.label(text, 14, colour, HORIZONTAL_ALIGNMENT_CENTER)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	p.add_child(l)
-	return p
-
-
-func _target_row(t: Dictionary) -> Control:
-	var id := str(t.get("player_id", ""))
-	var selected := id == _selected
-	var mine := maxi(int(_view.get("might", 1)), 1)
-	var ratio := float(int(t.get("might", 0))) / float(mine)
-
-	# Colour by relative strength, not by outcome: the player should be able to
-	# read the risk before committing energy, and never be told a win chance.
-	var risk := Palette.SUCCESS
-	var risk_word := "weaker"
-	if ratio > 1.15:
-		risk = Palette.DANGER
-		risk_word = "stronger"
-	elif ratio > 0.85:
-		risk = Palette.GOLD_INK
-		risk_word = "an even match"
-
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
-	b.focus_mode = Control.FOCUS_NONE
-	b.pressed.connect(func() -> void:
-		_selected = id
-		_rebuild())
-	var border := risk if selected else Color.TRANSPARENT
-	b.add_theme_stylebox_override("normal", UI.card_box(selected))
-	b.add_theme_stylebox_override("hover", UI.card_box(true))
-	b.add_theme_stylebox_override("pressed", UI.skin("ghost_press", Palette.PANEL, 14, 10))
-	b.add_theme_stylebox_override("disabled", UI.card_box(false, true))
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 12)
-	b.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	margin.add_child(row)
-
-	# The face is the point of portraits. In asynchronous PvP an opponent is a row
-	# on a list and never a person you meet, so without it every raid target reads
-	# as the same anonymous stranger.
-	var face := TextureRect.new()
-	face.texture = ArtRegistry.portrait(str(t.get("avatar", "knight")))
-	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	face.custom_minimum_size = Vector2(52, 52)
-	face.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(face)
-
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 2)
-	row.add_child(col)
-	col.add_child(UI.label(str(t.get("name", "")), UI.F_BODY, Palette.TEXT))
-	col.add_child(UI.label("level %d   ·   %s" % [int(t.get("level", 1)), risk_word], 12, risk))
-	col.add_child(UI.label("Might %s" % UI.number(int(t.get("might", 0))), UI.F_CAPTION, Palette.TEXT_DIM))
-
-	var right := VBoxContainer.new()
-	right.alignment = BoxContainer.ALIGNMENT_CENTER
-	right.add_theme_constant_override("separation", 2)
-	row.add_child(right)
-	right.add_child(UI.label("+%s" % UI.number(int(t.get("estimated_steal", 0))), UI.F_H2, Palette.GOLD_INK,
-		HORIZONTAL_ALIGNMENT_RIGHT))
-	right.add_child(UI.label("if you win", UI.F_MICRO, Palette.TEXT_FAINT, HORIZONTAL_ALIGNMENT_RIGHT))
-	return b
-
-
-func _selected_target() -> Dictionary:
-	for t in _view.get("targets", []):
-		if str(t.get("player_id", "")) == _selected:
-			return t
-	# A score to settle is a target too, and it is deliberately NOT in the
-	# shortlist: the matchmaker would never offer somebody who is shielded or on
-	# cooldown, which is exactly who you are owed a strike against.
-	for rv in _view.get("revenge", []):
-		if str(rv.get("target_id", "")) == _selected:
-			return {"player_id": _selected, "name": str(rv.get("target_name", "")),
-				"level": int(rv.get("target_level", 0))}
-	return {}
-
-
-func _refresh_action() -> void:
-	if _action == null:
+func _set_bar(c: Dictionary, frac: float) -> void:
+	if not c.has("bar"):
 		return
+	var b: Dictionary = c["bar"]
+	var total := 468.0
+	var green := clampf(frac, 0.08, 0.92) * total
+	b["bar_left"].position = Vector2(0, 0); b["bar_left"].size = Vector2(40, 26)
+	b["bar_green"].position = Vector2(40, 0); b["bar_green"].size = Vector2(maxf(0, green - 40 - 10), 26)
+	b["bar_split"].position = Vector2(green - 10, 0); b["bar_split"].size = Vector2(20, 26)
+	b["bar_red"].position = Vector2(green + 10, 0); b["bar_red"].size = Vector2(maxf(0, total - 41 - green - 10), 26)
+	b["bar_right"].position = Vector2(total - 41, 0); b["bar_right"].size = Vector2(41, 26)
+
+
+func _paint_history() -> void:
+	for i in _history_rows.size():
+		var r: Dictionary = _history_rows[i]
+		if i >= _history.size():
+			r["node"].visible = false
+			continue
+		r["node"].visible = true
+		var e: Dictionary = _history[i]
+		var p: Dictionary = r["parts"]
+		var won := bool(e.get("won", e.get("attacker_won", false)))
+		p["icon"].texture = Art.tex("icons/sword_victory" if won else "icons/sword_defeat")
+		var who := str(e.get("opponent", e.get("opponent_name", "")))
+		p["result"].text = "%s vs. %s" % ["Victory" if won else "Defeat", who]
+		p["result"].label_settings.font_color = UI.GREEN if won else UI.RED
+		var gold := int(str(e.get("gold", e.get("gold_delta", "0"))))
+		p["gold"].text = ("+" if gold > 0 else "") + UI.grouped(gold) if gold != 0 else "-"
+		p["coin"].visible = gold != 0
+		p["time"].text = UI.ago(int(e.get("seconds_ago", 0)))
+	# Tapping a row replays the fight.
+	for i in _history_rows.size():
+		var r: Dictionary = _history_rows[i]
+		if not r.has("hit"):
+			var hit := UI.hotspot(Rect2(Vector2.ZERO, r["node"].size))
+			hit.pressed.connect(_replay.bind(i))
+			r["node"].add_child(hit)
+			r["hit"] = hit
+
+
+func _portrait_for(t: Dictionary) -> String:
+	var names := ["portraits/rival_darius", "portraits/rival_seraphine", "portraits/rival_keldric", "portraits/rival_malric"]
+	return names[absi(str(t.get("player_id", t.get("name", ""))).hash()) % names.size()]
+
+
+func _crest_for(t: Dictionary) -> String:
+	var names := ["icons/crest_wolf", "icons/crest_lion", "icons/crest_stag", "icons/crest_eagle"]
+	return names[absi(str(t.get("player_id", t.get("name", ""))).hash()) % names.size()]
+
+
+# --- actions -------------------------------------------------------------------------
+
+func _attack_revenge() -> void:
+	var revenge: Array = _data.get("revenge", [])
+	if revenge.is_empty():
+		return
+	await _attack(revenge[0], true)
+
+
+func _attack_target(i: int) -> void:
+	var targets: Array = _data.get("targets", [])
+	if i >= targets.size():
+		return
+	await _attack(targets[i], false)
+
+
+func _attack(t: Dictionary, revenge: bool) -> void:
 	if _busy:
-		_action.text = "…"
-		_action.disabled = true
 		return
-	# Nothing to commit energy to on the history view; tapping a row watches it.
-	if _mode == Mode.HISTORY:
-		_action.text = "TAP A FIGHT TO WATCH IT"
-		_action.disabled = true
-		_action_sub.text = ""
-		return
-	var t := _selected_target()
-	if t.is_empty():
-		_action.text = "SELECT A TARGET"
-		_action.disabled = true
-		_action_sub.text = ""
-		return
-	var cost := int(_view.get("energy_cost", 0))
-	var avenging := _is_revenge(_selected)
-	if avenging:
-		cost = maxi(cost / 2, 1)
-	var can := GameState.display_energy() >= cost
-	_action.text = "%s %s  —  %d ⚡" % [
-		"AVENGE" if avenging else "RAID", str(t.get("name", "")).to_upper(), cost]
-	_action.disabled = not can
-	_action_sub.text = "" if can else "not enough energy"
-
-
-func _raid() -> void:
-	var t := _selected_target()
-	if t.is_empty() or _busy:
+	var cost := int(_data.get("energy_cost", 0))
+	if revenge:
+		cost = int(ceil(cost / 2.0))
+	if not await Dialog.ask(self, {"title": "Raid %s?" % str(t.get("name", "")),
+			"body": "Costs %d energy. Steal up to %s gold." % [cost, UI.grouped(int(t.get("estimated_steal", 0)))],
+			"confirm_text": "Attack", "danger": true}):
 		return
 	_busy = true
-	_refresh_action()
-
-	var seq := int(GameState.player().get("action_seq", 0)) + 1
-	var res: Api.Response = await Api.post_json("/v1/attack",
-		{"target_id": _selected, "action_seq": seq, "revenge": _is_revenge(_selected)})
+	var res: Api.Response = await GameState.act("/v1/attack", {"target_id": str(t.get("player_id", "")), "revenge": revenge})
 	_busy = false
+	if res.ok:
+		var won := bool(res.data.get("won", res.data.get("attacker_won", false)))
+		var gold := int(str(res.data.get("gold", res.data.get("gold_stolen", "0"))))
+		await Dialog.ask(self, {"title": "Victory!" if won else "Defeat",
+			"body": ("You plundered %s gold." % UI.grouped(gold)) if won else "Your army was driven back.", "confirm_text": "OK"})
+		await _load()
 
-	if not res.ok:
-		GameState.action_failed.emit(res.error)
-		await GameState.refresh()
-		await _reload()
+
+func _replay(i: int) -> void:
+	if i >= _history.size():
 		return
-
-	# The client NEVER simulates. It animates the log the server produced, which
-	# keeps cross-platform float determinism off the correctness path entirely.
-	var replay := preload("res://scenes/battle/battle_replay.gd").new()
-	replay.setup(res.data, t)
-	get_tree().root.add_child(replay)
-
-	await replay.finished
-	_selected = ""
-	await GameState.refresh()
-	await _reload()
-
-
-## The raid log, both directions.
-##
-## The defending half is the reason this screen exists. Every fight was already
-## stored with its replay; nothing read it, so a player who was raided overnight
-## woke up with less gold and no account of who took it. The ransom rule --
-## which pays you for LOSING a defence -- could never be experienced as news.
-func _build_history() -> void:
-	for c in _list.get_children():
-		c.queue_free()
-	_selected = ""
-
-	var entries: Array = _log.get("entries", [])
-	if entries.is_empty():
-		_header.text = "No raids yet, in either direction"
-		_list.add_child(_banner("Win or lose, every fight is kept here.", Palette.TEXT_DIM))
-		_refresh_action()
-		return
-
-	var raids := 0
-	var net := 0
-	for e in entries:
-		if bool(e.get("raided", false)):
-			raids += 1
-		net += int(e.get("gold", 0))
-	_header.text = "%d fights   ·   %d against you   ·   %s gold overall" % [
-		entries.size(), raids, UI.number(net)]
-
-	for e in entries:
-		_list.add_child(_history_row(e))
-	_refresh_action()
-
-
-func _history_row(e: Dictionary) -> Control:
-	var raided := bool(e.get("raided", false))
-	var won := bool(e.get("won", false))
-	var gold := int(e.get("gold", 0))
-
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
-	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_stylebox_override("normal", UI.card_box())
-	b.add_theme_stylebox_override("hover", UI.card_box(true))
-	b.pressed.connect(_watch.bind(e))
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 10)
-	b.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	margin.add_child(row)
-
-	var face := TextureRect.new()
-	face.custom_minimum_size = Vector2(44, 44)
-	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	face.texture = ArtRegistry.portrait(str(e.get("opponent_avatar", "")))
-	row.add_child(face)
-
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 2)
-	row.add_child(col)
-
-	# Told from the player's side, not the record's: "they raided you" is the
-	# sentence a defender needs, and the server already resolved which side
-	# they were on.
-	var who := str(e.get("opponent_name", "someone"))
-	var line := ("%s raided you" % who) if raided else ("You raided %s" % who)
-	col.add_child(UI.label(line, UI.F_BODY, Palette.TEXT))
-
-	var verdict := "held them off" if won else "took the field"
-	if not raided:
-		verdict = "you won" if won else "you were driven back"
-	col.add_child(UI.label("level %d   ·   %s" % [int(e.get("opponent_level", 0)), verdict],
-		UI.F_CAPTION, Palette.TEXT_DIM))
-
-	var amount := UI.number(absi(gold))
-	var tint := Palette.TEXT_DIM
-	if gold > 0:
-		amount = "+" + amount
-		tint = Palette.SUCCESS
-	elif gold < 0:
-		amount = "−" + amount
-		tint = Palette.DANGER
-	row.add_child(UI.label(amount, UI.F_BODY, tint))
-	return b
-
-
-## Replays a stored fight.
-##
-## The overlay takes the same payload shape the live raid hands it, so the
-## animation path is shared rather than reimplemented -- the client still never
-## simulates anything, it only ever animates a log the server produced.
-func _watch(e: Dictionary) -> void:
-	if _busy:
-		return
-	_busy = true
+	var e: Dictionary = _history[i]
 	var res: Api.Response = await Api.get_json("/v1/battles/%s" % str(e.get("battle_id", "")))
-	_busy = false
 	if not res.ok:
-		GameState.action_failed.emit(res.error)
 		return
-
-	var replay := preload("res://scenes/battle/battle_replay.gd").new()
-	replay.setup({
-		"won": bool(e.get("won", false)),
-		"gold_stolen": maxi(int(e.get("gold", 0)), 0),
-		"xp_gained": int(e.get("xp_gained", 0)),
-		"replay": res.data,
-	}, {
-		"name": str(e.get("opponent_name", "")),
-		"avatar": str(e.get("opponent_avatar", "")),
-		"level": int(e.get("opponent_level", 0)),
-	})
-	get_tree().root.add_child(replay)
-	await replay.finished
+	var rounds: Array = res.data.get("events", res.data.get("rounds", []))
+	await Dialog.ask(self, {"title": "Battle replay", "body": "%d rounds. %s" % [rounds.size(),
+		"Victory" if bool(res.data.get("attacker_won", false)) else "Defeat"], "confirm_text": "Close"})
 
 
-## Is the selected target somebody we owe a strike back?
-func _is_revenge(target_id: String) -> bool:
-	for rv in _view.get("revenge", []):
-		if str(rv.get("target_id", "")) == target_id:
-			return true
-	return false
-
-
-## One score to settle.
-##
-## Deliberately louder than a normal target row: this is the thing that makes
-## opening the game after a raid worth doing, and it stops mattering in a day.
-func _revenge_row(rv: Dictionary) -> Control:
-	var id := str(rv.get("target_id", ""))
-	var selected := id == _selected
-
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, UI.TAP_ROW)
-	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_stylebox_override("normal", UI.panel_box(
-		Palette.PANEL_HIGH if selected else Palette.PANEL, Palette.DANGER))
-	b.add_theme_stylebox_override("hover", UI.panel_box(Palette.PANEL_HIGH, Palette.DANGER))
-	b.pressed.connect(func() -> void:
-		_selected = id
-		_rebuild())
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 10)
-	b.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	margin.add_child(row)
-
-	var face := TextureRect.new()
-	face.custom_minimum_size = Vector2(44, 44)
-	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	face.texture = ArtRegistry.portrait(str(rv.get("target_avatar", "")))
-	row.add_child(face)
-
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 2)
-	row.add_child(col)
-	col.add_child(UI.label("%s robbed you" % str(rv.get("target_name", "someone")),
-		UI.F_BODY, Palette.TEXT))
-	col.add_child(UI.label("half energy   ·   their shield will not save them",
-		UI.F_CAPTION, Palette.DANGER))
-
-	row.add_child(UI.label("LEVEL %d" % int(rv.get("target_level", 0)), UI.F_CAPTION, Palette.TEXT_DIM))
-	return b
+func _view_all_history() -> void:
+	var lines: Array = []
+	for e in _history.slice(0, 12):
+		var won := bool(e.get("won", e.get("attacker_won", false)))
+		lines.append("%s vs. %s  %s" % ["Victory" if won else "Defeat", str(e.get("opponent", "")), UI.ago(int(e.get("seconds_ago", 0)))])
+	await Dialog.ask(self, {"title": "Battle history", "body": "\n".join(lines) if not lines.is_empty() else "No battles yet.", "confirm_text": "Close"})

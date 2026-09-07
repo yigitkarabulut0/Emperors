@@ -1,0 +1,385 @@
+{
+ "source": "collect.png",
+ "crops": [
+  {
+   "name": "collect/header",
+   "rect": [
+    155,
+    0,
+    786,
+    292
+   ],
+   "inpaint": [
+    [
+     177,
+     18,
+     227,
+     64
+    ],
+    [
+     436,
+     18,
+     215,
+     64
+    ],
+    [
+     663,
+     18,
+     231,
+     64
+    ]
+   ]
+  },
+  {
+   "name": "collect/footer",
+   "rect": [
+    155,
+    1516,
+    786,
+    156
+   ]
+  },
+  {
+   "name": "collect/quests_panel",
+   "rect": [
+    166,
+    281,
+    762,
+    228
+   ],
+   "erase": [
+    {
+     "rect": [
+      730,
+      294,
+      190,
+      34
+     ],
+     "sample_x": [
+      600,
+      700
+     ]
+    }
+   ]
+  },
+  {
+   "name": "collect/quest_card",
+   "rect": [
+    179,
+    333,
+    241,
+    165
+   ],
+   "erase": [
+    {
+     "rect": [
+      276,
+      346,
+      124,
+      60
+     ],
+     "sample_x": [
+      398,
+      410
+     ]
+    },
+    {
+     "rect": [
+      200,
+      344,
+      74,
+      66
+     ],
+     "sample_x": [
+      185,
+      195
+     ]
+    },
+    {
+     "rect": [
+      262,
+      419,
+      76,
+      22
+     ],
+     "sample_x": [
+      210,
+      240
+     ]
+    },
+    {
+     "rect": [
+      280,
+      450,
+      118,
+      34
+     ],
+     "sample_x": [
+      398,
+      410
+     ]
+    },
+    {
+     "rect": [
+      234,
+      450,
+      48,
+      36
+     ],
+     "sample_x": [
+      398,
+      410
+     ]
+    }
+   ]
+  },
+  {
+   "name": "collect/quest_bar_fill",
+   "src": "family.png",
+   "rect": [
+    420,
+    765,
+    60,
+    12
+   ]
+  },
+  {
+   "name": "icons/quest_scroll",
+   "rect": [
+    201,
+    346,
+    70,
+    66
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/quest_bolt",
+   "rect": [
+    458,
+    344,
+    70,
+    68
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/quest_swords",
+   "rect": [
+    710,
+    342,
+    74,
+    70
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/reward_crown",
+   "rect": [
+    236,
+    450,
+    48,
+    36
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/reward_diamond",
+   "rect": [
+    486,
+    452,
+    56,
+    34
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "collect/job_row",
+   "rect": [
+    166,
+    517,
+    762,
+    156
+   ],
+   "erase": [
+    {
+     "rect": [
+      354,
+      529,
+      290,
+      40
+     ],
+     "sample_x": [
+      500,
+      600
+     ]
+    },
+    {
+     "rect": [
+      394,
+      566,
+      56,
+      36
+     ],
+     "sample_x": [
+      520,
+      555
+     ]
+    },
+    {
+     "rect": [
+      494,
+      566,
+      22,
+      36
+     ],
+     "sample_x": [
+      520,
+      555
+     ]
+    },
+    {
+     "rect": [
+      556,
+      566,
+      4,
+      36
+     ],
+     "sample_x": [
+      520,
+      555
+     ]
+    },
+    {
+     "rect": [
+      602,
+      566,
+      74,
+      36
+     ],
+     "sample_x": [
+      520,
+      555
+     ]
+    },
+    {
+     "rect": [
+      640,
+      531,
+      82,
+      30
+     ],
+     "sample_x": [
+      500,
+      600
+     ]
+    },
+    {
+     "rect": [
+      520,
+      643,
+      402,
+      26
+     ],
+     "sample_x": [
+      470,
+      500
+     ]
+    }
+   ]
+  },
+  {
+   "name": "collect/collect_button",
+   "rect": [
+    732,
+    530,
+    178,
+    76
+   ]
+  },
+  {
+   "name": "icons/energy",
+   "rect": [
+    355,
+    561,
+    38,
+    48
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/coin",
+   "rect": [
+    450,
+    561,
+    48,
+    46
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "icons/xp",
+   "rect": [
+    558,
+    564,
+    48,
+    40
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "collect/job_grapes",
+   "rect": [
+    168,
+    515,
+    190,
+    158
+   ]
+  },
+  {
+   "name": "collect/job_strawberries",
+   "rect": [
+    168,
+    681,
+    190,
+    158
+   ]
+  },
+  {
+   "name": "collect/job_wheat",
+   "rect": [
+    168,
+    848,
+    190,
+    158
+   ]
+  },
+  {
+   "name": "collect/job_timber",
+   "rect": [
+    168,
+    1015,
+    190,
+    158
+   ]
+  },
+  {
+   "name": "collect/job_stone",
+   "rect": [
+    168,
+    1185,
+    190,
+    158
+   ]
+  },
+  {
+   "name": "collect/job_tax",
+   "rect": [
+    168,
+    1354,
+    190,
+    158
+   ]
+  }
+ ]
+}

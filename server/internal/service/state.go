@@ -81,17 +81,54 @@ type EnergyView struct {
 // bonus and already rounded — so the client's optimistic prediction is a table
 // lookup rather than a re-implementation of the economy that could drift.
 type JobView struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Order          int    `json:"order"`
-	EnergyCost     int64  `json:"energy_cost"`
-	GoldPayout     int64  `json:"gold_payout"`
-	XPPayout       int64  `json:"xp_payout"`
-	Collects       int64  `json:"collects"`
-	MasteryBonusBP int64  `json:"mastery_bonus_bp"`
-	NextMilestone  int64  `json:"next_milestone,omitempty"`
-	UnlockLevel    int    `json:"unlock_level"`
-	Unlocked       bool   `json:"unlocked"`
+	ID             string      `json:"id"`
+	Name           string      `json:"name"`
+	Order          int         `json:"order"`
+	EnergyCost     int64       `json:"energy_cost"`
+	GoldPayout     int64       `json:"gold_payout"`
+	XPPayout       int64       `json:"xp_payout"`
+	Collects       int64       `json:"collects"`
+	MasteryBonusBP int64       `json:"mastery_bonus_bp"`
+	NextMilestone  int64       `json:"next_milestone,omitempty"`
+	UnlockLevel    int         `json:"unlock_level"`
+	Unlocked       bool        `json:"unlocked"`
+	Mastery        MasteryView `json:"mastery"`
+}
+
+// MasteryView is the stretch of the mastery ladder a Collect row shows: the
+// threshold last reached (whose bonus is in force), the next one, and the one
+// after it. Resolved here so the client labels three markers and fills the
+// track between the first two without holding the ladder or walking it -- a
+// second copy of "which threshold counts" is how a row would come to show a
+// bonus the purse does not pay. A zero threshold means none: nothing reached
+// yet (Reached), or the ladder is finished (Next, After).
+type MasteryView struct {
+	Reached   int64 `json:"reached"`
+	ReachedBP int64 `json:"reached_bp"`
+	Next      int64 `json:"next"`
+	NextBP    int64 `json:"next_bp"`
+	After     int64 `json:"after"`
+	AfterBP   int64 `json:"after_bp"`
+}
+
+// masteryView resolves a row's stretch of the ladder at this collect count.
+func masteryView(cfg *gameconfig.Bundle, collects int64) MasteryView {
+	var v MasteryView
+	ms := cfg.Jobs.Milestones // ascending, see Bundle.build
+	i := 0
+	for i < len(ms) && collects >= ms[i].Collects {
+		i++
+	}
+	if i > 0 {
+		v.Reached, v.ReachedBP = ms[i-1].Collects, ms[i-1].BonusBP
+	}
+	if i < len(ms) {
+		v.Next, v.NextBP = ms[i].Collects, ms[i].BonusBP
+	}
+	if i+1 < len(ms) {
+		v.After, v.AfterBP = ms[i+1].Collects, ms[i+1].BonusBP
+	}
+	return v
 }
 
 type ConfigVersion struct {
@@ -164,6 +201,7 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 		Energy:   energyView(settled, maxEnergy, period),
 		Sections: sectionViews(d.Config, int(p.Level)),
 		Jobs:     jobViews(d.Config, p, collects, eff.Bonuses),
+		Prices:   PricesView{RenameDiamonds: d.Config.Progression.Store.RenameDiamonds},
 		ServerAt: now.UTC(),
 		Config:   ConfigVersion{Version: d.Config.Version},
 	}, nil
@@ -201,7 +239,6 @@ func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {
 		Gold:              itoa(p.Gold),
 		Treasury:          itoa(p.TreasuryGold),
 		Diamonds:          p.Diamonds,
-		Prices:   PricesView{RenameDiamonds: d.Config.Progression.Store.RenameDiamonds},
 		StatEnergy:        int(p.StatEnergy),
 		StatAttack:        int(p.StatAttack),
 		StatDefense:       int(p.StatDefense),
@@ -242,6 +279,7 @@ func jobViews(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, collects map[string]in
 			XPPayout:       economy.ApplyBucket(res.XP, bonuses, economy.BucketXPGain),
 			Collects:       done,
 			MasteryBonusBP: cfg.MilestoneBonusBP(done),
+			Mastery:        masteryView(cfg, done),
 			UnlockLevel:    j.UnlockLevel,
 			Unlocked:       j.UnlockLevel <= int(p.Level),
 		}

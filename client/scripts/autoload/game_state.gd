@@ -171,6 +171,16 @@ func tick_projection() -> void:
 		energy_changed.emit(v)
 
 
+## Optimistic collects queued for one job: what a row adds to its confirmed
+## count so the counter and the mastery track move on the tap, not on the reply.
+func pending_collects(job_id: String) -> int:
+	var n := 0
+	for a in _pending:
+		if str(a.get("job_id", "")) == job_id:
+			n += 1
+	return n
+
+
 func pending_count() -> int:
 	return _pending.size()
 

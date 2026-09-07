@@ -378,6 +378,56 @@
           ]
         },
         {
+          "id": "mastery_fill",
+          "kind": "image",
+          "asset": "collect/mastery_fill",
+          "rect": [
+            358,
+            111,
+            380,
+            7
+          ],
+          "fill": "left",
+          "ratio": 0.0,
+          "note": "inside the painted track (rows 628..634 of the reference); the fill runs from its start to where the count stands between the first two markers"
+        },
+        {
+          "id": "mastery_marker_1",
+          "kind": "image",
+          "asset": "collect/mastery_marker",
+          "rect": [
+            353,
+            106,
+            16,
+            16
+          ],
+          "note": "drawn back over the fill exactly where the painting has this diamond (centre x 527)"
+        },
+        {
+          "id": "mastery_marker_2",
+          "kind": "image",
+          "asset": "collect/mastery_marker",
+          "rect": [
+            481,
+            106,
+            16,
+            16
+          ],
+          "note": "drawn back over the fill exactly where the painting has this diamond (centre x 655)"
+        },
+        {
+          "id": "mastery_marker_3",
+          "kind": "image",
+          "asset": "collect/mastery_marker",
+          "rect": [
+            617,
+            106,
+            16,
+            16
+          ],
+          "note": "drawn back over the fill exactly where the painting has this diamond (centre x 791)"
+        },
+        {
           "id": "tile",
           "kind": "image",
           "asset": "collect/job_grapes",
@@ -572,7 +622,7 @@
       ],
       "static_baked": [
         "MASTERY BONUSES label at abs [364,622,150,18]",
-        "mastery track abs [522,624,392,16] with markers at x 528, 656, 791"
+        "mastery track abs [522,627,384,9] stays baked; its fill and its three diamonds (centres x 529, 655, 791) are drawn over it as parts"
       ]
     }
   ]

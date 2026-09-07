@@ -380,6 +380,46 @@
     190,
     158
    ]
+  },
+  {
+   "name": "collect/mastery_fill",
+   "src": "family.png",
+   "rect": [
+    420,
+    767,
+    60,
+    7
+   ]
+  },
+  {
+   "name": "collect/mastery_marker",
+   "rect": [
+    647,
+    623,
+    16,
+    16
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      8,
+      0
+     ],
+     [
+      16,
+      8
+     ],
+     [
+      8,
+      16
+     ],
+     [
+      0,
+      8
+     ]
+    ]
+   }
   }
  ]
 }

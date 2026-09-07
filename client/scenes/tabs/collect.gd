@@ -161,7 +161,8 @@ func _paint_rows() -> void:
 		p["xp"].text = UI.grouped(int(job.get("xp_payout", 0)))
 		var unlocked := bool(job.get("unlocked", false))
 		var next := int(job.get("next_milestone", 0))
-		var collects := int(job.get("collects", 0))
+		# Confirmed plus the taps still in flight, the same sum the pills show.
+		var collects := int(job.get("collects", 0)) + GameState.pending_collects(r["job_id"])
 		if not unlocked:
 			p["counter"].text = "LV %d" % int(job.get("unlock_level", 1))
 		elif next <= 0:
@@ -173,10 +174,7 @@ func _paint_rows() -> void:
 		# a long figure shrinks to stay inside it -- a Label grows to its text, so
 		# without this the count walked right until it sat on the COLLECT button.
 		UI.fit_label(p["counter"], COUNTER_FIT.x, COUNTER_FIT.y)
-		var tier: Array = ["25  +5%", "50  +10%", "100  +15%"] if next <= 100 else ["250  +20%", "500  +25%", "1000  +30%"]
-		p["mastery_1"].text = tier[0]
-		p["mastery_2"].text = tier[1]
-		p["mastery_3"].text = tier[2]
+		_paint_mastery(p, job.get("mastery", {}), collects)
 		r["node"].modulate = Color.WHITE if unlocked else Color(0.55, 0.55, 0.55)
 
 		# Energy is projected between polls rather than polled, so this is driven
@@ -185,6 +183,49 @@ func _paint_rows() -> void:
 		var short_of_energy := unlocked \
 			and GameState.display_energy() < int(job.get("energy_cost", 0))
 		_set_empty(r, short_of_energy)
+
+
+## The mastery track under a row: three painted markers labelled with the
+## stretch of the ladder the player is on -- the threshold reached (its bonus is
+## the one in force), the next, and the one after -- and a fill that runs from
+## the first marker toward the second as the count climbs. The server resolves
+## the stretch (JobView.mastery); this only places it. Zero thresholds mean
+## none: a fresh row reads "0  +0%  |  25  +5%  |  50  +10%", a finished one
+## carries MAX on the last marker and a full track.
+func _paint_mastery(p: Dictionary, m: Dictionary, collects: int) -> void:
+	var reached := int(m.get("reached", 0))
+	var next := int(m.get("next", 0))
+	var after := int(m.get("after", 0))
+	p["mastery_1"].text = _milestone_label(reached, int(m.get("reached_bp", 0)))
+	p["mastery_2"].text = _milestone_label(next, int(m.get("next_bp", 0))) if next > 0 else "MAX"
+	p["mastery_3"].text = _milestone_label(after, int(m.get("after_bp", 0))) if after > 0 else ("MAX" if next > 0 else "")
+	Layout.set_fill(p["mastery_fill"], mastery_fill_fraction(p, reached, next, collects))
+	# The marker the fill has reached is lit; the ones ahead wait.
+	var lit := [true, next == 0, false]
+	for i in 3:
+		p["mastery_marker_%d" % (i + 1)].modulate = Color.WHITE if lit[i] else Color(0.55, 0.55, 0.55)
+
+
+static func _milestone_label(collects: int, bp: int) -> String:
+	return "%d  +%d%%" % [collects, bp / 100]
+
+
+## How much of the track to fill: the first marker stands for the threshold
+## reached, the second for the next one, and the count's place between them is
+## the fill's place between the two markers. A finished ladder fills the track.
+## Geometry comes from the layout parts, never from numbers held here.
+static func mastery_fill_fraction(p: Dictionary, reached: int, next: int, collects: int) -> float:
+	var fill: Control = p["mastery_fill"]
+	var track_x: float = fill.position.x
+	var track_w: float = float(fill.get_meta("full", fill.size).x)
+	if next <= 0:
+		return 1.0
+	var m1: Control = p["mastery_marker_1"]
+	var m2: Control = p["mastery_marker_2"]
+	var x1 := m1.position.x + m1.size.x / 2.0
+	var x2 := m2.position.x + m2.size.x / 2.0
+	var t := clampf(float(collects - reached) / float(next - reached), 0.0, 1.0)
+	return clampf((x1 + t * (x2 - x1) - track_x) / track_w, 0.0, 1.0)
 
 
 func _on_collect(job_id: String) -> void:

@@ -23,6 +23,11 @@ var _quests_loaded_ms := -100000
 const REWARD_TEXT_X := 104.0
 const REWARD_TEXT_W := 120.0
 const REWARD_ROW_W := 167.0
+
+## Font sizes a row's name and its collect counter are fitted between (max, min):
+## the painting's size when the text fits its box, smaller only when it would not.
+const NAME_FIT := Vector2i(24, 14)
+const COUNTER_FIT := Vector2i(24, 16)
 var _built := false
 var _busy := false
 
@@ -148,7 +153,9 @@ func _paint_rows() -> void:
 		var name: String = str(job.get("name", "")).to_upper()
 		var name_label: Label = p["name"]
 		name_label.text = name
-		name_label.label_settings.font_size = 24 if name.length() <= 18 else 19
+		# Fitted to the box the painting gives a name, so the longest ("PLUNDER THE
+		# DRAGON'S HOARD") stops where the counter begins instead of running under it.
+		UI.fit_label(name_label, NAME_FIT.x, NAME_FIT.y)
 		p["energy"].text = str(int(job.get("energy_cost", 0)))
 		p["gold"].text = UI.grouped(int(job.get("gold_payout", 0)))
 		p["xp"].text = UI.grouped(int(job.get("xp_payout", 0)))
@@ -161,6 +168,11 @@ func _paint_rows() -> void:
 			p["counter"].text = "%d / MAX" % collects
 		else:
 			p["counter"].text = "%d / %d" % [collects, next]
+		# The painting's counter reads "0 / 25"; "1500 / MAX" is twice as wide. The
+		# box ends where the painted figure does, 36 units clear of the button, and
+		# a long figure shrinks to stay inside it -- a Label grows to its text, so
+		# without this the count walked right until it sat on the COLLECT button.
+		UI.fit_label(p["counter"], COUNTER_FIT.x, COUNTER_FIT.y)
 		var tier: Array = ["25  +5%", "50  +10%", "100  +15%"] if next <= 100 else ["250  +20%", "500  +25%", "1000  +30%"]
 		p["mastery_1"].text = tier[0]
 		p["mastery_2"].text = tier[1]

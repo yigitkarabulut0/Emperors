@@ -116,6 +116,27 @@ static func fit_label(l: Label, max_size: int, min_size: int = 14) -> void:
 	s.font_size = size
 
 
+
+## Shrinks a WRAPPING label's font until its text fits the box in both
+## directions.
+##
+## fit_label measures one line, so on a label that wraps it shrinks a long name
+## until the whole of it fits on a single line -- which spends the second line
+## the box was sized for. "The Unbroken Breastplate" came out at half the size
+## of "Warhorse" beside it for that reason.
+static func fit_wrapped(l: Label, max_size: int, min_size: int = 14) -> void:
+	var s := l.label_settings
+	var box_w: float = float(l.get_meta("box_w", l.size.x))
+	var box_h: float = l.size.y
+	var size := max_size
+	while size > min_size:
+		var m := s.font.get_multiline_string_size(
+			l.text, HORIZONTAL_ALIGNMENT_LEFT, box_w, size)
+		if m.y <= box_h and m.x <= box_w:
+			break
+		size -= 1
+	s.font_size = size
+
 # --- number formatting -----------------------------------------------------------
 
 static func grouped(v: int) -> String:

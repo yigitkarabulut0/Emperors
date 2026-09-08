@@ -131,12 +131,16 @@ func _paint_grid() -> void:
 		var i := _cards.size()
 		built["parts"]["btn_equip"].pressed.connect(_equip.bind(i))
 		built["parts"]["btn_sell"].pressed.connect(_sell.bind(i))
-		# Tier frame overlay: nine-patch border drawn over the empty tile's baked
-		# common ring (parts[1]); the item design sits inset inside it.
-		var frame := NinePatchRect.new()
-		frame.draw_center = false
-		UI.place(frame, Layout.rect_of(tpl["parts"][1]))
-		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Tier frame overlay, drawn over the empty tile (parts[1]) with the item
+		# design inside it.
+		#
+		# It used to be a nine-patch with its centre off, because the frames were
+		# cut as whole painted tiles: the item was still in them and the centre
+		# had to be hidden. That only holds at the size they were painted -- on
+		# the bigger tile the edge slices stretched and dragged the item out with
+		# them, a ghost down each side and the level plate along the bottom. The
+		# frames are cut hollow now, so the border simply scales with the tile.
+		var frame := UI.image("", Layout.rect_of(tpl["parts"][1]))
 		built["node"].add_child(frame)
 		built["node"].move_child(frame, 2)
 		built["frame"] = frame
@@ -154,18 +158,15 @@ func _paint_grid() -> void:
 		var slot := str(it.get("slot", "weapon"))
 		var tier := str(it.get("tier", "common"))
 		p["painting"].texture = Art.item(str(it.get("art", "")))
-		var frame: NinePatchRect = c["frame"]
+		var frame: TextureRect = c["frame"]
 		frame.texture = Art.tex("inventory/frame_" + tier)
-		var m := 18 if tier == "legendary" else 10
-		frame.patch_margin_left = m; frame.patch_margin_right = m; frame.patch_margin_top = m; frame.patch_margin_bottom = m
 		p["level"].text = "Lv. %d" % int(it.get("ilvl", 1))
 		p["name"].text = str(it.get("name", ""))
-		UI.fit_label(p["name"], 20, 13)
+		UI.fit_wrapped(p["name"], 31, 20)
 		p["type"].text = slot.to_upper()
 		var badge: TextureRect = p["badge"]
 		badge.texture = Art.tex("inventory/badge_" + tier)
 		badge.size = badge.texture.get_size()
-		badge.position.x = 382 - 9 - badge.size.x
 		var line: Array = STAT_LINE[slot]
 		p["icon1"].texture = Art.tex(line[2])
 		p["stat1"].text = "%s +%s" % [line[1], UI.grouped(int(it.get(line[0], 0)))] if slot != "horse" \

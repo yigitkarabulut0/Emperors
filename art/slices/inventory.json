@@ -535,7 +535,8 @@
     735,
     140,
     140
-   ]
+   ],
+   "hollow": 6
   },
   {
    "name": "inventory/frame_legendary",
@@ -544,7 +545,8 @@
     735,
     140,
     140
-   ]
+   ],
+   "hollow": 6
   },
   {
    "name": "inventory/frame_rare",
@@ -553,7 +555,8 @@
     945,
     140,
     140
-   ]
+   ],
+   "hollow": 6
   },
   {
    "name": "inventory/frame_uncommon",
@@ -562,7 +565,8 @@
     945,
     140,
     140
-   ]
+   ],
+   "hollow": 6
   },
   {
    "name": "inventory/frame_common",
@@ -571,7 +575,8 @@
     1155,
     140,
     140
-   ]
+   ],
+   "hollow": 6
   },
   {
    "name": "inventory/frame_special",
@@ -580,7 +585,8 @@
     1155,
     140,
     140
-   ]
+   ],
+   "hollow": 6
   },
   {
    "name": "inventory/frame_mystic",
@@ -589,7 +595,8 @@
     1366,
     140,
     140
-   ]
+   ],
+   "hollow": 6
   },
   {
    "name": "inventory/badge_epic",

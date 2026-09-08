@@ -18,7 +18,6 @@ const FRAME_FALLBACK := {"common": "uncommon", "mystic": "epic", "special": "leg
 ## mystic and special were never painted there. A player reading EPIC on a shop
 ## card and EPIC in their bags saw two different marks for one thing.
 const BADGE_PREFIX := "inventory/badge_"
-const TIER_NUMBER := {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5, "mystic": 6, "special": 7}
 const TYPE_WORD := {"weapon": "SWORD", "armor": "ARMOR", "horse": "HORSE"}
 
 var _scroll: ScrollContainer
@@ -114,11 +113,10 @@ func _paint() -> void:
 		p["badge"].texture = Art.tex(BADGE_PREFIX + tier)
 		p["badge"].size = p["badge"].texture.get_size()
 		p["name"].text = str(item.get("name", ""))
-		UI.fit_label(p["name"], 26, 15)
+		UI.fit_wrapped(p["name"], 24, 16)
 		var slot := str(item.get("slot", "weapon"))
 		p["type_icon"].texture = Art.tex("shop/type_" + ("sword" if slot == "weapon" else slot))
 		p["type"].text = TYPE_WORD.get(slot, slot.to_upper())
-		p["tier"].text = "TIER %d" % int(TIER_NUMBER.get(tier, 1))
 		p["price"].text = UI.short_number(int(offer.get("price", 0)))
 		var sold := bool(offer.get("purchased", false))
 		c["node"].modulate = Color(0.45, 0.45, 0.45) if sold else Color.WHITE

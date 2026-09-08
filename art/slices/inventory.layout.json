@@ -9,7 +9,7 @@
  "notes": [
   "All top-level rects are absolute source/layout pixels; template part rects are relative to the instance origin.",
   "Template instances carry {at, data}; a part with \"bind\" takes its asset or text from data[bind].",
-  "Tier frames (inventory/frame_<tier>) are the same 140x140 rect as the paintings: use as NinePatch with draw_center=false, margin per tier (legendary 18, others 10); the painting interior is rect [8,8,124,124] inside the crop (border ~5 px + 4 px glow margin; legendary border ~12 px).",
+  "Tier frames (inventory/frame_<tier>) are the same 140x140 rect as the paintings, cut hollow (everything inside a 6 px inset is cleared), so they are drawn stretched over whatever size the tile is. They were whole painted tiles once and had to be nine-patched with the centre off, which only worked at 140.",
   "Each items/<slug> painting from a card is 140x140 and carries its own tier frame and the Lv badge plate (text erased). The three equipped paintings are 221x194 landscape (y 320..514) with a gold frame, badge plate (text erased) and the red gem; they stop 1 px above the baked name's ascenders.",
   "Filter chips: only ALL has an active state in the reference. To activate any chip, draw inventory/chip_frame_active (NinePatch, margin 14) at that chip's rect and render its label in white title font; draw inventory/chip_frame_idle (NinePatch, margin 14) + the label in its tier colour for an idle ALL.",
   "Chip label colours (sampled): all #FFFFFF, common #FFFFFF, uncommon #BCFF7D, rare #B1ECFF, epic #FFD4FF, legendary #FFFFEA, mystic #EFD6FF, special #FFDAD0.",
@@ -328,162 +328,43 @@
      "rect": [
       160,
       729,
-      382,
-      203
+      776,
+      292
      ],
-     "pitch": 210,
+     "pitch": 306,
      "columns": [
-      160,
-      546
+      160
      ],
      "instances": [
-      {
-       "at": [
-        160,
-        729
-       ],
-       "data": {
-        "painting": "items/shadowfang",
-        "badge": "inventory/badge_epic",
-        "name": "Shadowfang",
-        "type": "WEAPON",
-        "level": "Lv. 40",
-        "icon1": "inventory/icon_attack",
-        "stat1": "ATK +520",
-        "icon2": "inventory/icon_power",
-        "stat2": "Power +780"
-       }
-      },
-      {
-       "at": [
-        546,
-        729
-       ],
-       "data": {
-        "painting": "items/dragonplate",
-        "badge": "inventory/badge_legendary",
-        "name": "Dragonplate",
-        "type": "ARMOR",
-        "level": "Lv. 38",
-        "icon1": "inventory/icon_defence",
-        "stat1": "DEF +620",
-        "icon2": "inventory/icon_power",
-        "stat2": "Power +910"
-       }
-      },
-      {
-       "at": [
-        160,
-        939
-       ],
-       "data": {
-        "painting": "items/knights_blade",
-        "badge": "inventory/badge_rare",
-        "name": "Knight's Blade",
-        "type": "WEAPON",
-        "level": "Lv. 28",
-        "icon1": "inventory/icon_attack",
-        "stat1": "ATK +290",
-        "icon2": "inventory/icon_power",
-        "stat2": "Power +430"
-       }
-      },
-      {
-       "at": [
-        546,
-        939
-       ],
-       "data": {
-        "painting": "items/forest_charger",
-        "badge": "inventory/badge_uncommon",
-        "name": "Forest Charger",
-        "type": "HORSE",
-        "level": "Lv. 22",
-        "icon1": "inventory/icon_defence",
-        "stat1": "POWER +360",
-        "icon2": "inventory/icon_speed",
-        "stat2": "Move Speed +12%"
-       }
-      },
-      {
-       "at": [
-        160,
-        1149
-       ],
-       "data": {
-        "painting": "items/recruit_armor",
-        "badge": "inventory/badge_common",
-        "name": "Recruit Armor",
-        "type": "ARMOR",
-        "level": "Lv. 15",
-        "icon1": "inventory/icon_defence",
-        "stat1": "DEF +140",
-        "icon2": "inventory/icon_power",
-        "stat2": "Power +210"
-       }
-      },
-      {
-       "at": [
-        546,
-        1149
-       ],
-       "data": {
-        "painting": "items/bloodcrown",
-        "badge": "inventory/badge_special",
-        "name": "Bloodcrown",
-        "type": "WEAPON",
-        "level": "Lv. 42",
-        "icon1": "inventory/icon_attack",
-        "stat1": "ATK +680",
-        "icon2": "inventory/icon_power",
-        "stat2": "Power +1,080"
-       }
-      },
-      {
-       "at": [
-        160,
-        1360
-       ],
-       "data": {
-        "painting": "items/nightmare",
-        "badge": "inventory/badge_mystic",
-        "name": "Nightmare",
-        "type": "HORSE",
-        "level": "Lv. 35",
-        "icon1": "inventory/icon_defence",
-        "stat1": "POWER +750",
-        "icon2": "inventory/icon_speed",
-        "stat2": "Move Speed +18%"
-       }
-      },
-      {
-       "at": [
-        546,
-        1360
-       ],
-       "data": {
-        "painting": "items/ranger_mail",
-        "badge": "inventory/badge_uncommon",
-        "name": "Ranger Mail",
-        "type": "ARMOR",
-        "level": "Lv. 26",
-        "icon1": "inventory/icon_defence",
-        "stat1": "DEF +260",
-        "icon2": "inventory/icon_power",
-        "stat2": "Power +390"
-       }
-      }
+      [
+       160,
+       729
+      ],
+      [
+       160,
+       1035
+      ],
+      [
+       160,
+       1341
+      ]
      ],
      "parts": [
       {
        "id": "frame",
-       "kind": "image",
+       "kind": "ninepatch",
        "asset": "inventory/card_frame",
        "rect": [
         0,
         0,
-        382,
-        203
+        776,
+        292
+       ],
+       "margin": [
+        26,
+        26,
+        26,
+        26
        ]
       },
       {
@@ -491,178 +372,151 @@
        "kind": "image",
        "asset": "inventory/item_tile_empty",
        "rect": [
-        6,
-        6,
-        140,
-        140
-       ],
-       "note": "index 1: inventory.gd places the tier ring over this rect"
+        12,
+        12,
+        240,
+        240
+       ]
       },
       {
        "id": "painting",
        "kind": "image",
        "asset": "items/{item}",
        "rect": [
-        24,
-        18,
-        104,
-        94
+        30,
+        22,
+        204,
+        196
        ],
        "fit": "contain"
       },
       {
        "id": "level",
        "kind": "text",
-       "bind": "level",
        "rect": [
-        70,
-        115,
-        66,
-        20
+        77,
+        208,
+        110,
+        34
        ],
-       "font": "body",
-       "size": 17,
+       "size": 28,
        "weight": 600,
        "color": "#FFFFFF",
        "align": "center",
-       "valign": "center",
-       "sample": "Lv. 40",
-       "cap_h": 12
-      },
-      {
-       "id": "name",
-       "kind": "text",
-       "bind": "name",
-       "rect": [
-        158,
-        17,
-        122,
-        28
-       ],
-       "font": "body",
-       "size": 20,
-       "weight": 600,
-       "color": "#FFFFFF",
-       "align": "left",
-       "valign": "center",
-       "sample": "Shadowfang",
-       "cap_h": 15
-      },
-      {
-       "id": "type",
-       "kind": "text",
-       "bind": "type",
-       "rect": [
-        158,
-        46,
-        122,
-        18
-       ],
-       "font": "body",
-       "size": 16,
-       "weight": 500,
-       "color": "#C9D2DC",
-       "align": "left",
-       "valign": "center",
-       "sample": "WEAPON",
-       "cap_h": 11
+       "sample": "Lv. 40"
       },
       {
        "id": "badge",
        "kind": "image",
-       "bind": "badge",
        "rect": [
-        283,
-        7,
+        266,
+        14,
         99,
         47
+       ]
+      },
+      {
+       "id": "name",
+       "kind": "text",
+       "rect": [
+        266,
+        66,
+        222,
+        92
        ],
-       "anchor": "right",
-       "note": "badge widths differ (90 or 99); right edge sits at rel x 373"
+       "size": 30,
+       "weight": 600,
+       "color": "#FFFFFF",
+       "align": "left",
+       "wrap": true,
+       "sample": "The Unbroken Breastplate"
+      },
+      {
+       "id": "type",
+       "kind": "text",
+       "rect": [
+        266,
+        162,
+        170,
+        32
+       ],
+       "size": 25,
+       "weight": 500,
+       "color": "#C9D2DC",
+       "align": "left",
+       "sample": "WEAPON"
       },
       {
        "id": "icon1",
        "kind": "image",
-       "bind": "icon1",
        "rect": [
-        153,
-        74,
-        34,
-        34
+        266,
+        200,
+        38,
+        38
        ]
       },
       {
        "id": "stat1",
        "kind": "text",
-       "bind": "stat1",
        "rect": [
-        185,
-        78,
-        190,
-        26
+        312,
+        201,
+        176,
+        36
        ],
-       "font": "body",
-       "size": 19,
+       "size": 28,
        "weight": 500,
        "color": "#FFFFFF",
        "align": "left",
-       "valign": "center",
-       "sample": "ATK +520",
-       "cap_h": 13
+       "sample": "ATK +520"
       },
       {
        "id": "icon2",
        "kind": "image",
-       "bind": "icon2",
        "rect": [
-        153,
-        104,
-        34,
-        34
+        266,
+        242,
+        38,
+        38
        ]
       },
       {
        "id": "stat2",
        "kind": "text",
-       "bind": "stat2",
        "rect": [
-        185,
-        108,
-        190,
-        26
+        312,
+        243,
+        176,
+        36
        ],
-       "font": "body",
-       "size": 19,
+       "size": 28,
        "weight": 500,
        "color": "#FFFFFF",
        "align": "left",
-       "valign": "center",
-       "sample": "Power +780",
-       "cap_h": 13
+       "sample": "Power +780"
       },
       {
        "id": "btn_equip",
        "kind": "button",
        "asset": "inventory/btn_equip",
        "rect": [
-        72,
-        148,
-        122,
-        43
-       ],
-       "action": "equip"
+        500,
+        44,
+        272,
+        96
+       ]
       },
       {
        "id": "btn_sell",
        "kind": "button",
        "asset": "inventory/btn_sell",
        "rect": [
-        202,
-        148,
-        108,
-        43
-       ],
-       "action": "sell"
+        500,
+        152,
+        241,
+        96
+       ]
       }
      ]
     }

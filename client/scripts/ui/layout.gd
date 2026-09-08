@@ -227,6 +227,14 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 				hs.set_meta("action", str(p.get("action", "")))
 				return hs
 			var b := UI.tex_button(asset, r)
+			if bool(p.get("keep_texture_size", false)):
+				# The rect is the tap target; the texture stays the picture. Every
+				# button in the references is painted wide and short -- BUY is
+				# 172x58, which on the phone is 27 pt against the 44 pt a thumb
+				# needs -- and stretching one to that height stretches the word
+				# baked into it. So the control grows and the painting keeps its
+				# own size, centred in it.
+				b.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
 			b.set_meta("action", str(p.get("action", "")))
 			return b
 		"hotspot":

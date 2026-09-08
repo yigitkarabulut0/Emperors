@@ -273,13 +273,13 @@
      "id": "name",
      "kind": "text",
      "rect": [
-      200,
-      30,
-      158,
-      36
+      196,
+      16,
+      166,
+      70
      ],
      "font": "body",
-     "size": 26,
+     "size": 24,
      "weight": 600,
      "color": "#F3F1EC",
      "align": "left",
@@ -292,10 +292,10 @@
      "kind": "image",
      "asset": "shop/type_{type}",
      "rect": [
-      202,
-      63,
-      44,
-      40
+      200,
+      88,
+      40,
+      36
      ],
      "note": "sword 44x36, armor 40x38, horse 44x40; anchor top-left"
     },
@@ -303,9 +303,9 @@
      "id": "type",
      "kind": "text",
      "rect": [
-      244,
-      70,
-      112,
+      242,
+      94,
+      118,
       24
      ],
      "font": "title",
@@ -315,23 +315,6 @@
      "align": "left",
      "valign": "center",
      "sample": "SWORD"
-    },
-    {
-     "id": "tier",
-     "kind": "text",
-     "rect": [
-      244,
-      100,
-      112,
-      22
-     ],
-     "font": "title",
-     "size": 19,
-     "weight": 500,
-     "color": "#B9C7D7",
-     "align": "left",
-     "valign": "center",
-     "sample": "TIER 5"
     },
     {
      "id": "price_pill",
@@ -366,12 +349,13 @@
      "kind": "button",
      "asset": "shop/buy",
      "rect": [
-      176,
-      175,
+      180,
+      149,
       172,
-      58
+      96
      ],
-     "action": "buy"
+     "action": "buy",
+     "keep_texture_size": true
     }
    ]
   },

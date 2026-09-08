@@ -45,6 +45,7 @@ class _Modal:
 	var value: int = 0
 	var text_value: String = ""
 	var _layer: CanvasLayer
+	var _plate: PanelContainer
 	var _armed := false
 	var _input: LineEdit
 
@@ -60,6 +61,7 @@ class _Modal:
 		_layer.add_child(back)
 
 		var plate := PanelContainer.new()
+		_plate = plate
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color("#0E1A26")
 		sb.border_color = UI.GOLD_DIM
@@ -67,20 +69,41 @@ class _Modal:
 		sb.set_corner_radius_all(8)
 		sb.set_content_margin_all(30)
 		plate.add_theme_stylebox_override("panel", sb)
-		plate.position = Vector2(140, 560)
+		# The width is fixed; only the height follows the content (see _settle).
+		plate.custom_minimum_size = Vector2(660, 0)
 		plate.size = Vector2(660, 0)
 		_layer.add_child(plate)
+		# The plate grows to its content, so it is centred once it has a size --
+		# and re-centred if the content changes -- in the canvas the game is laid
+		# out on: the topmost Control above the caller, which is the shell filling
+		# the viewport (941 wide, 1672 tall or more on a tall phone). Not in
+		# get_viewport_rect(): on a stretched desktop window that is the window's
+		# pixel size, and centring on it put the plate off the top-left corner
+		# with the backdrop still swallowing every tap.
+		var top: Control = host as Control
+		while top != null and top.get_parent() is Control:
+			top = top.get_parent()
+		var canvas: Vector2 = top.size if top != null and top.size.x > 0 else Vector2(941, 1672)
+		var centre := func() -> void:
+			plate.position = ((canvas - plate.size) / 2.0).floor()
+		plate.resized.connect(centre)
+		centre.call()
 
 		var col := VBoxContainer.new()
 		col.add_theme_constant_override("separation", 18)
 		plate.add_child(col)
 
+		# An autowrapped Label measures its height at its current width, and a
+		# fresh Label is 0 wide: one word per line, a plate thousands of units
+		# tall that never shrinks back. Each gets the column's width first.
 		var title := UI.label(str(cfg.get("title", "")), 34, UI.GOLD, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
 		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		title.size.x = 600
 		col.add_child(title)
 		if cfg.has("body") and str(cfg["body"]) != "":
 			var body := UI.label(str(cfg["body"]), 26, UI.INK, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
 			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			body.size.x = 600
 			col.add_child(body)
 
 		if mode == "amount" or mode == "text":
@@ -125,6 +148,26 @@ class _Modal:
 		buttons.add_child(_button(str(cfg.get("cancel_text", "Cancel")), Color("#22303D"), ""))
 
 		host.get_tree().create_timer(ARM_DELAY).timeout.connect(func() -> void: _armed = true)
+		_layer.visible = false
+		_settle()
+
+	## An autowrapped Label reports a one-word-per-line height until it has a
+	## width, so the plate's first size is absurd (3000-odd units) and, being a
+	## plain Control, it never shrinks back on its own. Two layout passes give
+	## the labels their width; then the plate is reset to its real content size,
+	## which re-centres it, and only then is it shown.
+	func _settle() -> void:
+		var tree := _layer.get_tree()
+		await tree.process_frame
+		await tree.process_frame
+		if not is_instance_valid(_plate):
+			return
+		_plate.size = Vector2(660.0, _plate.get_combined_minimum_size().y)
+		await tree.process_frame
+		if not is_instance_valid(_plate):
+			return
+		_plate.size = Vector2(660.0, _plate.get_combined_minimum_size().y)
+		_layer.visible = true
 
 	func _button(text: String, color: Color, result: String) -> Button:
 		var b := Button.new()

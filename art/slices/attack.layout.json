@@ -32,7 +32,8 @@
     786,
     202
    ],
-   "note": "blurred foliage behind the bottom panels; draw first, panels cover it"
+   "note": "blurred foliage behind the bottom panels; draw first, panels cover it",
+   "anchor": "bottom"
   },
   {
    "id": "header",
@@ -737,7 +738,8 @@
      "valign": "center",
      "sample": "Defeated players gain a 30-minute shield and cannot be attacked."
     }
-   }
+   },
+   "anchor": "bottom"
   }
  ]
 }

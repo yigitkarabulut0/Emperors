@@ -136,6 +136,12 @@ no asset, an invisible tap target), `ninepatch`, `fill` (a bar clipped from the 
 `group`, `template` (repeated component;
 `instances` may be `[x, y]` or `{pos|at, assets, texts, rects, data}`).
 Top-level rects are absolute; part rects are relative to their template.
+A top-level element may carry `"anchor": "bottom"` (pinned to the foot of the
+screen the player has, which on a tall phone is below the design's 1672) or
+`"grow": "bottom"` (its top stays, its bottom follows the screen's -- for the
+scroll lists). The rail spans the full height, dialogs centre in the visible
+viewport, and the toast hangs off its foot. `--capture-size 941x2040` renders
+a capture at a 19.5:9 phone's canvas to check all of this.
 `Layout.build()` returns `{id: node}` for plain elements and
 `{id: [{node, parts}, ...]}` for templates with instances. A nested template with
 instances comes back as a wrapper whose meta `instances` lists them.

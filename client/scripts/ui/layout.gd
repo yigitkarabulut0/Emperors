@@ -87,7 +87,18 @@ static func build(screen: String, host: Control) -> Dictionary:
 				out[id] = n
 				if str(e.get("anchor", "")) == "bottom":
 					_anchor_bottom(n, rect_of(e))
+				elif str(e.get("grow", "")) == "bottom":
+					_grow_to_bottom(n, rect_of(e))
 	return out
+
+
+## Keeps a region's top where the painting has it and lets its bottom follow the
+## screen's, so a list gets the extra height a tall phone has instead of leaving
+## it as ground. The gap it keeps to the design's foot (a pinned footer, usually)
+## is the gap it keeps to the screen's.
+static func _grow_to_bottom(n: Control, r: Rect2) -> void:
+	n.anchor_bottom = 1.0
+	n.offset_bottom = r.end.y - 1672.0
 
 
 ## Pins a node to the bottom of a taller-than-design viewport.

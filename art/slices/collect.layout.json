@@ -261,7 +261,8 @@
    ],
    "content": [
     "job_row"
-   ]
+   ],
+   "grow": "bottom"
   },
   {
    "id": "job_row",

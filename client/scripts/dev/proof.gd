@@ -1,5 +1,6 @@
 extends Node
-## Dev-only screenshot capture: --capture <path> --capture-after <seconds>.
+## Dev-only screenshot capture: --capture <path> --capture-after <seconds>
+## [--capture-size WxH].
 ##
 ## The game screenshots itself, so this works on the desktop and on the device
 ## without OS screenshot permissions. In a capture run the scenes are mounted in
@@ -25,11 +26,16 @@ func _ready() -> void:
 
 func _mount_viewport() -> void:
 	var container := SubViewportContainer.new()
-	container.stretch = true
+	# With stretch on, the container resizes the viewport to the window, which
+	# is the design grid. A --capture-size run wants the viewport at its own
+	# size instead, so the container shows it 1:1 (clipped by the window).
+	container.stretch = not Env.args.has("capture_size")
 	container.set_anchors_preset(Control.PRESET_FULL_RECT)
 	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var vp := SubViewport.new()
-	vp.size = Vector2i(941, 1672)
+	# The design grid by default; --capture-size 941x2040 shows what a taller
+	# phone shows, extra canvas and all.
+	vp.size = Env.args.get("capture_size", Vector2i(941, 1672))
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	vp.gui_disable_input = true
 	container.add_child(vp)

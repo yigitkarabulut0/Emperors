@@ -94,6 +94,6 @@
        {"id": "recruit", "kind": "button", "rect": [12, 165, 215, 54], "action": "recruit", "baked": true,
         "instance_rects": [[190, 1506, 215, 54], [432, 1506, 213, 54], [680, 1506, 218, 54]]}
      ]},
-    {"id": "bottom", "kind": "image", "asset": "army/bottom", "rect": [170, 1600, 771, 72]}
+    {"id": "bottom", "kind": "image", "asset": "army/bottom", "rect": [170, 1600, 771, 72], "anchor": "bottom"}
   ]
 }

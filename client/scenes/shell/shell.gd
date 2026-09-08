@@ -177,10 +177,9 @@ func _apply_safe_area() -> void:
 		return
 	_inset_top = float(sa.position.y) * 941.0 / float(win.x)
 	_host.position.y = _inset_top
-	_rail.position.y = _inset_top
+	_rail.offset_top = _inset_top
 	var band: TextureRect = _rail.get_child(0)
-	band.position.y = -_inset_top
-	band.size.y += _inset_top
+	band.offset_top = -_inset_top
 	for c in get_children():
 		if c != _host and c != _rail and c is Control and c.get_child_count() > 0 and c.get_child(0) is TextureRect:
 			c.position.y = _inset_top
@@ -192,6 +191,9 @@ func _apply_safe_area() -> void:
 func _build_rail() -> void:
 	_rail = Control.new()
 	_rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# The rail is as tall as the screen: a phone taller than the 1672 design
+	# gets more rail, not ground showing under a rail that stopped short.
+	_rail.set_anchors_preset(Control.PRESET_LEFT_WIDE)
 	_rail.size = Vector2(160, 1672)
 	add_child(_rail)
 
@@ -200,9 +202,17 @@ func _build_rail() -> void:
 	band.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	band.stretch_mode = TextureRect.STRETCH_TILE
 	UI.place(band, Rect2(0, 0, 160, 1470))
+	band.anchor_bottom = 1.0
+	band.offset_bottom = -202  # the painted foot below
 	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_rail.add_child(band)
-	_rail.add_child(UI.image("chrome/rail_bottom", Rect2(0, 1470, 160, 202)))
+	var foot := UI.image("chrome/rail_bottom", Rect2(0, 1470, 160, 202))
+	foot.anchor_top = 1.0
+	foot.anchor_bottom = 1.0
+	foot.offset_top = -202
+	foot.offset_bottom = 0
+	foot.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_rail.add_child(foot)
 
 	_plate = TextureRect.new()
 	_plate.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -375,6 +385,14 @@ func _on_changed() -> void:
 func _build_toast() -> void:
 	_toast = UI.label("", 28, UI.INK, "body", 600, HORIZONTAL_ALIGNMENT_CENTER)
 	UI.place(_toast, Rect2(180, 1590, 720, 56))
+	# Pinned to the bottom of the screen the player actually has: a taller
+	# phone gets more canvas below the 1672 design, and the toast belongs at
+	# its foot, not floating a few hundred units above it.
+	_toast.anchor_top = 1.0
+	_toast.anchor_bottom = 1.0
+	_toast.offset_top = -82
+	_toast.offset_bottom = -26
+	_toast.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_toast.visible = false
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.03, 0.06, 0.1, 0.92)

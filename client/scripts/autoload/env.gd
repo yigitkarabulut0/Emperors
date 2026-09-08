@@ -43,6 +43,12 @@ func _parse_args() -> void:
 		elif a == "--capture-after" and i + 1 < raw.size():
 			args["capture_after"] = float(raw[i + 1])
 			i += 2
+		elif a == "--capture-size" and i + 1 < raw.size():
+			# WxH in canvas units: 941x2040 is a 19.5:9 phone's canvas.
+			var wh: PackedStringArray = raw[i + 1].split("x")
+			if wh.size() == 2:
+				args["capture_size"] = Vector2i(int(wh[0]), int(wh[1]))
+			i += 2
 		elif a == "--tab" and i + 1 < raw.size():
 			args["tab"] = raw[i + 1]
 			i += 2

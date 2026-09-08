@@ -44,6 +44,15 @@ func _ready() -> void:
 	_content.custom_minimum_size = Vector2(941, 1672)
 	_content.mouse_filter = Control.MOUSE_FILTER_PASS
 	_scroll.add_child(_content)
+	# The page is at least as tall as the screen, so on a phone taller than the
+	# design the bottom-anchored pieces sit at the screen's foot rather than at
+	# the design's, with ground under them.
+	# The scroll took its size when its anchors were set, above, so the hook is
+	# applied once by hand as well as on every later resize.
+	var fit_page := func() -> void:
+		_content.custom_minimum_size.y = maxf(1672.0, _scroll.size.y)
+	_scroll.resized.connect(fit_page)
+	fit_page.call()
 	_ui = Layout.build(SCREEN, _content)
 
 	_lords = _ui["lord_row"]

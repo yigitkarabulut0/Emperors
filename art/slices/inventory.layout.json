@@ -678,7 +678,8 @@
       }
      ]
     }
-   ]
+   ],
+   "grow": "bottom"
   },
   {
    "id": "ground_bottom",
@@ -690,7 +691,8 @@
     786,
     112
    ],
-   "note": "static, behind the list"
+   "note": "static, behind the list",
+   "anchor": "bottom"
   }
  ]
 }

@@ -95,6 +95,21 @@ def mask_for(name, im):
     return m
 
 
+def fade_at_border(alpha, band=26):
+    """Fades the alpha out where the item runs off the edge of its source crop.
+
+    Several paintings are cropped by their own card -- the shop's Lionheart
+    armour has no bottom, the courser no hindquarters -- so the mask ends in a
+    straight razor line at the crop boundary. Inside its frame in the reference
+    that line is the frame; lifted onto a tile it is a sliced-off item. A short
+    ramp over the last few pixels reads as the painting fading out instead.
+    """
+    h, w = alpha.shape
+    yy, xx = np.mgrid[0:h, 0:w]
+    d = np.minimum(np.minimum(xx, w - 1 - xx), np.minimum(yy, h - 1 - yy))
+    return alpha * np.clip(d / float(band), 0, 1)
+
+
 def luma_key(a, lo=0.06, hi=0.34, vignette=0.55):
     lum = 0.30 * a[..., 0] + 0.55 * a[..., 1] + 0.15 * a[..., 2]
     mx, mn = a.max(axis=2), a.min(axis=2)
@@ -112,11 +127,16 @@ def cut(name, box):
     im = without_plate(im, box, k)
     a = np.array(im).astype(float) / 255.0
     m = np.array(mask_for(name, im).filter(ImageFilter.GaussianBlur(3))).astype(float) / 255.0
-    # The glow may reach well past the object's edge, so the key is allowed a
-    # wide, soft ring around the mask.
-    ring = np.array(Image.fromarray((m * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(61)).filter(ImageFilter.GaussianBlur(24))).astype(float) / 255.0
-    glow = luma_key(a) * ring
-    alpha = np.clip(m + (1 - m) * glow, 0, 1)
+    # The item only. An earlier cut kept the glow around it -- the purple haze
+    # on a shadow blade, the flames on a red one -- by keying luminance in a
+    # wide ring outside the mask. On the dark tiles that read as atmosphere, so
+    # the review sheet passed; on the shop's gold card the same pixels are a
+    # dark smear with a visible edge, because a semi-opaque backdrop cannot be
+    # right over two different grounds at once. It also painted a rarity into
+    # art that balance/items.json shares across three rarities: the purple
+    # around weapon_04 belongs to The Sundering (mystic) and rode along onto
+    # Guard's Greatsword (uncommon). Rarity is the frame's job.
+    alpha = m
     # A flat, near-black fill inside the mask is not the item: it is the level
     # plate the slicer erased from the crop, or ground the mask swallowed. Real
     # shading has some colour or some light in it; this has neither.
@@ -124,7 +144,8 @@ def cut(name, box):
     mx, mn = a.max(axis=2), a.min(axis=2)
     sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
     flat_dark = (lum < 0.10) & (sat < 0.25)
-    alpha = np.where(flat_dark, np.minimum(alpha, glow), alpha)
+    alpha = np.where(flat_dark, 0.0, alpha)
+    alpha = fade_at_border(alpha)
     rgba = np.dstack([a * 255, alpha[..., None] * 255]).astype(np.uint8)
     out = Image.fromarray(rgba, "RGBA")
     ys, xs = np.where(alpha > 0.16)
@@ -148,18 +169,25 @@ def main():
         done[key] = canvas
         print(f"{key} <- {name}")
     if args.review:
+        # Every design over BOTH grounds it is drawn on. A cut that keeps any of
+        # its own backdrop disappears against the dark tile and only shows on
+        # the shop's lit card, so a sheet with the tile alone passes work that
+        # is visibly wrong in the shop -- which is how the glow shipped.
         tile = Image.open(ROOT / "client/assets/family/gear_tile_empty.png").convert("RGBA")
-        cell = 224
-        sheet = Image.new("RGB", (cell * 7, (cell - 30) * 3 + 40), (25, 25, 25))
+        card = Image.open(ROOT / "client/assets/shop/card_frame_legendary.png").convert("RGBA")
+        cell, rows = 224, 6
+        sheet = Image.new("RGB", (cell * 7, (cell - 30) * rows + 40), (25, 25, 25))
         d = ImageDraw.Draw(sheet)
         for i, key in enumerate(DESIGNS):
             im = done[key].copy()
             im.thumbnail((184, 144))
-            t = tile.copy()
-            t.paste(im, (18 + (184 - im.width) // 2, 14 + (144 - im.height) // 2), im)
-            x, y = (i % 7) * cell, (i // 7) * (cell - 30) + 14
-            sheet.paste(t.convert("RGB"), (x + 2, y))
-            d.text((x + 4, y - 12), key, fill=(255, 255, 255))
+            col, band = i % 7, (i // 7) * 2
+            for j, ground in enumerate((tile, card)):
+                g = ground.copy()
+                g.paste(im, (18 + (184 - im.width) // 2, 14 + (144 - im.height) // 2), im)
+                x, y = col * cell, (band + j) * (cell - 30) + 14
+                sheet.paste(g.convert("RGB"), (x + 2, y))
+                d.text((x + 4, y - 12), key if j == 0 else key + " (shop)", fill=(255, 255, 255))
         (ROOT / "art/qa").mkdir(exist_ok=True)
         sheet.save(ROOT / "art/qa/item_designs.png")
         print("review sheet: art/qa/item_designs.png")

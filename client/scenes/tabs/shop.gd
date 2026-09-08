@@ -11,9 +11,13 @@ const FRAMES := {
 	"uncommon": [["shop/card_frame_uncommon_t", 0, 0], ["shop/card_frame_uncommon_b", 0, 56]],
 }
 const FRAME_FALLBACK := {"common": "uncommon", "mystic": "epic", "special": "legendary"}
-const BADGES := {"legendary": "shop/badge_legendary", "epic": "shop/badge_epic", "rare": "shop/badge_rare",
-	"uncommon": "shop/badge_uncommon", "common": "inventory/badge_common", "mystic": "inventory/badge_mystic",
-	"special": "inventory/badge_special"}
+## The rarity badge is the same object on every screen, so it is drawn from one
+## set. The shop reference paints its own -- a hexagon with a diamond finial and
+## a flaming tail, in pink for epic and red for legendary -- and cutting those
+## gave the shop four badges of one design and three of another, since common,
+## mystic and special were never painted there. A player reading EPIC on a shop
+## card and EPIC in their bags saw two different marks for one thing.
+const BADGE_PREFIX := "inventory/badge_"
 const TIER_NUMBER := {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5, "mystic": 6, "special": 7}
 const TYPE_WORD := {"weapon": "SWORD", "armor": "ARMOR", "horse": "HORSE"}
 
@@ -107,7 +111,7 @@ func _paint() -> void:
 		var tier := str(item.get("tier", "common"))
 		_set_frame(c, tier)
 		p["painting"].texture = Art.item(str(item.get("art", "")))
-		p["badge"].texture = Art.tex(BADGES.get(tier, "shop/badge_uncommon"))
+		p["badge"].texture = Art.tex(BADGE_PREFIX + tier)
 		p["badge"].size = p["badge"].texture.get_size()
 		p["name"].text = str(item.get("name", ""))
 		UI.fit_label(p["name"], 26, 15)

@@ -260,12 +260,12 @@
     {
      "id": "badge",
      "kind": "image",
-     "asset": "shop/badge_{tier}",
+     "asset": "inventory/badge_{tier}",
      "rect": [
       12,
       9,
-      158,
-      40
+      99,
+      47
      ],
      "note": "already baked into every painting; only needed when a painting lacks one"
     },

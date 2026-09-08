@@ -23,6 +23,7 @@ func _initialize() -> void:
 	await process_frame
 	_L = load("res://scripts/ui/layout.gd")
 	_every_design_has_a_painting()
+	_every_painting_is_a_clean_cutout()
 	for screen in TILES:
 		for spec in TILES[screen]:
 			_painting_sits_inside_its_tile(screen, spec[0], spec[1], spec[2])
@@ -30,7 +31,7 @@ func _initialize() -> void:
 		print("FAIL  %d check(s)" % _fails)
 		quit(1)
 		return
-	print("PASS  item designs have paintings and every screen insets them in a tile")
+	print("PASS  item designs have clean paintings and every screen insets them in a tile")
 	quit()
 
 
@@ -85,3 +86,57 @@ func _painting_sits_inside_its_tile(screen: String, tpl_id: String, tile_id: Str
 		order.append(str(p.get("id", "")))
 	if order.find(painting_id) < order.find(tile_id):
 		_fail("%s: the painting is listed before its tile and would be hidden under it" % tag)
+
+
+## A painting must be the item and nothing else.
+##
+## The cut used to keep the glow around each item -- the haze on a shadow blade,
+## the flames on a red one -- as semi-opaque pixels reaching well past the
+## silhouette. Over the dark tiles that read as atmosphere, so it looked right
+## wherever it was reviewed; over the shop's lit gold card the same pixels were
+## a dark smear with a visible edge. A backdrop cannot be correct over two
+## grounds at once, so there must not be one: nothing survives at the border,
+## and the soft fringe stays a fringe rather than a field.
+func _every_painting_is_a_clean_cutout() -> void:
+	for k in _art_keys():
+		var path := "res://assets/items/painted/%s.png" % k
+		if not ResourceLoader.exists(path):
+			continue
+		var im := Image.load_from_file(path)
+		im.convert(Image.FORMAT_RGBA8)
+		var w := im.get_width()
+		var h := im.get_height()
+		var edge := 0.0
+		for x in w:
+			for y in [0, 1, 2, 3, h - 4, h - 3, h - 2, h - 1]:
+				edge = maxf(edge, im.get_pixel(x, y).a)
+		for y in h:
+			for x in [0, 1, 2, 3, w - 4, w - 3, w - 2, w - 1]:
+				edge = maxf(edge, im.get_pixel(x, y).a)
+		if edge > 0.02:
+			_fail("%s: backdrop survives at the border (alpha %.2f there)" % [k, edge])
+		var faint := 0
+		var solid := 0
+		for y in h:
+			for x in w:
+				var a := im.get_pixel(x, y).a
+				if a > 0.02 and a < 0.5:
+					faint += 1
+				elif a >= 0.5:
+					solid += 1
+		# An edge fringe is a few pixels around a silhouette; a kept backdrop is
+		# a field of them, and outweighs the item itself.
+		if solid > 0 and faint > solid:
+			_fail("%s: %d faint pixels against %d solid -- that is a backdrop, not an edge"
+				% [k, faint, solid])
+
+
+func _art_keys() -> Array:
+	var f := FileAccess.open("res://../balance/items.json", FileAccess.READ)
+	if f == null:
+		return []
+	var d: Variant = JSON.parse_string(f.get_as_text())
+	var keys := {}
+	for it in d.get("definitions", []):
+		keys[str(it.get("art", ""))] = true
+	return keys.keys()

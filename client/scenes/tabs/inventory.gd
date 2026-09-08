@@ -74,6 +74,7 @@ func _paint_equipped() -> void:
 		var item: Variant = eq.get(slot, null)
 		var painting: TextureRect = p["painting"]
 		painting.visible = item is Dictionary
+		p["gem"].texture = Art.gem(str(item.get("tier", "")) if item is Dictionary else "")
 		if item is Dictionary:
 			painting.texture = Art.item(str(item.get("art", "")))
 			p["tile"].modulate = Color.WHITE

@@ -165,9 +165,11 @@ name to its box — a Label grows to its text, so the box width is kept in meta.
 Things the paintings do not contain, and how they are handled: item designs
 (the paintings hold one item per slot per screen, so every slot showed the same
 picture; the 21 designs the balance names now ship as their own matted paintings
-under `items/painted/`, rendered by `scripts/gen-items-painted.sh` into
-`art/painted/` and drawn inset into each screen's empty tile crop), only six job
-paintings (cycle), one upgrade painting (the granary, reused), portraits for
+under `items/painted/`, cut out of the paintings' own item pictures by
+`scripts/cut-item-paintings.py` -- object mask plus luminance key, so a glow
+survives and the ground goes clear -- and drawn inset into each screen's empty
+tile crop; the stone on a gear tile is `family/gem_<tier>` from
+`scripts/gen-gem-tints.py`), only six job paintings (cycle), one upgrade painting (the granary, reused), portraits for
 rivals and lords (assigned by hashing the id), tier numerals I–III (higher tiers
 use a blank plate with live text), one large soldier portrait (others are scaled
 into the tile), no lit hexagon but tier II (overlays tint the current tier).

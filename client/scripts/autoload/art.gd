@@ -51,3 +51,10 @@ func item(art_key: String) -> Texture2D:
 	if art_key == "":
 		return _placeholder_tex()
 	return tex("items/painted/" + art_key)
+## The stone on a gear tile's frame, in a tier's colour; unlit for no tier.
+## The tints are made from the painted red stone by scripts/gen-gem-tints.py,
+## on the palette in balance/tiers.json.
+func gem(tier: String) -> Texture2D:
+	return tex("family/gem_" + (tier if tier != "" and has("family/gem_" + tier) else "empty"))
+
+

@@ -332,6 +332,18 @@
        "fit": "contain"
       },
       {
+       "id": "gem",
+       "kind": "image",
+       "asset": "family/gem_{tier}",
+       "rect": [
+        86,
+        160,
+        40,
+        34
+       ],
+       "note": "the stone on the frame, coloured by the worn item's tier; gem_empty when the slot is bare"
+      },
+      {
        "id": "lv",
        "kind": "text",
        "rect": [
@@ -388,6 +400,18 @@
         144
        ],
        "fit": "contain"
+      },
+      {
+       "id": "gem",
+       "kind": "image",
+       "asset": "family/gem_{tier}",
+       "rect": [
+        86,
+        160,
+        40,
+        34
+       ],
+       "note": "the stone on the frame, coloured by the worn item's tier; gem_empty when the slot is bare"
       },
       {
        "id": "lv",
@@ -447,6 +471,18 @@
         144
        ],
        "fit": "contain"
+      },
+      {
+       "id": "gem",
+       "kind": "image",
+       "asset": "family/gem_{tier}",
+       "rect": [
+        91,
+        160,
+        40,
+        34
+       ],
+       "note": "the stone on the frame, coloured by the worn item's tier; gem_empty when the slot is bare"
       },
       {
        "id": "lv",

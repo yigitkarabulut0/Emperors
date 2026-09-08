@@ -142,6 +142,9 @@ func _paint_gear() -> void:
 		# drawn inset into it, so the picture follows the gear.
 		var painting: TextureRect = parts["painting"]
 		painting.visible = item is Dictionary
+		# The stone on the frame takes the worn item's tier colour, and sits
+		# unlit when the slot is bare.
+		parts["gem"].texture = Art.gem(str(item.get("tier", "")) if item is Dictionary else "")
 		if item is Dictionary:
 			painting.texture = Art.item(str(item.get("art", "")))
 			parts["lv"].text = "Lv. %d" % int(item.get("ilvl", 1))

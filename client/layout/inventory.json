@@ -114,6 +114,18 @@
      "note": "the worn design, inset in the tile; hidden when the slot is empty"
     },
     {
+     "id": "gem",
+     "kind": "image",
+     "asset": "family/gem_{tier}",
+     "rect": [
+      86,
+      160,
+      40,
+      34
+     ],
+     "note": "the stone on the frame, coloured by the worn item's tier; gem_empty when the slot is bare"
+    },
+    {
      "id": "level",
      "kind": "text",
      "bind": "level",

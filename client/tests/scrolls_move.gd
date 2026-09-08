@@ -40,6 +40,8 @@ func _initialize() -> void:
 		print("  checked %d scrolling region(s)" % checked)
 	_the_army_row_is_longer_than_its_window()
 	_a_scroll_built_by_hand_sets_its_deadzone()
+	_nothing_stands_on_a_scroll_and_eats_its_drags()
+	_a_card_that_is_all_button_passes_the_drag_on()
 	if _fails > 0:
 		print("FAIL  %d check(s)" % _fails)
 		quit(1)
@@ -101,6 +103,55 @@ func _the_army_row_is_longer_than_its_window() -> void:
 			% [maxs, window])
 	print("  army row: %d slots x %.0f + %.0f = %.0f units in a %.0f window"
 		% [maxs, pitch, next_w, full, window])
+
+
+## A button lying over a scrolling region takes the drags that start on it.
+##
+## Growing the tap targets did this: auto_equip reached 44 pt by extending down
+## into the slot row's window, and every drag begun in that band hit a button
+## instead of the row.
+func _nothing_stands_on_a_scroll_and_eats_its_drags() -> void:
+	for screen in SCREENS:
+		var elements: Array = _L.spec(screen).get("elements", [])
+		for e in elements:
+			if not (e is Dictionary) or str(e.get("kind", "")) != "scroll":
+				continue
+			var box: Rect2 = _L.rect_of(e)
+			for other in elements:
+				if not (other is Dictionary) or other == e:
+					continue
+				if not (str(other.get("kind", "")) in ["button", "hotspot"]):
+					continue
+				var r: Rect2 = _L.rect_of(other)
+				if box.intersects(r):
+					_fail("%s: %s %s lies over the scrolling region %s and will take its drags"
+						% [screen, str(other.get("id", "")), r, box])
+
+
+## A control that covers a whole card inside a scroll has to let the drag past.
+##
+## A Button consumes the press, so a row whose cards are covered by one can be
+## tapped and never dragged -- which is exactly what the army's row did, while
+## looking correct and measuring correct.
+func _a_card_that_is_all_button_passes_the_drag_on() -> void:
+	for screen in SCREENS:
+		for e in _L.spec(screen).get("elements", []):
+			if not (e is Dictionary) or str(e.get("kind", "")) != "scroll":
+				continue
+			for card in e.get("content", []):
+				if not (card is Dictionary) or str(card.get("kind", "")) != "template":
+					continue
+				var cr: Rect2 = _L.rect_of(card)
+				var area := cr.size.x * cr.size.y
+				for q in card.get("parts", []):
+					if not (str(q.get("kind", "")) in ["button", "hotspot"]):
+						continue
+					var qr: Rect2 = _L.rect_of(q)
+					if area <= 0 or qr.size.x * qr.size.y < area * 0.8:
+						continue
+					if not bool(q.get("pass_drag", false)):
+						_fail("%s/%s/%s covers its card and does not pass_drag, so the row cannot be dragged"
+							% [screen, str(card.get("id", "")), str(q.get("id", ""))])
 
 
 ## Layout gives every scroll it builds a deadzone. A screen that makes one

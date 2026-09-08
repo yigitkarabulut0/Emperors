@@ -308,7 +308,8 @@
         149,
         337
        ],
-       "action": "select_soldier"
+       "action": "select_soldier",
+       "pass_drag": true
       }
      ]
     },
@@ -388,7 +389,7 @@
    "asset": "army/auto_equip",
    "rect": [
     683,
-    480,
+    452,
     234,
     95
    ],

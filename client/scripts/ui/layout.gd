@@ -223,7 +223,7 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 				asset = str(first.get("asset", ""))
 			if asset == "" or asset.contains("<") or asset.contains("{"):
 				# The painted button is part of a bigger crop: an invisible tap target.
-				var hs := UI.hotspot(r)
+				var hs := UI.hotspot(r, bool(p.get("pass_drag", false)))
 				hs.set_meta("action", str(p.get("action", "")))
 				return hs
 			if p.has("label"):
@@ -236,6 +236,8 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 				pb.set_meta("action", str(p.get("action", "")))
 				return pb
 			var b := UI.tex_button(asset, r)
+			if bool(p.get("pass_drag", false)):
+				b.mouse_filter = Control.MOUSE_FILTER_PASS
 			if bool(p.get("keep_texture_size", false)):
 				# The rect is the tap target; the texture stays the picture. Every
 				# button in the references is painted wide and short -- BUY is

@@ -131,10 +131,16 @@ static func plate_button(plate: String, word: String, rect: Rect2, size: int,
 	return b
 
 ## An invisible tap target over a baked-in control (the "+" on a pill).
-static func hotspot(rect: Rect2) -> Button:
+## An invisible tap target. `pass_drag` lets the touch carry on to whatever is
+## behind it, which a control inside a scrolling row must do: a Button consumes
+## the press, so a row whose cards are covered by one can be tapped and never
+## dragged. MOUSE_FILTER_PASS still delivers the press to the button.
+static func hotspot(rect: Rect2, pass_drag: bool = false) -> Button:
 	var b := Button.new()
 	b.flat = true
 	b.focus_mode = Control.FOCUS_NONE
+	if pass_drag:
+		b.mouse_filter = Control.MOUSE_FILTER_PASS
 	place(b, rect)
 	b.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	b.add_theme_stylebox_override("hover", StyleBoxEmpty.new())

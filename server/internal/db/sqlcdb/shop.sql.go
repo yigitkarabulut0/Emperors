@@ -13,7 +13,8 @@ import (
 
 const bumpReroll = `-- name: BumpReroll :one
 UPDATE app.shop_state
-SET reroll_index = reroll_index + 1
+SET reroll_index = reroll_index + 1,
+    purchased_mask = 0
 WHERE player_id = $1 AND window_id = $2
 RETURNING player_id, window_id, purchased_mask, reroll_index, luck_bp
 `
@@ -23,6 +24,14 @@ type BumpRerollParams struct {
 	WindowID int64
 }
 
+// Advances the reroll and clears what was bought from the shelf it replaced.
+//
+// The offers are a pure function of (secret, player, window, reroll index), so
+// bumping the index puts six DIFFERENT items on the shelf. Carrying the mask
+// across that leaves a slot unbuyable for the rest of the window while showing
+// an item nobody has bought: the player rerolls, sees a new sword in slot 3,
+// and the shop insists they already own it. The mask still resets on a new
+// window, which UpsertShopWindow does.
 func (q *Queries) BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error) {
 	row := q.db.QueryRow(ctx, bumpReroll, arg.PlayerID, arg.WindowID)
 	var i AppShopState

@@ -226,6 +226,15 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 				var hs := UI.hotspot(r)
 				hs.set_meta("action", str(p.get("action", "")))
 				return hs
+			if p.has("label"):
+				# A plate that stretches with the word set in type over it, so
+				# the button's size is the layout's decision and not the
+				# texture's. See UI.plate_button.
+				var pb := UI.plate_button(asset, str(p["label"]), r,
+					int(p.get("size", 26)), Color(str(p.get("color", "#F4EFE6"))),
+					int(p.get("weight", 600)), int(p.get("margin", 14)))
+				pb.set_meta("action", str(p.get("action", "")))
+				return pb
 			var b := UI.tex_button(asset, r)
 			if bool(p.get("keep_texture_size", false)):
 				# The rect is the tap target; the texture stays the picture. Every

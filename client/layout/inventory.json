@@ -420,9 +420,9 @@
        "kind": "text",
        "rect": [
         266,
-        66,
-        222,
-        92
+        68,
+        250,
+        84
        ],
        "size": 30,
        "weight": 600,
@@ -436,8 +436,8 @@
        "kind": "text",
        "rect": [
         266,
-        162,
-        170,
+        158,
+        180,
         32
        ],
        "size": 25,
@@ -451,7 +451,7 @@
        "kind": "image",
        "rect": [
         266,
-        200,
+        196,
         38,
         38
        ]
@@ -461,8 +461,8 @@
        "kind": "text",
        "rect": [
         312,
-        201,
-        176,
+        197,
+        204,
         36
        ],
        "size": 28,
@@ -476,7 +476,7 @@
        "kind": "image",
        "rect": [
         266,
-        242,
+        238,
         38,
         38
        ]
@@ -486,8 +486,8 @@
        "kind": "text",
        "rect": [
         312,
-        243,
-        176,
+        239,
+        204,
         36
        ],
        "size": 28,
@@ -499,24 +499,34 @@
       {
        "id": "btn_equip",
        "kind": "button",
-       "asset": "inventory/btn_equip",
+       "asset": "inventory/btn_equip_plate",
        "rect": [
-        500,
-        44,
-        272,
+        534,
+        46,
+        210,
         96
-       ]
+       ],
+       "label": "EQUIP",
+       "size": 30,
+       "color": "#EFFCEF",
+       "weight": 600,
+       "margin": 14
       },
       {
        "id": "btn_sell",
        "kind": "button",
-       "asset": "inventory/btn_sell",
+       "asset": "inventory/btn_sell_plate",
        "rect": [
-        500,
-        152,
-        241,
+        534,
+        154,
+        210,
         96
-       ]
+       ],
+       "label": "SELL",
+       "size": 30,
+       "color": "#E7DFD1",
+       "weight": 600,
+       "margin": 14
       }
      ]
     }

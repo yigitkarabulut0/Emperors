@@ -91,6 +91,14 @@ type Querier interface {
 	// One statement so the hot paths (collect, attack, buy) pay a single round trip
 	// and never a read-then-write race.
 	BumpQuestProgress(ctx context.Context, arg BumpQuestProgressParams) (AppPlayerQuest, error)
+	// Advances the reroll and clears what was bought from the shelf it replaced.
+	//
+	// The offers are a pure function of (secret, player, window, reroll index), so
+	// bumping the index puts six DIFFERENT items on the shelf. Carrying the mask
+	// across that leaves a slot unbuyable for the rest of the window while showing
+	// an item nobody has bought: the player rerolls, sees a new sword in slot 3,
+	// and the shop insists they already own it. The mask still resets on a new
+	// window, which UpsertShopWindow does.
 	BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error)
 	// Spends diamonds and refills the energy pool in one statement. The WHERE is the
 	// guard: no row comes back if the player cannot afford it.

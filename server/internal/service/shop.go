@@ -280,8 +280,10 @@ func rerollCost(cfg *gameconfig.Bundle, used int64) int64 {
 //
 // Nothing about the offers is stored: they are a pure function of
 // (secret, player, window, reroll index), so advancing the index IS the reroll.
-// Slots already bought stay bought, because the purchase mask is per window --
-// otherwise a reroll would be a way to buy the same slot twice.
+// It also clears the purchase mask, because advancing the index replaces all
+// six offers -- buying slot 3 again after a reroll is buying a different item,
+// not the same one twice. Keeping the mask meant a slot the player had bought
+// from stayed dead for the rest of the window while displaying a new item.
 func (d Deps) RerollShop(ctx context.Context, playerID uuid.UUID, wantSeq int64) (*ShopView, error) {
 	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
 		q := sqlcdb.New(tx)

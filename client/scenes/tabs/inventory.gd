@@ -104,15 +104,20 @@ func _paint_chips() -> void:
 			l.label_settings.font_color = Color.WHITE if active else Color(CHIP_COLOR[t])
 
 
+## What is in the bag, which is everything that is not being worn.
+##
+## Worn gear used to head this list as well, greyed out, so the three pieces the
+## player has on were shown twice on one screen -- once in EQUIPPED GEAR at the
+## top and again below it, with an EQUIP button that did nothing. The panel is
+## where a worn piece lives; taking it off puts it back here.
 func _items_shown() -> Array:
 	var out: Array = []
 	for it in _inventory.get("items", []):
+		if bool(it.get("equipped", false)):
+			continue
 		if _filter == "all" or str(it.get("tier", "")) == _filter:
 			out.append(it)
-	out.sort_custom(func(a, b):
-		if bool(a.get("equipped", false)) != bool(b.get("equipped", false)):
-			return bool(a.get("equipped", false))
-		return int(a.get("power", 0)) > int(b.get("power", 0)))
+	out.sort_custom(func(a, b): return int(a.get("power", 0)) > int(b.get("power", 0)))
 	return out
 
 
@@ -174,8 +179,6 @@ func _paint_grid() -> void:
 		p["icon2"].texture = Art.tex("inventory/icon_power" if slot != "horse" else "inventory/icon_speed")
 		p["stat2"].text = "Power +%s" % UI.grouped(int(it.get("power", 0))) if slot != "horse" \
 			else "Move Speed +%s%%" % UI.grouped(int(it.get("speed", 0)))
-		var worn := bool(it.get("equipped", false))
-		p["btn_equip"].modulate = Color(0.5, 0.5, 0.5) if worn else Color.WHITE
 	var rows := int(ceil(items.size() / float(cols.size())))
 	content.custom_minimum_size = Vector2(sc.size.x, top + rows * pitch + 20)
 	if items.is_empty():

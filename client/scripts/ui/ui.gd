@@ -90,6 +90,46 @@ static func tex_button(asset: String, rect: Rect2) -> TextureButton:
 	return b
 
 
+
+## A button whose plate stretches and whose word is set in type.
+##
+## The painted buttons carry their word in the texture, which fixes their size:
+## the only way to reach the 44 pt a thumb needs is to scale the picture, and
+## scaling a 122x43 button 2.2x blows the word up with it -- soft, and far
+## bigger than the card wants. The plate assets have the word baked out
+## (tools/make_button_plates.gd), so the plate goes into a StyleBoxTexture,
+## which nine-patches: the chamfered corners stay at their painted resolution
+## whatever size the button is, and only the flat middle stretches. The word
+## goes on top as text, so it is sharp at any size and its size is the layout's
+## choice rather than the texture's.
+static func plate_button(plate: String, word: String, rect: Rect2, size: int,
+		col: Color, weight: int = 600, margin: int = 14) -> Button:
+	var b := Button.new()
+	var sb := StyleBoxTexture.new()
+	sb.texture = Art.tex(plate)
+	sb.texture_margin_left = margin
+	sb.texture_margin_right = margin
+	sb.texture_margin_top = margin
+	sb.texture_margin_bottom = margin
+	for state in ["normal", "hover", "focus"]:
+		b.add_theme_stylebox_override(state, sb)
+	var down := sb.duplicate()
+	down.modulate_color = Color(0.78, 0.78, 0.78)
+	b.add_theme_stylebox_override("pressed", down)
+	var off := sb.duplicate()
+	off.modulate_color = Color(0.55, 0.55, 0.55)
+	b.add_theme_stylebox_override("disabled", off)
+	b.text = word
+	b.add_theme_font_override("font", settings(size, col, "title", weight).font)
+	b.add_theme_font_size_override("font_size", size)
+	b.add_theme_color_override("font_color", col)
+	b.add_theme_color_override("font_pressed_color", col)
+	b.add_theme_color_override("font_hover_color", col)
+	b.add_theme_color_override("font_disabled_color", Color(col, 0.5))
+	b.add_theme_constant_override("outline_size", 0)
+	place(b, rect)
+	return b
+
 ## An invisible tap target over a baked-in control (the "+" on a pill).
 static func hotspot(rect: Rect2) -> Button:
 	var b := Button.new()

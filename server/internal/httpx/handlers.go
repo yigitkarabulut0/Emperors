@@ -609,7 +609,7 @@ func (a *api) donateItem(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
 		return
 	}
-	var req reforgeReq // same shape: an item id and a sequence
+	var req itemActionReq
 	if !decode(w, r, &req) {
 		return
 	}
@@ -626,33 +626,10 @@ func (a *api) donateItem(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
-type reforgeReq struct {
+// itemActionReq names one item and the sequence the action belongs to.
+type itemActionReq struct {
 	ItemID    string `json:"item_id"`
 	ActionSeq int64  `json:"action_seq"`
-}
-
-// reforge re-rolls an item's quality for gold. It can make it worse.
-func (a *api) reforge(w http.ResponseWriter, r *http.Request) {
-	pid, ok := PlayerID(r.Context())
-	if !ok {
-		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
-		return
-	}
-	var req reforgeReq
-	if !decode(w, r, &req) {
-		return
-	}
-	id, err := uuid.Parse(req.ItemID)
-	if err != nil {
-		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "item_id must be a uuid")
-		return
-	}
-	v, err := a.s().Reforge(r.Context(), pid, id, req.ActionSeq)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, v)
 }
 
 type sellBatchReq struct {

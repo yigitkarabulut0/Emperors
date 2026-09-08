@@ -46,7 +46,6 @@ type PriceConfig struct {
 	// What re-rolling an item's quality costs, as a share of its own
 	// undiscounted shop price. See the note in gen-balance.py for why this
 	// cannot be arbitraged against SellRatioBP.
-	ReforgeRatioBP int64 `json:"reforge_ratio_bp"`
 }
 
 type ShopConfig struct {

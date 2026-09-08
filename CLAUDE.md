@@ -96,10 +96,10 @@ this codebase invites.
   different curve from the multiplier the game runs on. Nothing read it, so
   nothing caught it. Derived values are now generated, and `Validate` rejects a
   document where the readable number disagrees with the real one.
-- **A field added to the generator, and the generator not re-run.** Reforge
-  shipped costing one gold, because a missing ratio reads as zero and zero prices
-  the action at the floor rather than refusing to load. `Validate` now rejects
-  zero where zero is meaningless.
+- **A field added to the generator, and the generator not re-run.** Reforging
+  (since removed) shipped costing one gold, because a missing ratio reads as
+  zero and zero prices the action at the floor rather than refusing to load.
+  `Validate` now rejects zero where zero is meaningless.
 - **A screen recomputing what the server already resolved.** The Estates tab
   called `estates.Derive` instead of `loadEffects`, so the rate it printed
   dropped kingdom upgrades, live events and the Legacy bonus. The purse was right

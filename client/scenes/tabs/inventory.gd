@@ -1,6 +1,6 @@
 extends Control
 ## INVENTORY — equipped gear, rarity filters and the item grid.
-## Layout: layout/inventory.json. Equip / sell / reforge go through the server;
+## Layout: layout/inventory.json. Equip and sell go through the server;
 ## the Collection (donate) lives behind the sliders button.
 
 const SCREEN := "inventory"
@@ -131,7 +131,6 @@ func _paint_grid() -> void:
 		var i := _cards.size()
 		built["parts"]["btn_equip"].pressed.connect(_equip.bind(i))
 		built["parts"]["btn_sell"].pressed.connect(_sell.bind(i))
-		built["parts"]["btn_reforge"].pressed.connect(_reforge.bind(i))
 		# Tier frame overlay: nine-patch border drawn over the empty tile's baked
 		# common ring (parts[1]); the item design sits inset inside it.
 		var frame := NinePatchRect.new()
@@ -223,18 +222,6 @@ func _sell(i: int) -> void:
 			"body": "For %s gold. This cannot be undone." % UI.grouped(int(it.get("sell_price", 0))), "confirm_text": "Sell", "danger": true}):
 		return
 	await _post("/v1/inventory/sell", {"item_id": str(it.get("id", ""))})
-
-
-func _reforge(i: int) -> void:
-	var it := _item_at(i)
-	if _busy or it.is_empty():
-		return
-	if not await Dialog.ask(self, {"title": "Reforge %s?" % str(it.get("name", "")),
-			"body": "Re-rolls its quality for %s gold. It can get worse." % UI.grouped(int(it.get("reforge_price", 0))), "confirm_text": "Reforge"}):
-		return
-	var res: Api.Response = await _post("/v1/inventory/reforge", {"item_id": str(it.get("id", ""))})
-	if res.ok:
-		GameState.action_failed.emit("Reforged: %s" % ("better" if bool(res.data.get("improved", false)) else "worse"))
 
 
 func _post(path: String, body: Dictionary) -> Api.Response:

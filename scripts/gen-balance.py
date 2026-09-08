@@ -400,18 +400,11 @@ emit("items.json", json.dumps({
     "level_mult_per_ilvl_bp": 900,
     "quality": {"min_pct": QUALITY_MIN_PCT, "max_pct": QUALITY_MAX_PCT},
     "masterwork": {"chance_bp": 300, "mult_pct": MASTERWORK_MULT_PCT},
-    # reforge_ratio_bp is what re-rolling an item's quality costs, as a share of
-    # its own undiscounted shop price.
-    #
-    # The design flagged this as invalidating its arbitrage proof, because that
-    # proof assumed an item's stats never change after acquisition. It no longer
-    # does, and the reason is the narrowed quality band: the best possible roll
-    # is 1.194x the worst, which at the 1.35 price exponent is 1.270x the price,
-    # so the most a reforge can ever add to the SELL value is 0.25 x 1.270 =
-    # 0.317 of the original price -- against a 0.60 cost. Reforging to sell loses
-    # money by construction, at every tier and every level.
-    "price": {"coef": 1.6, "exponent": 1.35, "sell_ratio_bp": 2500,
-              "reforge_ratio_bp": 6000},
+    # An item's stats never change after it is acquired, which is what the
+    # design's arbitrage proof rests on. Reforging re-rolled them for gold and
+    # so had to carry its own proof that re-rolling to sell always lost money;
+    # it has been removed, and the simpler invariant is back.
+    "price": {"coef": 1.6, "exponent": 1.35, "sell_ratio_bp": 2500},
     "speed_power_weight_bp": 5000,
     # The Collection: what donating a piece of gear is worth.
     #

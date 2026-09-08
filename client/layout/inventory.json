@@ -645,7 +645,7 @@
        "kind": "button",
        "asset": "inventory/btn_equip",
        "rect": [
-        14,
+        72,
         148,
         122,
         43
@@ -657,24 +657,12 @@
        "kind": "button",
        "asset": "inventory/btn_sell",
        "rect": [
-        143,
+        202,
         148,
         108,
         43
        ],
        "action": "sell"
-      },
-      {
-       "id": "btn_reforge",
-       "kind": "button",
-       "asset": "inventory/btn_reforge",
-       "rect": [
-        259,
-        148,
-        110,
-        43
-       ],
-       "action": "reforge"
       }
      ]
     }

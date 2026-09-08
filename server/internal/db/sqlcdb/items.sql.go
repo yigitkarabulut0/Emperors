@@ -289,61 +289,6 @@ func (q *Queries) LockPlayerItem(ctx context.Context, arg LockPlayerItemParams) 
 	return i, err
 }
 
-const reforgePlayerItem = `-- name: ReforgePlayerItem :one
-UPDATE app.player_items
-SET quality_pct = $1,
-    masterwork  = $2,
-    attack      = $3,
-    defense     = $4,
-    speed       = $5
-WHERE id = $6 AND player_id = $7
-RETURNING id, player_id, def_id, slot, tier, ilvl, quality_pct, masterwork, attack, defense, speed, equipped_on_hero, equipped_soldier_id, acquired_at, acquired_from, rolled_config_version
-`
-
-type ReforgePlayerItemParams struct {
-	QualityPct int32
-	Masterwork bool
-	Attack     int64
-	Defense    int64
-	Speed      int64
-	ID         uuid.UUID
-	PlayerID   uuid.UUID
-}
-
-// Rewrites the rolled half of an item: quality, the masterwork flag, and the
-// stats they produce. Identity -- what it IS -- never moves.
-func (q *Queries) ReforgePlayerItem(ctx context.Context, arg ReforgePlayerItemParams) (AppPlayerItem, error) {
-	row := q.db.QueryRow(ctx, reforgePlayerItem,
-		arg.QualityPct,
-		arg.Masterwork,
-		arg.Attack,
-		arg.Defense,
-		arg.Speed,
-		arg.ID,
-		arg.PlayerID,
-	)
-	var i AppPlayerItem
-	err := row.Scan(
-		&i.ID,
-		&i.PlayerID,
-		&i.DefID,
-		&i.Slot,
-		&i.Tier,
-		&i.Ilvl,
-		&i.QualityPct,
-		&i.Masterwork,
-		&i.Attack,
-		&i.Defense,
-		&i.Speed,
-		&i.EquippedOnHero,
-		&i.EquippedSoldierID,
-		&i.AcquiredAt,
-		&i.AcquiredFrom,
-		&i.RolledConfigVersion,
-	)
-	return i, err
-}
-
 const releaseItem = `-- name: ReleaseItem :exec
 UPDATE app.player_items
 SET equipped_on_hero = false, equipped_soldier_id = NULL

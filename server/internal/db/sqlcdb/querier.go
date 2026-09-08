@@ -298,9 +298,6 @@ type Querier interface {
 	RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time) ([]RecentlySeenPlayersRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
 	RefillEnergy(ctx context.Context, arg RefillEnergyParams) error
-	// Rewrites the rolled half of an item: quality, the masterwork flag, and the
-	// stats they produce. Identity -- what it IS -- never moves.
-	ReforgePlayerItem(ctx context.Context, arg ReforgePlayerItemParams) (AppPlayerItem, error)
 	// Registers a device, or re-points one that moved to another account.
 	RegisterDevice(ctx context.Context, arg RegisterDeviceParams) error
 	// Registrations per day. generate_series so a day with no signups is a zero in

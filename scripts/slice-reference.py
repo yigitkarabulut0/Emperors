@@ -13,6 +13,9 @@ Manifest:
                      # fill each row of rect with the mean colour of columns x0..x1 (source coords) on that row
                      # -> removes baked text from a plate while keeping its vertical gradient
                "inpaint": [ [x,y,w,h], ... ],       # content-aware fill of these source rects (cv2 Telea)
+               "soften": [ [x,y,w,h], ... ],        # replace with a very low-frequency version of the same
+                     # region: keeps the painting's own colours and the shape of its light, loses everything
+                     # with an edge. For lifting a whole painted object off its field, which Telea smears.
                "mask": {"type": "chamfer", "size": 6} | {"type": "polygon", "points": [[x,y],...]}
                      # alpha 0 outside; polygon points are relative to the crop
                "scale": [w, h]                      # optional: resize the result (LANCZOS)
@@ -51,6 +54,43 @@ def apply_inpaint(img, rects):
     out = cv2.inpaint(cv2.cvtColor(arr, cv2.COLOR_RGB2BGR), mask, 5, cv2.INPAINT_TELEA)
     return Image.fromarray(cv2.cvtColor(out, cv2.COLOR_BGR2RGB))
 
+def apply_soften(img, rects):
+    """Replaces each rect with a very low-frequency version of itself.
+
+    A shop card's item sits on a field of tier-coloured light, and lifting the
+    item out leaves a hole the size of half the card. Telea inpainting fills a
+    hole that big by dragging its edges inward, which produced the diagonal
+    smears the cards shipped with -- it repairs scratches, not removals.
+
+    Reducing the region (with a margin of its surroundings, so the fill
+    continues them) to a handful of pixels and scaling it back up keeps exactly
+    what a background should keep -- the colour and the broad shape of the
+    light -- and cannot keep anything with an edge, because at that size the
+    object is a pixel or two. The result is pasted back under a feathered mask
+    so it meets the untouched surroundings without a seam.
+    """
+    from PIL import ImageFilter
+    out = img.copy()
+    for x, y, w, h in rects:
+        pad = max(12, min(w, h) // 5)
+        bx, by = max(0, x - pad), max(0, y - pad)
+        bw, bh = min(img.width, x + w + pad) - bx, min(img.height, y + h + pad) - by
+        block = out.crop((bx, by, bx + bw, by + bh))
+        # Small enough that the object cannot survive, large enough to keep the
+        # gradient's direction.
+        tiny = block.resize((6, 7), Image.BOX)
+        field = tiny.resize((bw, bh), Image.BICUBIC).filter(ImageFilter.GaussianBlur(max(bw, bh) / 12))
+        # The margin is for sampling, not for blending: feathering by half of it
+        # left the rect's own corners barely touched, which is how a card kept a
+        # legible LEGENDARY under the badge that replaced it. A few pixels are
+        # all a seam needs.
+        feather = Image.new('L', (bw, bh), 0)
+        ImageDraw.Draw(feather).rectangle([x - bx, y - by, x - bx + w - 1, y - by + h - 1], fill=255)
+        feather = feather.filter(ImageFilter.GaussianBlur(3))
+        block.paste(field, (0, 0), feather)
+        out.paste(block, (bx, by))
+    return out
+
 def apply_mask(im, mask):
     im = im.convert('RGBA'); w, h = im.size; m = Image.new('L', (w, h), 0); d = ImageDraw.Draw(m)
     if mask['type'] == 'chamfer':
@@ -71,6 +111,7 @@ for mpath in a.manifests:
         work = img
         if c.get('erase'): work = apply_erase(work, c['erase'])
         if c.get('inpaint'): work = apply_inpaint(work, c['inpaint'])
+        if c.get('soften'): work = apply_soften(work, c['soften'])
         x, y, w, h = c['rect']
         assert 0 <= x and 0 <= y and x + w <= img.width and y + h <= img.height, f"{c['name']} rect outside {src}"
         crop = work.crop((x, y, x + w, y + h)); mode = c.get('mode', 'rect')

@@ -2,7 +2,6 @@ package gameconfig
 
 import (
 	"fmt"
-	"math"
 	"strings"
 )
 
@@ -161,7 +160,7 @@ func (b *Bundle) Validate() error {
 	// --- store ---
 	//
 	// A diamond price of zero is not "free", it is a field the generator was not
-	// re-run for. Reforge shipped at one gold that way; nothing in the store may
+	// re-run for. An action once shipped at one gold that way; nothing in the store may
 	// ship at nothing.
 	for _, price := range []struct {
 		name string
@@ -213,31 +212,12 @@ func (b *Bundle) Validate() error {
 	// --- item prices ---
 	//
 	// A ratio that is missing from the document reads as zero, and zero prices
-	// the action at the 1-gold floor rather than refusing to load. That is how a
-	// reforge shipped costing one gold: the field was added to the generator and
-	// the generator was not re-run, so the published document simply did not
-	// have it. Silence is the failure mode worth closing.
+	// the action at the 1-gold floor rather than refusing to load. That is how
+	// an action once shipped costing one gold: the field was added to the
+	// generator and the generator was not re-run, so the published document
+	// simply did not have it. Silence is the failure mode worth closing.
 	if b.Items.Price.SellRatioBP <= 0 {
 		p = append(p, "items price.sell_ratio_bp is zero — selling would pay nothing")
-	}
-	if b.Items.Price.ReforgeRatioBP <= 0 {
-		p = append(p, "items price.reforge_ratio_bp is zero — reforging would be free")
-	}
-	// Reforging then selling must always lose money, or an item is a gold press.
-	// The most a re-roll can add is the full quality span raised to the price
-	// exponent; compare that against what the sell pays back.
-	if q := b.Items.Quality; q.MinPct > 0 && b.Items.Price.ReforgeRatioBP > 0 {
-		mw := float64(100)
-		if float64(b.Items.Masterwork.MultPct) > mw {
-			mw = float64(b.Items.Masterwork.MultPct)
-		}
-		swing := (float64(q.MaxPct) * mw / 100) / float64(q.MinPct)
-		gain := math.Pow(swing, b.Items.Price.Exponent) * float64(b.Items.Price.SellRatioBP)
-		if gain >= float64(b.Items.Price.ReforgeRatioBP) {
-			p = append(p, fmt.Sprintf(
-				"a reforge costs %d bp of an item's price but could raise its sell value to %.0f bp — reforging to sell would print gold",
-				b.Items.Price.ReforgeRatioBP, gain))
-		}
 	}
 
 	// --- the tier ladder must be strictly ordered in power ---

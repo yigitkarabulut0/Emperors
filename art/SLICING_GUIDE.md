@@ -23,8 +23,8 @@ by the game itself are live values (numbers, names, timers) and the text that ch
   — cuts the crops. Modes and options are documented at the top of the file:
   `rect` (opaque), `darkkey` (alpha against the dark ground — for icons and glyphs sitting on the
   navy ground; NOT for dark-interior plates), `erase` (per-row fill from clean columns — removes
-  baked dynamic text), `inpaint` (content-aware fill), `mask` chamfer/polygon (alpha outside),
-  `scale`.
+  baked dynamic text), `inpaint` (content-aware fill), `soften` (replace a region with a very
+  low-frequency version of itself), `mask` chamfer/polygon (alpha outside), `scale`.
 
 ## What to cut, and how
 
@@ -32,7 +32,7 @@ by the game itself are live values (numbers, names, timers) and the text that ch
 |---|---|---|
 | Header painting with its baked title/subtitle | `rect` | Full width x 155..941. Inpaint the pill rects. Title text stays baked (it is static). |
 | Panel / card frame that will hold live text | `rect` + `erase` | Erase every dynamic text region with `erase` (sample clean columns on the same rows, inside the same plate). Keep static labels ("MASTERY BONUSES", "EQUIPPED GEAR", "WEAPON") baked. |
-| Button with a fixed label (COLLECT, BUY, EQUIP, SELL, REFORGE, ATTACK, HUNT, DISMISS, RECRUIT, UNLOCK, DONATE, UPGRADE, EQUIP BEST, AUTO EQUIP, MAX LEVEL, REROLL MARKET) | `rect` | Cut with its label. Include the bevel and 1 px of shadow. If it has chamfered corners, add `mask`. One crop per distinct button; identical buttons share one crop. |
+| Button with a fixed label (COLLECT, BUY, EQUIP, SELL, ATTACK, HUNT, DISMISS, RECRUIT, UNLOCK, DONATE, UPGRADE, EQUIP BEST, AUTO EQUIP, MAX LEVEL, REROLL MARKET) | `rect` | Cut with its label. Include the bevel and 1 px of shadow. If it has chamfered corners, add `mask`. One crop per distinct button; identical buttons share one crop. |
 | Icon on the navy ground (stat icons, currency glyphs, quest icons, small marks) | `darkkey` | Crop with ~4 px of clean ground around it. |
 | Icon inside a plate whose ground is not the navy (e.g. a coin inside a gold-bordered pill) | `rect` | Cut the whole pill instead, erase its number. |
 | Painting inside a tier frame (item art, job art, soldier portrait, rival portrait, crest) | `rect` | Cut the painting **and its frame together** when the frame is part of the look; erase any baked level/number badge text inside it (badge plate stays). Also cut each **tier frame** once, empty, if the frame colour changes by tier (inventory has all seven). |
@@ -105,3 +105,10 @@ the side-by-side as `art/qa/<screen>_sbs.png` and the contact sheet as `art/qa/<
 - Do not run git. Do not edit files outside `art/slices/`, `art/qa/`, `client/assets/`.
 - Do not change `scripts/slice-reference.py`; if a crop truly needs a capability it lacks, note it
   in your report with the exact rect and what is needed.
+- Use `soften`, not `inpaint`, to lift a whole painted object off its field. Telea repairs
+  scratches: asked to fill a hole the size of half a card it drags the edges inward, and the shop
+  cards shipped with diagonal smears behind every item because of it. `soften` reduces the region
+  (plus a margin of its surroundings) to a handful of pixels and scales it back, which keeps the
+  field's colour and the shape of its light and cannot keep anything with an edge. `erase` has the
+  same trap at a smaller scale: it fills each row from a narrow column sample, so anything in
+  those columns is smeared across the whole row.

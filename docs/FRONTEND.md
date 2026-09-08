@@ -104,7 +104,7 @@ own and fold into the Family ledger as cards in the GRANARY card's style.
 |---|---|---|---|
 | Family | `family.gd` | `hero` | name (the quill buys a new one for diamonds; price from `snapshot.prices`), level, XP bar, stats (tap a cell to spend a point), gear tiles → chooser, EQUIP BEST, then the ledger: 11 Family upgrades, the Royal Treasury (deposit/withdraw), 8 estate holdings, the Legacy |
 | Collect | `collect.gd` | `jobs` | today's three quests (tap to claim), fifteen job rows (six paintings cycle), optimistic COLLECT; each row's mastery track fills toward the next threshold and its three markers read reached / next / after from `job.mastery` |
-| Inventory | `inventory.gd` | `items` | equipped gear (tap to unequip), rarity chips, item grid: EQUIP / SELL / REFORGE; the sliders button opens the Collection (donate) |
+| Inventory | `inventory.gd` | `items` | equipped gear (tap to unequip), rarity chips, item grid: EQUIP / SELL; the sliders button opens the Collection (donate) |
 | Shop | `shop.gd` | `shop` | six offers on the 5-minute window, reroll for diamonds, Diamond Goods (energy refill, shield) |
 | Army | `army.gd` | `army` | might, hero support, four soldier cards + next slot, selected soldier (gear, HUNT = autoroll, DISMISS), recruit cards with the published odds |
 | Attack | `attack.gd` | `fight` | REVENGE / TARGETS tabs, revenge card, three targets with the power bar, battle history |

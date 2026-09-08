@@ -15,7 +15,7 @@ const HEX_LABELS := ["kingdom/rep_label_neutral", "kingdom/rep_label_respected",
 ## them baked, with tier II lit); overlays only where the live state differs.
 const HEX_RECTS := [[574, 1028, 47, 59], [656, 1024, 56, 66], [752, 1028, 49, 60], [847, 1028, 49, 60]]
 const LABEL_RECTS := [[562, 1090, 68, 22], [644, 1090, 78, 22], [744, 1090, 68, 22], [830, 1090, 82, 22]]
-const TAB_ASSETS := {"realm": "kingdom/tab_realm_active", "lords": "kingdom/tab_lords", "works": "kingdom/tab_works", "ranks": "kingdom/tab_ranks"}
+const TAB_NAMES := ["realm", "lords", "works", "ranks"]
 const SECTION_Y := {"realm": 0, "lords": 1131, "works": 1131, "ranks": 1483}
 
 var _scroll: ScrollContainer
@@ -64,18 +64,30 @@ func _ready() -> void:
 	_ui["lords_view_all"].pressed.connect(_lords_dialog)
 	_ui["works_view_all"].pressed.connect(_works_dialog)
 	_ui["view_rankings"].pressed.connect(_rankings_dialog)
-	# Tabs are anchors on a page that shows every section.
+	# Tabs are anchors on a page that shows every section, and they show which
+	# section you are in.
+	#
+	# They used to be the four crops the reference painting happens to contain,
+	# which is REALM lit and the other three dark -- so REALM stayed lit however
+	# far you scrolled, and a tab bar that never answers is worse than no tab
+	# bar. The layout carries a plate for each state and a label for each name;
+	# the plate follows the scroll now.
 	var tabs: Array = _ui["tabs"]
-	var names := ["realm", "lords", "works", "ranks"]
+	var widths: Array = Layout.find(SCREEN, "tabs").get("widths", [200, 182, 191, 187])
 	for i in tabs.size():
 		var node: Control = tabs[i]["node"]
 		var chip: TextureRect = tabs[i]["parts"]["chip"]
-		chip.texture = Art.tex(TAB_ASSETS[names[i]])
-		chip.size = chip.texture.get_size()
-		tabs[i]["parts"]["label"].visible = false
-		var hit := UI.hotspot(Rect2(Vector2.ZERO, chip.size))
-		hit.pressed.connect(_jump.bind(names[i]))
+		var w: float = float(widths[i]) if i < widths.size() else 186.0
+		UI.place(chip, Rect2(0, 0, w, 66))
+		var label: TextureRect = tabs[i]["parts"]["label"]
+		label.texture = Art.tex("kingdom/tab_label_" + TAB_NAMES[i])
+		var ls: Vector2 = label.texture.get_size()
+		UI.place(label, Rect2((w - ls.x) / 2.0, (66 - ls.y) / 2.0, ls.x, ls.y))
+		var hit := UI.hotspot(Rect2(0, 0, w, 66))
+		hit.pressed.connect(_jump.bind(TAB_NAMES[i]))
 		node.add_child(hit)
+	_scroll.get_v_scroll_bar().value_changed.connect(func(_v: float) -> void: _light_the_tab())
+	_light_the_tab()
 	# Reputation ladder overlays, drawn over the card's baked hexagons.
 	for i in HEX_RECTS.size():
 		var hr: Array = HEX_RECTS[i]
@@ -265,6 +277,19 @@ func _bonus_text(u: Dictionary) -> String:
 
 
 # --- actions ------------------------------------------------------------------------
+
+## Lights whichever tab's section the page is showing.
+func _light_the_tab() -> void:
+	var top := _scroll.scroll_vertical + 140
+	var at := 0
+	for i in TAB_NAMES.size():
+		if top >= int(SECTION_Y.get(TAB_NAMES[i], 0)):
+			at = i
+	var tabs: Array = _ui["tabs"]
+	for i in tabs.size():
+		var chip: TextureRect = tabs[i]["parts"]["chip"]
+		chip.texture = Art.tex("kingdom/tab_active_empty" if i == at else "kingdom/tab_inactive_empty")
+
 
 func _jump(section: String) -> void:
 	var y: int = SECTION_Y.get(section, 0)

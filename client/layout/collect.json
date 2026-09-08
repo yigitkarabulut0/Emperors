@@ -1,630 +1,631 @@
 {
-  "screen": "collect",
-  "source": "collect.png",
-  "canvas": [
-    941,
-    1672
-  ],
-  "ground": "#0a1620",
-  "fonts": {
-    "title": "Cinzel-Variable.ttf",
-    "body": "CrimsonPro[wght].ttf"
+ "screen": "collect",
+ "source": "collect.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0a1620",
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "CrimsonPro[wght].ttf"
+ },
+ "notes": [
+  "Instances may be [x,y] or {pos:[x,y], assets:{part_id: asset}, texts:{part_id: sample}}.",
+  "Job rows in the reference sit at y 517, 683, 850, 1017, 1187, 1356 (generated art drifts 166-170 px); the game uses pitch 168.",
+  "Only six job paintings exist; the server has 15 jobs. Paintings cycle: job i uses painting i mod 6.",
+  "All quest progress bars are empty in the reference; the fill swatch collect/quest_bar_fill is cut from family.png's XP bar (same yellow bar style).",
+  "The job_row frame keeps row one's grapes tile and the COLLECT button baked; both are always covered by the tile and button parts drawn at the same rects.",
+  "The quests_panel keeps the three cards baked; the quest_card template instances cover them exactly.",
+  "An instance may carry rects:{part_id:[x,y,w,h]} when its asset has a different native size (icons are drawn at native size, never scaled)."
+ ],
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "collect/header",
+   "rect": [
+    155,
+    0,
+    786,
+    292
+   ]
   },
-  "notes": [
-    "Instances may be [x,y] or {pos:[x,y], assets:{part_id: asset}, texts:{part_id: sample}}.",
-    "Job rows in the reference sit at y 517, 683, 850, 1017, 1187, 1356 (generated art drifts 166-170 px); the game uses pitch 168.",
-    "Only six job paintings exist; the server has 15 jobs. Paintings cycle: job i uses painting i mod 6.",
-    "All quest progress bars are empty in the reference; the fill swatch collect/quest_bar_fill is cut from family.png's XP bar (same yellow bar style).",
-    "The job_row frame keeps row one's grapes tile and the COLLECT button baked; both are always covered by the tile and button parts drawn at the same rects.",
-    "The quests_panel keeps the three cards baked; the quest_card template instances cover them exactly.",
-    "An instance may carry rects:{part_id:[x,y,w,h]} when its asset has a different native size (icons are drawn at native size, never scaled)."
-  ],
-  "elements": [
+  {
+   "id": "footer",
+   "kind": "image",
+   "asset": "collect/footer",
+   "rect": [
+    155,
+    1516,
+    786,
+    156
+   ],
+   "anchor": "bottom"
+  },
+  {
+   "id": "quests_panel",
+   "kind": "image",
+   "asset": "collect/quests_panel",
+   "rect": [
+    166,
+    281,
+    762,
+    228
+   ]
+  },
+  {
+   "id": "quests_reset",
+   "kind": "text",
+   "rect": [
+    730,
+    294,
+    190,
+    34
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 500,
+   "color": "#B9C5D0",
+   "align": "right",
+   "valign": "center",
+   "sample": "Resets in 14:26:38"
+  },
+  {
+   "id": "quest_card",
+   "kind": "template",
+   "rect": [
+    179,
+    333,
+    241,
+    165
+   ],
+   "instances": [
     {
-      "id": "header",
-      "kind": "image",
-      "asset": "collect/header",
-      "rect": [
-        155,
-        0,
-        786,
-        292
+     "pos": [
+      179,
+      333
+     ],
+     "assets": {
+      "icon": "icons/quest_scroll",
+      "reward_icon": "icons/reward_crown"
+     },
+     "texts": {
+      "title": "Collect\n20 times",
+      "progress": "0 / 20",
+      "reward": "+100 XP"
+     }
+    },
+    {
+     "pos": [
+      428,
+      333
+     ],
+     "assets": {
+      "icon": "icons/quest_bolt",
+      "reward_icon": "icons/reward_diamond"
+     },
+     "texts": {
+      "title": "Spend\n30 energy",
+      "progress": "0 / 30",
+      "reward": "+50"
+     },
+     "rects": {
+      "reward_icon": [
+       55,
+       119,
+       56,
+       34
+      ],
+      "icon": [
+       22,
+       11,
+       70,
+       68
       ]
+     }
     },
     {
-      "id": "footer",
-      "kind": "image",
-      "asset": "collect/footer",
-      "rect": [
-        155,
-        1516,
-        786,
-        156
-      ],
-      "anchor": "bottom"
-    },
-    {
-      "id": "quests_panel",
-      "kind": "image",
-      "asset": "collect/quests_panel",
-      "rect": [
-        166,
-        281,
-        762,
-        228
+     "pos": [
+      676,
+      333
+     ],
+     "assets": {
+      "icon": "icons/quest_swords",
+      "reward_icon": "icons/reward_crown"
+     },
+     "texts": {
+      "title": "Defeat\n1 rival",
+      "progress": "0 / 1",
+      "reward": "+150 XP"
+     },
+     "rects": {
+      "icon": [
+       21,
+       9,
+       74,
+       70
       ]
-    },
-    {
-      "id": "quests_reset",
-      "kind": "text",
-      "rect": [
-        730,
-        294,
-        190,
-        34
-      ],
-      "font": "body",
-      "size": 26,
-      "weight": 500,
-      "color": "#B9C5D0",
-      "align": "right",
-      "valign": "center",
-      "sample": "Resets in 14:26:38"
-    },
-    {
-      "id": "quest_card",
-      "kind": "template",
-      "rect": [
-        179,
-        333,
-        241,
-        165
-      ],
-      "instances": [
-        {
-          "pos": [
-            179,
-            333
-          ],
-          "assets": {
-            "icon": "icons/quest_scroll",
-            "reward_icon": "icons/reward_crown"
-          },
-          "texts": {
-            "title": "Collect\n20 times",
-            "progress": "0 / 20",
-            "reward": "+100 XP"
-          }
-        },
-        {
-          "pos": [
-            428,
-            333
-          ],
-          "assets": {
-            "icon": "icons/quest_bolt",
-            "reward_icon": "icons/reward_diamond"
-          },
-          "texts": {
-            "title": "Spend\n30 energy",
-            "progress": "0 / 30",
-            "reward": "+50"
-          },
-          "rects": {
-            "reward_icon": [
-              55,
-              119,
-              56,
-              34
-            ],
-            "icon": [
-              22,
-              11,
-              70,
-              68
-            ]
-          }
-        },
-        {
-          "pos": [
-            676,
-            333
-          ],
-          "assets": {
-            "icon": "icons/quest_swords",
-            "reward_icon": "icons/reward_crown"
-          },
-          "texts": {
-            "title": "Defeat\n1 rival",
-            "progress": "0 / 1",
-            "reward": "+150 XP"
-          },
-          "rects": {
-            "icon": [
-              21,
-              9,
-              74,
-              70
-            ]
-          }
-        }
-      ],
-      "parts": [
-        {
-          "id": "frame",
-          "kind": "image",
-          "asset": "collect/quest_card",
-          "rect": [
-            0,
-            0,
-            241,
-            165
-          ]
-        },
-        {
-          "id": "icon",
-          "kind": "image",
-          "asset": "icons/quest_scroll",
-          "rect": [
-            22,
-            13,
-            70,
-            66
-          ]
-        },
-        {
-          "id": "title",
-          "kind": "text",
-          "rect": [
-            97,
-            15,
-            130,
-            58
-          ],
-          "font": "body",
-          "size": 28,
-          "weight": 500,
-          "color": "#F3EDE0",
-          "align": "left",
-          "valign": "center",
-          "line_height": 1.05,
-          "sample": "Collect\n20 times"
-        },
-        {
-          "id": "bar_fill",
-          "kind": "image",
-          "asset": "collect/quest_bar_fill",
-          "rect": [
-            17,
-            86,
-            204,
-            20
-          ],
-          "fill": "left",
-          "ratio": 0.0
-        },
-        {
-          "id": "progress",
-          "kind": "text",
-          "rect": [
-            15,
-            82,
-            208,
-            24
-          ],
-          "font": "body",
-          "size": 22,
-          "weight": 500,
-          "color": "#E9E3D5",
-          "align": "center",
-          "valign": "center",
-          "sample": "0 / 20"
-        },
-        {
-          "id": "reward_icon",
-          "kind": "image",
-          "asset": "icons/reward_crown",
-          "rect": [
-            57,
-            117,
-            48,
-            36
-          ]
-        },
-        {
-          "id": "reward",
-          "kind": "text",
-          "rect": [
-            104,
-            116,
-            120,
-            38
-          ],
-          "font": "body",
-          "size": 30,
-          "weight": 500,
-          "color": "#F3EDE0",
-          "align": "left",
-          "valign": "center",
-          "sample": "+100 XP"
-        }
-      ]
-    },
-    {
-      "id": "job_list",
-      "kind": "scroll",
-      "rect": [
-        155,
-        509,
-        786,
-        1007
-      ],
-      "content": [
-        "job_row"
-      ],
-      "grow": "bottom"
-    },
-    {
-      "id": "job_row",
-      "kind": "template",
-      "rect": [
-        166,
-        517,
-        762,
-        156
-      ],
-      "pitch": 168,
-      "instances": [
-        {
-          "pos": [
-            166,
-            517
-          ],
-          "assets": {
-            "tile": "collect/job_grapes"
-          },
-          "texts": {
-            "name": "GRAPES",
-            "energy": "1",
-            "gold": "2",
-            "xp": "10"
-          }
-        },
-        {
-          "pos": [
-            166,
-            683
-          ],
-          "assets": {
-            "tile": "collect/job_strawberries"
-          },
-          "texts": {
-            "name": "STRAWBERRIES",
-            "energy": "2",
-            "gold": "4",
-            "xp": "20"
-          }
-        },
-        {
-          "pos": [
-            166,
-            850
-          ],
-          "assets": {
-            "tile": "collect/job_wheat"
-          },
-          "texts": {
-            "name": "WHEAT HARVEST",
-            "energy": "3",
-            "gold": "7",
-            "xp": "35"
-          }
-        },
-        {
-          "pos": [
-            166,
-            1017
-          ],
-          "assets": {
-            "tile": "collect/job_timber"
-          },
-          "texts": {
-            "name": "TIMBER CUTTING",
-            "energy": "5",
-            "gold": "12",
-            "xp": "60"
-          }
-        },
-        {
-          "pos": [
-            166,
-            1187
-          ],
-          "assets": {
-            "tile": "collect/job_stone"
-          },
-          "texts": {
-            "name": "STONE QUARRY",
-            "energy": "7",
-            "gold": "18",
-            "xp": "90"
-          }
-        },
-        {
-          "pos": [
-            166,
-            1356
-          ],
-          "assets": {
-            "tile": "collect/job_tax"
-          },
-          "texts": {
-            "name": "ROYAL TAX PICKUP",
-            "energy": "10",
-            "gold": "28",
-            "xp": "140"
-          }
-        }
-      ],
-      "parts": [
-        {
-          "id": "frame",
-          "kind": "image",
-          "asset": "collect/job_row",
-          "rect": [
-            0,
-            0,
-            762,
-            156
-          ]
-        },
-        {
-          "id": "mastery_fill",
-          "kind": "image",
-          "asset": "collect/mastery_fill",
-          "rect": [
-            358,
-            111,
-            380,
-            7
-          ],
-          "fill": "left",
-          "ratio": 0.0,
-          "note": "inside the painted track (rows 628..634 of the reference); the fill runs from its start to where the count stands between the first two markers"
-        },
-        {
-          "id": "mastery_marker_1",
-          "kind": "image",
-          "asset": "collect/mastery_marker",
-          "rect": [
-            353,
-            106,
-            16,
-            16
-          ],
-          "note": "drawn back over the fill exactly where the painting has this diamond (centre x 527)"
-        },
-        {
-          "id": "mastery_marker_2",
-          "kind": "image",
-          "asset": "collect/mastery_marker",
-          "rect": [
-            481,
-            106,
-            16,
-            16
-          ],
-          "note": "drawn back over the fill exactly where the painting has this diamond (centre x 655)"
-        },
-        {
-          "id": "mastery_marker_3",
-          "kind": "image",
-          "asset": "collect/mastery_marker",
-          "rect": [
-            617,
-            106,
-            16,
-            16
-          ],
-          "note": "drawn back over the fill exactly where the painting has this diamond (centre x 791)"
-        },
-        {
-          "id": "tile",
-          "kind": "image",
-          "asset": "collect/job_grapes",
-          "rect": [
-            2,
-            -2,
-            190,
-            158
-          ]
-        },
-        {
-          "id": "name",
-          "kind": "text",
-          "rect": [
-            190,
-            12,
-            250,
-            36
-          ],
-          "font": "title",
-          "size": 24,
-          "weight": 700,
-          "color": "#F4EEE2",
-          "align": "left",
-          "valign": "center",
-          "sample": "GRAPES"
-        },
-        {
-          "id": "energy_icon",
-          "kind": "image",
-          "asset": "icons/energy",
-          "rect": [
-            189,
-            44,
-            38,
-            48
-          ]
-        },
-        {
-          "id": "energy",
-          "kind": "text",
-          "rect": [
-            230,
-            48,
-            52,
-            36
-          ],
-          "font": "body",
-          "size": 30,
-          "weight": 600,
-          "color": "#F4EEE2",
-          "align": "left",
-          "valign": "center",
-          "sample": "1"
-        },
-        {
-          "id": "gold_icon",
-          "kind": "image",
-          "asset": "icons/coin",
-          "rect": [
-            284,
-            44,
-            48,
-            46
-          ]
-        },
-        {
-          "id": "gold",
-          "kind": "text",
-          "rect": [
-            330,
-            48,
-            60,
-            36
-          ],
-          "font": "body",
-          "size": 30,
-          "weight": 600,
-          "color": "#F4EEE2",
-          "align": "left",
-          "valign": "center",
-          "sample": "2"
-        },
-        {
-          "id": "xp_icon",
-          "kind": "image",
-          "asset": "icons/xp",
-          "rect": [
-            392,
-            47,
-            48,
-            40
-          ]
-        },
-        {
-          "id": "xp",
-          "kind": "text",
-          "rect": [
-            438,
-            48,
-            74,
-            36
-          ],
-          "font": "body",
-          "size": 30,
-          "weight": 600,
-          "color": "#F4EEE2",
-          "align": "left",
-          "valign": "center",
-          "sample": "10"
-        },
-        {
-          "id": "counter",
-          "kind": "text",
-          "rect": [
-            441,
-            15,
-            89,
-            30
-          ],
-          "font": "body",
-          "size": 24,
-          "weight": 500,
-          "color": "#DED8CC",
-          "align": "right",
-          "valign": "center",
-          "sample": "0 / 25"
-        },
-        {
-          "id": "collect",
-          "kind": "button",
-          "asset": "collect/collect_button",
-          "rect": [
-            566,
-            13,
-            178,
-            76
-          ],
-          "action": "collect"
-        },
-        {
-          "id": "mastery_1",
-          "kind": "text",
-          "rect": [
-            366,
-            127,
-            110,
-            26
-          ],
-          "font": "body",
-          "size": 21,
-          "weight": 500,
-          "color": "#E4DFD3",
-          "align": "left",
-          "valign": "center",
-          "sample": "25  +5%"
-        },
-        {
-          "id": "mastery_2",
-          "kind": "text",
-          "rect": [
-            494,
-            127,
-            110,
-            26
-          ],
-          "font": "body",
-          "size": 21,
-          "weight": 500,
-          "color": "#E4DFD3",
-          "align": "left",
-          "valign": "center",
-          "sample": "50  +10%"
-        },
-        {
-          "id": "mastery_3",
-          "kind": "text",
-          "rect": [
-            629,
-            127,
-            120,
-            26
-          ],
-          "font": "body",
-          "size": 21,
-          "weight": 500,
-          "color": "#E4DFD3",
-          "align": "left",
-          "valign": "center",
-          "sample": "100  +15%"
-        }
-      ],
-      "static_baked": [
-        "MASTERY BONUSES label at abs [364,622,150,18]",
-        "mastery track abs [522,627,384,9] stays baked; its fill and its three diamonds (centres x 529, 655, 791) are drawn over it as parts"
-      ]
+     }
     }
-  ]
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "collect/quest_card",
+     "rect": [
+      0,
+      0,
+      241,
+      165
+     ]
+    },
+    {
+     "id": "icon",
+     "kind": "image",
+     "asset": "icons/quest_scroll",
+     "rect": [
+      22,
+      13,
+      70,
+      66
+     ]
+    },
+    {
+     "id": "title",
+     "kind": "text",
+     "rect": [
+      97,
+      15,
+      130,
+      58
+     ],
+     "font": "body",
+     "size": 28,
+     "weight": 500,
+     "color": "#F3EDE0",
+     "align": "left",
+     "valign": "center",
+     "line_height": 1.05,
+     "sample": "Collect\n20 times"
+    },
+    {
+     "id": "bar_fill",
+     "kind": "image",
+     "asset": "collect/quest_bar_fill",
+     "rect": [
+      17,
+      86,
+      204,
+      20
+     ],
+     "fill": "left",
+     "ratio": 0.0
+    },
+    {
+     "id": "progress",
+     "kind": "text",
+     "rect": [
+      15,
+      82,
+      208,
+      24
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 500,
+     "color": "#E9E3D5",
+     "align": "center",
+     "valign": "center",
+     "sample": "0 / 20"
+    },
+    {
+     "id": "reward_icon",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      57,
+      117,
+      48,
+      36
+     ]
+    },
+    {
+     "id": "reward",
+     "kind": "text",
+     "rect": [
+      104,
+      116,
+      120,
+      38
+     ],
+     "font": "body",
+     "size": 30,
+     "weight": 500,
+     "color": "#F3EDE0",
+     "align": "left",
+     "valign": "center",
+     "sample": "+100 XP"
+    }
+   ]
+  },
+  {
+   "id": "job_list",
+   "kind": "scroll",
+   "rect": [
+    155,
+    509,
+    786,
+    1007
+   ],
+   "content": [
+    "job_row"
+   ],
+   "grow": "bottom"
+  },
+  {
+   "id": "job_row",
+   "kind": "template",
+   "rect": [
+    166,
+    517,
+    762,
+    156
+   ],
+   "pitch": 168,
+   "instances": [
+    {
+     "pos": [
+      166,
+      517
+     ],
+     "assets": {
+      "tile": "collect/job_grapes"
+     },
+     "texts": {
+      "name": "GRAPES",
+      "energy": "1",
+      "gold": "2",
+      "xp": "10"
+     }
+    },
+    {
+     "pos": [
+      166,
+      683
+     ],
+     "assets": {
+      "tile": "collect/job_strawberries"
+     },
+     "texts": {
+      "name": "STRAWBERRIES",
+      "energy": "2",
+      "gold": "4",
+      "xp": "20"
+     }
+    },
+    {
+     "pos": [
+      166,
+      850
+     ],
+     "assets": {
+      "tile": "collect/job_wheat"
+     },
+     "texts": {
+      "name": "WHEAT HARVEST",
+      "energy": "3",
+      "gold": "7",
+      "xp": "35"
+     }
+    },
+    {
+     "pos": [
+      166,
+      1017
+     ],
+     "assets": {
+      "tile": "collect/job_timber"
+     },
+     "texts": {
+      "name": "TIMBER CUTTING",
+      "energy": "5",
+      "gold": "12",
+      "xp": "60"
+     }
+    },
+    {
+     "pos": [
+      166,
+      1187
+     ],
+     "assets": {
+      "tile": "collect/job_stone"
+     },
+     "texts": {
+      "name": "STONE QUARRY",
+      "energy": "7",
+      "gold": "18",
+      "xp": "90"
+     }
+    },
+    {
+     "pos": [
+      166,
+      1356
+     ],
+     "assets": {
+      "tile": "collect/job_tax"
+     },
+     "texts": {
+      "name": "ROYAL TAX PICKUP",
+      "energy": "10",
+      "gold": "28",
+      "xp": "140"
+     }
+    }
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "collect/job_row",
+     "rect": [
+      0,
+      0,
+      762,
+      156
+     ]
+    },
+    {
+     "id": "mastery_fill",
+     "kind": "image",
+     "asset": "collect/mastery_fill",
+     "rect": [
+      358,
+      111,
+      380,
+      7
+     ],
+     "fill": "left",
+     "ratio": 0.0,
+     "note": "inside the painted track (rows 628..634 of the reference); the fill runs from its start to where the count stands between the first two markers"
+    },
+    {
+     "id": "mastery_marker_1",
+     "kind": "image",
+     "asset": "collect/mastery_marker",
+     "rect": [
+      353,
+      106,
+      16,
+      16
+     ],
+     "note": "drawn back over the fill exactly where the painting has this diamond (centre x 527)"
+    },
+    {
+     "id": "mastery_marker_2",
+     "kind": "image",
+     "asset": "collect/mastery_marker",
+     "rect": [
+      481,
+      106,
+      16,
+      16
+     ],
+     "note": "drawn back over the fill exactly where the painting has this diamond (centre x 655)"
+    },
+    {
+     "id": "mastery_marker_3",
+     "kind": "image",
+     "asset": "collect/mastery_marker",
+     "rect": [
+      617,
+      106,
+      16,
+      16
+     ],
+     "note": "drawn back over the fill exactly where the painting has this diamond (centre x 791)"
+    },
+    {
+     "id": "tile",
+     "kind": "image",
+     "asset": "collect/job_grapes",
+     "rect": [
+      2,
+      -2,
+      190,
+      158
+     ]
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      190,
+      12,
+      250,
+      36
+     ],
+     "font": "title",
+     "size": 24,
+     "weight": 700,
+     "color": "#F4EEE2",
+     "align": "left",
+     "valign": "center",
+     "sample": "GRAPES"
+    },
+    {
+     "id": "energy_icon",
+     "kind": "image",
+     "asset": "icons/energy",
+     "rect": [
+      189,
+      44,
+      38,
+      48
+     ]
+    },
+    {
+     "id": "energy",
+     "kind": "text",
+     "rect": [
+      230,
+      48,
+      52,
+      36
+     ],
+     "font": "body",
+     "size": 30,
+     "weight": 600,
+     "color": "#F4EEE2",
+     "align": "left",
+     "valign": "center",
+     "sample": "1"
+    },
+    {
+     "id": "gold_icon",
+     "kind": "image",
+     "asset": "icons/coin",
+     "rect": [
+      284,
+      44,
+      48,
+      46
+     ]
+    },
+    {
+     "id": "gold",
+     "kind": "text",
+     "rect": [
+      330,
+      48,
+      60,
+      36
+     ],
+     "font": "body",
+     "size": 30,
+     "weight": 600,
+     "color": "#F4EEE2",
+     "align": "left",
+     "valign": "center",
+     "sample": "2"
+    },
+    {
+     "id": "xp_icon",
+     "kind": "image",
+     "asset": "icons/xp",
+     "rect": [
+      392,
+      47,
+      48,
+      40
+     ]
+    },
+    {
+     "id": "xp",
+     "kind": "text",
+     "rect": [
+      438,
+      48,
+      74,
+      36
+     ],
+     "font": "body",
+     "size": 30,
+     "weight": 600,
+     "color": "#F4EEE2",
+     "align": "left",
+     "valign": "center",
+     "sample": "10"
+    },
+    {
+     "id": "counter",
+     "kind": "text",
+     "rect": [
+      441,
+      15,
+      89,
+      30
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 500,
+     "color": "#DED8CC",
+     "align": "right",
+     "valign": "center",
+     "sample": "0 / 25"
+    },
+    {
+     "id": "collect",
+     "kind": "button",
+     "asset": "collect/collect_button",
+     "rect": [
+      566,
+      4,
+      178,
+      95
+     ],
+     "action": "collect",
+     "keep_texture_size": true
+    },
+    {
+     "id": "mastery_1",
+     "kind": "text",
+     "rect": [
+      366,
+      127,
+      110,
+      26
+     ],
+     "font": "body",
+     "size": 21,
+     "weight": 500,
+     "color": "#E4DFD3",
+     "align": "left",
+     "valign": "center",
+     "sample": "25  +5%"
+    },
+    {
+     "id": "mastery_2",
+     "kind": "text",
+     "rect": [
+      494,
+      127,
+      110,
+      26
+     ],
+     "font": "body",
+     "size": 21,
+     "weight": 500,
+     "color": "#E4DFD3",
+     "align": "left",
+     "valign": "center",
+     "sample": "50  +10%"
+    },
+    {
+     "id": "mastery_3",
+     "kind": "text",
+     "rect": [
+      629,
+      127,
+      120,
+      26
+     ],
+     "font": "body",
+     "size": 21,
+     "weight": 500,
+     "color": "#E4DFD3",
+     "align": "left",
+     "valign": "center",
+     "sample": "100  +15%"
+    }
+   ],
+   "static_baked": [
+    "MASTERY BONUSES label at abs [364,622,150,18]",
+    "mastery track abs [522,627,384,9] stays baked; its fill and its three diamonds (centres x 529, 655, 791) are drawn over it as parts"
+   ]
+  }
+ ]
 }

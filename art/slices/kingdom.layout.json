@@ -46,13 +46,14 @@
    "id": "edit_name",
    "kind": "button",
    "rect": [
-    678,
-    346,
-    38,
-    37
+    650,
+    317,
+    95,
+    95
    ],
    "action": "kingdom_rename",
-   "note": "quill box is baked into header"
+   "note": "quill box is baked into header",
+   "keep_texture_size": true
   },
   {
    "id": "motto",
@@ -237,19 +238,19 @@
      "kind": "image",
      "asset": "kingdom/tab_label_<name>",
      "rect": [
-      0,
-      0,
-      0,
-      0
+      50,
+      20,
+      86,
+      24
      ],
      "align": "center"
     }
    ],
    "widths": [
-    206,
-    186,
-    197,
-    192
+    200,
+    182,
+    191,
+    187
    ],
    "labels": {
     "realm": {
@@ -374,12 +375,13 @@
    "kind": "button",
    "rect": [
     228,
-    1071,
+    1052,
     254,
-    58
+    95
    ],
    "action": "kingdom_donate",
-   "asset": "kingdom/btn_donate"
+   "asset": "kingdom/btn_donate",
+   "keep_texture_size": true
   },
   {
    "id": "reputation_card",
@@ -560,12 +562,13 @@
    "id": "lords_view_all",
    "kind": "button",
    "rect": [
-    440,
-    1155,
-    85,
-    30
+    400,
+    1147,
+    130,
+    42
    ],
-   "action": "kingdom_lords"
+   "action": "kingdom_lords",
+   "keep_texture_size": true
   },
   {
    "id": "lord_row",
@@ -724,12 +727,13 @@
    "id": "works_view_all",
    "kind": "button",
    "rect": [
-    850,
-    1155,
-    80,
-    30
+    842,
+    1122,
+    95,
+    95
    ],
-   "action": "kingdom_works"
+   "action": "kingdom_works",
+   "keep_texture_size": true
   },
   {
    "id": "work_row",
@@ -827,12 +831,13 @@
      "kind": "button",
      "rect": [
       259,
-      8,
+      0,
       110,
-      50
+      69
      ],
      "action": "kingdom_upgrade",
-     "asset": "kingdom/btn_upgrade"
+     "asset": "kingdom/btn_upgrade",
+     "keep_texture_size": true
     }
    ]
   },
@@ -870,11 +875,12 @@
    "kind": "button",
    "rect": [
     795,
-    1585,
+    1552,
     135,
-    30
+    95
    ],
-   "action": "kingdom_rankings"
+   "action": "kingdom_rankings",
+   "keep_texture_size": true
   },
   {
    "id": "foliage_bottom",
@@ -885,6 +891,8 @@
     1618,
     786,
     54
-   ], "anchor": "bottom"}
+   ],
+   "anchor": "bottom"
+  }
  ]
 }

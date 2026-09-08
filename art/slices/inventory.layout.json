@@ -192,10 +192,11 @@
     171,
     598,
     136,
-    60
+    95
    ],
    "action": "filter:all",
-   "active": true
+   "active": true,
+   "keep_texture_size": true
   },
   {
    "id": "chip_common",
@@ -205,9 +206,10 @@
     302,
     598,
     156,
-    60
+    95
    ],
-   "action": "filter:common"
+   "action": "filter:common",
+   "keep_texture_size": true
   },
   {
    "id": "chip_uncommon",
@@ -217,9 +219,10 @@
     460,
     598,
     181,
-    60
+    95
    ],
-   "action": "filter:uncommon"
+   "action": "filter:uncommon",
+   "keep_texture_size": true
   },
   {
    "id": "chip_rare",
@@ -229,9 +232,10 @@
     643,
     598,
     184,
-    60
+    95
    ],
-   "action": "filter:rare"
+   "action": "filter:rare",
+   "keep_texture_size": true
   },
   {
    "id": "chip_epic",
@@ -239,11 +243,12 @@
    "asset": "inventory/chip_epic",
    "rect": [
     171,
-    658,
+    700,
     161,
-    60
+    95
    ],
-   "action": "filter:epic"
+   "action": "filter:epic",
+   "keep_texture_size": true
   },
   {
    "id": "chip_legendary",
@@ -251,11 +256,12 @@
    "asset": "inventory/chip_legendary",
    "rect": [
     336,
-    658,
+    700,
     172,
-    60
+    95
    ],
-   "action": "filter:legendary"
+   "action": "filter:legendary",
+   "keep_texture_size": true
   },
   {
    "id": "chip_mystic",
@@ -263,11 +269,12 @@
    "asset": "inventory/chip_mystic",
    "rect": [
     511,
-    658,
+    700,
     152,
-    60
+    95
    ],
-   "action": "filter:mystic"
+   "action": "filter:mystic",
+   "keep_texture_size": true
   },
   {
    "id": "chip_special",
@@ -275,11 +282,12 @@
    "asset": "inventory/chip_special",
    "rect": [
     666,
-    658,
+    700,
     161,
-    60
+    95
    ],
-   "action": "filter:special"
+   "action": "filter:special",
+   "keep_texture_size": true
   },
   {
    "id": "chip_label_style",
@@ -306,20 +314,21 @@
    "asset": "inventory/sliders_button",
    "rect": [
     832,
-    596,
+    598,
     100,
-    124
+    197
    ],
-   "action": "sort"
+   "action": "sort",
+   "keep_texture_size": true
   },
   {
    "id": "list",
    "kind": "scroll",
    "rect": [
     155,
-    725,
+    812,
     786,
-    835
+    748
    ],
    "content": [
     {

@@ -12,11 +12,11 @@
   "identity_plate has name, level and xp text erased; the lion crest and quill button stay baked.",
   "stats_strip is one image holding the three cells; only the numbers are erased.",
   "gear_panel keeps YOUR GEAR, the ornament line, EQUIP BEST and the three tiles baked; the tiles are re-drawn over the same rects from items/ so an equipped item can change. gear_tile_empty is an inpainted frame for an empty slot (not in the reference).",
-  "upgrade_card is the GRANARY card with painting, name, level and bonus text erased so any upgrade can be shown; granary_art is the painting. Only a MAX LEVEL button exists in the reference — a purchasable upgrade has no button art here; reuse btn_max_level's plate with live text if needed (its label is baked).",
+  "upgrade_card is the GRANARY card with painting, name, level and bonus text erased so any upgrade can be shown; granary_art is the painting. Only a MAX LEVEL button exists in the reference \u2014 a purchasable upgrade has no button art here; reuse btn_max_level's plate with live text if needed (its label is baked).",
   "family_sword/armor/horse under items/ include their gold frame, red gem and the Lv badge plate; the badge number is erased."
  ],
  "fonts": {
-  "title": "Cinzel — caps with flared serifs (name, LEVEL, GRANARY, stat labels)",
+  "title": "Cinzel \u2014 caps with flared serifs (name, LEVEL, GRANARY, stat labels)",
   "body": "transitional serif (XP text, stat numbers, bonus line, Lv. badges)"
  },
  "elements": [
@@ -163,12 +163,13 @@
      "kind": "button",
      "asset": "family/btn_edit",
      "rect": [
-      697,
-      26,
-      36,
-      57
+      665,
+      7,
+      95,
+      95
      ],
-     "action": "rename"
+     "action": "rename",
+     "keep_texture_size": true
     }
    ]
   },
@@ -285,11 +286,12 @@
      "asset": "family/btn_equip_best",
      "rect": [
       482,
-      8,
+      0,
       248,
-      68
+      95
      ],
-     "action": "equip_best"
+     "action": "equip_best",
+     "keep_texture_size": true
     },
     {
      "id": "tile_weapon",
@@ -625,12 +627,13 @@
        "asset": "family/btn_max_level",
        "rect": [
         401,
-        147,
+        144,
         326,
-        90
+        95
        ],
        "action": "upgrade",
-       "note": "label MAX LEVEL is baked in the button; the card has the button region erased, so a buyable level can carry a different plate/text there (no separate art in reference)"
+       "note": "label MAX LEVEL is baked in the button; the card has the button region erased, so a buyable level can carry a different plate/text there (no separate art in reference)",
+       "keep_texture_size": true
       }
      ]
     }

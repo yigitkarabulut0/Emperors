@@ -208,7 +208,7 @@
      "kind": "text",
      "rect": [
       15,
-      84,
+      82,
       208,
       24
      ],
@@ -563,11 +563,12 @@
      "asset": "collect/collect_button",
      "rect": [
       566,
-      13,
+      4,
       178,
-      76
+      95
      ],
-     "action": "collect"
+     "action": "collect",
+     "keep_texture_size": true
     },
     {
      "id": "mastery_1",

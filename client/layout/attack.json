@@ -52,9 +52,9 @@
    "action": "tab:revenge",
    "rect": [
     183,
-    284,
+    276,
     368,
-    78
+    95
    ],
    "states": {
     "active": {
@@ -110,7 +110,8 @@
     "valign": "center",
     "sample": "1",
     "only_when": "active"
-   }
+   },
+   "keep_texture_size": true
   },
   {
    "id": "tab_targets",
@@ -118,9 +119,9 @@
    "action": "tab:targets",
    "rect": [
     553,
-    288,
+    274,
     368,
-    68
+    95
    ],
    "states": {
     "inactive": {
@@ -158,7 +159,8 @@
       "sample": "TARGETS"
      }
     }
-   }
+   },
+   "keep_texture_size": true
   },
   {
    "id": "revenge_card",
@@ -289,11 +291,12 @@
      "asset": "attack/btn_attack_red",
      "rect": [
       484,
-      135,
+      122,
       248,
-      68
+      95
      ],
-     "action": "attack_revenge"
+     "action": "attack_revenge",
+     "keep_texture_size": true
     }
    ]
   },
@@ -446,12 +449,13 @@
      "asset": "attack/btn_attack_green",
      "rect": [
       498,
-      85,
+      70,
       233,
-      66
+      95
      ],
      "action": "attack",
-     "only_when": "not shielded"
+     "only_when": "not shielded",
+     "keep_texture_size": true
     },
     {
      "id": "shield",
@@ -573,12 +577,13 @@
      "kind": "button",
      "rect": [
       610,
-      18,
+      0,
       120,
-      36
+      95
      ],
      "action": "history_all",
-     "note": "label 'View All >' is baked"
+     "note": "label 'View All >' is baked",
+     "keep_texture_size": true
     },
     {
      "id": "row",

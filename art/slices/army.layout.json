@@ -114,13 +114,14 @@
    "id": "support_info",
    "kind": "button",
    "rect": [
-    866,
-    356,
-    40,
-    40
+    838,
+    328,
+    95,
+    95
    ],
    "action": "hero_support_info",
-   "baked": true
+   "baked": true,
+   "keep_texture_size": true
   },
   {
    "id": "soldiers_panel",
@@ -387,11 +388,12 @@
    "asset": "army/auto_equip",
    "rect": [
     683,
-    504,
+    480,
     234,
-    47
+    95
    ],
-   "action": "autoequip"
+   "action": "autoequip",
+   "keep_texture_size": true
   },
   {
    "id": "selected_panel",
@@ -688,11 +690,12 @@
    "asset": "army/dismiss",
    "rect": [
     728,
-    1144,
+    1136,
     178,
-    78
+    95
    ],
-   "action": "dismiss"
+   "action": "dismiss",
+   "keep_texture_size": true
   },
   {
    "id": "recruit_panel",
@@ -908,9 +911,9 @@
      "kind": "button",
      "rect": [
       12,
-      165,
+      144,
       215,
-      54
+      95
      ],
      "action": "recruit",
      "baked": true,
@@ -933,7 +936,8 @@
        218,
        54
       ]
-     ]
+     ],
+     "keep_texture_size": true
     }
    ]
   },

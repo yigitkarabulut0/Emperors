@@ -261,6 +261,13 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 			else:
 				sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 				sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+			# Without a deadzone a drag that starts on a child button never
+			# reaches the container, because the button consumes it -- and every
+			# row in this game is made of buttons. Each screen used to set this
+			# by hand in _ready, which worked until a scroll was added that did
+			# not: the army's slot row could be seen and not moved. It belongs
+			# here, where a scroll cannot be built without it.
+			sc.scroll_deadzone = 14
 			var content := Control.new()
 			content.custom_minimum_size = r.size
 			content.mouse_filter = Control.MOUSE_FILTER_PASS

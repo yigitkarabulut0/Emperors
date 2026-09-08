@@ -481,33 +481,6 @@ type soldierReq struct {
 	ActionSeq int64  `json:"action_seq"`
 }
 
-type autoRollReq struct {
-	Slot       int    `json:"slot"`
-	TypeID     string `json:"type_id"`
-	TargetTier string `json:"target_tier"`
-	MaxGold    int64  `json:"max_gold"`
-	ActionSeq  int64  `json:"action_seq"`
-}
-
-// autoRoll chases a tier for a budget, instead of sixty-seven round trips.
-func (a *api) autoRoll(w http.ResponseWriter, r *http.Request) {
-	pid, ok := PlayerID(r.Context())
-	if !ok {
-		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
-		return
-	}
-	var req autoRollReq
-	if !decode(w, r, &req) {
-		return
-	}
-	v, err := a.s().AutoRoll(r.Context(), pid, req.Slot, req.TypeID, req.TargetTier, req.MaxGold, req.ActionSeq)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, v)
-}
-
 // recruitOdds publishes the real tier chances. Required disclosure, and also
 // the thing that makes a budget an informed decision rather than a guess.
 func (a *api) recruitOdds(w http.ResponseWriter, r *http.Request) {

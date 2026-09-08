@@ -24,27 +24,14 @@ var _selected := 1
 var _loaded_ms := -100000
 var _busy := false
 var _numeral_labels: Dictionary = {}
+var _next_card: Dictionary = {}
 var _sel_numeral_label: Label
 
 
 func _ready() -> void:
 	_ui = Layout.build(SCREEN, self)
-	_cards = _ui["soldier_card"]
-	for i in _cards.size():
-		var p: Dictionary = _cards[i]["parts"]
-		p["tap"].pressed.connect(_select.bind(i + 1))
-		var np: Control = p["selected_frame"]
-		if np is NinePatchRect:
-			np.draw_center = false
-			np.patch_margin_left = 8; np.patch_margin_top = 14; np.patch_margin_right = 10; np.patch_margin_bottom = 14
-		var l := UI.label("", 22, Color("#F2E6C8"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-		UI.place(l, Layout.rect_of(Layout.find(SCREEN, "numeral")))
-		l.visible = false
-		_cards[i]["node"].add_child(l)
-		_numeral_labels[i] = l
+	_ui["soldier_strip"].set_meta("origin", Layout.rect_of(Layout.element(SCREEN, "soldier_strip")).position)
 	_ui["auto_equip"].pressed.connect(_auto_equip)
-	_ui["unlock"].pressed.connect(_buy_slot)
-	_ui["hunt"].pressed.connect(_hunt)
 	_ui["dismiss"].pressed.connect(_dismiss)
 	_ui["support_info"].pressed.connect(func() -> void:
 		Dialog.ask(self, {"title": "Hero support", "body": "Your Family upgrades (Armoury, Bulwark, Stables) lift every soldier's attack, defence and speed.", "confirm_text": "OK"}))
@@ -119,11 +106,52 @@ func _paint() -> void:
 	_ui["soldiers_count"].text = "(%d/%d)" % [filled, slots.size()]
 	if _slot(_selected).is_empty() and not slots.is_empty():
 		_selected = int(slots[0].get("index", 1))
+	_build_strip(slots.size())
 	for i in _cards.size():
 		_paint_card(i)
 	_paint_next_slot()
 	_paint_selected()
 	_paint_recruits()
+
+
+## One card per slot the player owns, with the next-slot tile after the last.
+##
+## The layout used to paint four cards at fixed positions, which is what the
+## reference happened to show; a player can hold ten, and slots five upward were
+## simply not on the screen -- so neither were the soldiers in them, and only
+## the first four could be selected or dismissed. The row scrolls sideways
+## instead, and "unlock the next slot" is where it belongs: at the end of it.
+func _build_strip(count: int) -> void:
+	var sc: ScrollContainer = _ui["soldier_strip"]
+	var content: Control = sc.get_meta("content")
+	var tpl := Layout.find(SCREEN, "soldier_card")
+	var pitch := float(tpl.get("pitch", 151))
+	while _cards.size() < count:
+		var i := _cards.size()
+		var built := Layout.instantiate(tpl)
+		built["node"].position = Vector2(i * pitch, 0)
+		content.add_child(built["node"])
+		var p: Dictionary = built["parts"]
+		p["tap"].pressed.connect(_select.bind(i + 1))
+		var np: Control = p["selected_frame"]
+		if np is NinePatchRect:
+			np.draw_center = false
+			np.patch_margin_left = 8; np.patch_margin_top = 14
+			np.patch_margin_right = 10; np.patch_margin_bottom = 14
+		var l := UI.label("", 22, Color("#F2E6C8"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
+		UI.place(l, Layout.rect_of(Layout.find(SCREEN, "numeral")))
+		l.visible = false
+		built["node"].add_child(l)
+		_numeral_labels[i] = l
+		_cards.append(built)
+	for i in _cards.size():
+		_cards[i]["node"].visible = i < count
+	if _next_card.is_empty():
+		_next_card = Layout.instantiate(Layout.find(SCREEN, "next_slot_card"))
+		content.add_child(_next_card["node"])
+		_next_card["parts"]["unlock"].pressed.connect(_buy_slot)
+	_next_card["node"].position = Vector2(count * pitch, 0)
+	content.custom_minimum_size = Vector2(count * pitch + 143 + 8, sc.size.y)
 
 
 func _paint_card(i: int) -> void:
@@ -171,22 +199,25 @@ func _numeral(plate: TextureRect, label: Label, tier: int) -> void:
 
 
 func _paint_next_slot() -> void:
+	if _next_card.is_empty():
+		return
+	var np: Dictionary = _next_card["parts"]
 	var ns: Dictionary = _army.get("next_slot", {})
 	var unlocked := bool(ns.get("unlocked", false))
 	if bool(ns.get("free", false)):
-		_ui["next_slot_price"].text = "FREE"
+		np["price"].text = "FREE"
 	elif unlocked:
-		_ui["next_slot_price"].text = UI.short_number(int(ns.get("cost", 0)))
+		np["price"].text = UI.short_number(int(ns.get("cost", 0)))
 	else:
-		_ui["next_slot_price"].text = "LV %d" % int(ns.get("level_gate", 1))
-	_ui["unlock"].modulate = Color.WHITE if unlocked else Color(0.5, 0.5, 0.5)
+		np["price"].text = "LV %d" % int(ns.get("level_gate", 1))
+	np["unlock"].modulate = Color.WHITE if unlocked else Color(0.5, 0.5, 0.5)
 
 
 func _paint_selected() -> void:
 	var s := _slot(_selected)
 	var soldier: Variant = s.get("soldier", null) if not s.is_empty() else null
 	var has := soldier is Dictionary
-	for id in ["sel_portrait", "sel_numeral", "sel_tier_chip", "hunt", "dismiss", "sel_troop_bar"]:
+	for id in ["sel_portrait", "sel_numeral", "sel_tier_chip", "dismiss", "sel_troop_bar"]:
 		_ui[id].visible = has
 	if not has:
 		_ui["sel_name"].text = "EMPTY SLOT"
@@ -354,29 +385,6 @@ func _dismiss() -> void:
 	var res: Api.Response = await GameState.act("/v1/army/dismiss", {"soldier_id": str(soldier.get("id", ""))})
 	_busy = false
 	if res.ok:
-		await _load()
-
-
-func _hunt() -> void:
-	var soldier: Variant = _slot(_selected).get("soldier", null)
-	if _busy or not (soldier is Dictionary):
-		return
-	var type := str(soldier.get("type", "peasant"))
-	var options: Array = []
-	for t in ["uncommon", "rare", "epic", "legendary"]:
-		options.append({"id": t, "label": "Hunt for %s" % t.capitalize(), "sub": "Re-recruit until a %s or better lands" % t})
-	var target := await Dialog.choose(self, {"title": "Hunt a tier", "body": "Keeps recruiting %ss into this slot until the target tier drops, up to your budget." % type, "options": options})
-	if target == "":
-		return
-	var budget := await Dialog.prompt_amount(self, {"title": "Gold budget", "placeholder": "Max gold to spend", "preset": str(mini(GameState.display_gold(), 200000)), "confirm_text": "Hunt"})
-	if budget["action"] != "confirm" or int(budget["value"]) <= 0:
-		return
-	_busy = true
-	var res: Api.Response = await GameState.act("/v1/army/autoroll", {"slot": _selected, "type_id": type, "target_tier": target, "max_gold": int(budget["value"])})
-	_busy = false
-	if res.ok:
-		GameState.action_failed.emit("%d rolls, %s gold: %s" % [int(res.data.get("rolls", 0)), UI.grouped(int(res.data.get("gold_spent", 0))),
-			("got a %s" % str(res.data.get("final_tier", ""))) if bool(res.data.get("hit_target", false)) else "stopped (%s)" % str(res.data.get("stopped_because", ""))])
 		await _load()
 
 

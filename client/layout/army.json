@@ -1,99 +1,953 @@
 {
-  "screen": "army",
-  "source": "army.png",
-  "canvas": [941, 1672],
-  "ground": "#0B151F",
-  "notes": [
-    "All rects are source pixels = layout units. Content starts at x=170 (army.png's rail is wider than collect's; the gutter 155..170 is ground).",
-    "Header: this screen's baked pills were larger than the shared chrome pills (gold 185..412, diamond 432..650, energy 668..903, y 24..84). They are inpainted; up to 15 px right of and 5 px below each shared pill shows inpainted sky. The might number's background (263,281,146,50) is inpainted too; the rendered number covers it.",
-    "Fonts: 'title' glyphs in the reference are ~25-30% narrower than Cinzel at the same cap height; sizes below are cap-height*1.4 and the width budget is the rect. 'body' is a transitional serif (Crimson Pro / EB Garamond are close).",
-    "Soldier cards in the reference are not uniform (x=174 w145 selected, 320 w149, 481 w147, 631 w137, next slot 778 w143). Template is card 3's frame (149x337); use pitch 151 -> slots at 174,325,476,627 and next slot at 778 which matches the reference exactly.",
-    "portraits/soldier_villager is 134x172 (cut inside the selected card's thicker frame); it must be drawn stretched to the 139x166 portrait interior (3.7%). mercenary/gladiator are cut at 139x166.",
-    "Only numerals I, II, III exist in the reference (army/numeral_1..3); tier IV+ needs one more plate. Only the villager exists as a large portrait (portraits/soldier_villager_large); for other selected types scale the small portrait interior into the large tile or reuse the frame.",
-    "The troop bar is 100% full in the reference; army/troop_bar_full is the full bar, clip it from the left for partial values (no empty track exists in the reference).",
-    "army/card_selected_frame is a nine-patch drawn with draw_center=false over a card slot at offset (-2,-11), size 153x349, margins l8 t14 r10 b14.",
-    "Gear tile level badges: the plate under 'Lv. N' is kept (row-filled), text is live.",
-    "Recruit cards: chips were erased from the card art and are drawn as a nine-patch (army/recruit_chip, margins 8/6/8/6) at each card's chip rect, widths differ per card. Names, coins, (i) line and RECRUIT labels are baked."
-  ],
-  "fonts": {"title": "Cinzel (caps, flared serifs)", "body": "transitional serif (Crimson Pro)"},
-  "elements": [
-    {"id": "header", "kind": "image", "asset": "army/header", "rect": [170, 0, 771, 346]},
-    {"id": "might_value", "kind": "text", "rect": [263, 281, 146, 50], "font": "title", "size": 40, "weight": 700, "color": "#F4EA8B", "outline": "#2A1A08", "align": "left", "sample": "95,430"},
-
-    {"id": "hero_support", "kind": "image", "asset": "army/hero_support", "rect": [170, 342, 771, 148]},
-    {"id": "support_attack",  "kind": "text", "rect": [284, 420, 90, 44], "font": "body", "size": 40, "weight": 600, "color": "#FAFAFB", "align": "left", "sample": "+18%"},
-    {"id": "support_defence", "kind": "text", "rect": [516, 420, 90, 44], "font": "body", "size": 40, "weight": 600, "color": "#FAFAFB", "align": "left", "sample": "+12%"},
-    {"id": "support_troop",   "kind": "text", "rect": [760, 420, 90, 44], "font": "body", "size": 40, "weight": 600, "color": "#FAFAFB", "align": "left", "sample": "+18%"},
-    {"id": "support_info", "kind": "button", "rect": [866, 356, 40, 40], "action": "hero_support_info", "baked": true},
-
-    {"id": "soldiers_panel", "kind": "image", "asset": "army/soldiers_panel", "rect": [170, 488, 771, 412]},
-    {"id": "soldiers_count", "kind": "text", "rect": [358, 508, 85, 40], "font": "title", "size": 32, "weight": 500, "color": "#CFD8E7", "align": "left", "sample": "(4/5)"},
-    {"id": "auto_equip", "kind": "button", "asset": "army/auto_equip", "rect": [683, 504, 234, 47], "action": "autoequip"},
-
-    {"id": "soldier_card", "kind": "template", "rect": [174, 559, 149, 337], "pitch": 151,
-     "instances": [[174, 559], [325, 559], [476, 559], [627, 559]],
-     "reference_instances": [[174, 559], [320, 559], [481, 559], [631, 559]],
+ "screen": "army",
+ "source": "army.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0B151F",
+ "notes": [
+  "All rects are source pixels = layout units. Content starts at x=170 (army.png's rail is wider than collect's; the gutter 155..170 is ground).",
+  "Header: this screen's baked pills were larger than the shared chrome pills (gold 185..412, diamond 432..650, energy 668..903, y 24..84). They are inpainted; up to 15 px right of and 5 px below each shared pill shows inpainted sky. The might number's background (263,281,146,50) is inpainted too; the rendered number covers it.",
+  "Fonts: 'title' glyphs in the reference are ~25-30% narrower than Cinzel at the same cap height; sizes below are cap-height*1.4 and the width budget is the rect. 'body' is a transitional serif (Crimson Pro / EB Garamond are close).",
+  "Soldier cards in the reference are not uniform (x=174 w145 selected, 320 w149, 481 w147, 631 w137, next slot 778 w143). Template is card 3's frame (149x337); use pitch 151 -> slots at 174,325,476,627 and next slot at 778 which matches the reference exactly.",
+  "portraits/soldier_villager is 134x172 (cut inside the selected card's thicker frame); it must be drawn stretched to the 139x166 portrait interior (3.7%). mercenary/gladiator are cut at 139x166.",
+  "Only numerals I, II, III exist in the reference (army/numeral_1..3); tier IV+ needs one more plate. Only the villager exists as a large portrait (portraits/soldier_villager_large); for other selected types scale the small portrait interior into the large tile or reuse the frame.",
+  "The troop bar is 100% full in the reference; army/troop_bar_full is the full bar, clip it from the left for partial values (no empty track exists in the reference).",
+  "army/card_selected_frame is a nine-patch drawn with draw_center=false over a card slot at offset (-2,-11), size 153x349, margins l8 t14 r10 b14.",
+  "Gear tile level badges: the plate under 'Lv. N' is kept (row-filled), text is live.",
+  "Recruit cards: chips were erased from the card art and are drawn as a nine-patch (army/recruit_chip, margins 8/6/8/6) at each card's chip rect, widths differ per card. Names, coins, (i) line and RECRUIT labels are baked."
+ ],
+ "fonts": {
+  "title": "Cinzel (caps, flared serifs)",
+  "body": "transitional serif (Crimson Pro)"
+ },
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "army/header",
+   "rect": [
+    170,
+    0,
+    771,
+    346
+   ]
+  },
+  {
+   "id": "might_value",
+   "kind": "text",
+   "rect": [
+    263,
+    281,
+    146,
+    50
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 700,
+   "color": "#F4EA8B",
+   "outline": "#2A1A08",
+   "align": "left",
+   "sample": "95,430"
+  },
+  {
+   "id": "hero_support",
+   "kind": "image",
+   "asset": "army/hero_support",
+   "rect": [
+    170,
+    342,
+    771,
+    148
+   ]
+  },
+  {
+   "id": "support_attack",
+   "kind": "text",
+   "rect": [
+    284,
+    420,
+    90,
+    44
+   ],
+   "font": "body",
+   "size": 40,
+   "weight": 600,
+   "color": "#FAFAFB",
+   "align": "left",
+   "sample": "+18%"
+  },
+  {
+   "id": "support_defence",
+   "kind": "text",
+   "rect": [
+    516,
+    420,
+    90,
+    44
+   ],
+   "font": "body",
+   "size": 40,
+   "weight": 600,
+   "color": "#FAFAFB",
+   "align": "left",
+   "sample": "+12%"
+  },
+  {
+   "id": "support_troop",
+   "kind": "text",
+   "rect": [
+    760,
+    420,
+    90,
+    44
+   ],
+   "font": "body",
+   "size": 40,
+   "weight": 600,
+   "color": "#FAFAFB",
+   "align": "left",
+   "sample": "+18%"
+  },
+  {
+   "id": "support_info",
+   "kind": "button",
+   "rect": [
+    866,
+    356,
+    40,
+    40
+   ],
+   "action": "hero_support_info",
+   "baked": true
+  },
+  {
+   "id": "soldiers_panel",
+   "kind": "image",
+   "asset": "army/soldiers_panel",
+   "rect": [
+    170,
+    488,
+    771,
+    412
+   ]
+  },
+  {
+   "id": "soldier_strip",
+   "kind": "scroll",
+   "axis": "horizontal",
+   "rect": [
+    174,
+    552,
+    762,
+    352
+   ],
+   "content": [
+    {
+     "id": "soldier_card",
+     "kind": "template",
+     "rect": [
+      0,
+      7,
+      149,
+      337
+     ],
+     "pitch": 151,
      "parts": [
-       {"id": "frame", "kind": "image", "asset": "army/card", "rect": [0, 0, 149, 337]},
-       {"id": "portrait", "kind": "image", "asset": "portraits/soldier_{type}", "rect": [5, 7, 139, 166], "fit": "stretch",
-        "types": {"villager": "portraits/soldier_villager", "mercenary": "portraits/soldier_mercenary", "gladiator": "portraits/soldier_gladiator"}},
-       {"id": "numeral", "kind": "image", "asset": "army/numeral_{tier}", "rect": [4, 8, 50, 50], "tiers_available": [1, 2, 3]},
-       {"id": "name", "kind": "text", "rect": [6, 181, 137, 30], "font": "title", "size": 22, "weight": 600, "color": "#D3DDE4", "align": "center", "sample": "MERCENARY"},
-       {"id": "attack",  "kind": "text", "rect": [56, 212, 80, 29], "font": "body", "size": 28, "weight": 500, "color": "#CCD7E3", "align": "left", "sample": "512"},
-       {"id": "defence", "kind": "text", "rect": [56, 240, 80, 29], "font": "body", "size": 28, "weight": 500, "color": "#CCD7E3", "align": "left", "sample": "403"},
-       {"id": "power",   "kind": "text", "rect": [56, 268, 80, 31], "font": "body", "size": 28, "weight": 500, "color": "#CCD7E3", "align": "left", "sample": "3,820"},
-       {"id": "troop",   "kind": "text", "rect": [66, 299, 66, 28], "font": "body", "size": 26, "weight": 500, "color": "#D0D8DE", "align": "left", "sample": "240"},
-       {"id": "selected_frame", "kind": "ninepatch", "asset": "army/card_selected_frame", "rect": [-2, -11, 153, 349], "margins": [8, 14, 10, 14], "draw_center": false, "when": "selected"},
-       {"id": "tap", "kind": "button", "rect": [0, 0, 149, 337], "action": "select_soldier"}
-     ]},
-    {"id": "next_slot", "kind": "image", "asset": "army/next_slot", "rect": [778, 559, 143, 337]},
-    {"id": "next_slot_price", "kind": "text", "rect": [826, 768, 92, 36], "font": "body", "size": 34, "weight": 700, "color": "#F2E851", "align": "left", "sample": "2.50M"},
-    {"id": "unlock", "kind": "button", "asset": "army/unlock", "rect": [793, 812, 114, 52], "action": "buy_slot", "baked_in": "army/next_slot"},
-
-    {"id": "selected_panel", "kind": "image", "asset": "army/selected_panel", "rect": [170, 888, 771, 398]},
-    {"id": "sel_portrait", "kind": "image", "asset": "portraits/soldier_villager_large", "rect": [183, 955, 214, 301], "note": "frame+portrait; only villager exists"},
-    {"id": "sel_numeral", "kind": "image", "asset": "army/numeral_large_1", "rect": [189, 968, 72, 68], "tiers_available": [1]},
-    {"id": "sel_name", "kind": "text", "rect": [398, 968, 150, 36], "font": "title", "size": 34, "weight": 700, "color": "#F6F6F6", "align": "left", "sample": "VILLAGER"},
-    {"id": "sel_tier_chip", "kind": "image", "asset": "army/tier_chip", "rect": [553, 972, 84, 28]},
-    {"id": "sel_tier_text", "kind": "text", "rect": [553, 972, 84, 28], "font": "title", "size": 18, "weight": 500, "color": "#D5DCE5", "align": "center", "sample": "TIER I"},
-    {"id": "sel_description", "kind": "text", "rect": [398, 1010, 316, 56], "font": "body", "size": 24, "weight": 500, "color": "#B3C2CD", "align": "left", "lines": 2, "line_height": 23, "sample": "Humble but reliable. The backbone\nof every army."},
-    {"id": "sel_attack",  "kind": "text", "rect": [430, 1100, 80, 34], "font": "body", "size": 32, "weight": 500, "color": "#C9CED2", "align": "left", "sample": "215"},
-    {"id": "sel_defence", "kind": "text", "rect": [530, 1100, 80, 34], "font": "body", "size": 32, "weight": 500, "color": "#C9CED2", "align": "left", "sample": "176"},
-    {"id": "sel_power",   "kind": "text", "rect": [628, 1100, 76, 34], "font": "body", "size": 32, "weight": 500, "color": "#C9CED2", "align": "left", "sample": "1,420"},
-    {"id": "gear_tile", "kind": "template", "rect": [396, 1156, 98, 100],
-     "instances": [[396, 1156], [500, 1156], [605, 1156]],
-     "instance_assets": ["items/army_spear", "items/army_leather_armor", "items/army_horse"],
-     "instance_sizes": [[98, 100], [100, 100], [103, 100]],
+      {
+       "id": "frame",
+       "kind": "image",
+       "asset": "army/card",
+       "rect": [
+        0,
+        0,
+        149,
+        337
+       ]
+      },
+      {
+       "id": "portrait",
+       "kind": "image",
+       "asset": "portraits/soldier_{type}",
+       "rect": [
+        5,
+        7,
+        139,
+        166
+       ],
+       "fit": "stretch",
+       "types": {
+        "villager": "portraits/soldier_villager",
+        "mercenary": "portraits/soldier_mercenary",
+        "gladiator": "portraits/soldier_gladiator"
+       }
+      },
+      {
+       "id": "numeral",
+       "kind": "image",
+       "asset": "army/numeral_{tier}",
+       "rect": [
+        4,
+        8,
+        50,
+        50
+       ],
+       "tiers_available": [
+        1,
+        2,
+        3
+       ]
+      },
+      {
+       "id": "name",
+       "kind": "text",
+       "rect": [
+        6,
+        181,
+        137,
+        30
+       ],
+       "font": "title",
+       "size": 22,
+       "weight": 600,
+       "color": "#D3DDE4",
+       "align": "center",
+       "sample": "MERCENARY"
+      },
+      {
+       "id": "attack",
+       "kind": "text",
+       "rect": [
+        56,
+        212,
+        80,
+        29
+       ],
+       "font": "body",
+       "size": 28,
+       "weight": 500,
+       "color": "#CCD7E3",
+       "align": "left",
+       "sample": "512"
+      },
+      {
+       "id": "defence",
+       "kind": "text",
+       "rect": [
+        56,
+        240,
+        80,
+        29
+       ],
+       "font": "body",
+       "size": 28,
+       "weight": 500,
+       "color": "#CCD7E3",
+       "align": "left",
+       "sample": "403"
+      },
+      {
+       "id": "power",
+       "kind": "text",
+       "rect": [
+        56,
+        268,
+        80,
+        31
+       ],
+       "font": "body",
+       "size": 28,
+       "weight": 500,
+       "color": "#CCD7E3",
+       "align": "left",
+       "sample": "3,820"
+      },
+      {
+       "id": "troop",
+       "kind": "text",
+       "rect": [
+        66,
+        299,
+        66,
+        28
+       ],
+       "font": "body",
+       "size": 26,
+       "weight": 500,
+       "color": "#D0D8DE",
+       "align": "left",
+       "sample": "240"
+      },
+      {
+       "id": "selected_frame",
+       "kind": "ninepatch",
+       "asset": "army/card_selected_frame",
+       "rect": [
+        -2,
+        -11,
+        153,
+        349
+       ],
+       "margins": [
+        8,
+        14,
+        10,
+        14
+       ],
+       "draw_center": false,
+       "when": "selected"
+      },
+      {
+       "id": "tap",
+       "kind": "button",
+       "rect": [
+        0,
+        0,
+        149,
+        337
+       ],
+       "action": "select_soldier"
+      }
+     ]
+    },
+    {
+     "id": "next_slot_card",
+     "kind": "template",
+     "rect": [
+      0,
+      0,
+      143,
+      344
+     ],
      "parts": [
-       {"id": "art", "kind": "image", "asset": "army/gear_tile_empty", "rect": [0, 0, 98, 100]},
-       {"id": "painting", "kind": "image", "asset": "items/{item}", "rect": [11, 9, 76, 62], "fit": "contain"},
-       {"id": "level", "kind": "text", "rect": [48, 74, 48, 25], "font": "body", "size": 20, "weight": 500, "color": "#A8B1BE", "align": "center", "sample": "Lv. 10",
-        "instance_rects": [[444, 1230, 48, 25], [552, 1230, 46, 25], [661, 1230, 45, 25]]},
-       {"id": "tap", "kind": "button", "rect": [0, 0, 98, 100], "action": "soldier_gear_slot"}
-     ]},
-    {"id": "sel_troop_text", "kind": "text", "rect": [779, 968, 130, 40], "font": "body", "size": 30, "weight": 500, "color": "#BFC0C4", "align": "center", "sample": "320 / 320"},
-    {"id": "sel_troop_bar", "kind": "image", "asset": "army/troop_bar_full", "rect": [728, 1002, 178, 24], "fill": "left"},
-    {"id": "hunt", "kind": "button", "asset": "army/hunt", "rect": [728, 1056, 178, 78], "action": "autoroll"},
-    {"id": "dismiss", "kind": "button", "asset": "army/dismiss", "rect": [728, 1144, 178, 78], "action": "dismiss"},
-
-    {"id": "recruit_panel", "kind": "image", "asset": "army/recruit_panel", "rect": [170, 1286, 771, 314]},
-    {"id": "recruit_card", "kind": "template", "rect": [178, 1341, 231, 241],
-     "instances": [[178, 1341], [420, 1341], [667, 1341]],
-     "instance_assets": ["army/recruit_villager", "army/recruit_mercenary", "army/recruit_gladiator"],
-     "instance_sizes": [[231, 241], [236, 241], [240, 241]],
-     "parts": [
-       {"id": "card", "kind": "image", "rect": [0, 0, 231, 241]},
-       {"id": "chip", "kind": "ninepatch", "asset": "army/recruit_chip", "rect": [101, 43, 95, 25], "margins": [8, 6, 8, 6],
-        "instance_rects": [[279, 1384, 95, 25], [526, 1384, 106, 25], [778, 1384, 109, 25]]},
-       {"id": "chip_text", "kind": "text", "rect": [101, 43, 95, 25], "font": "title", "size": 16, "weight": 500, "color": "#D8E1EA", "align": "center", "sample": "TIER I - III",
-        "instance_rects": [[279, 1384, 95, 25], [526, 1384, 106, 25], [778, 1384, 109, 25]]},
-       {"id": "odds", "kind": "text", "rect": [82, 75, 144, 26], "font": "body", "size": 22, "weight": 500, "color": "#D2D8DF", "align": "center", "sample": "80% T1    20% T2",
-        "instance_rects": [[260, 1416, 144, 26], [504, 1416, 150, 26], [750, 1416, 154, 26]]},
-       {"id": "price", "kind": "text", "rect": [88, 121, 100, 36], "font": "body", "size": 34, "weight": 700, "color": "#FFF66D", "align": "left", "sample": "10,000",
-        "instance_rects": [[266, 1462, 100, 36], [507, 1462, 100, 36], [756, 1462, 100, 36]]},
-       {"id": "recruit", "kind": "button", "rect": [12, 165, 215, 54], "action": "recruit", "baked": true,
-        "instance_rects": [[190, 1506, 215, 54], [432, 1506, 213, 54], [680, 1506, 218, 54]]}
-     ]},
-    {"id": "bottom", "kind": "image", "asset": "army/bottom", "rect": [170, 1600, 771, 72], "anchor": "bottom"}
-  ]
+      {
+       "id": "tile",
+       "kind": "image",
+       "asset": "army/next_slot",
+       "rect": [
+        0,
+        7,
+        143,
+        337
+       ]
+      },
+      {
+       "id": "price",
+       "kind": "text",
+       "rect": [
+        48,
+        190,
+        92,
+        36
+       ],
+       "font": "body",
+       "size": 34,
+       "weight": 700,
+       "color": "#F2E851",
+       "align": "left",
+       "sample": "2.50M"
+      },
+      {
+       "id": "unlock",
+       "kind": "button",
+       "asset": "army/unlock",
+       "rect": [
+        8,
+        236,
+        128,
+        96
+       ],
+       "action": "buy_slot",
+       "keep_texture_size": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "soldiers_count",
+   "kind": "text",
+   "rect": [
+    358,
+    508,
+    85,
+    40
+   ],
+   "font": "title",
+   "size": 32,
+   "weight": 500,
+   "color": "#CFD8E7",
+   "align": "left",
+   "sample": "(4/5)"
+  },
+  {
+   "id": "auto_equip",
+   "kind": "button",
+   "asset": "army/auto_equip",
+   "rect": [
+    683,
+    504,
+    234,
+    47
+   ],
+   "action": "autoequip"
+  },
+  {
+   "id": "selected_panel",
+   "kind": "image",
+   "asset": "army/selected_panel",
+   "rect": [
+    170,
+    888,
+    771,
+    398
+   ]
+  },
+  {
+   "id": "sel_portrait",
+   "kind": "image",
+   "asset": "portraits/soldier_villager_large",
+   "rect": [
+    183,
+    955,
+    214,
+    301
+   ],
+   "note": "frame+portrait; only villager exists"
+  },
+  {
+   "id": "sel_numeral",
+   "kind": "image",
+   "asset": "army/numeral_large_1",
+   "rect": [
+    189,
+    968,
+    72,
+    68
+   ],
+   "tiers_available": [
+    1
+   ]
+  },
+  {
+   "id": "sel_name",
+   "kind": "text",
+   "rect": [
+    398,
+    968,
+    150,
+    36
+   ],
+   "font": "title",
+   "size": 34,
+   "weight": 700,
+   "color": "#F6F6F6",
+   "align": "left",
+   "sample": "VILLAGER"
+  },
+  {
+   "id": "sel_tier_chip",
+   "kind": "image",
+   "asset": "army/tier_chip",
+   "rect": [
+    553,
+    972,
+    84,
+    28
+   ]
+  },
+  {
+   "id": "sel_tier_text",
+   "kind": "text",
+   "rect": [
+    553,
+    972,
+    84,
+    28
+   ],
+   "font": "title",
+   "size": 18,
+   "weight": 500,
+   "color": "#D5DCE5",
+   "align": "center",
+   "sample": "TIER I"
+  },
+  {
+   "id": "sel_description",
+   "kind": "text",
+   "rect": [
+    398,
+    1010,
+    316,
+    56
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 500,
+   "color": "#B3C2CD",
+   "align": "left",
+   "lines": 2,
+   "line_height": 23,
+   "sample": "Humble but reliable. The backbone\nof every army."
+  },
+  {
+   "id": "sel_attack",
+   "kind": "text",
+   "rect": [
+    430,
+    1100,
+    80,
+    34
+   ],
+   "font": "body",
+   "size": 32,
+   "weight": 500,
+   "color": "#C9CED2",
+   "align": "left",
+   "sample": "215"
+  },
+  {
+   "id": "sel_defence",
+   "kind": "text",
+   "rect": [
+    530,
+    1100,
+    80,
+    34
+   ],
+   "font": "body",
+   "size": 32,
+   "weight": 500,
+   "color": "#C9CED2",
+   "align": "left",
+   "sample": "176"
+  },
+  {
+   "id": "sel_power",
+   "kind": "text",
+   "rect": [
+    628,
+    1100,
+    76,
+    34
+   ],
+   "font": "body",
+   "size": 32,
+   "weight": 500,
+   "color": "#C9CED2",
+   "align": "left",
+   "sample": "1,420"
+  },
+  {
+   "id": "gear_tile",
+   "kind": "template",
+   "rect": [
+    396,
+    1156,
+    98,
+    100
+   ],
+   "instances": [
+    [
+     396,
+     1156
+    ],
+    [
+     500,
+     1156
+    ],
+    [
+     605,
+     1156
+    ]
+   ],
+   "instance_assets": [
+    "items/army_spear",
+    "items/army_leather_armor",
+    "items/army_horse"
+   ],
+   "instance_sizes": [
+    [
+     98,
+     100
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     103,
+     100
+    ]
+   ],
+   "parts": [
+    {
+     "id": "art",
+     "kind": "image",
+     "asset": "army/gear_tile_empty",
+     "rect": [
+      0,
+      0,
+      98,
+      100
+     ]
+    },
+    {
+     "id": "painting",
+     "kind": "image",
+     "asset": "items/{item}",
+     "rect": [
+      11,
+      9,
+      76,
+      62
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "rect": [
+      48,
+      74,
+      48,
+      25
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 500,
+     "color": "#A8B1BE",
+     "align": "center",
+     "sample": "Lv. 10",
+     "instance_rects": [
+      [
+       444,
+       1230,
+       48,
+       25
+      ],
+      [
+       552,
+       1230,
+       46,
+       25
+      ],
+      [
+       661,
+       1230,
+       45,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "tap",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      98,
+      100
+     ],
+     "action": "soldier_gear_slot"
+    }
+   ]
+  },
+  {
+   "id": "sel_troop_text",
+   "kind": "text",
+   "rect": [
+    779,
+    968,
+    130,
+    40
+   ],
+   "font": "body",
+   "size": 30,
+   "weight": 500,
+   "color": "#BFC0C4",
+   "align": "center",
+   "sample": "320 / 320"
+  },
+  {
+   "id": "sel_troop_bar",
+   "kind": "image",
+   "asset": "army/troop_bar_full",
+   "rect": [
+    728,
+    1002,
+    178,
+    24
+   ],
+   "fill": "left"
+  },
+  {
+   "id": "dismiss",
+   "kind": "button",
+   "asset": "army/dismiss",
+   "rect": [
+    728,
+    1144,
+    178,
+    78
+   ],
+   "action": "dismiss"
+  },
+  {
+   "id": "recruit_panel",
+   "kind": "image",
+   "asset": "army/recruit_panel",
+   "rect": [
+    170,
+    1286,
+    771,
+    314
+   ]
+  },
+  {
+   "id": "recruit_card",
+   "kind": "template",
+   "rect": [
+    178,
+    1341,
+    231,
+    241
+   ],
+   "instances": [
+    [
+     178,
+     1341
+    ],
+    [
+     420,
+     1341
+    ],
+    [
+     667,
+     1341
+    ]
+   ],
+   "instance_assets": [
+    "army/recruit_villager",
+    "army/recruit_mercenary",
+    "army/recruit_gladiator"
+   ],
+   "instance_sizes": [
+    [
+     231,
+     241
+    ],
+    [
+     236,
+     241
+    ],
+    [
+     240,
+     241
+    ]
+   ],
+   "parts": [
+    {
+     "id": "card",
+     "kind": "image",
+     "rect": [
+      0,
+      0,
+      231,
+      241
+     ]
+    },
+    {
+     "id": "chip",
+     "kind": "ninepatch",
+     "asset": "army/recruit_chip",
+     "rect": [
+      101,
+      43,
+      95,
+      25
+     ],
+     "margins": [
+      8,
+      6,
+      8,
+      6
+     ],
+     "instance_rects": [
+      [
+       279,
+       1384,
+       95,
+       25
+      ],
+      [
+       526,
+       1384,
+       106,
+       25
+      ],
+      [
+       778,
+       1384,
+       109,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "chip_text",
+     "kind": "text",
+     "rect": [
+      101,
+      43,
+      95,
+      25
+     ],
+     "font": "title",
+     "size": 16,
+     "weight": 500,
+     "color": "#D8E1EA",
+     "align": "center",
+     "sample": "TIER I - III",
+     "instance_rects": [
+      [
+       279,
+       1384,
+       95,
+       25
+      ],
+      [
+       526,
+       1384,
+       106,
+       25
+      ],
+      [
+       778,
+       1384,
+       109,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "odds",
+     "kind": "text",
+     "rect": [
+      82,
+      75,
+      144,
+      26
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 500,
+     "color": "#D2D8DF",
+     "align": "center",
+     "sample": "80% T1    20% T2",
+     "instance_rects": [
+      [
+       260,
+       1416,
+       144,
+       26
+      ],
+      [
+       504,
+       1416,
+       150,
+       26
+      ],
+      [
+       750,
+       1416,
+       154,
+       26
+      ]
+     ]
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      88,
+      121,
+      100,
+      36
+     ],
+     "font": "body",
+     "size": 34,
+     "weight": 700,
+     "color": "#FFF66D",
+     "align": "left",
+     "sample": "10,000",
+     "instance_rects": [
+      [
+       266,
+       1462,
+       100,
+       36
+      ],
+      [
+       507,
+       1462,
+       100,
+       36
+      ],
+      [
+       756,
+       1462,
+       100,
+       36
+      ]
+     ]
+    },
+    {
+     "id": "recruit",
+     "kind": "button",
+     "rect": [
+      12,
+      165,
+      215,
+      54
+     ],
+     "action": "recruit",
+     "baked": true,
+     "instance_rects": [
+      [
+       190,
+       1506,
+       215,
+       54
+      ],
+      [
+       432,
+       1506,
+       213,
+       54
+      ],
+      [
+       680,
+       1506,
+       218,
+       54
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "bottom",
+   "kind": "image",
+   "asset": "army/bottom",
+   "rect": [
+    170,
+    1600,
+    771,
+    72
+   ],
+   "anchor": "bottom"
+  }
+ ]
 }

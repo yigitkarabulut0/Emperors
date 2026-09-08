@@ -16,7 +16,8 @@ const PT_PER_UNIT := 440.0 / 941.0
 const MIN_TAP_PT := 44.0
 
 ## screen -> template id. Both hold one item and its actions.
-const CARDS := {"inventory": "item_card", "shop": "offer_card"}
+const CARDS := {"inventory": "item_card", "shop": "offer_card",
+	"army": "next_slot_card"}
 
 ## Parts that are meant to sit on top of another, and the part they sit on.
 const OVER := {"painting": "tile", "price": "price_pill"}

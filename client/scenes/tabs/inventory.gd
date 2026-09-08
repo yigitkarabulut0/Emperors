@@ -117,7 +117,19 @@ func _items_shown() -> Array:
 			continue
 		if _filter == "all" or str(it.get("tier", "")) == _filter:
 			out.append(it)
-	out.sort_custom(func(a, b): return int(a.get("power", 0)) > int(b.get("power", 0)))
+	# Rarity first, best at the top, and power inside a rarity.
+	#
+	# Sorting on power alone looked shuffled, because power is not rarity: an
+	# item's numbers come from its level as well as its tier, so a common at
+	# level 40 outranks a legendary at level 12 and the list read common,
+	# legendary, mystic, common. What a player scans this list for is the
+	# rarity, so that is what orders it.
+	out.sort_custom(func(a, b):
+		var ra := TIERS.find(str(a.get("tier", "common")))
+		var rb := TIERS.find(str(b.get("tier", "common")))
+		if ra != rb:
+			return ra > rb
+		return int(a.get("power", 0)) > int(b.get("power", 0)))
 	return out
 
 

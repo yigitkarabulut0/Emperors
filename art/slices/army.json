@@ -666,19 +666,6 @@
    ]
   },
   {
-   "name": "army/hunt",
-   "rect": [
-    728,
-    1056,
-    178,
-    78
-   ],
-   "mask": {
-    "type": "chamfer",
-    "size": 8
-   }
-  },
-  {
    "name": "army/dismiss",
    "rect": [
     728,

@@ -253,8 +253,14 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 		"scroll":
 			var sc := ScrollContainer.new()
 			UI.place(sc, r)
-			sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-			sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+			if str(p.get("axis", "vertical")) == "horizontal":
+				# A row too long for the screen: the army's slots run to ten and
+				# only the first four were ever drawn.
+				sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+				sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+			else:
+				sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+				sc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 			var content := Control.new()
 			content.custom_minimum_size = r.size
 			content.mouse_filter = Control.MOUSE_FILTER_PASS

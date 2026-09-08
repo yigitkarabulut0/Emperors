@@ -82,6 +82,7 @@ func _ready() -> void:
 
 	_on_changed()
 	open(str(Env.args.get("tab", "collect")))
+	_preload_tabs.call_deferred()
 	_daily_on_boot.call_deferred()
 
 
@@ -310,20 +311,43 @@ func open(id: String) -> void:
 		var old: Control = _tabs[_current]
 		old.visible = false
 		old.process_mode = Node.PROCESS_MODE_DISABLED
-	if not _tabs.has(id):
-		var script: GDScript = load(TABS[id])
-		var tab: Control = script.new()
-		tab.set_anchors_preset(Control.PRESET_FULL_RECT)
-		tab.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_host.add_child(tab)
-		_tabs[id] = tab
-	var cur: Control = _tabs[id]
+	var cur: Control = _ensure_tab(id)
 	cur.visible = true
 	cur.process_mode = Node.PROCESS_MODE_INHERIT
 	_current = id
 	_set_active(id)
 	if cur.has_method("refresh"):
 		cur.refresh()
+
+
+## Builds a tab's screen, hidden and paused, without opening it.
+func _ensure_tab(id: String) -> Control:
+	if not _tabs.has(id):
+		var script: GDScript = load(TABS[id])
+		var tab: Control = script.new()
+		tab.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tab.visible = false
+		tab.process_mode = Node.PROCESS_MODE_DISABLED
+		_host.add_child(tab)
+		_tabs[id] = tab
+	return _tabs[id]
+
+
+## Every screen is built and its data fetched right after arrival, one per
+## frame behind the one that is showing, so the first tap on any tab lands on
+## a finished screen rather than on frames filling in while the server answers.
+## Locked tabs are built too -- unlocking later is a level-up, not a load.
+func _preload_tabs() -> void:
+	for id in ORDER:
+		if id == _current:
+			continue
+		await get_tree().process_frame
+		if not is_inside_tree():
+			return
+		var tab := _ensure_tab(id)
+		if tab.has_method("refresh"):
+			tab.refresh()
 
 
 func _unlock_level(id: String) -> int:

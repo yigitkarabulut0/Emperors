@@ -55,8 +55,12 @@ them into the SubViewport.
   from the server's `sections` list.
 - **the currency pills** (gold, diamonds, energy) at their `collect.png`
   positions, numbers erased and set live at 29 px.
-- **the screen host** — one Control per section, instantiated on first open,
-  hidden with `PROCESS_MODE_DISABLED` otherwise.
+- **the screen host** — one Control per section. The first section opens at
+  once; the other six are built and their data fetched one per frame right
+  behind it, then kept hidden with `PROCESS_MODE_DISABLED`, so the first tap on
+  any tab lands on a finished screen. A layout placeholder (`items/{item}`)
+  draws nothing until its screen fills it; magenta is reserved for an asset
+  that is missing.
 
 Autoloads, in load order: `Env` → `Nav` → `Api` → `Session` → `GameState` →
 `Art` → `Proof`. Each may only reference the ones above it.

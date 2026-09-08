@@ -8,14 +8,18 @@ extends Node
 var _cache: Dictionary = {}
 var _missing: Dictionary = {}
 var _placeholder: Texture2D
+var _clear: Texture2D
 
 
 func tex(name: String) -> Texture2D:
 	if _cache.has(name):
 		return _cache[name]
 	if name.contains("{") or name.contains("<") or name == "":
-		# A layout placeholder ("items/{item}"): the screen sets the real texture.
-		return _placeholder_tex()
+		# A layout placeholder ("items/{item}"): the screen sets the real texture
+		# once its data arrives. Until then nothing is drawn -- the magenta square
+		# is for assets that are MISSING, and a slot waiting for the server is not
+		# one of those, so it must not flash magenta on the way in.
+		return _clear_tex()
 	var path := "res://assets/%s.png" % name
 	if ResourceLoader.exists(path):
 		var t: Texture2D = load(path)
@@ -29,6 +33,14 @@ func tex(name: String) -> Texture2D:
 
 func has(name: String) -> bool:
 	return ResourceLoader.exists("res://assets/%s.png" % name)
+
+
+func _clear_tex() -> Texture2D:
+	if _clear == null:
+		var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+		img.fill(Color(0, 0, 0, 0))
+		_clear = ImageTexture.create_from_image(img)
+	return _clear
 
 
 func _placeholder_tex() -> Texture2D:
@@ -47,10 +59,6 @@ func _placeholder_tex() -> Texture2D:
 ## draws one inset into its own empty tile, so a change of gear is a change of
 ## picture. A design without a painting warns once and draws the placeholder,
 ## like any missing asset.
-func item(art_key: String) -> Texture2D:
-	if art_key == "":
-		return _placeholder_tex()
-	return tex("items/painted/" + art_key)
 ## The stone on a gear tile's frame, in a tier's colour; unlit for no tier.
 ## The tints are made from the painted red stone by scripts/gen-gem-tints.py,
 ## on the palette in balance/tiers.json.
@@ -58,3 +66,7 @@ func gem(tier: String) -> Texture2D:
 	return tex("family/gem_" + (tier if tier != "" and has("family/gem_" + tier) else "empty"))
 
 
+func item(art_key: String) -> Texture2D:
+	if art_key == "":
+		return _clear_tex()
+	return tex("items/painted/" + art_key)

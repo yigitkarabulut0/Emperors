@@ -93,24 +93,6 @@
      }
     }
    },
-   "badge_count": {
-    "kind": "text",
-    "rect": [
-     446,
-     281,
-     46,
-     46
-    ],
-    "font": "body",
-    "size": 34,
-    "cap": 24,
-    "weight": 500,
-    "color": "#F6F1EA",
-    "align": "center",
-    "valign": "center",
-    "sample": "1",
-    "only_when": "active"
-   },
    "keep_texture_size": true,
    "paint_rect": [
     183,

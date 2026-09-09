@@ -15,7 +15,6 @@ var _loaded_ms := -100000
 var _busy := false
 var _view := "revenge"            ## revenge | targets
 var _tab_labels: Dictionary = {}
-var _badge: Label
 
 
 func _ready() -> void:
@@ -37,14 +36,6 @@ func _ready() -> void:
 		l.visible = false
 		add_child(l)
 		_tab_labels[id] = l
-	# The count goes in the bubble painted into the tab. The layout measured
-	# where that bubble is; this used to place a smaller number by hand, 17
-	# units below and to the right of it, so it sat on the bubble's rim.
-	var bs: Dictionary = Layout.element(SCREEN, "tab_revenge").get("badge_count", {})
-	_badge = UI.label("", int(bs.get("size", 34)), Color(str(bs.get("color", "#F6F1EA"))),
-		str(bs.get("font", "body")), int(bs.get("weight", 500)), HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_badge, Layout.rect_of(bs) if not bs.is_empty() else Rect2(446, 281, 46, 46))
-	add_child(_badge)
 	_apply_tabs()
 
 
@@ -85,10 +76,12 @@ func _apply_tabs() -> void:
 		var b: TextureButton = pair[0]
 		var st: Dictionary = pair[1]
 		var asset := str(st["asset"])
-		# The bubble is painted into the active REVENGE tab, so with nobody to
-		# avenge it showed an empty circle -- a badge saying nothing, which
-		# reads as if something is waiting. There is a tab without it.
-		if asset == "attack/tab_revenge" and _revenge_count() == 0:
+		# The bubble is painted into the active REVENGE tab and the tab is not
+		# where the count belongs: the card underneath already says THEY
+		# ATTACKED YOU in a red frame, and a circle with a 0 in it -- or an
+		# empty circle, which is what showed with nobody to avenge -- reads as
+		# though something is waiting. The tab without it is the one that ships.
+		if asset == "attack/tab_revenge":
 			asset = "attack/tab_revenge_plain"
 		b.texture_normal = Art.tex(asset)
 		UI.place(b, Layout.rect_of(st))
@@ -99,18 +92,13 @@ func _apply_tabs() -> void:
 			UI.place(l, Layout.rect_of(ls))
 			l.label_settings.font_color = Color(str(ls.get("color", "#F4F0EA")))
 			l.label_settings.font_size = int(ls.get("size", 31))
-	_badge.visible = _view == "revenge" and _revenge_count() > 0
 
-
-func _revenge_count() -> int:
-	return (_data.get("revenge", []) as Array).size()
 
 
 func _paint() -> void:
 	var revenge: Array = _data.get("revenge", [])
 	var targets: Array = _data.get("targets", [])
 	var my_might := int(_data.get("might", 0))
-	_badge.text = str(revenge.size())
 	_apply_tabs()
 	var show_revenge := _view == "revenge" and not revenge.is_empty()
 	_revenge_card["node"].visible = show_revenge

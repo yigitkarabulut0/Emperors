@@ -340,7 +340,7 @@
    "name": "collect/job_strawberries",
    "rect": [
     168,
-    681,
+    679,
     190,
     158
    ]
@@ -349,7 +349,7 @@
    "name": "collect/job_wheat",
    "rect": [
     168,
-    848,
+    846,
     190,
     158
    ]
@@ -358,7 +358,7 @@
    "name": "collect/job_timber",
    "rect": [
     168,
-    1015,
+    1014,
     190,
     158
    ]
@@ -367,7 +367,7 @@
    "name": "collect/job_stone",
    "rect": [
     168,
-    1185,
+    1183,
     190,
     158
    ]
@@ -376,7 +376,7 @@
    "name": "collect/job_tax",
    "rect": [
     168,
-    1354,
+    1352,
     190,
     158
    ]

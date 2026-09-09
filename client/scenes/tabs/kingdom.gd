@@ -29,6 +29,11 @@ const REALM_PARTS := ["realm_card", "realm_bonuses", "bonus_income", "bonus_xp",
 ## every row hidden behind it.
 const SECTION_TOP := 646.0
 const SECTION_X := 168.0
+## The lit plate is 206x68 and the dark ones 63 tall; the strip is as tall as
+## the tallest, and every instance stands on its top edge.
+const TAB_H := 68.0
+const ACTIVE_MARGIN := [14, 10, 14, 10]
+const IDLE_MARGIN := [12, 8, 12, 8]
 const MAX_NAME := 18
 const MAX_TAG := 4
 
@@ -47,6 +52,8 @@ var _view := "realm"
 var _section: Control
 var _found_button: TextureButton
 var _found_label: Label
+var _widths: Array = []
+var _label_spots: Dictionary = {}
 
 
 func _ready() -> void:
@@ -89,17 +96,26 @@ func _ready() -> void:
 	# bar. The layout carries a plate for each state and a label for each name;
 	# the plate follows the scroll now.
 	var tabs: Array = _ui["tabs"]
-	var widths: Array = Layout.find(SCREEN, "tabs").get("widths", [200, 182, 191, 187])
+	var strip: Dictionary = Layout.find(SCREEN, "tabs")
+	_widths = strip.get("widths", [206, 186, 197, 192])
+	_label_spots = strip.get("labels", {})
 	for i in tabs.size():
 		var node: Control = tabs[i]["node"]
-		var chip: TextureRect = tabs[i]["parts"]["chip"]
-		var w: float = float(widths[i]) if i < widths.size() else 186.0
-		UI.place(chip, Rect2(0, 0, w, 66))
 		var label: TextureRect = tabs[i]["parts"]["label"]
 		label.texture = Art.tex("kingdom/tab_label_" + TAB_NAMES[i])
 		var ls: Vector2 = label.texture.get_size()
-		UI.place(label, Rect2((w - ls.x) / 2.0, (66 - ls.y) / 2.0, ls.x, ls.y))
-		var hit := UI.hotspot(Rect2(0, 0, w, 66))
+		var w := _tab_width(i)
+		# Where the painting sets each word, not where centring the plate would
+		# put it: REALM, WORKS and RANKS are each a unit or three off centre in
+		# the painting, and matching the painting is the whole rule here.
+		var spot: Dictionary = _label_spots.get(TAB_NAMES[i], {})
+		var lr: Array = spot.get("rect", [])
+		if lr.size() == 4:
+			UI.place(label, Rect2(float(lr[0]) - 151.0 - (tabs[i]["node"].position.x - 151.0),
+				float(lr[1]) - 556.0, ls.x, ls.y))
+		else:
+			UI.place(label, Rect2((w - ls.x) / 2.0, (TAB_H - ls.y) / 2.0, ls.x, ls.y))
+		var hit := UI.hotspot(Rect2(0, 0, w, TAB_H))
 		hit.pressed.connect(_jump.bind(TAB_NAMES[i]))
 		node.add_child(hit)
 	_scroll.get_v_scroll_bar().value_changed.connect(func(_v: float) -> void: _light_the_tab())
@@ -307,8 +323,24 @@ func _light_the_tab() -> void:
 	var at := maxi(0, TAB_NAMES.find(_view))
 	var tabs: Array = _ui["tabs"]
 	for i in tabs.size():
-		var chip: TextureRect = tabs[i]["parts"]["chip"]
-		chip.texture = Art.tex("kingdom/tab_active_empty" if i == at else "kingdom/tab_inactive_empty")
+		var chip: NinePatchRect = tabs[i]["parts"]["chip"]
+		var on := i == at
+		chip.texture = Art.tex("kingdom/tab_active_empty" if on else "kingdom/tab_inactive_empty")
+		# The lit plate is painted taller than the dark ones and stands two units
+		# higher; both are drawn at their own height and nine-patched to the
+		# tab's own width, so the gold rule under the strip stays one line.
+		var m: Array = ACTIVE_MARGIN if on else IDLE_MARGIN
+		chip.patch_margin_left = int(m[0])
+		chip.patch_margin_top = int(m[1])
+		chip.patch_margin_right = int(m[2])
+		chip.patch_margin_bottom = int(m[3])
+		UI.place(chip, Rect2(0, 0 if on else 2, _tab_width(i), TAB_H if on else 63))
+
+
+## The painted width of tab i. The strip is not four equal chips: the painting
+## cut each plate to its own word.
+func _tab_width(i: int) -> float:
+	return float(_widths[i]) if i < _widths.size() else 186.0
 
 
 func _jump(section: String) -> void:

@@ -15,6 +15,7 @@ const PT_PER_UNIT := 440.0 / 941.0
 ## anything placed by code, which has no painting telling it where to go.
 const RAIL_RIGHT := 160.0
 const CANVASES := [Vector2(941, 1672), Vector2(941, 2040)]
+const TAB_NAMES := ["realm", "lords", "works", "ranks"]
 
 var _fails: int = 0
 var _rows: int = 0
@@ -170,6 +171,7 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 		if minf(d.size.x, d.size.y) * PT_PER_UNIT < 44.0:
 			_fail("the realm's %s is %.0fx%.0f pt, under the 44 a thumb needs"
 				% [id, d.size.x * PT_PER_UNIT, d.size.y * PT_PER_UNIT])
+	_the_strip_matches_the_painting(page, ui)
 	print("  the four tabs each swap the page's content, clear of the rail")
 	host.queue_free()
 	await process_frame
@@ -197,6 +199,41 @@ func _nothing_eats_the_drag(page: Control) -> void:
 			_fail("%s: a %s %.0f units wide takes the drag before the scroll can"
 				% [_tag, n.get_class(), c2.size.x])
 			return
+
+
+## The tab strip is four plates the painting cut to four different widths, and
+## each is drawn at the height the painting gave its state. They were being
+## squeezed into one set of numbers -- the lit plate is 206x68 and was going
+## into 200x66 -- so the gold rule under the strip stepped between tabs and the
+## words drifted off the ones the painting baked.
+func _the_strip_matches_the_painting(page: Control, ui: Dictionary) -> void:
+	var L: GDScript = load("res://scripts/ui/layout.gd")
+	var strip: Dictionary = L.find("kingdom", "tabs")
+	var widths: Array = strip.get("widths", [])
+	var tabs: Array = ui.get("tabs", [])
+	if widths.size() != tabs.size() or tabs.is_empty():
+		_fail("the tab strip has %d plates and %d widths" % [tabs.size(), widths.size()])
+		return
+	for i in tabs.size():
+		var chip: Control = tabs[i]["parts"]["chip"]
+		var tex: Texture2D = chip.get("texture")
+		if tex == null:
+			_fail("tab %d has no plate" % i)
+			continue
+		if absf(chip.size.x - float(widths[i])) > 0.5:
+			_fail("tab %d is drawn %.0f wide, not the %d the painting cut"
+				% [i, chip.size.x, int(widths[i])])
+		# A plate keeps the height of its own crop; only its width is patched.
+		if absf(chip.size.y - float(tex.get_height())) > 0.5:
+			_fail("tab %d is drawn %.0f tall against a plate of %d -- it is being squeezed"
+				% [i, chip.size.y, tex.get_height()])
+		var word: TextureRect = tabs[i]["parts"]["label"]
+		var spot: Dictionary = strip.get("labels", {}).get(str(TAB_NAMES[i]), {})
+		var lr: Array = spot.get("rect", [])
+		if lr.size() == 4 and word.global_position.distance_to(
+				Vector2(float(lr[0]), float(lr[1]))) > 1.5:
+			_fail("tab %d's word sits at %s, not the %s the painting has"
+				% [i, word.global_position, Vector2(float(lr[0]), float(lr[1]))])
 
 
 func _walk(n: Node) -> void:

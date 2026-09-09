@@ -215,29 +215,35 @@
         ],
         [
           356,
-          558
+          556
         ],
         [
           543,
-          558
+          556
         ],
         [
           739,
-          558
+          556
         ]
       ],
-      "note": "per-tab: chip = kingdom/tab_active_empty (206x68, nine margins [14,10,14,10]) when selected else kingdom/tab_inactive_empty (186x63, nine [12,8,12,8]) stretched to the instance width; label image centred. Reference state (REALM selected) is also available as the four baked crops kingdom/tab_realm_active, tab_lords, tab_works, tab_ranks at these rects.",
+      "note": "per-tab: chip is the painted plate nine-patched to that tab's own width -- active kingdom/tab_active_empty (206x68, margins 14/10/14/10) drawn at [0,0,w,68], otherwise kingdom/tab_inactive_empty (186x63, 12/8/12/8) at [0,2,w,63], which is where the painting has each. The widths were four to twenty units under the crops and every plate was squeezed into them, so the gold rule under the strip stepped between tabs. Label image centred in the 68.",
       "parts": [
         {
           "id": "chip",
-          "kind": "image",
+          "kind": "ninepatch",
           "asset": "kingdom/tab_inactive_empty",
           "asset_selected": "kingdom/tab_active_empty",
           "rect": [
             0,
-            0,
+            2,
             186,
             63
+          ],
+          "margin": [
+            12,
+            8,
+            12,
+            8
           ]
         },
         {
@@ -254,10 +260,10 @@
         }
       ],
       "widths": [
-        200,
-        182,
-        191,
-        187
+        206,
+        186,
+        197,
+        192
       ],
       "labels": {
         "realm": {
@@ -418,7 +424,7 @@
         26
       ],
       "font": "title",
-      "size": 24,
+      "size": 22,
       "weight": 700,
       "color": "#F2C94C",
       "align": "left",

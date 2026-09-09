@@ -41,9 +41,15 @@ static func settings(size: int, color: Color, role: String = "body", weight: int
 	s.font_size = size
 	s.font_color = color
 	if shadow:
-		s.shadow_color = Color(0, 0, 0, 0.55)
+		# shadow_size is an OUTLINE on the shadow: it spreads the black out in
+		# every direction, so two units of it put a black halo all the way round
+		# every letter. On the Kingdom's gold RESPECTED that read as a black
+		# patch behind the word, and it was doing the same, more quietly, to
+		# every other label in the game. The paintings carry a plain drop
+		# shadow -- offset, no spread -- so that is what this is.
+		s.shadow_color = Color(0, 0, 0, 0.45)
 		s.shadow_offset = Vector2(0, 2)
-		s.shadow_size = 2
+		s.shadow_size = 0
 	return s
 
 

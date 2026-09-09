@@ -214,19 +214,13 @@
         206,
         68
       ],
-      "erase": [
-        {
-          "rect": [
-            205,
-            574,
-            100,
-            32
-          ],
-          "sample_x": [
-            175,
-            195
-          ]
-        }
+      "inpaint": [
+        [
+          203,
+          572,
+          104,
+          36
+        ]
       ]
     },
     {
@@ -237,19 +231,13 @@
         186,
         63
       ],
-      "erase": [
-        {
-          "rect": [
-            405,
-            574,
-            90,
-            32
-          ],
-          "sample_x": [
-            370,
-            395
-          ]
-        }
+      "inpaint": [
+        [
+          403,
+          572,
+          94,
+          36
+        ]
       ]
     },
     {
@@ -373,19 +361,27 @@
           32
         ],
         [
-          665,
-          979,
-          146,
-          26
-        ],
-        [
           670,
-          959,
-          131,
-          23
+          983,
+          140,
+          22
         ]
       ],
-      "note": "text bands lifted with inpaint: the card's ground is graded across, so a row-fill from one column band leaves a dark rectangle"
+      "note": "text bands lifted with inpaint: the card's ground is graded across, so a row-fill from one column band leaves a dark rectangle",
+      "erase": [
+        {
+          "rect": [
+            673,
+            962,
+            125,
+            17
+          ],
+          "sample_x": [
+            840,
+            880
+          ]
+        }
+      ]
     },
     {
       "name": "kingdom/rep_bar_fill",

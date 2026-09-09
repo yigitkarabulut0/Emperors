@@ -25,6 +25,7 @@ func _initialize() -> void:
 	await process_frame
 	for c in CANVASES:
 		await _check(c)
+	await _the_animation_runs_and_settles()
 	if _checked == 0:
 		_fail("no screen was built, so nothing was measured")
 	else:
@@ -92,6 +93,74 @@ func _check(canvas: Vector2) -> void:
 	screen.queue_free()
 	host.queue_free()
 	await process_frame
+
+
+## The blow is four beats and it has to end where it started, or a portrait
+## walks off its frame over the course of a battle. This plays a short battle at
+## real speed and checks that the effects were spawned, that both faces came
+## home, and that the bars landed on the numbers the events named.
+func _the_animation_runs_and_settles() -> void:
+	var host := Control.new()
+	host.size = Vector2(941, 1672)
+	root.add_child(host)
+	var screen: CanvasLayer = load("res://scenes/battle/battle_replay.gd").new()
+	screen.setup({"won": true, "gold_stolen": "1000", "replay": _short_replay()})
+	host.add_child(screen)
+	for i in 3:
+		await process_frame
+
+	var floaters: Control = screen.get("_floaters")
+	var home: Dictionary = screen.get("_home")
+	var faces: Dictionary = screen.get("_face")
+	if floaters == null or home.is_empty() or faces.is_empty():
+		_fail("the screen did not build its animation state")
+		host.queue_free()
+		return
+
+	# Watch it play. The effects are short-lived, so what is worth recording is
+	# which of them were ever drawn -- counting them only says something was
+	# there, and passes with two of the three missing.
+	var seen := {}
+	var waited := 0.0
+	while waited < 6.0 and not bool(screen.get("_done")):
+		await create_timer(0.04).timeout
+		waited += 0.04
+		for c in floaters.get_children():
+			if c is Label:
+				seen["number"] = true
+			elif c is TextureRect and (c as TextureRect).texture != null:
+				seen[(c as TextureRect).texture.resource_path.get_file().get_basename()] = true
+	for want in ["slash", "impact", "number"]:
+		if not seen.has(want):
+			_fail("a blow never drew its %s; the fight drew %s" % [want, str(seen.keys())])
+	if _fails == 0:
+		print("  a blow drew: %s" % str(seen.keys()))
+	if not bool(screen.get("_done")):
+		_fail("the battle did not finish inside 6 seconds")
+
+	# Nobody drifts. A blow moves a face and puts it back; the fallen side slides
+	# down and turns, but neither side ends up further along the screen than it
+	# started, or a portrait walks out of its frame over a long battle.
+	for side in ["a", "d"]:
+		var f: Control = faces[side]
+		var h: Vector2 = home[side]
+		if absf(f.position.x - h.x) > 1.0:
+			_fail("side %s ended %.0f units from where it stands" % [side, f.position.x - h.x])
+	screen.queue_free()
+	host.queue_free()
+	await process_frame
+
+
+func _short_replay() -> Dictionary:
+	var r := _replay()
+	var cut: Array = []
+	for e in r["events"]:
+		if int(e.get("r", 0)) <= 2:
+			cut.append(e)
+	cut.append({"r": 2, "k": "death", "s": "d", "dst": "D"})
+	r["events"] = cut
+	r["rounds"] = 2
+	return r
 
 
 func _walk(n: Node) -> void:

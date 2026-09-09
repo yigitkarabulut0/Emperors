@@ -18,9 +18,18 @@ extends CanvasLayer
 
 signal finished
 
-const ROUND_PAUSE := 0.40      ## between rounds: long enough to read the blow
-const BLOW_PAUSE := 0.55       ## after a hit lands
-const DRAIN := 0.32            ## how long a bar takes to fall
+## A blow is four beats: pull back, drive in, land, recover. The numbers are
+## what the beats are worth -- the wind-up is slow enough to be read as intent,
+## the lunge is the fastest thing on the screen, and the recovery is long enough
+## that the next blow does not tread on this one.
+const WIND_UP := 0.13
+const LUNGE := 0.09
+const RECOVER := 0.26
+const AFTER_BLOW := 0.30       ## quiet between one blow and the next
+const ROUND_PAUSE := 0.55      ## the round card holds for this
+const DRAIN := 0.30            ## the bar falls
+const GHOST_DRAIN := 0.55      ## the pale bar behind it follows, late
+const GHOST_DELAY := 0.16
 
 ## The design grid, and where the pieces sit on it.
 const W := 941.0
@@ -39,8 +48,11 @@ var _hp := {"a": 0, "d": 0}
 var _max := {"a": 1, "d": 1}
 var _id_side: Dictionary = {}
 var _fill: Dictionary = {}
+var _ghost: Dictionary = {}
 var _hp_text: Dictionary = {}
 var _face: Dictionary = {}
+var _home: Dictionary = {}      ## where each face rests, to come back to
+var _centre: Dictionary = {}    ## the middle of each face, for effects
 var _root: Control
 var _floaters: Control
 var _round_label: Label
@@ -160,8 +172,11 @@ func _side(army: Dictionary, side: String, x: float, portrait: String, might: in
 	var face := UI.image(portrait, frame)
 	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	face.clip_contents = true
+	face.pivot_offset = PORTRAIT.size / 2.0
 	_root.add_child(face)
 	_face[side] = face
+	_home[side] = frame.position
+	_centre[side] = frame.position + PORTRAIT.size / 2.0
 	# The rarity frames are hollow, so one of them makes a border for anything.
 	var ring := UI.image("inventory/frame_legendary" if side == "a" else "inventory/frame_special",
 		frame)
@@ -191,13 +206,29 @@ func _side(army: Dictionary, side: String, x: float, portrait: String, might: in
 
 	var track := UI.image("family/xp_track", Rect2(x - 20, BAR_Y, PORTRAIT.size.x + 40, 30))
 	_root.add_child(track)
+	# Two fills, one behind the other. The pale one drains late and slower, so a
+	# blow leaves a strip showing exactly what it took -- the oldest trick in
+	# fighting games and the only one that makes a number and a bar agree.
+	var bar := Rect2(x - 15, BAR_Y + 4, PORTRAIT.size.x + 30, 22)
+	var ghost := Control.new()
+	UI.place(ghost, bar)
+	ghost.clip_contents = true
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var gtex := UI.image("attack/bar_green" if side == "a" else "attack/bar_red",
+		Rect2(0, -4, bar.size.x, 30))
+	gtex.modulate = Color(1.0, 0.85, 0.75, 0.55)
+	ghost.add_child(gtex)
+	ghost.set_meta("full", bar.size)
+	_root.add_child(ghost)
+	_ghost[side] = ghost
+
 	var wrap := Control.new()
-	UI.place(wrap, Rect2(x - 15, BAR_Y + 4, PORTRAIT.size.x + 30, 22))
+	UI.place(wrap, bar)
 	wrap.clip_contents = true
 	wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	wrap.add_child(UI.image("attack/bar_green" if side == "a" else "attack/bar_red",
-		Rect2(0, -4, PORTRAIT.size.x + 30, 30)))
-	wrap.set_meta("full", Vector2(PORTRAIT.size.x + 30, 22))
+		Rect2(0, -4, bar.size.x, 30)))
+	wrap.set_meta("full", bar.size)
 	_root.add_child(wrap)
 	_fill[side] = wrap
 
@@ -210,6 +241,7 @@ func _side(army: Dictionary, side: String, x: float, portrait: String, might: in
 
 func _paint(side: String) -> void:
 	Layout.set_fill(_fill[side], float(_hp[side]) / float(_max[side]))
+	Layout.set_fill(_ghost[side], float(_hp[side]) / float(_max[side]))
 	_hp_text[side].text = "%s / %s" % [UI.grouped(_hp[side]), UI.grouped(_max[side])]
 
 
@@ -221,16 +253,11 @@ func _play() -> void:
 		var dst := str(e.get("dst", ""))
 		match str(e.get("k", "")):
 			"round":
-				_round_label.text = "ROUND %d" % int(e.get("r", 0))
-				await _wait(ROUND_PAUSE)
+				await _round_card(int(e.get("r", 0)))
 			"hit":
-				var crit := bool(e.get("crit", false))
-				_strike(side, int(e.get("dmg", 0)), crit)
-				await _wait(BLOW_PAUSE)
+				await _blow(side, int(e.get("dmg", 0)), bool(e.get("crit", false)))
 			"dodge", "miss":
-				_say("DODGED", UI.DIM)
-				_lunge(side)
-				await _wait(BLOW_PAUSE * 0.7)
+				await _dodge(side)
 			"hp":
 				var s := str(_id_side.get(dst, ""))
 				if s != "":
@@ -241,8 +268,7 @@ func _play() -> void:
 				if s2 != "":
 					_hp[s2] = 0
 					_drain(s2)
-					_fall(s2)
-					await _wait(0.5)
+					await _fall(s2)
 	_finish()
 
 
@@ -252,83 +278,244 @@ func _wait(seconds: float) -> void:
 	await get_tree().create_timer(seconds).timeout
 
 
-## One blow: the striker lunges, the struck side flashes and the number lands.
-func _strike(side: String, damage: int, crit: bool) -> void:
+## The round announces itself and gets out of the way.
+func _round_card(round: int) -> void:
+	_round_label.text = "ROUND %d" % round
+	if _skip:
+		return
+	_round_label.modulate.a = 0.0
+	_round_label.pivot_offset = Vector2(W / 2.0, 22)
+	_round_label.scale = Vector2(1.25, 1.25)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(_round_label, "modulate:a", 1.0, 0.16)
+	tw.tween_property(_round_label, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_BACK) \
+		.set_ease(Tween.EASE_OUT)
+	await _wait(ROUND_PAUSE)
+
+
+## One blow, in four beats.
+##
+## Pull back, drive in, land, recover. The old version slid a portrait 34 units
+## and put a number in the middle of the screen, which told you a number had
+## happened somewhere; none of it said who hit whom or how hard. Every beat here
+## is doing one of those two jobs: the lunge is the striker's, the recoil, the
+## flash, the burst, the shake and the bar are the struck side's, and the number
+## lands on the face it was taken out of.
+func _blow(side: String, damage: int, crit: bool) -> void:
 	var hit := "d" if side == "a" else "a"
-	_lunge(side)
-	_flash(hit, UI.RED if crit else Color(1, 1, 1))
-	_say(("%s%s" % [UI.grouped(damage), "!" if crit else ""]), UI.GOLD if crit else UI.INK,
-		112 if crit else 92)
+	if _skip:
+		return
+	var toward := 1.0 if side == "a" else -1.0
+	var face: Control = _face[side]
+	var home: Vector2 = _home[side]
+
+	# 1. Wind up: back off the target and rise a little. Intent, made visible.
+	var wind := create_tween()
+	wind.set_parallel(true)
+	wind.tween_property(face, "position:x", home.x - toward * 26.0, WIND_UP) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	wind.tween_property(face, "scale", Vector2(1.05, 1.05), WIND_UP)
+	await _wait(WIND_UP)
+
+	# 2. Lunge: the fastest movement on the screen, and the only one that eases in.
+	var drive := create_tween()
+	drive.tween_property(face, "position:x", home.x + toward * 104.0, LUNGE) \
+		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN)
+	await _wait(LUNGE)
+
+	# 3. The blow lands on the other side.
+	var force := clampf(float(damage) / float(maxi(_max[hit], 1)) * 3.2, 0.25, 1.0)
+	_slash_at(hit, toward, crit)
+	_burst_at(hit, crit)
+	_recoil(hit, toward, force)
+	_flash(hit, Color(1.6, 1.1, 1.0) if crit else Color(1.4, 1.4, 1.4))
+	_shake(force * (1.8 if crit else 1.0))
+	_number_at(hit, damage, crit)
 	if crit:
-		_shake()
+		_say("CRITICAL", UI.GOLD)
+
+	# 4. Recover.
+	var back := create_tween()
+	back.set_parallel(true)
+	back.tween_property(face, "position:x", home.x, RECOVER).set_trans(Tween.TRANS_QUAD) \
+		.set_ease(Tween.EASE_OUT)
+	back.tween_property(face, "scale", Vector2.ONE, RECOVER)
+	await _wait(AFTER_BLOW)
 
 
-## The number is the event, so it arrives in the middle at full size and leaves.
-func _say(text: String, col: Color, size: int = 92) -> void:
+## A dodge is a blow that does not land: the target leaves, and nothing hits.
+func _dodge(side: String) -> void:
+	var miss := "d" if side == "a" else "a"
+	if _skip:
+		return
+	var toward := 1.0 if side == "a" else -1.0
+	var face: Control = _face[side]
+	var home: Vector2 = _home[side]
+	var target: Control = _face[miss]
+	var thome: Vector2 = _home[miss]
+
+	var drive := create_tween()
+	drive.tween_property(face, "position:x", home.x + toward * 84.0, LUNGE + 0.04) \
+		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN)
+	var slip := create_tween()
+	slip.tween_property(target, "position:y", thome.y - 34.0, 0.10).set_trans(Tween.TRANS_QUAD)
+	slip.tween_property(target, "position:y", thome.y, 0.20).set_trans(Tween.TRANS_QUAD)
+	_say("DODGED", UI.DIM)
+	await _wait(0.16)
+	var back := create_tween()
+	back.tween_property(face, "position:x", home.x, RECOVER).set_trans(Tween.TRANS_QUAD)
+	await _wait(AFTER_BLOW)
+
+
+## The arc a blade leaves, swept across the face it landed on.
+func _slash_at(side: String, toward: float, crit: bool) -> void:
+	var at: Vector2 = _centre[side]
+	var size := 300.0 if crit else 250.0
+	var img := UI.image("battle/slash", Rect2(at.x - size / 2.0, at.y - size / 2.0, size, size))
+	img.pivot_offset = Vector2(size / 2.0, size / 2.0)
+	# The crescent faces the way the blow came from, and sweeps through.
+	img.rotation = deg_to_rad(-55.0 if toward > 0.0 else 125.0)
+	img.scale = Vector2(0.55, 0.9)
+	img.modulate = Color(1, 1, 1, 0.0)
+	_floaters.add_child(img)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(img, "modulate:a", 1.0, 0.05)
+	tw.tween_property(img, "scale", Vector2(1.25, 1.05), 0.22).set_trans(Tween.TRANS_QUAD) \
+		.set_ease(Tween.EASE_OUT)
+	tw.tween_property(img, "rotation", img.rotation + deg_to_rad(38.0 * toward), 0.22)
+	tw.chain().tween_property(img, "modulate:a", 0.0, 0.14)
+	tw.chain().tween_callback(img.queue_free)
+
+
+## The flash of contact.
+func _burst_at(side: String, crit: bool) -> void:
+	var at: Vector2 = _centre[side]
+	var size := 340.0 if crit else 260.0
+	var img := UI.image("battle/impact", Rect2(at.x - size / 2.0, at.y - size / 2.0, size, size))
+	img.pivot_offset = Vector2(size / 2.0, size / 2.0)
+	img.scale = Vector2(0.25, 0.25)
+	img.rotation = randf_range(-0.4, 0.4)
+	_floaters.add_child(img)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(img, "scale", Vector2.ONE, 0.26).set_trans(Tween.TRANS_QUINT) \
+		.set_ease(Tween.EASE_OUT)
+	tw.tween_property(img, "modulate:a", 0.0, 0.30)
+	tw.chain().tween_callback(img.queue_free)
+
+
+## The struck side is thrown back and comes off its feet a little.
+func _recoil(side: String, toward: float, force: float) -> void:
+	var face: Control = _face[side]
+	var home: Vector2 = _home[side]
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(face, "position:x", home.x + toward * (16.0 + 34.0 * force), 0.08) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(face, "rotation", deg_to_rad(toward * 4.0 * force), 0.08)
+	tw.chain().set_parallel(true)
+	tw.tween_property(face, "position:x", home.x, 0.34).set_trans(Tween.TRANS_ELASTIC) \
+		.set_ease(Tween.EASE_OUT)
+	tw.tween_property(face, "rotation", 0.0, 0.34).set_trans(Tween.TRANS_ELASTIC) \
+		.set_ease(Tween.EASE_OUT)
+
+
+func _flash(side: String, col: Color) -> void:
+	var face: Control = _face[side]
+	face.modulate = col
+	var tw := create_tween()
+	tw.tween_property(face, "modulate", Color.WHITE, 0.28)
+
+
+## The number lands on the face it came out of, then drifts off it.
+func _number_at(side: String, damage: int, crit: bool) -> void:
+	var at: Vector2 = _centre[side]
+	var size := 96 if crit else 74
+	var l := UI.label(UI.grouped(damage) + ("!" if crit else ""), size,
+		UI.GOLD if crit else UI.INK, "title", 800, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(l, Rect2(at.x - 170, at.y - 60, 340, size + 30))
+	l.pivot_offset = Vector2(170, (size + 30) / 2.0)
+	l.scale = Vector2(0.5, 0.5)
+	_floaters.add_child(l)
+	var away := 1.0 if side == "d" else -1.0
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(l, "scale", Vector2(1.15, 1.15), 0.12).set_trans(Tween.TRANS_BACK) \
+		.set_ease(Tween.EASE_OUT)
+	tw.chain().set_parallel(true)
+	tw.tween_property(l, "scale", Vector2.ONE, 0.10)
+	tw.tween_property(l, "position:y", l.position.y - 96.0, 0.62).set_trans(Tween.TRANS_QUAD) \
+		.set_ease(Tween.EASE_OUT)
+	tw.tween_property(l, "position:x", l.position.x + away * 26.0, 0.62)
+	tw.tween_property(l, "modulate:a", 0.0, 0.62).set_delay(0.18)
+	tw.chain().tween_callback(l.queue_free)
+
+
+## The word for what happened, when a number is not the story.
+func _say(text: String, col: Color) -> void:
 	if _skip:
 		return
 	_callout.text = text
 	_callout.label_settings.font_color = col
-	_callout.label_settings.font_size = size
+	_callout.label_settings.font_size = 54
 	_callout.modulate.a = 1.0
-	_callout.scale = Vector2(0.7, 0.7)
 	_callout.pivot_offset = Vector2(W / 2.0, 65)
+	_callout.scale = Vector2(0.8, 0.8)
 	var tw := create_tween()
+	tw.set_parallel(true)
 	tw.tween_property(_callout, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK) \
 		.set_ease(Tween.EASE_OUT)
-	tw.tween_interval(0.22)
-	tw.tween_property(_callout, "modulate:a", 0.0, 0.2)
+	tw.chain().tween_interval(0.24)
+	tw.chain().tween_property(_callout, "modulate:a", 0.0, 0.22)
 
 
-func _lunge(side: String) -> void:
-	if _skip or not _face.has(side):
-		return
-	var face: Control = _face[side]
-	var home := face.position
-	var tw := create_tween()
-	tw.tween_property(face, "position:x", home.x + (34.0 if side == "a" else -34.0), 0.1) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(face, "position:x", home.x, 0.22).set_trans(Tween.TRANS_QUAD)
-
-
-func _flash(side: String, col: Color) -> void:
-	if _skip or not _face.has(side):
-		return
-	var face: Control = _face[side]
-	face.modulate = col
-	var tw := create_tween()
-	tw.tween_property(face, "modulate", Color.WHITE, 0.3)
-
-
-func _shake() -> void:
+func _shake(force: float) -> void:
 	if _skip:
 		return
 	var home := _root.position
+	var amp := 4.0 + 12.0 * clampf(force, 0.0, 1.0)
 	var tw := create_tween()
-	for i in 3:
-		tw.tween_property(_root, "position", home + Vector2(randf_range(-9, 9), randf_range(-6, 6)), 0.04)
-	tw.tween_property(_root, "position", home, 0.05)
+	for i in 4:
+		tw.tween_property(_root, "position",
+			home + Vector2(randf_range(-amp, amp), randf_range(-amp * 0.6, amp * 0.6)), 0.035)
+	tw.tween_property(_root, "position", home, 0.06)
 
 
+## The real bar falls at once; the pale one behind it follows, late and slower,
+## so the strip between them is the blow that was just struck.
 func _drain(side: String) -> void:
-	if _skip:
-		_paint(side)
-		return
-	var wrap: Control = _fill[side]
-	var full: Vector2 = wrap.get_meta("full")
-	var want := full.x * clampf(float(_hp[side]) / float(_max[side]), 0.0, 1.0)
 	_hp_text[side].text = "%s / %s" % [UI.grouped(_hp[side]), UI.grouped(_max[side])]
-	wrap.visible = want >= 1.0
-	var tw := create_tween()
-	tw.tween_property(wrap, "size:x", maxf(want, 1.0), DRAIN).set_trans(Tween.TRANS_CUBIC)
-
-
-func _fall(side: String) -> void:
-	if not _face.has(side):
+	if _skip:
+		Layout.set_fill(_fill[side], float(_hp[side]) / float(_max[side]))
+		Layout.set_fill(_ghost[side], float(_hp[side]) / float(_max[side]))
 		return
+	var frac := clampf(float(_hp[side]) / float(_max[side]), 0.0, 1.0)
+	for pair in [[_fill[side], DRAIN, 0.0], [_ghost[side], GHOST_DRAIN, GHOST_DELAY]]:
+		var wrap: Control = pair[0]
+		var full: Vector2 = wrap.get_meta("full")
+		var want: float = maxf(full.x * frac, 1.0)
+		wrap.visible = full.x * frac >= 1.0
+		var tw := create_tween()
+		tw.tween_property(wrap, "size:x", want, float(pair[1])) \
+			.set_trans(Tween.TRANS_CUBIC).set_delay(float(pair[2]))
+
+
+## The loser goes down: the colour leaves them and they slide out of the light.
+func _fall(side: String) -> void:
 	var face: Control = _face[side]
+	if _skip:
+		face.modulate = Color(0.35, 0.3, 0.3, 0.6)
+		return
+	_shake(1.0)
 	var tw := create_tween()
-	tw.tween_property(face, "modulate", Color(0.35, 0.3, 0.3, 0.65), 0.45)
+	tw.set_parallel(true)
+	tw.tween_property(face, "modulate", Color(0.34, 0.29, 0.30, 0.55), 0.55)
+	tw.tween_property(face, "position:y", _home[side].y + 34.0, 0.55) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(face, "rotation", deg_to_rad(7.0 if side == "d" else -7.0), 0.55)
+	await _wait(0.75)
 
 
 func _finish() -> void:

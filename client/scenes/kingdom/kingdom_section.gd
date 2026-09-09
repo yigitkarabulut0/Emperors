@@ -136,6 +136,11 @@ func _text_span(text_x: float, button_w: float) -> float:
 func _row(height: float) -> Control:
 	var holder := Control.new()
 	holder.custom_minimum_size = Vector2(WIDTH, height)
+	# A plain Control stops mouse input, and a row covers the whole width of the
+	# list: seven of them across the Works tab swallowed every drag before the
+	# scroll could see one, so the tab would not scroll at all. Ignoring input
+	# here does not deafen the children -- the row's own button still answers.
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var plate := NinePatchRect.new()
 	plate.texture = Art.tex(PLATE)
 	for m in ["left", "top", "right", "bottom"]:

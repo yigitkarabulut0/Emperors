@@ -310,32 +310,21 @@
         345,
         190
       ],
-      "erase": [
-        {
-          "rect": [
-            680,
-            682,
-            66,
-            24
-          ],
-          "sample_x": [
-            880,
-            900
-          ]
-        },
-        {
-          "rect": [
-            680,
-            743,
-            64,
-            22
-          ],
-          "sample_x": [
-            880,
-            900
-          ]
-        }
-      ]
+      "inpaint": [
+        [
+          682,
+          682,
+          60,
+          21
+        ],
+        [
+          684,
+          742,
+          58,
+          23
+        ]
+      ],
+      "note": "as reputation_card: the bonus values sit on a graded ground"
     },
     {
       "name": "kingdom/realm_notice",
@@ -376,44 +365,27 @@
         396,
         258
       ],
-      "erase": [
-        {
-          "rect": [
-            668,
-            928,
-            150,
-            26
-          ],
-          "sample_x": [
-            880,
-            900
-          ]
-        },
-        {
-          "rect": [
-            668,
-            982,
-            140,
-            20
-          ],
-          "sample_x": [
-            880,
-            900
-          ]
-        },
-        {
-          "rect": [
-            673,
-            962,
-            125,
-            17
-          ],
-          "sample_x": [
-            820,
-            880
-          ]
-        }
-      ]
+      "inpaint": [
+        [
+          665,
+          925,
+          156,
+          32
+        ],
+        [
+          665,
+          979,
+          146,
+          26
+        ],
+        [
+          670,
+          959,
+          131,
+          23
+        ]
+      ],
+      "note": "text bands lifted with inpaint: the card's ground is graded across, so a row-fill from one column band leaves a dark rectangle"
     },
     {
       "name": "kingdom/rep_bar_fill",
@@ -511,245 +483,18 @@
       "erase": [
         {
           "rect": [
-            245,
-            1201,
-            14,
-            14
+            160,
+            1174,
+            366,
+            290
           ],
           "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            266,
-            1196,
-            150,
-            24
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            264,
-            1221,
-            28,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            296,
-            1224,
-            110,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            468,
-            1214,
-            56,
-            22
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            245,
-            1270,
-            14,
-            14
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            266,
-            1265,
-            150,
-            24
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            264,
-            1290,
-            28,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            296,
-            1293,
-            110,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            468,
-            1283,
-            56,
-            22
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            245,
-            1339,
-            14,
-            14
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            266,
-            1334,
-            150,
-            24
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            264,
-            1359,
-            28,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            296,
-            1362,
-            110,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            468,
-            1352,
-            56,
-            22
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            245,
-            1408,
-            14,
-            14
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            266,
-            1403,
-            150,
-            24
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            264,
-            1428,
-            28,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            296,
-            1431,
-            110,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            468,
-            1421,
-            56,
-            22
-          ],
-          "sample_x": [
-            365,
-            430
+            416,
+            434
           ]
         }
-      ]
+      ],
+      "note": "the panel bakes four portraits, four sword marks and the text beside them. The live row plate covers x 167..521 of each row, but the portrait art is taller than the row, so its ring showed above and below every plate. The rows' whole band is flattened to the plate's own colour; everything in it is drawn live."
     },
     {
       "name": "kingdom/lord_row",
@@ -762,89 +507,18 @@
       "erase": [
         {
           "rect": [
-            168,
-            1397,
-            74,
-            61
+            167,
+            1396,
+            354,
+            63
           ],
           "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            245,
-            1408,
-            14,
-            14
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            266,
-            1403,
-            150,
-            24
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            264,
-            1428,
-            28,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            296,
-            1431,
-            110,
-            20
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            468,
-            1421,
-            56,
-            22
-          ],
-          "sample_x": [
-            365,
-            430
-          ]
-        },
-        {
-          "rect": [
-            436,
-            1406,
-            34,
-            40
-          ],
-          "sample_x": [
-            365,
-            430
+            416,
+            434
           ]
         }
-      ]
+      ],
+      "note": "the empty row a panel shows where there is no lord. Seven separate erases left the gold of the portrait ring at the crop's top and bottom edge and a smudge of the role and level between them, so an empty row looked like someone standing in the dark. The row's interior is one flat colour from x 244 rightwards, so one sweep from a clean column band is exact."
     },
     {
       "name": "portraits/lord_yigit",

@@ -89,6 +89,7 @@ func _check(mode: String, canvas: Vector2) -> void:
 	var before := _buttons
 	_band = Vector2(page.global_position.x, page.global_position.x + page.size.x)
 	_walk(page)
+	_nothing_eats_the_drag(page)
 	if mode != "ranks" and _buttons == before:
 		_fail("%s: built no buttons at all" % _tag)
 	if page.size.y < 200.0:
@@ -172,6 +173,30 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 	print("  the four tabs each swap the page's content, clear of the rail")
 	host.queue_free()
 	await process_frame
+
+
+## A tab taller than the phone has to scroll, and a ScrollContainer only sees a
+## drag its children let through. Every row of these sections is a full-width
+## Control, and a plain Control stops mouse input: seven of them across the
+## Works tab swallowed every drag, so the tab could not be scrolled at all and
+## the Favour shop under the works was unreachable.
+func _nothing_eats_the_drag(page: Control) -> void:
+	var stack: Array = [page]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		for c in n.get_children():
+			stack.append(c)
+		if not (n is Control) or n is Button or n == page:
+			continue
+		var c2 := n as Control
+		if c2.mouse_filter != Control.MOUSE_FILTER_STOP:
+			continue
+		# A control narrower than half the section cannot be in the way of a
+		# thumb dragging down the middle of it.
+		if c2.size.x > page.size.x / 2.0:
+			_fail("%s: a %s %.0f units wide takes the drag before the scroll can"
+				% [_tag, n.get_class(), c2.size.x])
+			return
 
 
 func _walk(n: Node) -> void:

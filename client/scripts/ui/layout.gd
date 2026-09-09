@@ -210,9 +210,31 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 			if p.has("shadow") and not bool(p["shadow"]):
 				l.label_settings.shadow_color = Color(0, 0, 0, 0)
 			if p.has("line_height"):
-				# Godot's default leading is ~1.25 em; the layouts record the painting's.
-				l.label_settings.line_spacing = int(p.get("size", 24)) * (float(p["line_height"]) - 1.25)
+				# The layouts record the painting's own leading, and they record
+				# it two ways: as a ratio of the type size (1.05) or as the line
+				# height in design units (23). Reading the second as the first
+				# put 522 units between the two lines of the Army screen's
+				# soldier description, which is a third of the screen.
+				#
+				# Godot's line_spacing is what is ADDED to the font's own line,
+				# so the font's line has to be read with the spacing cleared
+				# before the difference can be worked out.
+				var want := float(p["line_height"])
+				if want < 4.0:
+					want *= float(p.get("size", 24))
+				l.label_settings.line_spacing = 0.0
+				l.label_settings.line_spacing = want - l.get_line_height()
 			UI.place(l, r)
+			# A Label cannot be shorter than one line of its own type, so a rect
+			# recorded tighter than the leading -- which most of them are, being
+			# measured off the painting's ink -- makes Godot grow the control
+			# downward from the rect's top and the words land low. The Kingdom's
+			# bonus values ended up sitting on the labels baked under them, and
+			# its ranking number eight units below where the painting has it.
+			# Centring the line on the rect's own centre puts the ink back.
+			var block := l.get_minimum_size().y
+			if block > r.size.y and l.vertical_alignment == VERTICAL_ALIGNMENT_CENTER:
+				l.position.y = r.position.y - (block - r.size.y) / 2.0
 			return l
 		"button":
 			var asset := str(p.get("asset", ""))

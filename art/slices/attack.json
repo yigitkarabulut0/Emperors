@@ -48,6 +48,23 @@
    ]
   },
   {
+   "name": "attack/tab_revenge_plain",
+   "rect": [
+    183,
+    284,
+    368,
+    78
+   ],
+   "soften": [
+    [
+     446,
+     280,
+     52,
+     52
+    ]
+   ]
+  },
+  {
    "name": "attack/tab_targets",
    "rect": [
     553,
@@ -652,6 +669,16 @@
      ]
     }
    ]
+  },
+  {
+   "name": "battle/horizon",
+   "rect": [
+    155,
+    85,
+    786,
+    80
+   ],
+   "note": "Banners, helmets and the castle from the Attack header, above its title and below the pills: the only band of that painting with no text in it. The battle screen stands its champions in front of it."
   }
  ]
 }

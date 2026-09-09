@@ -9,7 +9,6 @@ package combat
 import (
 	"math"
 	"math/rand/v2"
-	"sort"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/game/army"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
@@ -79,39 +78,67 @@ type Replay struct {
 	Events        []Event `json:"events"`
 }
 
-type unit struct {
+
+// Champion is a side as it fights: one figure carrying the whole army.
+//
+// A raid is the player's hero leading their soldiers, not ten separate duels,
+// and this is what the screen shows -- two champions trading single blows, the
+// way Shakes & Fidget does it. The arithmetic is the same as the roster it
+// replaces, on purpose:
+//
+//   Attack is the sum, because in the old model every unit struck once a round,
+//   so a side dealt the sum of its attacks per round. It still does, in one blow
+//   instead of ten.
+//
+//   HP is the sum, and the damage reduction is chosen so the champion takes
+//   exactly as much punishment as the roster did. Killing a roster costs the sum
+//   of its EFFECTIVE hit points -- hp scaled up by each unit's own reduction --
+//   because only the front rank was ever hit. So the champion's reduction is set
+//   from that: hp_total / ehp_total is what survives the armour.
+//
+//   Speed is the sum, so crit and dodge still turn on the ratio of one army's
+//   speed to the other's.
+//
+// Might is sqrt(attack x ehp), and both are carried over exactly, so the win
+// curve the calibration test guards does not move.
+type Champion struct {
 	Combatant
 	side  Side
 	hp    int64
 	maxHP int64
 	level int64
+	drBP  int64 // what its armour takes off every blow, in basis points
 }
 
-func (u *unit) alive() bool { return u.hp > 0 }
+func (c *Champion) alive() bool { return c.hp > 0 }
 
 // Simulate runs a battle to completion.
 //
-// The model is a volley with a front line: every living unit on a side
-// contributes damage each round, and all of it lands on the enemy's front unit.
-// That is what makes the Might proxy exact rather than approximate — attack sums
-// because everyone fires, effective HP sums because only the front is hit — and
-// it is also the only shape that animates legibly on a portrait phone.
+// Two champions, the attacker first, one blow each per round until one falls or
+// the rounds run out.
+//
+// It used to be a roster of up to ten units a side acting one at a time in speed
+// order, each with its own hit points and its own armour. That animated as a
+// stream of small numbers over a row of portraits -- legible as data, not as a
+// fight -- and it made a raid look like a spreadsheet settling. The maths is
+// carried over intact (see Champion); what changed is that a side's whole
+// strength lands in one readable blow.
 func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, defender Army) *Replay {
 	c := cfg.Soldiers.Combat
 
 	rep := &Replay{
-		Version: 1, Seed: seed, ConfigVersion: cfg.Version,
+		Version: 2, Seed: seed, ConfigVersion: cfg.Version,
 		Attacker: attacker, Defender: defender,
-		Events: make([]Event, 0, 256),
+		Events: make([]Event, 0, 64),
 	}
 
 	// Home Ground: the defender fights with +8% defence. A small, legible thumb
 	// on the scale that makes attacking a genuine decision rather than free.
-	aUnits := buildSide(attacker, SideAttacker, 10000)
-	dUnits := buildSide(defender, SideDefender, 10000+c.HomeGroundBP)
-	if len(aUnits) == 0 || len(dUnits) == 0 {
+	a := buildChampion(cfg, attacker, SideAttacker, 10000)
+	d := buildChampion(cfg, defender, SideDefender, 10000+c.HomeGroundBP)
+	if a == nil || d == nil {
 		rep.Winner = SideDefender
-		if len(dUnits) == 0 {
+		if d == nil {
 			rep.Winner = SideAttacker
 		}
 		return rep
@@ -119,96 +146,58 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 
 	// Fortune of War, rolled once per side before anything animates.
 	//
-	// This is the ONLY knob that can shape the win curve. With ~200 damage rolls
-	// per side, per-hit noise averages away to a coefficient of variation under
-	// 0.04, so crit and dodge cannot move it. A per-unit roll fails too: its
-	// effect shrinks as 1/sqrt(N), so the curve would drift as players buy slots.
+	// This is the ONLY knob that can shape the win curve. Per-blow noise cannot:
+	// it averages away over a battle, and a per-unit roll would shrink as
+	// 1/sqrt(N) and drift as players buy slots.
 	rep.FortuneABP = rollFortune(rng, c)
 	rep.FortuneDBP = rollFortune(rng, c)
 
-	// Speed no longer decides WHO opens -- the attacker always does, because the
-	// player who chose to raid should see their own blow land first. What speed
-	// decides is the order every unit acts in WITHIN a round, and the charge.
-	var aSpeed, dSpeed int64
-	for _, u := range aUnits {
-		aSpeed += u.Speed
-	}
-	for _, u := range dUnits {
-		dSpeed += u.Speed
-	}
+	// The attacker always opens: the player who chose to raid should see their
+	// own blow land first. The charge still belongs to the genuinely faster
+	// army, which is a separate question from who is raiding whom.
 	rep.FirstSide = SideAttacker
-	// The charge still belongs to the genuinely faster army, which is a separate
-	// question from who is raiding whom.
 	fastSide := SideAttacker
-	if dSpeed > aSpeed {
+	if d.Speed > a.Speed {
 		fastSide = SideDefender
 	}
-
-	aFront, dFront := 0, 0
 
 	for round := 1; round <= c.MaxRounds; round++ {
 		rep.Rounds = round
 		rageBP := 10000 + c.RageStepBP*int64(round-1)
+		rep.Events = append(rep.Events, Event{Round: round, Kind: "round"})
 
-		// One unit at a time, in speed order, damage landing as it is dealt.
-		//
-		// This used to be a volley: every living unit on a side struck at once,
-		// their damage was SUMMED, and the total was applied in one go. Two
-		// things came out of that. The replay showed ten numbers appearing
-		// together and read as a burst of noise rather than a fight. And overkill
-		// was wasted per volley rather than per blow, so a side could pour ten
-		// units' damage into a target with two hit points left and throw the rest
-		// away.
-		//
-		// Acting one at a time fixes both: each blow is a discrete, readable
-		// event, and the front rank advances the moment it falls, so the next
-		// unit in the order strikes whoever is actually standing there.
-		for _, u := range initiative(aUnits, dUnits) {
-			if !u.alive() {
-				continue // fell earlier in this same round
-			}
-			side := u.side
-
-			var dst []*unit
-			var frontIx *int
-			if side == SideAttacker {
-				dst, frontIx = dUnits, &dFront
-			} else {
-				dst, frontIx = aUnits, &aFront
-			}
-
+		for _, turn := range [2]*Champion{a, d} {
+			foe := d
 			fortune := rep.FortuneABP
-			if side == SideDefender {
+			if turn.side == SideDefender {
+				foe = a
 				fortune = rep.FortuneDBP
 			}
-
-			target := advanceFront(dst, frontIx)
-			if target == nil {
+			if !turn.alive() {
 				continue
 			}
 
-			dmg, crit, dodged := strike(cfg, rng, u, target, fortune, rageBP, round, side == fastSide)
+			dmg, crit, dodged := blow(cfg, rng, turn, foe, fortune, rageBP, round,
+				turn.side == fastSide)
 			if dodged {
-				rep.Events = append(rep.Events, Event{Round: round, Kind: "dodge", Side: side, Src: u.ID, Dst: target.ID})
+				rep.Events = append(rep.Events, Event{
+					Round: round, Kind: "dodge", Side: turn.side, Src: turn.ID, Dst: foe.ID})
 				continue
 			}
-
 			rep.Events = append(rep.Events, Event{
-				Round: round, Kind: "hit", Side: side, Src: u.ID, Dst: target.ID,
+				Round: round, Kind: "hit", Side: turn.side, Src: turn.ID, Dst: foe.ID,
 				Damage: dmg, Crit: crit,
 			})
-
-			target.hp -= dmg
-			if target.hp <= 0 {
-				target.hp = 0
-				rep.Events = append(rep.Events, Event{Round: round, Kind: "death", Side: other(side), Dst: target.ID})
+			foe.hp -= dmg
+			if foe.hp < 0 {
+				foe.hp = 0
 			}
 			rep.Events = append(rep.Events, Event{
-				Round: round, Kind: "hp", Side: other(side), Dst: target.ID, HPLeft: target.hp,
-			})
-
-			if !anyAlive(dst) {
-				rep.Winner = side
+				Round: round, Kind: "hp", Side: foe.side, Dst: foe.ID, HPLeft: foe.hp})
+			if !foe.alive() {
+				rep.Events = append(rep.Events, Event{
+					Round: round, Kind: "death", Side: foe.side, Dst: foe.ID})
+				rep.Winner = turn.side
 				return rep
 			}
 		}
@@ -217,115 +206,63 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 	// Timeout: whoever kept the larger fraction of their health. An exact tie
 	// goes to the defender, so a stalemate never rewards the aggressor.
 	rep.TimedOut = true
-	aFrac := healthFraction(aUnits)
-	dFrac := healthFraction(dUnits)
 	rep.Winner = SideDefender
-	if aFrac > dFrac {
+	if a.hp*10000/max64(a.maxHP, 1) > d.hp*10000/max64(d.maxHP, 1) {
 		rep.Winner = SideAttacker
 	}
 	return rep
 }
 
-// initiative orders every living unit for one round of blows.
-//
-// Speed is what this is FOR. It buys you the right to swing earlier, which in a
-// system where the front rank can fall mid-round is worth real damage: a fast
-// unit lands its blow before a slower one that might have killed its target
-// first, and a fast defender can drop the attacker's champion before it acts.
-//
-// The attacker always opens, whatever the speeds. Raiding is a deliberate act
-// and the player who chose it should see their own blow land first; speed
-// arranges everyone after that.
-func initiative(aUnits, dUnits []*unit) []*unit {
-	out := make([]*unit, 0, len(aUnits)+len(dUnits))
-	for _, u := range aUnits {
-		if u.alive() {
-			out = append(out, u)
-		}
-	}
-	for _, u := range dUnits {
-		if u.alive() {
-			out = append(out, u)
-		}
-	}
-	// Fastest first; the attacker takes ties, and id breaks the rest, so an audit
-	// re-run of the same battle cannot disagree about who swung when.
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Speed != out[j].Speed {
-			return out[i].Speed > out[j].Speed
-		}
-		if out[i].side != out[j].side {
-			return out[i].side == SideAttacker
-		}
-		return out[i].ID < out[j].ID
-	})
-	// Pull the attacker's fastest to the very front. Everyone else keeps their
-	// speed order behind it.
-	for i, u := range out {
-		if u.side == SideAttacker {
-			if i > 0 {
-				copy(out[1:i+1], out[:i])
-				out[0] = u
-			}
-			break
-		}
-	}
-	return out
-}
-
-func buildSide(a Army, side Side, defScaleBP int64) []*unit {
-	out := make([]*unit, 0, len(a.Units))
-	for _, cbt := range a.Units {
-		u := &unit{Combatant: cbt, side: side, hp: cbt.HP, maxHP: cbt.HP, level: a.Level}
-		u.Defense = u.Defense * defScaleBP / 10000
-		if u.hp <= 0 {
+// buildChampion folds a roster into the one figure that fights for it.
+func buildChampion(cfg *gameconfig.Bundle, roster Army, side Side, defScaleBP int64) *Champion {
+	var atk, spd, hp, ehp int64
+	var face Combatant
+	var haveFace bool
+	for _, u := range roster.Units {
+		if u.HP <= 0 {
 			continue
 		}
-		out = append(out, u)
-	}
-	// Fastest first, ties broken by id, so ordering is fully deterministic and an
-	// audit re-run cannot disagree about who stood where.
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Speed != out[j].Speed {
-			return out[i].Speed > out[j].Speed
+		def := u.Defense * defScaleBP / 10000
+		drBP := army.DamageReductionBP(cfg, def, roster.Level)
+		atk += u.Attack
+		spd += u.Speed
+		hp += u.HP
+		// What it costs to kill this unit through its own armour.
+		ehp += u.HP * 10000 / max64(10000-drBP, 1)
+		// The hero is the face of the army; failing that, the first unit in it.
+		if u.IsHero || !haveFace {
+			if u.IsHero || !face.IsHero {
+				face = u
+				haveFace = true
+			}
 		}
-		return out[i].ID < out[j].ID
-	})
-	return out
+	}
+	if hp <= 0 {
+		return nil
+	}
+	return &Champion{
+		Combatant: Combatant{
+			ID: roster.PlayerID, Name: roster.Name, Tier: face.Tier, Type: face.Type,
+			IsHero: true, Attack: atk, Defense: face.Defense, Speed: spd, HP: hp,
+		},
+		side: side, hp: hp, maxHP: hp, level: roster.Level,
+		// Set so that hp / (1 - dr) == ehp: the champion takes exactly the
+		// punishment the roster it replaces would have taken.
+		drBP: 10000 - hp*10000/max64(ehp, 1),
+	}
 }
 
-func advanceFront(units []*unit, front *int) *unit {
-	for *front < len(units) {
-		if units[*front].alive() {
-			return units[*front]
-		}
-		*front++
+func max64(a, b int64) int64 {
+	if a > b {
+		return a
 	}
-	return nil
+	return b
 }
 
-func anyAlive(units []*unit) bool {
-	for _, u := range units {
-		if u.alive() {
-			return true
-		}
-	}
-	return false
-}
 
-func healthFraction(units []*unit) int64 {
-	var hp, max int64
-	for _, u := range units {
-		if u.hp > 0 {
-			hp += u.hp
-		}
-		max += u.maxHP
-	}
-	if max == 0 {
-		return 0
-	}
-	return hp * 10000 / max
-}
+
+
+
 
 func other(s Side) Side {
 	if s == SideAttacker {
@@ -334,8 +271,8 @@ func other(s Side) Side {
 	return SideAttacker
 }
 
-// strike resolves one unit's contribution to a volley.
-func strike(cfg *gameconfig.Bundle, rng *rand.Rand, u, target *unit, fortuneBP, rageBP int64, round int, isFastSide bool) (dmg int64, crit, dodged bool) {
+// blow resolves one champion's swing at the other.
+func blow(cfg *gameconfig.Bundle, rng *rand.Rand, u, target *Champion, fortuneBP, rageBP int64, round int, isFastSide bool) (dmg int64, crit, dodged bool) {
 	c := cfg.Soldiers.Combat
 
 	if rng.Int64N(10000) < dodgeChanceBP(cfg, target, u) {
@@ -347,8 +284,9 @@ func strike(cfg *gameconfig.Bundle, rng *rand.Rand, u, target *unit, fortuneBP, 
 	base = base * fortuneBP / 10000
 	base = base * rageBP / 10000
 
-	drBP := army.DamageReductionBP(cfg, target.Defense, target.level)
-	base = base * (10000 - drBP) / 10000
+	// The champion's own reduction, set when it was folded together so that it
+	// absorbs exactly what its roster would have.
+	base = base * (10000 - target.drBP) / 10000
 
 	span := c.VarianceMaxBP - c.VarianceMinBP
 	variance := c.VarianceMinBP
@@ -373,7 +311,7 @@ func strike(cfg *gameconfig.Bundle, rng *rand.Rand, u, target *unit, fortuneBP, 
 	return base, crit, false
 }
 
-func critChanceBP(cfg *gameconfig.Bundle, u, target *unit) int64 {
+func critChanceBP(cfg *gameconfig.Bundle, u, target *Champion) int64 {
 	c := cfg.Soldiers.Combat
 	denom := u.Speed + target.Speed + 1
 	bp := c.CritBaseBP + c.CritSpeedBP*u.Speed/denom
@@ -383,7 +321,7 @@ func critChanceBP(cfg *gameconfig.Bundle, u, target *unit) int64 {
 	return bp
 }
 
-func dodgeChanceBP(cfg *gameconfig.Bundle, target, attacker *unit) int64 {
+func dodgeChanceBP(cfg *gameconfig.Bundle, target, attacker *Champion) int64 {
 	c := cfg.Soldiers.Combat
 	denom := target.Speed + attacker.Speed + 1
 	bp := c.DodgeSpeedBP * target.Speed / denom

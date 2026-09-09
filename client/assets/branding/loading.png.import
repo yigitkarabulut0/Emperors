@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dkigctxx8mjip"
-path="res://.godot/imported/medallion.png-29e32c2de6f71660dbc584ea9577711d.ctex"
+uid="uid://dh1bdw8se36k2"
+path="res://.godot/imported/loading.png-361c768877410283a418ffd29e8e7cba.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/branding/medallion.png"
-dest_files=["res://.godot/imported/medallion.png-29e32c2de6f71660dbc584ea9577711d.ctex"]
+source_file="res://assets/branding/loading.png"
+dest_files=["res://.godot/imported/loading.png-361c768877410283a418ffd29e8e7cba.ctex"]
 
 [params]
 

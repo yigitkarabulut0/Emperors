@@ -1,141 +1,93 @@
 #!/usr/bin/env python3
-"""Bakes the two pieces the boot screen and the iOS launch image share.
+"""Prepares the splash and loading art the app ships.
 
     art/.venv/bin/python scripts/make-branding.py
 
-  branding/medallion.png  the hero portrait in a gold ring, on transparency
-  branding/launch@2x.png  the launch image iOS shows while the engine starts
+The two paintings live in art/branding/ and do not ship; what ships is built
+from them here.
+
+  branding/loading.png       the loading painting with its progress track
+                             emptied, so the bar can be filled for real
+  branding/loading_fill.png  the gold out of that bar, to fill it with
+  branding/launch@2x.png     the splash painting at the sizes iOS wants
   branding/launch@3x.png
 
-The launch image and the game's first frame are one composition, laid out on
-the same 941x1672 grid at the same proportions, so nothing jumps when the
-engine takes over. The launch image carries no progress bar and no status
-line: nothing on it should look like it is doing something while the app is
-not yet running.
+The splash is the painting without a progress bar, because iOS shows it before
+the app is running and nothing on it should look like it is doing something.
+The loading painting has the bar, and boot.gd fills it as each step of the boot
+finishes rather than on a timer.
+
+Both paintings are 941x1672, the design grid. A phone is taller than that, so
+the launch images are rendered at the phone's own proportions with the painting
+scaled to cover and cropped evenly at the sides -- the composition is symmetric,
+so it loses only the outer edge of each banner.
 """
 import math
 import pathlib
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-BRAND = ROOT / "client/assets/branding"   # what ships
-SRC = ROOT / "art/branding"                # the portrait it is built from, which does not
-CINZEL = ROOT / "client/assets/fonts/Cinzel-Variable.ttf"
+SRC = ROOT / "art/branding"                  # the paintings, which do not ship
+OUT = ROOT / "client/assets/branding"        # what does
 
-GROUND = (9, 21, 30)
-GOLD = (233, 196, 106)
-GOLD_DIM = (201, 162, 78)
-DIM = (184, 174, 156)
+## The paintings are 941x1672 and a phone is much taller. Covering the screen
+## with them crops a fifth of the width, which cuts the E and the S off
+## EMPERORS, so each is first extended to the tall canvas by stretching its own
+## top and bottom rows: the top is sky between pillars and banners, all
+## vertical, and the bottom is carpet and stone, all horizontal, so neither
+## shows the stretch. After that the covering crop takes only a little off the
+## top and bottom and nothing off the sides.
+ART = (941, 1672)
+TALL = (941, 2200)
+PAD = (TALL[1] - ART[1]) // 2
 
-MEDALLION = 560                      # the asset's pixel size
-
-# The composition, in fractions of the screen it is drawn on -- not of the
-# 941x1672 design grid. A 19.5:9 phone runs a long way past the grid's foot, so
-# a layout measured on the grid leaves the bottom third of the phone empty,
-# which is what the first attempt did. boot.gd uses these same numbers.
-VISTA_F = 0.235                      # height of the picture band
-FADE_F = 0.105                       # over which it becomes the ground
-MED_MID_F = 0.345                    # centre of the medallion
-MED_W_F = 0.60                       # its width, of the screen's
-TITLE_MID_F = 0.545
-TITLE_SIZE_F = 0.0625
-RULE_F = 0.605
-RULE_W_F = 0.32
-SUB_MID_F = 0.634
-SUB_SIZE_F = 0.018
-FOOT_F = 0.062                       # the foliage at the very bottom
-
+## The progress track inside the painted frame, in the EXTENDED painting's
+## pixels, read off a 2x crop of the bar. boot.gd carries the same numbers.
+TRACK = (205, 1787, 514, 30)     # 1523 in the painting, + PAD
+FILL = (205, 1791, 514, 21)      # 1527 in the painting, + PAD
 SIZES = {"launch@2x.png": (860, 1864), "launch@3x.png": (1290, 2796)}
 
 
-def medallion():
-    """The portrait, round, in a gold ring with a soft light behind it."""
-    n = MEDALLION
-    ring, glow = 9, 26
-    face = n - 2 * (ring + glow)
-
-    out = Image.new("RGBA", (n, n), (0, 0, 0, 0))
-
-    # A warm halo, so the medallion sits in the dark rather than on it.
-    halo = Image.new("RGBA", (n, n), (0, 0, 0, 0))
-    ImageDraw.Draw(halo).ellipse([glow // 2, glow // 2, n - glow // 2, n - glow // 2],
-                                 fill=GOLD_DIM + (70,))
-    out = Image.alpha_composite(out, halo.filter(ImageFilter.GaussianBlur(glow / 1.6)))
-
-    src = Image.open(SRC / "hero.png").convert("RGB").resize((face, face), Image.LANCZOS)
-    mask = Image.new("L", (face * 4, face * 4), 0)
-    ImageDraw.Draw(mask).ellipse([0, 0, face * 4 - 1, face * 4 - 1], fill=255)
-    mask = mask.resize((face, face), Image.LANCZOS)
-    out.paste(src, (glow + ring, glow + ring), mask)
-
-    # The ring, drawn at 4x and reduced so its edge is clean.
-    s = 4
-    r = Image.new("RGBA", (n * s, n * s), (0, 0, 0, 0))
-    d = ImageDraw.Draw(r)
-    box = [(glow + ring // 2) * s, (glow + ring // 2) * s,
-           (n - glow - ring // 2) * s, (n - glow - ring // 2) * s]
-    d.ellipse(box, outline=GOLD + (255,), width=ring * s)
-    d.ellipse([b + (ring + 3) * s * (1 if i < 2 else -1) for i, b in enumerate(box)],
-              outline=GOLD_DIM + (150,), width=max(1, s))
-    return Image.alpha_composite(out, r.resize((n, n), Image.LANCZOS))
+def extend(im):
+    """The painting on the tall canvas, its own edges carrying the difference."""
+    out = Image.new("RGB", TALL)
+    out.paste(im, (0, PAD))
+    top = im.crop((0, 0, ART[0], 4)).resize((ART[0], 1), Image.LANCZOS)
+    bot = im.crop((0, ART[1] - 4, ART[0], ART[1])).resize((ART[0], 1), Image.LANCZOS)
+    out.paste(top.resize((ART[0], PAD), Image.NEAREST), (0, 0))
+    out.paste(bot.resize((ART[0], TALL[1] - ART[1] - PAD), Image.NEAREST), (0, PAD + ART[1]))
+    return out
 
 
-def _font(size, weight):
-    f = ImageFont.truetype(str(CINZEL), int(size))
-    try:
-        f.set_variation_by_axes([weight])
-    except Exception:
-        pass
-    return f
+def loading():
+    """The painting with its bar emptied, and the gold that fills it."""
+    im = extend(Image.open(SRC / "loading_src.jpg").convert("RGB"))
+    fx, fy, fw, fh = FILL
+    # A slice of the painted gold, to be stretched across however much of the
+    # bar is done. Taken from the middle of the run, clear of both ends.
+    strip = im.crop((fx + 95, fy, fx + 195, fy + fh))
+    tx, ty, tw, th = TRACK
+    # The unfilled end of the track, copied across the filled part.
+    im.paste(im.crop((tx + tw - 30, ty, tx + tw - 20, ty + th)).resize((tw, th), Image.LANCZOS),
+             (tx, ty))
+    im.save(OUT / "loading.png")
+    strip.save(OUT / "loading_fill.png")
+    print(f"loading.png  {im.size}\nloading_fill.png  {strip.size}")
 
 
-def _centred(d, w, text, font, mid_y, fill):
-    box = d.textbbox((0, 0), text, font=font)
-    d.text(((w - (box[2] - box[0])) / 2 - box[0], mid_y - (box[3] - box[1]) / 2 - box[1]),
-           text, font=font, fill=fill)
-
-
-def launch(w, h, med):
-    im = Image.new("RGB", (w, h), GROUND)
-
-    # The vista fills the top band, cropped to it rather than squashed.
-    vista = Image.open(BRAND / "vista.png").convert("RGB")
-    vh = int(VISTA_F * h)
-    scale = max(w / vista.width, vh / vista.height)
-    big = vista.resize((math.ceil(vista.width * scale), math.ceil(vista.height * scale)),
-                       Image.LANCZOS)
-    im.paste(big.crop(((big.width - w) // 2, 0, (big.width - w) // 2 + w, vh)), (0, 0))
-
-    fade_h = int(FADE_F * h)
-    ramp = Image.new("L", (1, fade_h))
-    for y in range(fade_h):
-        ramp.putpixel((0, y), int(255 * (y / max(1, fade_h - 1))))
-    im.paste(Image.new("RGB", (w, fade_h), GROUND), (0, vh - fade_h), ramp.resize((w, fade_h)))
-
-    foot = Image.open(BRAND / "foot.png").convert("RGB")
-    fh = int(FOOT_F * h)
-    im.paste(foot.resize((w, fh), Image.LANCZOS), (0, h - fh))
-
-    ms = int(MED_W_F * w)
-    med_s = med.resize((ms, ms), Image.LANCZOS)
-    im.paste(med_s, ((w - ms) // 2, int(MED_MID_F * h - ms / 2)), med_s)
-
-    d = ImageDraw.Draw(im)
-    _centred(d, w, "EMPERORS", _font(TITLE_SIZE_F * h, 700), TITLE_MID_F * h, GOLD)
-    rw, ry = int(RULE_W_F * w), int(RULE_F * h)
-    d.rectangle([(w - rw) // 2, ry, (w + rw) // 2, ry + max(2, int(h / 1000))], fill=GOLD_DIM)
-    _centred(d, w, "RULE YOUR REALM", _font(SUB_SIZE_F * h, 500), SUB_MID_F * h, DIM)
-    return im
-
-
-def main():
-    med = medallion()
-    med.save(BRAND / "medallion.png")
-    print(f"medallion.png  {MEDALLION}x{MEDALLION}")
+def launch():
+    src = extend(Image.open(SRC / "splash_src.jpg").convert("RGB"))
     for name, (w, h) in SIZES.items():
-        launch(w, h, med).save(BRAND / name)
+        scale = max(w / src.width, h / src.height)
+        big = src.resize((math.ceil(src.width * scale), math.ceil(src.height * scale)),
+                         Image.LANCZOS)
+        left = (big.width - w) // 2
+        top = (big.height - h) // 2
+        big.crop((left, top, left + w, top + h)).save(OUT / name)
         print(f"{name}  {w}x{h}")
 
 
 if __name__ == "__main__":
-    main()
+    OUT.mkdir(parents=True, exist_ok=True)
+    loading()
+    launch()

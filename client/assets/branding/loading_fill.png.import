@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://xuvgtf5a3rph"
-path="res://.godot/imported/foot.png-07b311b355dc6f2d2fdb104350079051.ctex"
+uid="uid://gyuxeintmb2r"
+path="res://.godot/imported/loading_fill.png-1cbfde24bb07bbd663c9c80ee2ec1444.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/branding/foot.png"
-dest_files=["res://.godot/imported/foot.png-07b311b355dc6f2d2fdb104350079051.ctex"]
+source_file="res://assets/branding/loading_fill.png"
+dest_files=["res://.godot/imported/loading_fill.png-1cbfde24bb07bbd663c9c80ee2ec1444.ctex"]
 
 [params]
 

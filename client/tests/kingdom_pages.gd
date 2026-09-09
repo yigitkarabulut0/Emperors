@@ -21,6 +21,11 @@ var _rows: int = 0
 var _buttons: int = 0
 var _tag := ""
 var _screen := Rect2()
+## The section's own left and right edge, in screen units. Every row is built
+## from the section's width; a row internal that was written against an older,
+## wider section runs off the phone, and that is exactly what happened when the
+## section was narrowed to clear the rail and the rows were not.
+var _band := Vector2.ZERO
 
 
 func _initialize() -> void:
@@ -82,6 +87,7 @@ func _check(mode: String, canvas: Vector2) -> void:
 	_tag = "%s on %dx%d" % [mode, int(canvas.x), int(canvas.y)]
 	_screen = Rect2(Vector2.ZERO, canvas)
 	var before := _buttons
+	_band = Vector2(page.global_position.x, page.global_position.x + page.size.x)
 	_walk(page)
 	if mode != "ranks" and _buttons == before:
 		_fail("%s: built no buttons at all" % _tag)
@@ -144,18 +150,25 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 	for i in 3:
 		await process_frame
 	var lowest := 0.0
-	for id in ["donate", "reputation_card", "treasury_card"]:
+	# REALM is the reference's whole painted page now, so what has to be down
+	# there is the page's own foot -- the ranking card and the two panels.
+	for id in ["ranking_card", "works_panel", "lords_panel", "donate"]:
 		if ui.has(id):
 			var c: Control = ui[id]
 			lowest = maxf(lowest, c.position.y + c.size.y)
 	if lowest < 1200.0:
 		_fail("the realm tab finishes at y %.0f and leaves the rest of the page empty"
 			% lowest)
-	if ui.has("donate"):
-		var d: Control = ui["donate"]
-		if d.size.y * PT_PER_UNIT < 50.0:
-			_fail("the realm's DONATE is %.0f pt tall on a tab with room to spare"
-				% (d.size.y * PT_PER_UNIT))
+	# REALM's own buttons are painted plates seated in the reference's page, so
+	# what is asked of them is the thumb rule, not extra height: the painting
+	# says where DONATE goes and stretching it stretches the word on it.
+	for id in ["donate", "edit_name", "lords_view_all", "works_view_all", "view_rankings"]:
+		if not ui.has(id):
+			continue
+		var d: Control = ui[id]
+		if minf(d.size.x, d.size.y) * PT_PER_UNIT < 44.0:
+			_fail("the realm's %s is %.0fx%.0f pt, under the 44 a thumb needs"
+				% [id, d.size.x * PT_PER_UNIT, d.size.y * PT_PER_UNIT])
 	print("  the four tabs each swap the page's content, clear of the rail")
 	host.queue_free()
 	await process_frame
@@ -175,5 +188,15 @@ func _walk(n: Node) -> void:
 				% [_tag, r.size.x, _screen.size.x])
 	if n is Label and (n as Label).text != "":
 		_rows += 1
-	for c in n.get_children():
-		_walk(c)
+	if n is Control and _band != Vector2.ZERO and n.get_parent() != null:
+		var c := n as Control
+		var l := c.global_position.x
+		var rr := l + c.size.x
+		if rr > _band.y + 1.0:
+			_fail("%s: a %s reaches x %.0f, past the section's right edge at %.0f"
+				% [_tag, n.get_class(), rr, _band.y])
+		if l < _band.x - 1.0:
+			_fail("%s: a %s starts at x %.0f, left of the section's %.0f"
+				% [_tag, n.get_class(), l, _band.x])
+	for c2 in n.get_children():
+		_walk(c2)

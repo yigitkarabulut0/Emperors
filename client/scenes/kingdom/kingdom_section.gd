@@ -19,14 +19,34 @@ extends Control
 ## One script for all three, because the rows differ and nothing else does.
 
 signal acted(path: String, body: Dictionary)
+## How tall the section turned out. Ranks fetches three boards over HTTP and
+## fills in as they land, so its height is not known on the frame it is built:
+## the page measured it once, a frame after it appeared, and the boards that
+## arrived afterwards hung below the end of the scroll where nothing could
+## reach them.
+signal grew(height: float)
 
 ## The rail runs down x 0..160 and the screen ends at 941, so a section lives
 ## between them with a margin either side. It was 800 wide starting at 70,
 ## which put the first ninety units of every row behind the rail.
 const WIDTH := 762.0
-const ROW_GAP := 14.0
+## Every row is measured from WIDTH, never from a number that happens to match
+## it. The rows were written for 800 and the section was later narrowed to 762
+## to clear the rail; the buttons on their right ran off the screen for a
+## fortnight because nothing tied the two together.
+const PAD := 24.0
+const INNER := WIDTH - PAD * 2.0
+const ROW_GAP := 16.0
 const PLATE := "inventory/card_frame"
 const PLATE_MARGIN := 26
+## Every row's action is the same object in the same place: a plate of this size
+## against the row's right edge, centred in the row's height. A row whose button
+## sat two units higher than the row above it is the whole reason the column
+## looked hand-placed.
+const BUTTON_H := 96.0
+## The gutter between the text column and the button, and between the picture
+## and the text. Both are this, so the three columns breathe evenly.
+const GUTTER := 22.0
 
 var mode := "lords"           ## lords | works | ranks
 var data: Dictionary = {}
@@ -47,31 +67,42 @@ func setup(which: String, kingdom_data: Dictionary, favour_shop: Dictionary) -> 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
-	var head := UI.label(_subtitle(), 26, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(head, Rect2(0, 0, WIDTH, 36))
+	var head := UI.label(_subtitle(), 28, UI.GOLD_DIM, "title", 600,
+		HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(head, Rect2(0, 0, WIDTH, 44))
 	add_child(head)
 
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", int(ROW_GAP))
-	_list.position = Vector2(0, 46)
+	_list.position = Vector2(0, 60)
 	_list.custom_minimum_size.x = WIDTH
 	add_child(_list)
+	_list.minimum_size_changed.connect(_measure)
 	_fill()
-	# The page scrolls, so the section only has to say how tall it turned out.
+	# The page scrolls, so the section only has to say how tall it turned out --
+	# every time it turns out to be a different height.
 	await get_tree().process_frame
-	custom_minimum_size = Vector2(WIDTH, 46.0 + _list.get_combined_minimum_size().y + 40.0)
+	_measure()
+
+
+func _measure() -> void:
+	var h := 60.0 + _list.get_combined_minimum_size().y + 40.0
+	if absf(h - size.y) < 1.0:
+		return
+	custom_minimum_size = Vector2(WIDTH, h)
 	size = custom_minimum_size
+	grew.emit(h)
 
 
 func _subtitle() -> String:
 	match mode:
 		"lords":
 			var k: Dictionary = data.get("kingdom", {}) if data.get("kingdom", null) is Dictionary else {}
-			return "%d of %d lords" % [int(k.get("members", 0)), int(k.get("member_cap", 0))]
+			return "%d OF %d LORDS" % [int(k.get("members", 0)), int(k.get("member_cap", 0))]
 		"works":
-			return "%s Favour to spend" % UI.grouped(int(shop.get("favour", 0)))
+			return "%s FAVOUR TO SPEND" % UI.grouped(int(shop.get("favour", 0)))
 		"ranks":
-			return "Where the realm stands"
+			return "WHERE THE REALM STANDS"
 	return ""
 
 
@@ -86,19 +117,44 @@ func _plate_button(word: String, plate: String, col: Color) -> Button:
 	return b
 
 
+## The row's action, seated against the right edge and centred in the height.
+func _action(row: Control, word: String, plate: String, col: Color,
+		button_w: float, row_h: float) -> Button:
+	var b := _plate_button(word, plate, col)
+	UI.place(b, Rect2(WIDTH - PAD - button_w, (row_h - BUTTON_H) / 2.0, button_w, BUTTON_H))
+	row.add_child(b)
+	return b
+
+
+## How wide the text column is once the picture on the left and the button on
+## the right have taken theirs. Nothing in a row is given a width by hand.
+func _text_span(text_x: float, button_w: float) -> float:
+	return WIDTH - PAD - button_w - GUTTER - text_x
+
+
 ## A row is a plate with things laid on it. Everything in the list is one.
 func _row(height: float) -> Control:
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(800, height)
+	holder.custom_minimum_size = Vector2(WIDTH, height)
 	var plate := NinePatchRect.new()
 	plate.texture = Art.tex(PLATE)
 	for m in ["left", "top", "right", "bottom"]:
 		plate.set("patch_margin_" + m, PLATE_MARGIN)
-	UI.place(plate, Rect2(0, 0, 800, height))
+	UI.place(plate, Rect2(0, 0, WIDTH, height))
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(plate)
 	_list.add_child(holder)
 	return holder
+
+
+## A picture on the left of a row, centred in its height, drawn at its own
+## proportions. The portraits are near square and the works are 86x69, and a
+## work forced into a square box came out a squashed building.
+func _picture(row: Control, asset: String, box: Vector2, row_h: float) -> TextureRect:
+	var t := UI.image(asset, Rect2(PAD, (row_h - box.y) / 2.0, box.x, box.y))
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(t)
+	return t
 
 
 func _text(host: Control, s: String, rect: Rect2, size: int, col: Color,
@@ -117,6 +173,14 @@ func _act(path: String, body: Dictionary) -> void:
 	acted.emit(path, body)
 
 
+## What a list says when it has nothing to show. A tab that draws an empty
+## column reads as a tab that failed to load, and one of these did.
+func _notice(text: String) -> void:
+	var row := _row(110.0)
+	_text(row, text, Rect2(PAD, 0, INNER, 110), 25, UI.DIM, "body", 500,
+		HORIZONTAL_ALIGNMENT_CENTER).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
 func _fill() -> void:
 	match mode:
 		"lords": _fill_lords()
@@ -130,11 +194,18 @@ func _fill() -> void:
 ## king can set a rank by tapping a row; everyone can invite; everyone can
 ## leave. All three used to be entries in the same list of options, so "Leave
 ## the kingdom" sat under the members like a thirteenth member.
-const LORD_PORTRAITS := ["portraits/lord_yigit", "portraits/lord_aldric",
-	"portraits/lord_seraphine", "portraits/lord_darian"]
+## Four faces are painted and a kingdom holds fifty lords, so a face is a
+## stand-in until players have their own. It is still chosen, not cycled: the
+## crowned portrait belongs to the king and to nobody else -- rotating the list
+## by row put a crown on the fifth lord in the roster -- and the rest are picked
+## by a hash of the player's id, so a lord keeps the same face every visit.
+const KING_PORTRAIT := "portraits/lord_yigit"
+const LORD_PORTRAITS := ["portraits/lord_aldric", "portraits/lord_seraphine",
+	"portraits/lord_darian"]
 const ROLE_ICON := {"king": "icons/role_king", "captain": "icons/role_captain",
 	"lord": "icons/role_lord"}
-const ROW_H := 150.0
+const ROW_H := 156.0
+const FACE := 122.0
 
 
 func _fill_lords() -> void:
@@ -143,40 +214,51 @@ func _fill_lords() -> void:
 	for i in members.size():
 		var m: Dictionary = members[i]
 		var row := _row(ROW_H)
-		var face := UI.image(LORD_PORTRAITS[i % LORD_PORTRAITS.size()], Rect2(16, 16, 118, 118))
-		face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		face.clip_contents = true
-		row.add_child(face)
-		var ring := UI.image("inventory/frame_legendary" if str(m.get("role", "")) == "king"
-			else "inventory/frame_rare", Rect2(16, 16, 118, 118))
-		row.add_child(ring)
+		# The portraits carry their own gold ring, painted. An item tier frame
+		# was drawn over them as well, so every lord wore a rarity around his
+		# face -- two rings, and the wrong vocabulary for a person.
+		_picture(row, face_for(str(m.get("player_id", "")),
+			str(m.get("role", ""))), Vector2(FACE, FACE), ROW_H)
 
-		_text(row, str(m.get("name", "")), Rect2(152, 22, 380, 42), 34, UI.INK, "title", 700)
-		var role := str(m.get("role", "lord"))
-		row.add_child(UI.image(str(ROLE_ICON.get(role, ROLE_ICON["lord"])), Rect2(152, 70, 34, 34)))
-		_text(row, role.to_upper(), Rect2(194, 72, 200, 32), 24, UI.GOLD_DIM, "title", 600)
-		_text(row, "Level %d" % int(m.get("level", 1)), Rect2(152, 106, 200, 30), 24, UI.DIM)
-		_text(row, "%s given" % UI.short_number(int(str(m.get("donated", "0")))),
-			Rect2(500, 106, 284, 30), 24, UI.GOLD_DIM, "body", 500, HORIZONTAL_ALIGNMENT_RIGHT)
-
-		# Only the king can change a rank, and never their own.
 		var them := str(m.get("player_id", ""))
-		if king and them != Session.player_id:
-			var b := _plate_button("RANK", "inventory/btn_sell_plate", UI.INK)
-			UI.place(b, Rect2(560, 24, 218, 96))
-			b.pressed.connect(_set_role.bind(them, str(m.get("name", ""))))
-			row.add_child(b)
+		var can_rank := king and them != Session.player_id
+		var button_w := 200.0
+		var text_x := PAD + FACE + GUTTER
+		var text_w := _text_span(text_x, button_w if can_rank else 0.0)
+
+		_text(row, str(m.get("name", "")), Rect2(text_x, 24, text_w, 44), 34, UI.INK,
+			"title", 700)
+		var role := str(m.get("role", "lord"))
+		row.add_child(UI.image(str(ROLE_ICON.get(role, ROLE_ICON["lord"])),
+			Rect2(text_x, 74, 32, 32)))
+		_text(row, role.to_upper(), Rect2(text_x + 42, 76, text_w - 42, 30), 25, UI.GOLD_DIM,
+			"title", 600)
+		_text(row, "Level %d  ·  %s given" % [int(m.get("level", 1)),
+			UI.short_number(int(str(m.get("donated", "0"))))],
+			Rect2(text_x, 112, text_w, 30), 24, UI.DIM)
+
+		if can_rank:
+			_action(row, "RANK", "inventory/btn_sell_plate", UI.INK, button_w, ROW_H) \
+				.pressed.connect(_set_role.bind(them, str(m.get("name", ""))))
 
 	var invite := _plate_button("INVITE A PLAYER", "shop/buy_plate", Color("#F3FBF3"))
-	UI.place(invite, Rect2(0, 0, 800, 96))
-	invite.custom_minimum_size = Vector2(800, 96)
+	invite.custom_minimum_size = Vector2(WIDTH, BUTTON_H)
 	invite.pressed.connect(_invite)
 	_list.add_child(invite)
 
 	var leave := _plate_button("LEAVE THE KINGDOM", "shop/danger_plate", Color("#FBEDED"))
-	leave.custom_minimum_size = Vector2(800, 96)
+	leave.custom_minimum_size = Vector2(WIDTH, BUTTON_H)
 	leave.pressed.connect(_leave)
 	_list.add_child(leave)
+
+
+## Static so the Realm tab's painted ROYAL LORDS panel picks the same face for
+## the same lord. Two rules for one roster put a crown on a different man in
+## each of the two places he appears.
+static func face_for(player_id: String, role: String) -> String:
+	if role == "king":
+		return KING_PORTRAIT
+	return LORD_PORTRAITS[absi(player_id.hash()) % LORD_PORTRAITS.size()]
 
 
 func _set_role(player_id: String, name: String) -> void:
@@ -220,8 +302,10 @@ func _leave() -> void:
 ## in one list, and a building looked exactly like a potion.
 const WORK_ART := ["kingdom/work_banner_hall", "kingdom/work_training_grounds",
 	"kingdom/work_granary_law", "kingdom/work_royal_archives"]
-const WORK_H := 168.0
-const GOOD_H := 132.0
+const WORK_H := 176.0
+const GOOD_H := 140.0
+## The work paintings are 86x69, so the box they are drawn in is too.
+const WORK_PIC := Vector2(152, 122)
 
 
 func _fill_works() -> void:
@@ -229,41 +313,57 @@ func _fill_works() -> void:
 	for i in ups.size():
 		var u: Dictionary = ups[i]
 		var row := _row(WORK_H)
-		row.add_child(UI.image(WORK_ART[i % WORK_ART.size()], Rect2(16, 16, 136, 136)))
-		_text(row, str(u.get("name", "")), Rect2(168, 20, 380, 42), 32, UI.INK, "title", 700)
-		_text(row, "Level %d" % int(u.get("level", 0)), Rect2(168, 66, 200, 32), 26, UI.GOLD_DIM,
-			"body", 600)
-		_text(row, _bonus_text(u), Rect2(168, 102, 400, 34), 25, UI.DIM)
+		_picture(row, WORK_ART[i % WORK_ART.size()], WORK_PIC, WORK_H)
 
+		var button_w := 216.0
+		var text_x := PAD + WORK_PIC.x + GUTTER
+		var text_w := _text_span(text_x, button_w)
+
+		_text(row, str(u.get("name", "")), Rect2(text_x, 26, text_w, 44), 32, UI.INK,
+			"title", 700)
+		_text(row, "Level %d" % int(u.get("level", 0)), Rect2(text_x, 74, text_w, 32), 26,
+			UI.GOLD_DIM, "body", 600)
+		_text(row, _bonus_text(u), Rect2(text_x, 110, text_w, 46), 24, UI.DIM).autowrap_mode = \
+			TextServer.AUTOWRAP_WORD_SMART
+
+		# The cost sits under the button, inside the row, so the right column
+		# reads as one object. It used to hang two units off the row's bottom
+		# edge, which looked like a caption that had come loose.
 		if bool(u.get("maxed", false)):
-			_text(row, "MAX", Rect2(560, 60, 218, 44), 30, UI.GOLD_DIM, "title", 700,
-				HORIZONTAL_ALIGNMENT_CENTER)
+			# A maxed work keeps the column: the same plate, spent, rather than
+			# a word floating where every other row has a button.
+			var done := _action(row, "MAX LEVEL", "inventory/btn_sell_plate", UI.GOLD_DIM,
+				button_w, WORK_H - 34.0)
+			done.disabled = true
+			done.modulate = Color(0.62, 0.62, 0.62)
 			continue
-		var b := _plate_button("UPGRADE", "shop/buy_plate", Color("#F3FBF3"))
-		UI.place(b, Rect2(556, 20, 226, 96))
-		b.pressed.connect(_upgrade.bind(str(u.get("id", "")), str(u.get("name", "")),
-			int(u.get("next_cost", 0))))
-		row.add_child(b)
+		_action(row, "UPGRADE", "shop/buy_plate", Color("#F3FBF3"), button_w, WORK_H - 34.0) \
+			.pressed.connect(_upgrade.bind(str(u.get("id", "")), str(u.get("name", "")),
+				int(u.get("next_cost", 0))))
 		_text(row, "%s gold" % UI.short_number(int(u.get("next_cost", 0))),
-			Rect2(556, 120, 226, 32), 24, UI.GOLD_DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
+			Rect2(WIDTH - PAD - button_w, WORK_H - 52.0, button_w, 32), 24, UI.GOLD_DIM,
+			"body", 600, HORIZONTAL_ALIGNMENT_CENTER)
 
 	var goods: Array = shop.get("goods", [])
 	if goods.is_empty():
 		return
-	var head := UI.label("THE FAVOUR SHOP", 30, UI.GOLD, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-	head.custom_minimum_size = Vector2(800, 60)
-	_list.add_child(head)
+	_heading("THE FAVOUR SHOP")
+	var purse := int(shop.get("favour", 0))
 	for g in goods:
 		var row := _row(GOOD_H)
-		_text(row, str(g.get("name", "")), Rect2(24, 18, 480, 40), 30, UI.INK, "title", 700)
-		_text(row, str(g.get("blurb", "")), Rect2(24, 62, 500, 50), 24, UI.DIM)
+		var button_w := 224.0
+		var text_w := _text_span(PAD, button_w)
+		_text(row, str(g.get("name", "")), Rect2(PAD, 26, text_w, 40), 30, UI.INK, "title", 700)
+		_text(row, str(g.get("blurb", "")), Rect2(PAD, 70, text_w, 50), 23, UI.DIM) \
+			.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var cost := int(g.get("cost", 0))
-		var b := _plate_button("%d FAVOUR" % cost, "inventory/btn_sell_plate", UI.INK)
-		UI.place(b, Rect2(546, 18, 236, 96))
-		b.disabled = cost > int(shop.get("favour", 0))
+		var b := _action(row, "%d FAVOUR" % cost, "inventory/btn_sell_plate", UI.INK,
+			button_w, GOOD_H)
+		b.disabled = cost > purse
+		if b.disabled:
+			b.modulate = Color(0.6, 0.6, 0.6)
 		b.pressed.connect(func() -> void:
 			_act("/v1/kingdom/shop/buy", {"good": str(g.get("id", ""))}))
-		row.add_child(b)
 
 
 func _bonus_text(u: Dictionary) -> String:
@@ -286,40 +386,61 @@ func _upgrade(id: String, name: String, cost: int) -> void:
 ## boards. This was a single block of joined-up lines in a notice dialog, which
 ## is the shape a log has, not a table.
 const BOARDS := [["might", "MIGHT"], ["level", "LEVEL"], ["wealth", "WEALTH"]]
-const RANK_H := 92.0
+const RANK_H := 84.0
+const PLACE_W := 92.0
+const VALUE_W := 240.0
 
 
 func _fill_ranks() -> void:
 	var top: Array = data.get("leaderboard", [])
+	var mine := str((data.get("kingdom", {}) as Dictionary).get("id", ""))
 	if not top.is_empty():
 		_heading("KINGDOMS")
-		var mine := str((data.get("kingdom", {}) as Dictionary).get("id", ""))
 		for i in mini(top.size(), 10):
 			var k: Dictionary = top[i]
-			var row := _row(RANK_H)
 			var is_mine := str(k.get("id", "")) == mine
-			_text(row, "#%d" % (i + 1), Rect2(20, 24, 90, 44), 32,
-				UI.GOLD if is_mine else UI.GOLD_DIM, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-			_text(row, str(k.get("name", "")), Rect2(120, 24, 420, 44), 30,
-				UI.INK if is_mine else UI.DIM, "title", 600)
-			_text(row, "[%s]  Lv %d" % [str(k.get("tag", "")), int(k.get("level", 1))],
-				Rect2(540, 28, 240, 36), 24, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_RIGHT)
+			_rank_row(i + 1, str(k.get("name", "")),
+				"[%s]  Lv %d" % [str(k.get("tag", "")), int(k.get("level", 1))], is_mine)
 
+	var boards := 0
 	for board in BOARDS:
 		var res: Api.Response = await Api.get_json("/v1/leaderboards/" + str(board[0]))
+		# Three round trips, and a tap on another tab frees this section during
+		# any of them.
+		if not is_inside_tree():
+			return
 		if not res.ok:
 			continue
+		boards += 1
 		_heading("%s  ·  you are #%d" % [str(board[1]), int(res.data.get("my_rank", 0))])
 		for r in (res.data.get("rows", []) as Array).slice(0, 5):
-			var row := _row(RANK_H)
-			_text(row, "#%d" % int(r.get("rank", 0)), Rect2(20, 24, 90, 44), 30, UI.GOLD_DIM,
-				"title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-			_text(row, str(r.get("name", "")), Rect2(120, 24, 420, 44), 28, UI.INK, "title", 600)
-			_text(row, UI.short_number(int(str(r.get("value", "0")))), Rect2(540, 28, 240, 36),
-				26, UI.GOLD_DIM, "body", 600, HORIZONTAL_ALIGNMENT_RIGHT)
+			_rank_row(int(r.get("rank", 0)), str(r.get("name", "")),
+				UI.short_number(int(str(r.get("value", "0")))),
+				str(r.get("player_id", r.get("id", ""))) == Session.player_id)
+	if boards == 0:
+		_notice("The heralds have not counted the players yet.\nCome back shortly.")
+
+
+## One line of a table: place, who, and the one number the board is about. The
+## player's own line is lit; the rest are quiet, so a table can be read down
+## its left edge.
+func _rank_row(place: int, who: String, value: String, is_mine: bool) -> void:
+	var row := _row(RANK_H)
+	# Gold type alone did not read as "this line is you" at arm's length on a
+	# phone, so the plate under it is warmed as well.
+	if is_mine:
+		row.get_child(0).modulate = Color(1.24, 1.10, 0.82)
+	_text(row, "#%d" % place, Rect2(PAD, 0, PLACE_W, RANK_H), 32,
+		UI.GOLD if is_mine else UI.GOLD_DIM, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
+	var name_x := PAD + PLACE_W + GUTTER
+	_text(row, who, Rect2(name_x, 0, WIDTH - PAD - VALUE_W - GUTTER - name_x, RANK_H), 30,
+		UI.INK if is_mine else UI.DIM, "title", 600)
+	_text(row, value, Rect2(WIDTH - PAD - VALUE_W, 0, VALUE_W, RANK_H), 26,
+		UI.GOLD if is_mine else UI.DIM, "body", 600, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func _heading(text: String) -> void:
 	var l := UI.label(text, 28, UI.GOLD, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-	l.custom_minimum_size = Vector2(800, 62)
+	l.custom_minimum_size = Vector2(WIDTH, 64)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_list.add_child(l)

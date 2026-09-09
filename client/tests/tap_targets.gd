@@ -16,7 +16,7 @@ const MIN_PT := 44.0
 
 ## The two the painting will not give room to, with what stops them. Listed
 ## rather than ignored: if a panel is ever redrawn, this is the list to empty.
-## The six that cannot reach 44 pt, with what stops each. All six are drawn over
+## The five that cannot reach 44 pt, with what stops each. All six are drawn over
 ## a twin painted into the panel behind them, so growing one means growing it
 ## around its own centre or the player sees the button twice -- and around the
 ## centre there is something else in the way. A correctly placed button beats a
@@ -30,8 +30,6 @@ const CRAMPED := {
 		"the identity plate is only 95 units of height wide enough to hold it",
 	"family/equip_best":
 		"the gear panel's header band ends where the gear tiles begin",
-	"kingdom/lords_view_all":
-		"the lords panel's header band is 58 units and the rows under it are tap targets too",
 	"kingdom/upgrade":
 		"four works rows share the panel; a taller button would cover the row below",
 }
@@ -99,13 +97,24 @@ func _check(screen: String, e: Dictionary, r: Rect2) -> void:
 			% [id, w, h, MIN_PT])
 	if not small and CRAMPED.has(id):
 		_fail("%s now fits (%.0fx%.0f pt); take it out of CRAMPED" % [id, w, h])
-	# A button is drawn centred in its rect, and nearly all of them have a twin
-	# painted into the panel behind. Move the centre and the player sees two --
-	# which is what AUTO EQUIP did after it was grown upward to reach 44 pt.
-	if e.has("paint_rect"):
-		var pr: Array = e["paint_rect"]
-		var painted := Vector2(float(pr[0]) + float(pr[2]) / 2.0, float(pr[1]) + float(pr[3]) / 2.0)
-		var now := r.position + r.size / 2.0
-		if now.distance_to(painted) > 1.0:
+	if not e.has("paint_rect"):
+		return
+	var pr: Array = e["paint_rect"]
+	var paint := Rect2(float(pr[0]), float(pr[1]), float(pr[2]), float(pr[3]))
+	if e.has("asset"):
+		# A button that draws a texture draws it centred in its rect, and nearly
+		# all of them have a twin painted into the panel behind. Move the centre
+		# and the player sees two -- which is what AUTO EQUIP did after it was
+		# grown upward to reach 44 pt.
+		var off := (r.position + r.size / 2.0).distance_to(paint.position + paint.size / 2.0)
+		if off > 1.0:
 			_fail("%s has moved %.0f units off where it is painted; it will be drawn twice"
-				% [id, now.distance_to(painted)])
+				% [id, off])
+		return
+	# A button with no texture draws nothing, so it cannot be drawn twice; what
+	# it owes is the opposite. It is invisible over words the painting already
+	# put there, so it has to cover them: a hotspot grown clear of the label it
+	# appears to be leaves the label dead under the thumb.
+	if not r.encloses(paint):
+		_fail("%s is a hotspot at %s that does not cover the %s it is painted over"
+			% [id, r, paint])

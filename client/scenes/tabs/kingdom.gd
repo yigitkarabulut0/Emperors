@@ -4,7 +4,9 @@ extends Control
 ## and any invitations.
 
 const SCREEN := "kingdom"
-const LORD_PORTRAITS := ["portraits/lord_yigit", "portraits/lord_aldric", "portraits/lord_seraphine", "portraits/lord_darian"]
+## The roster's faces, and the rule for choosing one, live with the section that
+## also draws lords, so the two never disagree.
+const Faces := preload("res://scenes/kingdom/kingdom_section.gd")
 const WORK_ART := ["kingdom/work_banner_hall", "kingdom/work_training_grounds", "kingdom/work_granary_law", "kingdom/work_royal_archives"]
 const ROLE_ICON := {"king": "icons/role_king", "captain": "icons/role_captain", "lord": "icons/role_lord"}
 ## Reputation ranks: name, threshold. The server stores a number; the ladder is presentation.
@@ -16,25 +18,17 @@ const HEX_LABELS := ["kingdom/rep_label_neutral", "kingdom/rep_label_respected",
 const HEX_RECTS := [[574, 1028, 47, 59], [656, 1024, 56, 66], [752, 1028, 49, 60], [847, 1028, 49, 60]]
 const LABEL_RECTS := [[562, 1090, 68, 22], [644, 1090, 78, 22], [744, 1090, 68, 22], [830, 1090, 82, 22]]
 const TAB_NAMES := ["realm", "lords", "works", "ranks"]
-## Everything the REALM tab owns; the header and the tab strip are not in it,
-## because they are the page rather than a section of it.
+## Everything the reference paints below the tab strip. All of it is REALM; the
+## header and the strip are the page rather than a section of it.
 const REALM_PARTS := ["realm_card", "realm_bonuses", "bonus_income", "bonus_xp",
 	"realm_notice", "treasury_card", "donate", "reputation_card", "rep_rank_name",
-	"rep_bar_fill", "rep_progress"]
+	"rep_bar_fill", "rep_progress", "lords_panel", "lords_view_all",
+	"works_panel", "works_view_all", "ranking_card", "rank", "view_rankings"]
 ## Just under the tab strip, which ends at 624, and clear of the rail: it runs
 ## down x 0..160, and a section that started at 70 had the first ninety units of
 ## every row hidden behind it.
 const SECTION_TOP := 646.0
 const SECTION_X := 168.0
-## The realm's two bands of painted panels, and what the block is worth at rest.
-const REALM_BAND_A := ["realm_card", "realm_bonuses", "bonus_income", "bonus_xp",
-	"realm_notice"]
-const REALM_BAND_B := ["treasury_card", "donate", "reputation_card", "rep_rank_name",
-	"rep_bar_fill", "rep_progress"]
-const BAND_A_TOP := 612.0
-const BAND_A_BOTTOM := 880.0
-const BAND_B_TOP := 872.0
-const BAND_B_BOTTOM := 1147.0
 const MAX_NAME := 18
 const MAX_TAG := 4
 
@@ -185,7 +179,7 @@ func _paint() -> void:
 		return
 
 	_ui["kingdom_name"].text = str(k.get("name", "")).to_upper()
-	UI.fit_label(_ui["kingdom_name"], 48, 24)
+	UI.fit_label(_ui["kingdom_name"], 48, 30)
 	_ui["motto"].text = "[%s] · Kingdom of %d lord%s" % [str(k.get("tag", "")), int(k.get("members", 1)), "" if int(k.get("members", 1)) == 1 else "s"]
 	_ui["level"].text = "LEVEL %d" % int(k.get("level", 1))
 	var need := int(k.get("xp_to_next", 0))
@@ -209,55 +203,6 @@ func _paint() -> void:
 		if str(top[i].get("id", "")) == str(k.get("id", "")):
 			rank = i + 1
 	_ui["rank"].text = "#%d" % rank if rank > 0 else "#-"
-
-
-## Spreads the realm's two bands of panels down the room the tab now has.
-##
-## They were laid out to be the top of one long page with Lords, Works and Ranks
-## stacked under them. On their own under a tab they finish at 1147 and leave
-## the rest of a tall phone empty, so the page reads as a third full. The bands
-## keep their own heights -- they are paintings and stretching one shows -- and
-## the space between and below them is what grows.
-func _lay_realm() -> void:
-	var bottom: float = maxf(1672.0, _scroll.size.y) - 150.0
-	var a_h := BAND_A_BOTTOM - BAND_A_TOP
-	var b_h := BAND_B_BOTTOM - BAND_B_TOP
-	var room := bottom - SECTION_TOP
-	# Capped. Sharing the slack equally left 234 units of nothing between the tab
-	# strip and the first panel, which reads as the content having fallen down
-	# the page rather than as space. Past ninety it stops being rhythm; what is
-	# left over goes to the foot, where every other screen has ground anyway.
-	var gap := clampf((room - a_h - b_h) / 3.0, 24.0, 90.0)
-	var a_top := SECTION_TOP + gap
-	var b_top := a_top + a_h + gap
-	_move(REALM_BAND_A, a_top - BAND_A_TOP)
-	_move(REALM_BAND_B, b_top - BAND_B_TOP)
-	# The reputation ladder is placed in code, so it is moved the same way.
-	var shift := b_top - BAND_B_TOP
-	for i in _hexes.size():
-		var hr: Array = HEX_RECTS[i]
-		var lr: Array = LABEL_RECTS[i]
-		UI.place(_hexes[i]["hex"], Rect2(hr[0], hr[1] + shift, hr[2], hr[3]))
-		UI.place(_hexes[i]["label"], Rect2(lr[0], lr[1] + shift, lr[2], lr[3]))
-	for inst in _ui.get("rep_tiers", []):
-		var r: Rect2 = Layout.rect_of(Layout.element(SCREEN, "rep_tiers"))
-		inst["node"].position = Vector2(r.position.x, r.position.y + shift)
-
-
-## Puts each named element back at its measured place, moved down by `dy`.
-func _move(ids: Array, dy: float) -> void:
-	for id in ids:
-		if not _ui.has(id):
-			continue
-		var r: Rect2 = Layout.rect_of(Layout.element(SCREEN, id))
-		if r.size == Vector2.ZERO:
-			continue
-		# The treasury's DONATE gets the room the spread freed: it was 254x95,
-		# the smallest thing on a tab that now has half a screen spare.
-		if id == "donate":
-			UI.place(_ui[id], Rect2(r.position.x - 20.0, r.position.y + dy, r.size.x + 40.0, 120.0))
-			continue
-		UI.place(_ui[id], Rect2(r.position.x, r.position.y + dy, r.size.x, r.size.y))
 
 
 func _paint_reputation(rep: int) -> void:
@@ -309,7 +254,7 @@ func _paint_lords() -> void:
 		if i >= members.size():
 			continue
 		var m: Dictionary = members[i]
-		p["portrait"].texture = Art.tex(LORD_PORTRAITS[absi(str(m.get("player_id", "")).hash()) % LORD_PORTRAITS.size()] if str(m.get("player_id", "")) != Session.player_id else LORD_PORTRAITS[0])
+		p["portrait"].texture = Art.tex(Faces.face_for(str(m.get("player_id", "")), str(m.get("role", "lord"))))
 		p["online"].texture = Art.tex("icons/dot_online" if str(m.get("player_id", "")) == Session.player_id else "icons/dot_offline")
 		p["name"].text = str(m.get("name", "")).to_upper()
 		UI.fit_label(p["name"], 24, 14)
@@ -335,7 +280,10 @@ func _paint_works() -> void:
 		p["level"].text = "Lv. %d" % int(u.get("level", 0))
 		p["bonus"].text = "%s · %s" % [_bonus_text(u), UI.short_number(int(u.get("next_cost", 0)))] if not bool(u.get("maxed", false)) else _bonus_text(u) + " · MAX"
 		UI.fit_label(p["bonus"], 18, 12)
-		p["upgrade"].modulate = Color.WHITE if not bool(u.get("maxed", false)) else Color(0.5, 0.5, 0.5)
+		var maxed := bool(u.get("maxed", false))
+		p["upgrade"].modulate = Color(0.5, 0.5, 0.5) if maxed else Color.WHITE
+		# A dimmed button that still answers is a button that lies.
+		p["upgrade"].disabled = maxed
 
 
 func _bonus_text(u: Dictionary) -> String:
@@ -370,52 +318,57 @@ func _jump(section: String) -> void:
 
 ## Shows one section and hides the rest, in the page it is already on.
 ##
-## The tabs used to be anchors: everything was stacked down one long page and a
-## tab scrolled to it. That is a table of contents, not a tab strip -- and the
-## sections it scrolled to were the Dialog.choose lists, which is where a roster
-## of twelve went.
+## REALM is the page the reference painted: the realm card and its bonuses, the
+## treasury, the reputation ladder, the lords and works panels side by side with
+## their View All, and the ranking strip. It fills the screen because it was
+## drawn to, and it is a summary -- the other three tabs are where the whole
+## roster, the whole build list and the whole table live.
 ##
-## REALM keeps the painted panels the reference draws for it. The other three
-## are built at the full width (kingdom_section.gd), because the panels for
-## Lords and Works are half a page each, meant to sit side by side, and alone
-## under a tab they read as a column with a hole beside it.
+## Everything below the tab strip belongs to REALM, so switching away is hiding
+## all of it and putting one section in its place. _paint() only fills in what
+## REALM shows, which is why it is not called for the others: it used to run on
+## every tab and make the lords and works rows visible again, drawing four
+## building thumbnails across the reputation card.
 func _show_section(which: String) -> void:
 	_view = which
 	if _section != null:
 		_section.queue_free()
 		_section = null
+	var realm := which == "realm"
 	for id in REALM_PARTS:
 		if _ui.has(id):
-			_ui[id].visible = which == "realm"
-	for id in ["lords_panel", "lords_view_all", "works_panel", "works_view_all",
-			"ranking_card", "rank", "view_rankings"]:
-		if _ui.has(id):
-			_ui[id].visible = false
+			_ui[id].visible = realm
+	# The panels' rows belong to REALM. Hiding them unconditionally left the
+	# painted ROYAL LORDS panel showing four faces with no names beside them,
+	# because the faces are baked into the panel and only the type is live.
 	for r in _lords:
-		r["node"].visible = false
+		r["node"].visible = realm
 	for w in _works:
-		w["node"].visible = false
-	if which != "realm":
-		for h in _hexes:
-			h["hex"].visible = false
-			h["label"].visible = false
+		w["node"].visible = realm
+	for h in _hexes:
+		h["hex"].visible = false
+		h["label"].visible = false
+	for inst in _ui.get("rep_tiers", []):
+		inst["node"].visible = realm
 
 	_light_the_tab()
-	if which == "realm":
+	if realm:
 		_content.custom_minimum_size.y = maxf(1672.0, _scroll.size.y)
-		_lay_realm()
 		_paint()
 		return
+
 	_section = load("res://scenes/kingdom/kingdom_section.gd").new()
 	_section.setup(which, _data, _shop)
 	_section.position = Vector2(SECTION_X, SECTION_TOP)
 	_section.acted.connect(func(path: String, body: Dictionary) -> void:
 		await _act(path, body)
 		_show_section(_view))
+	_section.grew.connect(func(h: float) -> void:
+		_content.custom_minimum_size.y = maxf(_scroll.size.y, SECTION_TOP + h + 140.0))
 	_content.add_child(_section)
 	await get_tree().process_frame
 	_content.custom_minimum_size.y = maxf(_scroll.size.y,
-		SECTION_TOP + _section.size.y + 120.0)
+		SECTION_TOP + _section.size.y + 140.0)
 
 
 func _found_or_accept() -> void:
@@ -460,9 +413,11 @@ func _found_or_accept() -> void:
 ## leaderboard, in every battle log and over the gate -- and founding used to be
 ## the only chance to set it, so a typo was permanent. The king can change it.
 ##
-## MAX_NAME is what the plate holds: 18 characters of ordinary type still fit at
-## 34 units in the widened box, and the worst a player can type stays readable
-## at 24. The server allows 24 and answers for anything else.
+## MAX_NAME is what the plate holds. The band runs 372..772 -- 400 units, all
+## the clean plate there is before the painted pillar -- and Cinzel at 700 sets
+## an average capital in 35 units at size 48, so eighteen characters fit once
+## the name has shrunk to 30, which is 14 pt and still reads. The server allows
+## 24 and answers for anything longer.
 func _rename() -> void:
 	if _busy or _kingdom().is_empty():
 		return

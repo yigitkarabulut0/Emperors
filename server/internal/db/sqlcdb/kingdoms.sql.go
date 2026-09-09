@@ -695,6 +695,38 @@ func (q *Queries) RefillEnergy(ctx context.Context, arg RefillEnergyParams) erro
 	return err
 }
 
+const renameKingdom = `-- name: RenameKingdom :one
+UPDATE app.kingdoms
+SET name = $1
+WHERE id = $2 AND leader_id = $3
+RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at
+`
+
+type RenameKingdomParams struct {
+	Name     string
+	ID       uuid.UUID
+	LeaderID *uuid.UUID
+}
+
+// Renames a kingdom, and only for its king. The WHERE carries the permission,
+// so a lord who reaches the endpoint gets no rows rather than a rename.
+func (q *Queries) RenameKingdom(ctx context.Context, arg RenameKingdomParams) (AppKingdom, error) {
+	row := q.db.QueryRow(ctx, renameKingdom, arg.Name, arg.ID, arg.LeaderID)
+	var i AppKingdom
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Tag,
+		&i.LeaderID,
+		&i.Level,
+		&i.Xp,
+		&i.Treasury,
+		&i.Reputation,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const searchKingdoms = `-- name: SearchKingdoms :many
 SELECT k.id, k.name, k.tag, k.leader_id, k.level, k.xp, k.treasury, k.reputation, k.created_at, (SELECT count(*) FROM app.players p WHERE p.kingdom_id = k.id) AS members
 FROM app.kingdoms k

@@ -1043,6 +1043,7 @@ type kingdomTargetReq struct {
 	PlayerID  string `json:"player_id,omitempty"`
 	KingdomID string `json:"kingdom_id,omitempty"`
 	Role      string `json:"role,omitempty"`
+	Name      string `json:"name,omitempty"`
 	Amount    int64  `json:"amount,omitempty"`
 	ID        string `json:"id,omitempty"`
 	ActionSeq int64  `json:"action_seq,omitempty"`
@@ -1095,6 +1096,8 @@ func (a *api) kingdomAction(w http.ResponseWriter, r *http.Request, name string)
 		v, err = a.s().Donate(r.Context(), pid, req.Amount, req.ActionSeq)
 	case "upgrade":
 		v, err = a.s().BuyKingdomUpgrade(r.Context(), pid, req.ID)
+	case "rename":
+		v, err = a.s().RenameKingdom(r.Context(), pid, req.Name)
 	}
 	if err != nil {
 		a.fail(w, r, err)

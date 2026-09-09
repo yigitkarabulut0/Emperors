@@ -206,6 +206,52 @@ func max64(a, b int64) int64 {
 	return b
 }
 
+// RenameKingdom changes a kingdom's name. Only its king may.
+//
+// A name outlives the moment it was chosen: it is on the leaderboard, in every
+// battle log and over the gate. Founding used to be the only chance to set it,
+// which made a typo permanent.
+func (d Deps) RenameKingdom(ctx context.Context, playerID uuid.UUID, name string) (*KingdomView, error) {
+	name = strings.TrimSpace(name)
+	// The tag is not changing, so it is validated as it stands.
+	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
+		q := sqlcdb.New(tx)
+		p, err := q.LockPlayer(ctx, playerID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("lock player: %w", err)
+		}
+		if p.KingdomID == nil {
+			return ErrNotInKingdom
+		}
+		k, err := q.LockKingdom(ctx, *p.KingdomID)
+		if err != nil {
+			return fmt.Errorf("lock kingdom: %w", err)
+		}
+		if err := validKingdomName(name, k.Tag); err != nil {
+			return err
+		}
+		if _, err := q.RenameKingdom(ctx, sqlcdb.RenameKingdomParams{
+			ID: k.ID, LeaderID: &playerID, Name: name,
+		}); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotPermitted
+			}
+			if db.IsUniqueViolation(err, "") {
+				return ErrKingdomNameTaken
+			}
+			return fmt.Errorf("rename kingdom: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return d.GetKingdom(ctx, playerID)
+}
+
 // Found creates a kingdom and installs the founder as its king.
 func (d Deps) Found(ctx context.Context, playerID uuid.UUID, name, tag string, wantSeq int64) (*KingdomView, error) {
 	name = strings.TrimSpace(name)

@@ -31,7 +31,7 @@
    "rect": [
     372,
     340,
-    300,
+    418,
     44
    ],
    "font": "title",
@@ -46,8 +46,8 @@
    "id": "edit_name",
    "kind": "button",
    "rect": [
-    650,
-    317,
+    806,
+    320,
     95,
     95
    ],
@@ -55,10 +55,10 @@
    "note": "quill box is baked into header",
    "keep_texture_size": true,
    "paint_rect": [
-    678,
-    346,
-    38,
-    37
+    806,
+    320,
+    95,
+    95
    ]
   },
   {

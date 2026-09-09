@@ -1,6 +1,14 @@
 -- name: CreateKingdom :one
 INSERT INTO app.kingdoms (name, tag, leader_id) VALUES ($1, $2, $3) RETURNING *;
 
+-- Renames a kingdom, and only for its king. The WHERE carries the permission,
+-- so a lord who reaches the endpoint gets no rows rather than a rename.
+-- name: RenameKingdom :one
+UPDATE app.kingdoms
+SET name = sqlc.arg(name)
+WHERE id = sqlc.arg(id) AND leader_id = sqlc.arg(leader_id)
+RETURNING *;
+
 -- name: GetKingdom :one
 SELECT * FROM app.kingdoms WHERE id = $1;
 

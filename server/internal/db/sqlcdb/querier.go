@@ -322,6 +322,9 @@ type Querier interface {
 	// Moves the password login onto a renamed player's new name, so the name they
 	// see is the name they sign in with.
 	RenameIdentitySubject(ctx context.Context, arg RenameIdentitySubjectParams) error
+	// Renames a kingdom, and only for its king. The WHERE carries the permission,
+	// so a lord who reaches the endpoint gets no rows rather than a rename.
+	RenameKingdom(ctx context.Context, arg RenameKingdomParams) (AppKingdom, error)
 	// Buys a new name. The WHERE carries the price, so a double tap cannot pay
 	// twice, and players_username_lower_key refuses a name somebody else holds.
 	RenamePlayer(ctx context.Context, arg RenamePlayerParams) (AppPlayer, error)

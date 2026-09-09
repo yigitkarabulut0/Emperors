@@ -16,6 +16,8 @@ const HEX_LABELS := ["kingdom/rep_label_neutral", "kingdom/rep_label_respected",
 const HEX_RECTS := [[574, 1028, 47, 59], [656, 1024, 56, 66], [752, 1028, 49, 60], [847, 1028, 49, 60]]
 const LABEL_RECTS := [[562, 1090, 68, 22], [644, 1090, 78, 22], [744, 1090, 68, 22], [830, 1090, 82, 22]]
 const TAB_NAMES := ["realm", "lords", "works", "ranks"]
+const MAX_NAME := 18
+const MAX_TAG := 4
 const SECTION_Y := {"realm": 0, "lords": 1131, "works": 1131, "ranks": 1483}
 
 var _scroll: ScrollContainer
@@ -61,9 +63,9 @@ func _ready() -> void:
 		_works[i]["parts"]["upgrade"].pressed.connect(_upgrade.bind(i))
 	_ui["donate"].pressed.connect(_donate)
 	_ui["edit_name"].pressed.connect(_rename)
-	_ui["lords_view_all"].pressed.connect(_lords_dialog)
-	_ui["works_view_all"].pressed.connect(_works_dialog)
-	_ui["view_rankings"].pressed.connect(_rankings_dialog)
+	_ui["lords_view_all"].pressed.connect(_open_page.bind("lords"))
+	_ui["works_view_all"].pressed.connect(_open_page.bind("works"))
+	_ui["view_rankings"].pressed.connect(_open_page.bind("ranks"))
 	# Tabs are anchors on a page that shows every section, and they show which
 	# section you are in.
 	#
@@ -163,7 +165,7 @@ func _paint() -> void:
 		return
 
 	_ui["kingdom_name"].text = str(k.get("name", "")).to_upper()
-	UI.fit_label(_ui["kingdom_name"], 48, 26)
+	UI.fit_label(_ui["kingdom_name"], 48, 24)
 	_ui["motto"].text = "[%s] · Kingdom of %d lord%s" % [str(k.get("tag", "")), int(k.get("members", 1)), "" if int(k.get("members", 1)) == 1 else "s"]
 	_ui["level"].text = "LEVEL %d" % int(k.get("level", 1))
 	var need := int(k.get("xp_to_next", 0))
@@ -297,12 +299,19 @@ func _jump(section: String) -> void:
 		_scroll.scroll_vertical = 0
 	else:
 		_scroll.scroll_vertical = maxi(0, y - 120)
-	if section == "lords":
-		_lords_dialog()
-	elif section == "works":
-		_works_dialog()
-	elif section == "ranks":
-		_rankings_dialog()
+	if section != "realm":
+		_open_page(section)
+
+
+## Lords, Works and Ranks are pages. They were Dialog.choose lists of up to
+## twelve options -- a roster, a build list and three leaderboards -- inside a
+## modal built for asking one question. A roster is not a question.
+func _open_page(which: String) -> void:
+	var page: CanvasLayer = load("res://scenes/kingdom/kingdom_page.gd").new()
+	page.setup(which, _data, _shop)
+	page.acted.connect(func(path: String, body: Dictionary) -> void: _act(path, body))
+	page.finished.connect(func() -> void: _load())
+	Nav.overlay_parent().add_child(page)
 
 
 func _found_or_accept() -> void:
@@ -322,27 +331,49 @@ func _found_or_accept() -> void:
 	if level < int(_data.get("found_level", 20)):
 		GameState.action_failed.emit("Founding needs level %d" % int(_data.get("found_level", 20)))
 		return
-	var text := await _prompt_text("Name your kingdom", "Kingdom name")
-	if text == "":
+	# The name is the player's to choose, and it is typed rather than picked
+	# from anything: nothing here supplies a prefix or a pattern.
+	var named: Dictionary = await Dialog.prompt_text(self, {
+		"title": "Name your kingdom",
+		"body": "Up to %d characters. Yours to choose." % MAX_NAME,
+		"placeholder": "Kingdom name", "max_length": MAX_NAME, "confirm_text": "Next"})
+	if named["action"] != "confirm" or str(named["text"]) == "":
 		return
-	var tag := await _prompt_text("A short tag (2-5 letters)", "TAG")
-	if tag == "":
+	var text := str(named["text"])
+	var tagged: Dictionary = await Dialog.prompt_text(self, {
+		"title": "And a tag",
+		"body": "Two to four letters, shown beside the name.",
+		"placeholder": "TAG", "max_length": MAX_TAG, "confirm_text": "Found"})
+	if tagged["action"] != "confirm" or str(tagged["text"]) == "":
 		return
+	var tag := str(tagged["text"])
 	if not await Dialog.ask(self, {"title": "Found %s?" % text, "body": "Costs %s gold." % UI.grouped(int(_data.get("found_cost", 0))), "confirm_text": "Found"}):
 		return
 	await _act("/v1/kingdom/found", {"name": text, "tag": tag.to_upper()})
 
 
-func _prompt_text(title: String, placeholder: String) -> String:
-	var d := Dialog._Modal.new(self, {"title": title, "placeholder": placeholder, "confirm_text": "OK"}, "amount")
-	var action: String = await d.finished
-	if action != "confirm":
-		return ""
-	return d.text_value
-
-
+## A kingdom's name outlives the moment it was chosen -- it is on the
+## leaderboard, in every battle log and over the gate -- and founding used to be
+## the only chance to set it, so a typo was permanent. The king can change it.
+##
+## MAX_NAME is what the plate holds: 18 characters of ordinary type still fit at
+## 34 units in the widened box, and the worst a player can type stays readable
+## at 24. The server allows 24 and answers for anything else.
 func _rename() -> void:
-	GameState.action_failed.emit("A kingdom's name is set when it is founded")
+	if _busy or _kingdom().is_empty():
+		return
+	var mine: Variant = _data.get("me", null)
+	if not (mine is Dictionary) or str((mine as Dictionary).get("role", "")) != "king":
+		GameState.action_failed.emit("Only the king may rename the kingdom")
+		return
+	var r: Dictionary = await Dialog.prompt_text(self, {
+		"title": "Name the kingdom",
+		"body": "Up to %d characters. It is on the leaderboard and in every battle log." % MAX_NAME,
+		"placeholder": "Kingdom name", "preset": str(_kingdom().get("name", "")),
+		"max_length": MAX_NAME, "confirm_text": "Rename"})
+	if r["action"] != "confirm" or str(r["text"]) == "":
+		return
+	await _act("/v1/kingdom/rename", {"name": str(r["text"])})
 
 
 func _donate() -> void:
@@ -377,71 +408,3 @@ func _act(path: String, body: Dictionary) -> void:
 	_busy = false
 	if res.ok:
 		await _load()
-
-
-func _lords_dialog() -> void:
-	var members: Array = _data.get("members", [])
-	if members.is_empty():
-		return
-	var me: Dictionary = _data.get("me", {}) if _data.get("me", null) is Dictionary else {}
-	var options: Array = []
-	for m in members:
-		options.append({"id": str(m.get("player_id", "")), "label": "%s — %s" % [str(m.get("name", "")), str(m.get("role", "")).to_upper()], "sub": "Level %d · donated %s" % [int(m.get("level", 1)), UI.short_number(int(str(m.get("donated", "0"))))]})
-	options.append({"id": "__invite", "label": "Invite a player", "sub": "By username"})
-	options.append({"id": "__leave", "label": "Leave the kingdom"})
-	var pick := await Dialog.choose(self, {"title": "Royal Lords", "options": options.slice(0, 10)})
-	if pick == "":
-		return
-	if pick == "__invite":
-		var name := await _prompt_text("Invite by username", "Username")
-		if name == "":
-			return
-		var found: Api.Response = await Api.get_json("/v1/kingdom/search?q=" + name.uri_encode())
-		var target := ""
-		for p in found.data.get("players", []) if found.ok else []:
-			if str(p.get("name", "")).to_lower() == name.to_lower():
-				target = str(p.get("player_id", p.get("id", "")))
-		if target == "":
-			GameState.action_failed.emit("No player named %s" % name)
-			return
-		await _act("/v1/kingdom/invite", {"player_id": target})
-	elif pick == "__leave":
-		if await Dialog.ask(self, {"title": "Leave the kingdom?", "confirm_text": "Leave", "danger": true}):
-			await _act("/v1/kingdom/leave", {})
-	elif str(me.get("role", "")) == "king" and pick != Session.player_id:
-		var role := await Dialog.choose(self, {"title": "Set a role", "options": [{"id": "captain", "label": "Captain"}, {"id": "lord", "label": "Lord"}]})
-		if role != "":
-			await _act("/v1/kingdom/role", {"player_id": pick, "role": role})
-
-
-func _works_dialog() -> void:
-	var ups: Array = _data.get("upgrades", [])
-	var options: Array = []
-	for i in ups.size():
-		var u: Dictionary = ups[i]
-		options.append({"id": "up:%d" % i, "label": "%s  Lv. %d" % [str(u.get("name", "")), int(u.get("level", 0))], "sub": _bonus_text(u) + ("" if bool(u.get("maxed", false)) else " · next %s" % UI.short_number(int(u.get("next_cost", 0))))})
-	var favour := int(_shop.get("favour", 0))
-	for g in _shop.get("goods", []):
-		options.append({"id": "good:" + str(g.get("id", "")), "label": "%s — %d Favour" % [str(g.get("name", "")), int(g.get("cost", 0))], "sub": str(g.get("blurb", ""))})
-	var pick := await Dialog.choose(self, {"title": "Kingdom Works · %d Favour" % favour, "options": options.slice(0, 12)})
-	if pick == "":
-		return
-	if pick.begins_with("up:"):
-		await _upgrade(int(pick.substr(3)))
-	elif pick.begins_with("good:"):
-		await _act("/v1/kingdom/shop/buy", {"good": pick.substr(5)})
-
-
-func _rankings_dialog() -> void:
-	var lines: Array = []
-	var top: Array = _data.get("leaderboard", [])
-	for i in mini(5, top.size()):
-		lines.append("#%d  %s  [%s]  Lv %d" % [i + 1, str(top[i].get("name", "")), str(top[i].get("tag", "")), int(top[i].get("level", 1))])
-	for board in ["might", "level", "wealth"]:
-		var res: Api.Response = await Api.get_json("/v1/leaderboards/" + board)
-		if res.ok:
-			lines.append("")
-			lines.append("%s — you are #%d" % [board.to_upper(), int(res.data.get("my_rank", 0))])
-			for row in res.data.get("rows", []).slice(0, 3):
-				lines.append("  #%d  %s  %s" % [int(row.get("rank", 0)), str(row.get("name", "")), UI.short_number(int(str(row.get("value", "0"))))])
-	await Dialog.ask(self, {"title": "Rankings", "body": "\n".join(lines) if not lines.is_empty() else "No kingdoms yet.", "confirm_text": "Close"})

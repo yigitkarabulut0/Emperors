@@ -16,9 +16,15 @@ const HEX_LABELS := ["kingdom/rep_label_neutral", "kingdom/rep_label_respected",
 const HEX_RECTS := [[574, 1028, 47, 59], [656, 1024, 56, 66], [752, 1028, 49, 60], [847, 1028, 49, 60]]
 const LABEL_RECTS := [[562, 1090, 68, 22], [644, 1090, 78, 22], [744, 1090, 68, 22], [830, 1090, 82, 22]]
 const TAB_NAMES := ["realm", "lords", "works", "ranks"]
+## Everything the REALM tab owns; the header and the tab strip are not in it,
+## because they are the page rather than a section of it.
+const REALM_PARTS := ["realm_card", "realm_bonuses", "bonus_income", "bonus_xp",
+	"realm_notice", "treasury_card", "donate", "reputation_card", "rep_rank_name",
+	"rep_bar_fill", "rep_progress"]
+## Just under the tab strip, which ends at 624.
+const SECTION_TOP := 646.0
 const MAX_NAME := 18
 const MAX_TAG := 4
-const SECTION_Y := {"realm": 0, "lords": 1131, "works": 1131, "ranks": 1483}
 
 var _scroll: ScrollContainer
 var _content: Control
@@ -31,6 +37,8 @@ var _shop: Dictionary = {}
 var _boards: Dictionary = {}
 var _loaded_ms := -100000
 var _busy := false
+var _view := "realm"
+var _section: Control
 var _found_button: TextureButton
 var _found_label: Label
 
@@ -63,9 +71,9 @@ func _ready() -> void:
 		_works[i]["parts"]["upgrade"].pressed.connect(_upgrade.bind(i))
 	_ui["donate"].pressed.connect(_donate)
 	_ui["edit_name"].pressed.connect(_rename)
-	_ui["lords_view_all"].pressed.connect(_open_page.bind("lords"))
-	_ui["works_view_all"].pressed.connect(_open_page.bind("works"))
-	_ui["view_rankings"].pressed.connect(_open_page.bind("ranks"))
+	_ui["lords_view_all"].pressed.connect(_show_section.bind("lords"))
+	_ui["works_view_all"].pressed.connect(_show_section.bind("works"))
+	_ui["view_rankings"].pressed.connect(_show_section.bind("ranks"))
 	# Tabs are anchors on a page that shows every section, and they show which
 	# section you are in.
 	#
@@ -281,12 +289,13 @@ func _bonus_text(u: Dictionary) -> String:
 # --- actions ------------------------------------------------------------------------
 
 ## Lights whichever tab's section the page is showing.
+## Lights the tab whose section is showing.
+##
+## It used to work the scroll position out against a table of section
+## positions, because the tabs were anchors down one long page. They select
+## now, so the lit one is simply the selected one.
 func _light_the_tab() -> void:
-	var top := _scroll.scroll_vertical + 140
-	var at := 0
-	for i in TAB_NAMES.size():
-		if top >= int(SECTION_Y.get(TAB_NAMES[i], 0)):
-			at = i
+	var at := maxi(0, TAB_NAMES.find(_view))
 	var tabs: Array = _ui["tabs"]
 	for i in tabs.size():
 		var chip: TextureRect = tabs[i]["parts"]["chip"]
@@ -294,24 +303,57 @@ func _light_the_tab() -> void:
 
 
 func _jump(section: String) -> void:
-	var y: int = SECTION_Y.get(section, 0)
-	if section == "realm":
-		_scroll.scroll_vertical = 0
-	else:
-		_scroll.scroll_vertical = maxi(0, y - 120)
-	if section != "realm":
-		_open_page(section)
+	_scroll.scroll_vertical = 0
+	_show_section(section)
 
 
-## Lords, Works and Ranks are pages. They were Dialog.choose lists of up to
-## twelve options -- a roster, a build list and three leaderboards -- inside a
-## modal built for asking one question. A roster is not a question.
-func _open_page(which: String) -> void:
-	var page: CanvasLayer = load("res://scenes/kingdom/kingdom_page.gd").new()
-	page.setup(which, _data, _shop)
-	page.acted.connect(func(path: String, body: Dictionary) -> void: _act(path, body))
-	page.finished.connect(func() -> void: _load())
-	Nav.overlay_parent().add_child(page)
+## Shows one section and hides the rest, in the page it is already on.
+##
+## The tabs used to be anchors: everything was stacked down one long page and a
+## tab scrolled to it. That is a table of contents, not a tab strip -- and the
+## sections it scrolled to were the Dialog.choose lists, which is where a roster
+## of twelve went.
+##
+## REALM keeps the painted panels the reference draws for it. The other three
+## are built at the full width (kingdom_section.gd), because the panels for
+## Lords and Works are half a page each, meant to sit side by side, and alone
+## under a tab they read as a column with a hole beside it.
+func _show_section(which: String) -> void:
+	_view = which
+	if _section != null:
+		_section.queue_free()
+		_section = null
+	for id in REALM_PARTS:
+		if _ui.has(id):
+			_ui[id].visible = which == "realm"
+	for id in ["lords_panel", "lords_view_all", "works_panel", "works_view_all",
+			"ranking_card", "rank", "view_rankings"]:
+		if _ui.has(id):
+			_ui[id].visible = false
+	for r in _lords:
+		r["node"].visible = false
+	for w in _works:
+		w["node"].visible = false
+	if which != "realm":
+		for h in _hexes:
+			h["hex"].visible = false
+			h["label"].visible = false
+
+	_light_the_tab()
+	if which == "realm":
+		_content.custom_minimum_size.y = maxf(1672.0, _scroll.size.y)
+		_paint()
+		return
+	_section = load("res://scenes/kingdom/kingdom_section.gd").new()
+	_section.setup(which, _data, _shop)
+	_section.position = Vector2(70, SECTION_TOP)
+	_section.acted.connect(func(path: String, body: Dictionary) -> void:
+		await _act(path, body)
+		_show_section(_view))
+	_content.add_child(_section)
+	await get_tree().process_frame
+	_content.custom_minimum_size.y = maxf(_scroll.size.y,
+		SECTION_TOP + _section.size.y + 120.0)
 
 
 func _found_or_accept() -> void:

@@ -1,26 +1,26 @@
-extends CanvasLayer
-## The Kingdom's three sections as pages, not popups.
+extends Control
+## One of the Kingdom's sections, drawn into the Kingdom page itself.
 ##
 ## Lords, Works and Ranks each used to open a Dialog.choose with up to twelve
-## options in it -- a roster, a build list and three leaderboards, all squeezed
-## into a modal built for asking one question. A roster is not a question. They
-## are pages now: a title, a scrolling list of real rows with their own art and
-## their own buttons, and one way back.
+## options in it: a roster, a build list and three leaderboards, all squeezed
+## into a modal built for asking one question. A roster is not a question.
 ##
-## One script for all three because the chrome is the same and only the rows
-## differ; three files would have been three copies of the same header, scroll
-## and footer, drifting apart.
+## They are not a separate screen either. The page already has a header, a crest
+## and a tab strip; tapping a tab should change what is under it, which is what
+## a tab is for. So this is a Control the page puts in that space and throws
+## away when the tab changes -- the page keeps scrolling, the header stays put.
 ##
-## Built from the game's own parts -- the card plate the item rows stand on, the
-## painted button plates, the Cinzel titles -- so a page looks like the screen
-## it came from.
+## The painted panels the reference draws for Lords and Works are half-width,
+## meant to sit beside each other under one long page. Alone under a tab they
+## read as a column with a hole beside it, so what a tab shows is built here at
+## the full width instead: a lord with a face and a rank, a work with its
+## painting and what it costs, a table that is a table.
+##
+## One script for all three, because the rows differ and nothing else does.
 
-signal finished
 signal acted(path: String, body: Dictionary)
 
-const W := 941.0
-const TOP := 210.0            ## where the list starts
-const FOOT := 150.0           ## room kept for the way back
+const WIDTH := 800.0
 const ROW_GAP := 14.0
 const PLATE := "inventory/card_frame"
 const PLATE_MARGIN := 26
@@ -30,8 +30,6 @@ var data: Dictionary = {}
 var shop: Dictionary = {}
 var me: Dictionary = {}
 
-var _root: Control
-var _scroll: ScrollContainer
 var _list: VBoxContainer
 var _busy := false
 
@@ -45,59 +43,21 @@ func setup(which: String, kingdom_data: Dictionary, favour_shop: Dictionary) -> 
 
 
 func _ready() -> void:
-	layer = 80
-	_root = Control.new()
-	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
-	var ground := ColorRect.new()
-	ground.color = Color(UI.GROUND.r, UI.GROUND.g, UI.GROUND.b, 0.99)
-	ground.set_anchors_preset(Control.PRESET_FULL_RECT)
-	ground.mouse_filter = Control.MOUSE_FILTER_STOP
-	_root.add_child(ground)
+	mouse_filter = Control.MOUSE_FILTER_PASS
+	var head := UI.label(_subtitle(), 26, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(head, Rect2(0, 0, WIDTH, 36))
+	add_child(head)
 
-	var titles := {"lords": "ROYAL LORDS", "works": "KINGDOM WORKS", "ranks": "RANKINGS"}
-	var title := UI.label(str(titles.get(mode, "")), 60, UI.GOLD, "title", 700,
-		HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(title, Rect2(0, 84, W, 80))
-	_root.add_child(title)
-
-	var rule := ColorRect.new()
-	rule.color = Color(UI.GOLD_DIM, 0.45)
-	UI.place(rule, Rect2(240, 174, 461, 2))
-	_root.add_child(rule)
-
-	var sub := UI.label(_subtitle(), 26, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(sub, Rect2(0, 186, W, 36))
-	_root.add_child(sub)
-
-	_scroll = ScrollContainer.new()
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
-	_scroll.scroll_deadzone = 14
-	_root.add_child(_scroll)
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", int(ROW_GAP))
-	_list.custom_minimum_size.x = 800
-	_scroll.add_child(_list)
-
-	var back := _plate_button("BACK", "inventory/btn_sell_plate", UI.INK)
-	back.pressed.connect(func() -> void:
-		finished.emit()
-		queue_free())
-	_root.add_child(back)
-	back.set_meta("is_back", true)
-
-	_root.resized.connect(_lay_out)
-	_lay_out()
+	_list.position = Vector2(0, 46)
+	_list.custom_minimum_size.x = WIDTH
+	add_child(_list)
 	_fill()
-
-
-func _lay_out() -> void:
-	var h: float = _root.size.y if _root.size.y > 1.0 else 1672.0
-	UI.place(_scroll, Rect2(70, TOP + 40, 800, h - TOP - 40 - FOOT))
-	for c in _root.get_children():
-		if c is Button and (c as Button).get_meta("is_back", false):
-			UI.place(c, Rect2(W / 2.0 - 170, h - FOOT + 22, 340, 96))
+	# The page scrolls, so the section only has to say how tall it turned out.
+	await get_tree().process_frame
+	custom_minimum_size = Vector2(WIDTH, 46.0 + _list.get_combined_minimum_size().y + 40.0)
+	size = custom_minimum_size
 
 
 func _subtitle() -> String:
@@ -152,8 +112,6 @@ func _act(path: String, body: Dictionary) -> void:
 		return
 	_busy = true
 	acted.emit(path, body)
-	finished.emit()
-	queue_free()
 
 
 func _fill() -> void:

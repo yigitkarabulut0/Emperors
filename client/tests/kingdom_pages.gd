@@ -1,10 +1,11 @@
 extends SceneTree
-## Lords, Works and Ranks build as pages and fit the phone.
+## Lords, Works and Ranks build inside the Kingdom page and fit the phone.
 ##
 ## They were Dialog.choose lists of up to twelve options -- a roster, a build
 ## list and three leaderboards -- inside a modal built for asking one question.
-## As pages they have to do what a page does: hold their rows on the screen,
-## keep a way back under the thumb, and put nothing where it cannot be reached.
+## The page already has a header, a crest and a tab strip, so a tab changes what
+## is under it rather than opening anything: what a section has to do is build
+## its rows at the page's width, with every button a thumb can reach.
 ##
 ## Run: godot --headless --path client --script tests/kingdom_pages.gd
 
@@ -23,6 +24,7 @@ func _initialize() -> void:
 	for canvas in CANVASES:
 		for mode in ["lords", "works", "ranks"]:
 			await _check(mode, canvas)
+	await _the_tabs_swap_what_the_page_shows()
 	if _rows == 0:
 		_fail("no page built any rows, so nothing was measured")
 	else:
@@ -65,7 +67,7 @@ func _check(mode: String, canvas: Vector2) -> void:
 	var host := Control.new()
 	host.size = canvas
 	root.add_child(host)
-	var page: CanvasLayer = load("res://scenes/kingdom/kingdom_page.gd").new()
+	var page: Control = load("res://scenes/kingdom/kingdom_section.gd").new()
 	page.setup(mode, _data(), {"favour": 480, "goods": [
 		{"id": "g1", "name": "Energy Draught", "blurb": "Restores your energy.", "cost": 40},
 		{"id": "g2", "name": "Kingdom Banner", "blurb": "A standard for the gate.", "cost": 800}]})
@@ -77,9 +79,55 @@ func _check(mode: String, canvas: Vector2) -> void:
 	_screen = Rect2(Vector2.ZERO, canvas)
 	var before := _buttons
 	_walk(page)
-	if _buttons == before:
-		_fail("%s: built no buttons at all, not even a way back" % _tag)
+	if mode != "ranks" and _buttons == before:
+		_fail("%s: built no buttons at all" % _tag)
+	if page.size.y < 200.0:
+		_fail("%s: the section came out %.0f units tall; it has not built its rows"
+			% [_tag, page.size.y])
 	page.queue_free()
+	host.queue_free()
+	await process_frame
+
+
+## A tab has to change what is under it. The strip used to be anchors down one
+## long page, so every section was on the screen at once and a tab scrolled to
+## it; nothing would have noticed if it went back to that.
+func _the_tabs_swap_what_the_page_shows() -> void:
+	var host := Control.new()
+	host.size = Vector2(941, 1672)
+	root.add_child(host)
+	var page: Control = load("res://scenes/tabs/kingdom.gd").new()
+	page.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.add_child(page)
+	for i in 3:
+		await process_frame
+
+	var ui: Dictionary = page.get("_ui")
+	if ui == null or not ui.has("realm_card"):
+		_fail("the kingdom page did not build")
+		host.queue_free()
+		return
+	page.set("_data", _data())
+	page.set("_shop", {"favour": 100, "goods": []})
+
+	for mode in ["lords", "works", "ranks", "realm"]:
+		page.call("_show_section", mode)
+		for i in 3:
+			await process_frame
+		var realm_showing: bool = (ui["realm_card"] as Control).visible
+		if mode == "realm":
+			if not realm_showing:
+				_fail("the REALM tab does not show the realm card")
+			if page.get("_section") != null:
+				_fail("the REALM tab left another section standing")
+		else:
+			if realm_showing:
+				_fail("the %s tab still shows the realm card under it" % mode.to_upper())
+			if page.get("_section") == null:
+				_fail("the %s tab built nothing" % mode.to_upper())
+			if (ui["lords_panel"] as Control).visible:
+				_fail("the %s tab left the half-width lords panel showing" % mode.to_upper())
+	print("  the four tabs each swap the page's content")
 	host.queue_free()
 	await process_frame
 

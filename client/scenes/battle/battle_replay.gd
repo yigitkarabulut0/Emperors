@@ -33,9 +33,14 @@ const GHOST_DELAY := 0.16
 
 ## The design grid, and where the pieces sit on it.
 const W := 941.0
-const PORTRAIT := Rect2(0, 0, 300, 300)
-const LEFT_X := 78.0
-const RIGHT_X := 563.0
+## The rival portraits in the paintings are 136 across and the hero's is 480.
+## Drawing both at 300 meant blowing a rival up two and a half times and, for
+## the small lord portraits the old list also picked from, four times -- which
+## is what made the face opposite look like a smear. 236 is 1.7x the rival art
+## and a reduction of the hero's, so both are sharp.
+const PORTRAIT := Rect2(0, 0, 236, 236)
+const LEFT_X := 112.0
+const RIGHT_X := 593.0
 const FACE_Y := 360.0
 const BAR_Y := 700.0
 const THEATRE_Y := 820.0
@@ -53,6 +58,7 @@ var _hp_text: Dictionary = {}
 var _face: Dictionary = {}
 var _home: Dictionary = {}      ## where each face rests, to come back to
 var _centre: Dictionary = {}    ## the middle of each face, for effects
+var _weapon: Dictionary = {}    ## side -> the painted sword it swings
 var _root: Control
 var _floaters: Control
 var _round_label: Label
@@ -95,16 +101,18 @@ func _ready() -> void:
 	UI.place(title, Rect2(0, 96, W, 96))
 	_root.add_child(title)
 	_round_label = UI.label("", 30, UI.DIM, "title", 500, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_round_label, Rect2(0, 190, W, 44))
+	UI.place(_round_label, Rect2(0, 200, W, 44))
 	_root.add_child(_round_label)
 
+	_weapon["a"] = _weapon_for(_replay.get("attacker", {}))
+	_weapon["d"] = _weapon_for(_replay.get("defender", {}))
 	_side(_replay.get("attacker", {}), "a", LEFT_X, "portraits/hero_throne",
 		int(_replay.get("attacker_might", 0)))
 	_side(_replay.get("defender", {}), "d", RIGHT_X, _portrait_for(_replay.get("defender", {})),
 		int(_replay.get("defender_might", 0)))
 
 	var swords := UI.label("⚔", 66, UI.GOLD_DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(swords, Rect2(W / 2.0 - 60, FACE_Y + 96, 120, 90))
+	UI.place(swords, Rect2(W / 2.0 - 60, FACE_Y + PORTRAIT.size.y / 2.0 - 45, 120, 90))
 	_root.add_child(swords)
 
 	# Where the blow is announced: one number at a time, in the middle, big.
@@ -157,10 +165,22 @@ func _plate_button(word: String, plate: String, col: Color, rect: Rect2) -> Butt
 	return b
 
 
+## Only the painted rival faces, which are 136 square. The lord portraits the
+## old list also drew from are 76x68 -- thumbnails for a kingdom roster, four
+## times too small for a face the screen is built around.
 func _portrait_for(army: Dictionary) -> String:
-	var names := ["portraits/rival_darius", "portraits/lord_aldric",
-		"portraits/lord_seraphine", "portraits/lord_darian"]
+	var names := ["portraits/rival_darius", "portraits/rival_seraphine",
+		"portraits/rival_keldric", "portraits/rival_malric"]
 	return names[absi(str(army.get("player_id", army.get("name", ""))).hash()) % names.size()]
+
+
+## The sword this side fights with, as the replay recorded it.
+func _weapon_for(army: Dictionary) -> String:
+	for u in army.get("units", []):
+		var w := str(u.get("weapon", ""))
+		if w != "":
+			return "items/painted/" + w
+	return "items/painted/weapon_01"
 
 
 ## One champion: face, name, might, and the bar that says how it is going.
@@ -184,13 +204,13 @@ func _side(army: Dictionary, side: String, x: float, portrait: String, might: in
 
 	var name := UI.label(str(army.get("name", "")).to_upper(), 30, UI.INK, "title", 700,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(name, Rect2(x - 20, FACE_Y + 312, PORTRAIT.size.x + 40, 40))
+	UI.place(name, Rect2(x - 30, FACE_Y + PORTRAIT.size.y + 14, PORTRAIT.size.x + 60, 40))
 	UI.fit_label(name, 30, 18)
 	_root.add_child(name)
 
 	var m := UI.label("⚔ %s" % UI.grouped(might), 26, accent, "body", 600,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(m, Rect2(x, FACE_Y + 352, PORTRAIT.size.x, 34))
+	UI.place(m, Rect2(x, FACE_Y + PORTRAIT.size.y + 58, PORTRAIT.size.x, 34))
 	_root.add_child(m)
 
 	var pool := 0
@@ -318,11 +338,16 @@ func _blow(side: String, damage: int, crit: bool) -> void:
 	wind.tween_property(face, "scale", Vector2(1.05, 1.05), WIND_UP)
 	await _wait(WIND_UP)
 
-	# 2. Lunge: the fastest movement on the screen, and the only one that eases in.
+	# 2. Lunge, and the sword goes with it. The portraits are paintings and
+	#    cannot move a limb, so the swing has to be carried by something that
+	#    can: the player's own weapon, crossing the gap and arriving at the
+	#    moment of contact. This is the motion the animation was missing -- a
+	#    portrait sliding back and forth reads as a picture being slid.
+	_swing(side, toward)
 	var drive := create_tween()
 	drive.tween_property(face, "position:x", home.x + toward * 104.0, LUNGE) \
 		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN)
-	await _wait(LUNGE)
+	await _wait(LUNGE + 0.06)
 
 	# 3. The blow lands on the other side.
 	var force := clampf(float(damage) / float(maxi(_max[hit], 1)) * 3.2, 0.25, 1.0)
@@ -366,6 +391,40 @@ func _dodge(side: String) -> void:
 	var back := create_tween()
 	back.tween_property(face, "position:x", home.x, RECOVER).set_trans(Tween.TRANS_QUAD)
 	await _wait(AFTER_BLOW)
+
+
+## The sword crosses the gap and arrives as the blow lands.
+##
+## It starts cocked back over the striker's shoulder, sweeps through a
+## hundred-odd degrees on its way over, and ends buried in the other side. The
+## blade is the painted item the player equipped, so a raid shows the sword they
+## bought doing the work.
+func _swing(side: String, toward: float) -> void:
+	var from: Vector2 = _centre[side] + Vector2(-toward * 40.0, -40.0)
+	var to: Vector2 = _centre["d" if side == "a" else "a"] + Vector2(-toward * 30.0, 10.0)
+	var size := 210.0
+	var img := UI.image(str(_weapon.get(side, "items/painted/weapon_01")),
+		Rect2(from.x - size / 2.0, from.y - size / 2.0, size, size))
+	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	img.pivot_offset = Vector2(size / 2.0, size / 2.0)
+	# Cocked back, and mirrored so the defender's blade leads with its edge too.
+	img.rotation = deg_to_rad(-70.0 * toward)
+	img.scale = Vector2(toward, 1.0) * 0.85
+	_floaters.add_child(img)
+
+	var travel := LUNGE + 0.06
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(img, "position", Vector2(to.x - size / 2.0, to.y - size / 2.0), travel) \
+		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN)
+	tw.tween_property(img, "rotation", deg_to_rad(38.0 * toward), travel) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(img, "scale", Vector2(toward, 1.0) * 1.15, travel)
+	# It bites, holds a beat, and is gone before the recovery starts.
+	tw.chain().set_parallel(true)
+	tw.tween_property(img, "rotation", deg_to_rad(56.0 * toward), 0.10)
+	tw.tween_property(img, "modulate:a", 0.0, 0.20).set_delay(0.06)
+	tw.chain().tween_callback(img.queue_free)
 
 
 ## The arc a blade leaves, swept across the face it landed on.
@@ -536,12 +595,13 @@ func _finish() -> void:
 
 	var head := UI.label("VICTORY" if won else "DEFEAT", 62, UI.GOLD if won else UI.RED,
 		"title", 800, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(head, Rect2(130, 1090, 681, 80))
+	UI.place(head, Rect2(130, 1086, 681, 84))
 	_root.add_child(head)
-	var rounds := UI.label("%d rounds%s" % [int(_replay.get("rounds", 0)),
+	var n := int(_replay.get("rounds", 0))
+	var rounds := UI.label("%d %s%s" % [n, "round" if n == 1 else "rounds",
 		"  ·  ran out of time" if bool(_replay.get("timed_out", false)) else ""],
 		24, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(rounds, Rect2(130, 1170, 681, 34))
+	UI.place(rounds, Rect2(130, 1182, 681, 34))
 	_root.add_child(rounds)
 
 	var spoils: Array = []
@@ -559,7 +619,7 @@ func _finish() -> void:
 	for i in spoils.size():
 		var row: Array = spoils[i]
 		var l := UI.label(str(row[0]), 30, row[1], "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
-		UI.place(l, Rect2(130, 1216 + i * 40, 681, 38))
+		UI.place(l, Rect2(130, 1228 + i * 40, 681, 38))
 		_root.add_child(l)
 
 	var go := _plate_button("CONTINUE", "shop/buy_plate" if won else "inventory/btn_sell_plate",

@@ -19,6 +19,8 @@ var _labels: int = 0
 var _buttons: int = 0
 var _tag := ""
 var _screen_rect := Rect2()
+var _boxes: Array = []
+var _bars: Array = []
 
 
 func _initialize() -> void:
@@ -62,9 +64,9 @@ func _replay() -> Dictionary:
 		"v": 2, "rounds": 4, "winner": "a", "fortune_a_bp": 10400, "fortune_d_bp": 9700,
 		"attacker_might": 3350, "defender_might": 3120,
 		"attacker": {"player_id": "A", "name": "Yigit", "units": [
-			{"id": "A", "hp": 9000}]},
+			{"id": "A", "hp": 9000, "is_hero": true, "weapon": "weapon_05"}]},
 		"defender": {"player_id": "D", "name": "Lord Darius", "units": [
-			{"id": "D", "hp": 8000}]},
+			{"id": "D", "hp": 8000, "is_hero": true, "weapon": "weapon_02"}]},
 		"events": events,
 	}
 
@@ -85,7 +87,10 @@ func _check(canvas: Vector2) -> void:
 	_screen_rect = Rect2(Vector2.ZERO, canvas)
 	_labels = 0
 	_buttons = 0
+	_boxes = []
+	_bars = []
 	_walk(screen)
+	_nothing_sits_on_anything_else()
 	if _labels < 6:
 		_fail("%s: only %d labels drawn; the screen is not built" % [_tag, _labels])
 	if _buttons == 0:
@@ -130,7 +135,8 @@ func _the_animation_runs_and_settles() -> void:
 				seen["number"] = true
 			elif c is TextureRect and (c as TextureRect).texture != null:
 				seen[(c as TextureRect).texture.resource_path.get_file().get_basename()] = true
-	for want in ["slash", "impact", "number"]:
+	# The sword is the swing. Without it the portraits just slide.
+	for want in ["slash", "impact", "number", "weapon_05"]:
 		if not seen.has(want):
 			_fail("a blow never drew its %s; the fight drew %s" % [want, str(seen.keys())])
 	if _fails == 0:
@@ -163,13 +169,37 @@ func _short_replay() -> Dictionary:
 	return r
 
 
+## Text and bars are placed by hand here, not by a layout file, so nothing
+## measures them but this. Both of the overlaps it found were real: the might
+## line sat on the health bar, and BATTLE sat on ROUND 1.
+func _nothing_sits_on_anything_else() -> void:
+	for i in _boxes.size():
+		for j in range(i + 1, _boxes.size()):
+			var a: Array = _boxes[i]
+			var b: Array = _boxes[j]
+			if (a[1] as Rect2).intersects(b[1] as Rect2):
+				_fail("%s: \"%s\" overlaps \"%s\"" % [_tag, a[0], b[0]])
+	# And no text on a health bar, which is a texture and so not in the list above.
+	for box in _boxes:
+		for bar in _bars:
+			if (box[1] as Rect2).intersects(bar as Rect2):
+				_fail("%s: \"%s\" sits on a health bar" % [_tag, box[0]])
+
+
 func _walk(n: Node) -> void:
 	if n is Label and (n as Label).text != "":
 		_labels += 1
+		# Only the fixed furniture: floating numbers are meant to cross things.
+		if (n as Control).get_parent().name != "floaters":
+			_boxes.append([(n as Label).text.substr(0, 18),
+				Rect2((n as Control).global_position, (n as Control).size)])
 		var r := Rect2(n.global_position, (n as Control).size)
 		if r.size.x > 0 and not _screen_rect.intersects(r):
 			_fail("%s: \"%s\" is entirely off the screen at %s"
 				% [_tag, (n as Label).text.substr(0, 20), str(r)])
+	if n is TextureRect and (n as TextureRect).texture != null \
+			and (n as TextureRect).texture.resource_path.contains("xp_track"):
+		_bars.append(Rect2((n as Control).global_position, (n as Control).size))
 	if n is Button:
 		_buttons += 1
 		var br := Rect2((n as Control).global_position, (n as Control).size)

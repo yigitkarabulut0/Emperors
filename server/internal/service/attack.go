@@ -506,8 +506,15 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 func toCombatArmy(p sqlcdb.AppPlayer, v *ArmyView) combat.Army {
 	a := combat.Army{PlayerID: p.ID.String(), Name: p.DisplayName, Avatar: p.Avatar, Level: int64(p.Level)}
 	add := func(u UnitView) {
+		// The weapon rides along so the replay can swing the sword the player
+		// actually bought rather than a stand-in.
+		weapon := ""
+		if w := u.Equipped["weapon"]; w != nil {
+			weapon = w.Art
+		}
 		a.Units = append(a.Units, combat.Combatant{
 			ID: u.ID, Name: u.Name, Tier: u.Tier, Type: u.Type, IsHero: u.IsHero,
+			Weapon: weapon,
 			Attack: u.Attack, Defense: u.Defense, Speed: u.Speed, HP: u.HP,
 		})
 	}

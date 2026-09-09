@@ -30,6 +30,10 @@ type Combatant struct {
 	Tier    string `json:"tier,omitempty"`
 	Type    string `json:"type,omitempty"`
 	IsHero  bool   `json:"is_hero"`
+	// The art key of the weapon this unit fights with, for the screen to swing.
+	// A battle is watched, and what a player wants to see swing is the sword
+	// they bought. Empty for a soldier, and for a hero with an empty hand.
+	Weapon  string `json:"weapon,omitempty"`
 	Attack  int64  `json:"attack"`
 	Defense int64  `json:"defense"`
 	Speed   int64  `json:"speed"`
@@ -243,7 +247,8 @@ func buildChampion(cfg *gameconfig.Bundle, roster Army, side Side, defScaleBP in
 	return &Champion{
 		Combatant: Combatant{
 			ID: roster.PlayerID, Name: roster.Name, Tier: face.Tier, Type: face.Type,
-			IsHero: true, Attack: atk, Defense: face.Defense, Speed: spd, HP: hp,
+			IsHero: true, Weapon: face.Weapon,
+			Attack: atk, Defense: face.Defense, Speed: spd, HP: hp,
 		},
 		side: side, hp: hp, maxHP: hp, level: roster.Level,
 		// Set so that hp / (1 - dr) == ehp: the champion takes exactly the

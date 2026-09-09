@@ -20,7 +20,10 @@ extends Control
 
 signal acted(path: String, body: Dictionary)
 
-const WIDTH := 800.0
+## The rail runs down x 0..160 and the screen ends at 941, so a section lives
+## between them with a margin either side. It was 800 wide starting at 70,
+## which put the first ninety units of every row behind the rail.
+const WIDTH := 762.0
 const ROW_GAP := 14.0
 const PLATE := "inventory/card_frame"
 const PLATE_MARGIN := 26

@@ -21,8 +21,20 @@ const TAB_NAMES := ["realm", "lords", "works", "ranks"]
 const REALM_PARTS := ["realm_card", "realm_bonuses", "bonus_income", "bonus_xp",
 	"realm_notice", "treasury_card", "donate", "reputation_card", "rep_rank_name",
 	"rep_bar_fill", "rep_progress"]
-## Just under the tab strip, which ends at 624.
+## Just under the tab strip, which ends at 624, and clear of the rail: it runs
+## down x 0..160, and a section that started at 70 had the first ninety units of
+## every row hidden behind it.
 const SECTION_TOP := 646.0
+const SECTION_X := 168.0
+## The realm's two bands of painted panels, and what the block is worth at rest.
+const REALM_BAND_A := ["realm_card", "realm_bonuses", "bonus_income", "bonus_xp",
+	"realm_notice"]
+const REALM_BAND_B := ["treasury_card", "donate", "reputation_card", "rep_rank_name",
+	"rep_bar_fill", "rep_progress"]
+const BAND_A_TOP := 612.0
+const BAND_A_BOTTOM := 880.0
+const BAND_B_TOP := 872.0
+const BAND_B_BOTTOM := 1147.0
 const MAX_NAME := 18
 const MAX_TAG := 4
 
@@ -199,6 +211,55 @@ func _paint() -> void:
 	_ui["rank"].text = "#%d" % rank if rank > 0 else "#-"
 
 
+## Spreads the realm's two bands of panels down the room the tab now has.
+##
+## They were laid out to be the top of one long page with Lords, Works and Ranks
+## stacked under them. On their own under a tab they finish at 1147 and leave
+## the rest of a tall phone empty, so the page reads as a third full. The bands
+## keep their own heights -- they are paintings and stretching one shows -- and
+## the space between and below them is what grows.
+func _lay_realm() -> void:
+	var bottom: float = maxf(1672.0, _scroll.size.y) - 150.0
+	var a_h := BAND_A_BOTTOM - BAND_A_TOP
+	var b_h := BAND_B_BOTTOM - BAND_B_TOP
+	var room := bottom - SECTION_TOP
+	# Capped. Sharing the slack equally left 234 units of nothing between the tab
+	# strip and the first panel, which reads as the content having fallen down
+	# the page rather than as space. Past ninety it stops being rhythm; what is
+	# left over goes to the foot, where every other screen has ground anyway.
+	var gap := clampf((room - a_h - b_h) / 3.0, 24.0, 90.0)
+	var a_top := SECTION_TOP + gap
+	var b_top := a_top + a_h + gap
+	_move(REALM_BAND_A, a_top - BAND_A_TOP)
+	_move(REALM_BAND_B, b_top - BAND_B_TOP)
+	# The reputation ladder is placed in code, so it is moved the same way.
+	var shift := b_top - BAND_B_TOP
+	for i in _hexes.size():
+		var hr: Array = HEX_RECTS[i]
+		var lr: Array = LABEL_RECTS[i]
+		UI.place(_hexes[i]["hex"], Rect2(hr[0], hr[1] + shift, hr[2], hr[3]))
+		UI.place(_hexes[i]["label"], Rect2(lr[0], lr[1] + shift, lr[2], lr[3]))
+	for inst in _ui.get("rep_tiers", []):
+		var r: Rect2 = Layout.rect_of(Layout.element(SCREEN, "rep_tiers"))
+		inst["node"].position = Vector2(r.position.x, r.position.y + shift)
+
+
+## Puts each named element back at its measured place, moved down by `dy`.
+func _move(ids: Array, dy: float) -> void:
+	for id in ids:
+		if not _ui.has(id):
+			continue
+		var r: Rect2 = Layout.rect_of(Layout.element(SCREEN, id))
+		if r.size == Vector2.ZERO:
+			continue
+		# The treasury's DONATE gets the room the spread freed: it was 254x95,
+		# the smallest thing on a tab that now has half a screen spare.
+		if id == "donate":
+			UI.place(_ui[id], Rect2(r.position.x - 20.0, r.position.y + dy, r.size.x + 40.0, 120.0))
+			continue
+		UI.place(_ui[id], Rect2(r.position.x, r.position.y + dy, r.size.x, r.size.y))
+
+
 func _paint_reputation(rep: int) -> void:
 	var idx := 0
 	for i in RANKS.size():
@@ -342,11 +403,12 @@ func _show_section(which: String) -> void:
 	_light_the_tab()
 	if which == "realm":
 		_content.custom_minimum_size.y = maxf(1672.0, _scroll.size.y)
+		_lay_realm()
 		_paint()
 		return
 	_section = load("res://scenes/kingdom/kingdom_section.gd").new()
 	_section.setup(which, _data, _shop)
-	_section.position = Vector2(70, SECTION_TOP)
+	_section.position = Vector2(SECTION_X, SECTION_TOP)
 	_section.acted.connect(func(path: String, body: Dictionary) -> void:
 		await _act(path, body)
 		_show_section(_view))

@@ -10,6 +10,10 @@ extends SceneTree
 ## Run: godot --headless --path client --script tests/kingdom_pages.gd
 
 const PT_PER_UNIT := 440.0 / 941.0
+## The rail owns x 0..160. The painted panels are measured to tuck five units
+## under its edge, which is how the reference draws them; what must clear it is
+## anything placed by code, which has no painting telling it where to go.
+const RAIL_RIGHT := 160.0
 const CANVASES := [Vector2(941, 1672), Vector2(941, 2040)]
 
 var _fails: int = 0
@@ -127,7 +131,32 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 				_fail("the %s tab built nothing" % mode.to_upper())
 			if (ui["lords_panel"] as Control).visible:
 				_fail("the %s tab left the half-width lords panel showing" % mode.to_upper())
-	print("  the four tabs each swap the page's content")
+	# Nothing a tab shows may sit under the rail, and REALM has to use the room
+	# the other tabs use rather than stopping a third of the way down.
+	page.call("_show_section", "lords")
+	for i in 3:
+		await process_frame
+	var section: Control = page.get("_section")
+	if section != null and section.position.x < RAIL_RIGHT:
+		_fail("a section starts at x %.0f, behind the rail's %.0f"
+			% [section.position.x, RAIL_RIGHT])
+	page.call("_show_section", "realm")
+	for i in 3:
+		await process_frame
+	var lowest := 0.0
+	for id in ["donate", "reputation_card", "treasury_card"]:
+		if ui.has(id):
+			var c: Control = ui[id]
+			lowest = maxf(lowest, c.position.y + c.size.y)
+	if lowest < 1200.0:
+		_fail("the realm tab finishes at y %.0f and leaves the rest of the page empty"
+			% lowest)
+	if ui.has("donate"):
+		var d: Control = ui["donate"]
+		if d.size.y * PT_PER_UNIT < 50.0:
+			_fail("the realm's DONATE is %.0f pt tall on a tab with room to spare"
+				% (d.size.y * PT_PER_UNIT))
+	print("  the four tabs each swap the page's content, clear of the rail")
 	host.queue_free()
 	await process_frame
 

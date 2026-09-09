@@ -146,8 +146,6 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "already_claimed", err.Error())
 	case errors.Is(err, service.ErrNotEnoughFavour):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_favour", "not enough favour")
-	case errors.Is(err, service.ErrDonationCap):
-		WriteProblem(w, r, http.StatusConflict, "donation_cap", "you have donated all you can today")
 	case errors.Is(err, service.ErrLastKing):
 		WriteProblem(w, r, http.StatusConflict, "last_king", "promote another lord before you leave")
 	case errors.Is(err, service.ErrSameKingdom):
@@ -1119,7 +1117,7 @@ func isKnownServiceError(err error) bool {
 		service.ErrUpgradeMaxed, service.ErrNoTax,
 		service.ErrAlreadyInKingdom, service.ErrNotInKingdom, service.ErrKingdomFull,
 		service.ErrNotInvited, service.ErrNotPermitted, service.ErrKingdomNameTaken,
-		service.ErrDonationCap, service.ErrLastKing, service.ErrSameKingdom,
+		service.ErrLastKing, service.ErrSameKingdom,
 		service.ErrBadName, service.ErrSameName,
 	} {
 		if errors.Is(err, e) {

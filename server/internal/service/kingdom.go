@@ -22,7 +22,6 @@ var (
 	ErrNotInvited       = errors.New("you have not been invited")
 	ErrNotPermitted     = errors.New("your rank does not allow that")
 	ErrKingdomNameTaken = errors.New("that name or tag is taken")
-	ErrDonationCap      = errors.New("you have donated all you can today")
 	ErrLastKing         = errors.New("promote another lord before you leave")
 	ErrSameKingdom      = errors.New("you cannot raid your own kingdom")
 	ErrNotEnoughFavour  = errors.New("not enough favour")
@@ -66,9 +65,7 @@ type MembershipView struct {
 	Role           string `json:"role"`
 	Donated        string `json:"donated"`
 	Favour         int64  `json:"favour"`
-	DailyCap       int64  `json:"daily_cap"`
 	DonatedToday   int64  `json:"donated_today"`
-	RemainingToday int64  `json:"remaining_today"`
 }
 
 type InviteView struct {
@@ -162,14 +159,13 @@ func (d Deps) GetKingdom(ctx context.Context, playerID uuid.UUID) (*KingdomView,
 		})
 	}
 
-	cap := d.donationCap(int64(p.Level))
 	today := int64(0)
 	if p.KingdomDay.Valid && sameDay(p.KingdomDay.Time, d.Now()) {
 		today = p.KingdomDonatedToday
 	}
 	view.Me = &MembershipView{
 		Role: p.KingdomRole, Donated: itoa(p.KingdomDonatedTotal), Favour: p.KingdomFavour,
-		DailyCap: cap, DonatedToday: today, RemainingToday: max64(cap-today, 0),
+		DonatedToday: today,
 	}
 	return view, nil
 }
@@ -184,13 +180,6 @@ func (d Deps) kingdomInfo(k sqlcdb.AppKingdom, members, courtBonus int) KingdomI
 		Treasury: itoa(k.Treasury), Reputation: k.Reputation / reputationScale,
 		Members: members, MemberCap: d.Config.KingdomMemberCap(int(k.Level), courtBonus),
 	}
-}
-
-// donationCap bounds a player's daily contribution. It stops one whale from
-// instantly maxing a kingdom, and it blocks alt-account gold laundering.
-func (d Deps) donationCap(level int64) int64 {
-	c := d.Config.Kingdoms.Donation
-	return c.DailyCapBase + c.DailyCapPerLevel*level
 }
 
 func sameDay(a time.Time, b time.Time) bool {

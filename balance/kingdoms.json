@@ -191,8 +191,6 @@
     }
   ],
   "donation": {
-    "daily_cap_base": 20000,
-    "daily_cap_per_level": 800,
     "xp_per_gold": 1,
     "xp_per_reputation": 100,
     "favour_per_gold": 100

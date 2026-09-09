@@ -471,9 +471,14 @@ func _donate() -> void:
 	if _busy or _kingdom().is_empty():
 		return
 	var me: Dictionary = _data.get("me", {}) if _data.get("me", null) is Dictionary else {}
+	# There is no daily ceiling any more, so the line says what has been given
+	# rather than what is left to give.
+	var today := int(me.get("donated_today", 0))
+	var body := "A hundred gold earns one Favour, and the treasury takes whatever you have."
+	if today > 0:
+		body += "\nGiven today: %s gold." % UI.grouped(today)
 	var r := await Dialog.prompt_amount(self, {"title": "Donate to the treasury",
-		"body": "Donations earn Favour. Today: %s of %s." % [UI.grouped(int(me.get("donated_today", 0))), UI.grouped(int(me.get("daily_cap", 0)))],
-		"placeholder": "Gold", "confirm_text": "Donate"})
+		"body": body, "placeholder": "Gold", "confirm_text": "Donate"})
 	if r["action"] != "confirm" or int(r["value"]) <= 0:
 		return
 	await _act("/v1/kingdom/donate", {"amount": int(r["value"])})

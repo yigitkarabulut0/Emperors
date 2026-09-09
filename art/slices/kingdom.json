@@ -755,6 +755,32 @@
         786,
         54
       ]
+    },
+    {
+      "name": "icons/market_tent",
+      "src": "collect.png",
+      "rect": [
+        10,
+        750,
+        136,
+        110
+      ],
+      "mode": "darkkey",
+      "note": "the rail's market tent without the word under it -- the Favour shop's Fresh Wares. Cut from collect.png because on shop.png the same cell is the lit red plate.",
+      "erase": [
+        {
+          "rect": [
+            141,
+            750,
+            5,
+            110
+          ],
+          "sample_x": [
+            120,
+            130
+          ]
+        }
+      ]
     }
   ]
 }

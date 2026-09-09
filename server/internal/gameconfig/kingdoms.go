@@ -23,8 +23,6 @@ type KingdomLevel struct {
 }
 
 type DonationConfig struct {
-	DailyCapBase     int64 `json:"daily_cap_base"`
-	DailyCapPerLevel int64 `json:"daily_cap_per_level"`
 	XPPerGold        int64 `json:"xp_per_gold"`
 	XPPerReputation  int64 `json:"xp_per_reputation"`
 	FavourPerGold    int64 `json:"favour_per_gold"`

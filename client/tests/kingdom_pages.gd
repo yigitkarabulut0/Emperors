@@ -73,14 +73,24 @@ func _data() -> Dictionary:
 		"members": members, "upgrades": upgrades, "leaderboard": board}
 
 
+## The goods the game actually sells, from the generator's own document, so a
+## good added without a painting fails here rather than shipping as whatever
+## the fallback happens to be.
+func _goods() -> Array:
+	var fh := FileAccess.open("res://../balance/kingdoms.json", FileAccess.READ)
+	if fh == null:
+		_fail("balance/kingdoms.json is not readable")
+		return []
+	var d: Variant = JSON.parse_string(fh.get_as_text())
+	return (d as Dictionary).get("favour_shop", []) if d is Dictionary else []
+
+
 func _check(mode: String, canvas: Vector2) -> void:
 	var host := Control.new()
 	host.size = canvas
 	root.add_child(host)
 	var page: Control = load("res://scenes/kingdom/kingdom_section.gd").new()
-	page.setup(mode, _data(), {"favour": 480, "goods": [
-		{"id": "g1", "name": "Energy Draught", "blurb": "Restores your energy.", "cost": 40},
-		{"id": "g2", "name": "Kingdom Banner", "blurb": "A standard for the gate.", "cost": 800}]})
+	page.setup(mode, _data(), {"favour": 480, "goods": _goods()})
 	host.add_child(page)
 	for i in 4:
 		await process_frame
@@ -91,6 +101,8 @@ func _check(mode: String, canvas: Vector2) -> void:
 	_band = Vector2(page.global_position.x, page.global_position.x + page.size.x)
 	_walk(page)
 	_nothing_eats_the_drag(page)
+	if mode == "works":
+		_the_favour_shop_is_a_shelf(page)
 	if mode != "ranks" and _buttons == before:
 		_fail("%s: built no buttons at all" % _tag)
 	if page.size.y < 200.0:
@@ -259,6 +271,28 @@ func _the_rows_meet(ui: Dictionary) -> void:
 				% [pair[0], left.position.x + left.size.x, pair[1], right.position.x, gap])
 		elif gap < -2.0:
 			_fail("%s overlaps %s by %.0f units" % [pair[0], pair[1], -gap])
+
+
+## The Favour shop is three cards abreast, the way the Royal Market lays out
+## what it sells: one painting each, and a price a thumb can press. They were
+## three rows of type in which a potion, a market and a scholar's draught looked
+## exactly alike.
+func _the_favour_shop_is_a_shelf(page: Control) -> void:
+	var arts := {}
+	var wide := 0.0
+	var stack: Array = [page]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		for c in n.get_children():
+			stack.append(c)
+		if n is TextureRect and (n as TextureRect).texture != null:
+			var path := (n as TextureRect).texture.resource_path
+			if path.contains("/icons/"):
+				arts[path] = true
+				wide = maxf(wide, (n as Control).size.x)
+	if arts.size() < 3:
+		_fail("%s: the favour shop shows %d painting(s); three goods, three paintings"
+			% [_tag, arts.size()])
 
 
 func _walk(n: Node) -> void:

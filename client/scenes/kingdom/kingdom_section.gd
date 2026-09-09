@@ -164,8 +164,16 @@ func _picture(row: Control, asset: String, box: Vector2, row_h: float) -> Textur
 
 func _text(host: Control, s: String, rect: Rect2, size: int, col: Color,
 		role: String = "body", weight: int = 500,
-		align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+		align: int = HORIZONTAL_ALIGNMENT_LEFT, wrap: bool = false) -> Label:
 	var l := UI.label(s, size, col, role, weight, align)
+	if wrap:
+		# Before the rect is set, not after. A Label without wrapping asks for
+		# the width of its whole string, and a Control cannot be smaller than
+		# what it asks for -- so turning wrapping on afterwards left the label
+		# at the width it had already claimed. The Favour goods' blurbs ran a
+		# hundred units past the card they were on.
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(rect.size.x, 0)
 	UI.place(l, rect)
 	host.add_child(l)
 	return l
@@ -183,7 +191,7 @@ func _act(path: String, body: Dictionary) -> void:
 func _notice(text: String) -> void:
 	var row := _row(110.0)
 	_text(row, text, Rect2(PAD, 0, INNER, 110), 25, UI.DIM, "body", 500,
-		HORIZONTAL_ALIGNMENT_CENTER).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		HORIZONTAL_ALIGNMENT_CENTER, true)
 
 
 func _fill() -> void:
@@ -308,7 +316,6 @@ func _leave() -> void:
 const WORK_ART := ["kingdom/work_banner_hall", "kingdom/work_training_grounds",
 	"kingdom/work_granary_law", "kingdom/work_royal_archives"]
 const WORK_H := 176.0
-const GOOD_H := 140.0
 ## The work paintings are 86x69, so the box they are drawn in is too.
 const WORK_PIC := Vector2(152, 122)
 
@@ -328,8 +335,8 @@ func _fill_works() -> void:
 			"title", 700)
 		_text(row, "Level %d" % int(u.get("level", 0)), Rect2(text_x, 74, text_w, 32), 26,
 			UI.GOLD_DIM, "body", 600)
-		_text(row, _bonus_text(u), Rect2(text_x, 110, text_w, 46), 24, UI.DIM).autowrap_mode = \
-			TextServer.AUTOWRAP_WORD_SMART
+		_text(row, _bonus_text(u), Rect2(text_x, 110, text_w, 46), 24, UI.DIM,
+			"body", 500, HORIZONTAL_ALIGNMENT_LEFT, true)
 
 		# The cost sits under the button, inside the row, so the right column
 		# reads as one object. It used to hang two units off the row's bottom
@@ -353,22 +360,73 @@ func _fill_works() -> void:
 	if goods.is_empty():
 		return
 	_heading("THE FAVOUR SHOP")
+	_favour_cards(goods)
+
+
+## The three goods, side by side, the way the Royal Market lays out what it
+## sells. They were three full-width rows of type with a price on the right --
+## a potion, a market and a scholar's draught all looking exactly alike, which
+## is what a list of names looks like when the game has a painting for each.
+const GOOD_ART := {
+	"energy_potion": "icons/good_energy",
+	"shop_refresh": "icons/market_tent",
+	"xp_boost": "icons/quest_scroll",
+}
+const GOOD_FALLBACK := "icons/quest_scroll"
+const CARD_GAP := 16.0
+## 16 of air, a 100 picture, a name of up to two lines, a blurb of up to three,
+## the word FAVOUR, and a button a thumb can hit. Every band is measured, so a
+## longer blurb pushes nothing off the card.
+const CARD_H := 398.0
+## The picture band. Each good is drawn into it at its own proportions: the
+## flask is 98x136, the tent 136x110 and the scroll 70x66, so nothing but a
+## common box makes them read as one set.
+const PIC := Vector2(132, 100)
+
+
+func _favour_cards(goods: Array) -> void:
+	var shelf := Control.new()
+	var wide := (INNER - CARD_GAP * 2.0) / 3.0
+	shelf.custom_minimum_size = Vector2(WIDTH, CARD_H)
+	shelf.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_list.add_child(shelf)
 	var purse := int(shop.get("favour", 0))
-	for g in goods:
-		var row := _row(GOOD_H)
-		var button_w := 224.0
-		var text_w := _text_span(PAD, button_w)
-		_text(row, str(g.get("name", "")), Rect2(PAD, 26, text_w, 40), 30, UI.INK, "title", 700)
-		_text(row, str(g.get("blurb", "")), Rect2(PAD, 70, text_w, 50), 23, UI.DIM) \
-			.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for i in mini(goods.size(), 3):
+		var g: Dictionary = goods[i]
+		var card := Control.new()
+		card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		UI.place(card, Rect2(PAD + (wide + CARD_GAP) * i, 0, wide, CARD_H))
+		shelf.add_child(card)
+
+		var plate := NinePatchRect.new()
+		plate.texture = Art.tex(PLATE)
+		for m in ["left", "top", "right", "bottom"]:
+			plate.set("patch_margin_" + m, PLATE_MARGIN)
+		UI.place(plate, Rect2(0, 0, wide, CARD_H))
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(plate)
+
+		var art := UI.image(str(GOOD_ART.get(str(g.get("id", "")), GOOD_FALLBACK)),
+			Rect2((wide - PIC.x) / 2.0, 16, PIC.x, PIC.y))
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		card.add_child(art)
+
+		_text(card, str(g.get("name", "")), Rect2(8, 126, wide - 16, 52), 24,
+			UI.INK, "title", 700, HORIZONTAL_ALIGNMENT_CENTER, true)
+		_text(card, str(g.get("blurb", "")), Rect2(10, 186, wide - 20, 66), 20, UI.DIM,
+			"body", 500, HORIZONTAL_ALIGNMENT_CENTER, true)
+		_text(card, "FAVOUR", Rect2(14, 258, wide - 28, 24), 18,
+			UI.GOLD_DIM, "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
+
 		var cost := int(g.get("cost", 0))
-		var b := _action(row, "%d FAVOUR" % cost, "inventory/btn_sell_plate", UI.INK,
-			button_w, GOOD_H)
+		var b := _plate_button("%d" % cost, "inventory/btn_sell_plate", UI.GOLD)
+		UI.place(b, Rect2(14, 286, wide - 28, BUTTON_H))
 		b.disabled = cost > purse
 		if b.disabled:
 			b.modulate = Color(0.6, 0.6, 0.6)
 		b.pressed.connect(func() -> void:
 			_act("/v1/kingdom/shop/buy", {"good": str(g.get("id", ""))}))
+		card.add_child(b)
 
 
 func _bonus_text(u: Dictionary) -> String:

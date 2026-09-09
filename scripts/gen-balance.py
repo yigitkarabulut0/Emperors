@@ -821,9 +821,11 @@ emit("kingdoms.json", json.dumps({
     "max_level": KINGDOM_MAX_LEVEL,
     "levels": k_levels,
     "upgrades": k_upgrades,
+    # No daily cap. There was one -- 20,000 gold plus 800 a level -- to stop a
+    # whale maxing a kingdom overnight and to make alt-account laundering slow.
+    # The owner asked for it gone: a player may give the treasury whatever they
+    # have.
     "donation": {
-        "daily_cap_base": 20000,
-        "daily_cap_per_level": 800,
         "xp_per_gold": 1,
         "xp_per_reputation": 100,
         "favour_per_gold": 100,
@@ -835,10 +837,10 @@ emit("kingdoms.json", json.dumps({
     # and gave them back a number. The design's own line on this: "Donating must
     # reward the donor personally, or nobody donates."
     #
-    # Priced against the daily donation cap rather than against gold directly: a
-    # level-1 kingdom's cap is 20,800 gold a day, which is 208 favour, so the
-    # energy potion is roughly a fifth of a day's donating and the XP boost about
-    # half of one.
+    # Priced in favour, which is a hundredth of the gold given: the energy potion
+    # is 4,000 gold of donation, the market refresh 2,500 and the XP boost
+    # 12,000. These were set against a daily cap of about 20,800 gold, which is
+    # gone; the prices stand because they are what the goods are worth.
     "favour_shop": [
         {"id": "energy_potion", "name": "Energy Potion", "cost": 40,
          "blurb": "Fills your energy to the brim."},

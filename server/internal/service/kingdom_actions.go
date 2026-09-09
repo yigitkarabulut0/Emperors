@@ -219,18 +219,9 @@ func (d Deps) Donate(ctx context.Context, playerID uuid.UUID, amount int64, want
 			return ErrNotInKingdom
 		}
 
+		// There is no daily ceiling. A player gives what they have, and
+		// DonateGold's own WHERE clause is what refuses more than that.
 		now := d.Now()
-		today := int64(0)
-		if p.KingdomDay.Valid && sameDay(p.KingdomDay.Time, now) {
-			today = p.KingdomDonatedToday
-		}
-		remaining := d.donationCap(int64(p.Level)) - today
-		if remaining <= 0 {
-			return ErrDonationCap
-		}
-		if amount > remaining {
-			amount = remaining
-		}
 
 		cfg := d.Config.Kingdoms.Donation
 		favour := amount / cfg.FavourPerGold

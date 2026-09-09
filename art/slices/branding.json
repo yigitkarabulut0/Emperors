@@ -1,0 +1,25 @@
+{
+ "source": "kingdom.png",
+ "crops": [
+  {
+   "name": "branding/vista",
+   "rect": [
+    155,
+    78,
+    786,
+    262
+   ],
+   "note": "The castle, the banners and the crest, below the currency pills and above the LION BANNER plate. The boot screen's backdrop and the iOS launch image are both built from this, so the app's first frame and the game's first frame are the same picture."
+  },
+  {
+   "name": "branding/foot",
+   "rect": [
+    0,
+    1616,
+    941,
+    56
+   ],
+   "note": "The blurred foliage every screen stands on, cut clean of the ranking plate above it. It anchors the boot screen and the launch image to the bottom of the phone rather than to the design grid, which a tall screen runs past."
+  }
+ ]
+}

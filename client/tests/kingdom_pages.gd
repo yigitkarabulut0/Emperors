@@ -172,6 +172,7 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 			_fail("the realm's %s is %.0fx%.0f pt, under the 44 a thumb needs"
 				% [id, d.size.x * PT_PER_UNIT, d.size.y * PT_PER_UNIT])
 	_the_strip_matches_the_painting(page, ui)
+	_the_rows_meet(ui)
 	print("  the four tabs each swap the page's content, clear of the rail")
 	host.queue_free()
 	await process_frame
@@ -234,6 +235,30 @@ func _the_strip_matches_the_painting(page: Control, ui: Dictionary) -> void:
 				Vector2(float(lr[0]), float(lr[1]))) > 1.5:
 			_fail("tab %d's word sits at %s, not the %s the painting has"
 				% [i, word.global_position, Vector2(float(lr[0]), float(lr[1]))])
+
+
+## The Realm tab is three rows of two cards. Each pair meets within a few units
+## in the painting; the castle's crop stopped 34 units short of the card beside
+## it, and what showed between them was bare ground, so the right-hand card read
+## as adrift. A crop cut shorter than the painting leaves no other trace.
+const PAIRS := [["realm_card", "realm_bonuses"], ["treasury_card", "reputation_card"],
+	["lords_panel", "works_panel"]]
+const MAX_GAP := 8.0
+
+
+func _the_rows_meet(ui: Dictionary) -> void:
+	for pair in PAIRS:
+		if not (ui.has(pair[0]) and ui.has(pair[1])):
+			_fail("the realm tab is missing %s or %s" % [pair[0], pair[1]])
+			continue
+		var left: Control = ui[pair[0]]
+		var right: Control = ui[pair[1]]
+		var gap := right.position.x - (left.position.x + left.size.x)
+		if gap > MAX_GAP:
+			_fail("%s ends at x %.0f and %s starts at %.0f -- %.0f units of bare ground"
+				% [pair[0], left.position.x + left.size.x, pair[1], right.position.x, gap])
+		elif gap < -2.0:
+			_fail("%s overlaps %s by %.0f units" % [pair[0], pair[1], -gap])
 
 
 func _walk(n: Node) -> void:

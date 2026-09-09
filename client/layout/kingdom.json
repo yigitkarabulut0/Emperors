@@ -311,9 +311,10 @@
       "rect": [
         155,
         614,
-        396,
+        431,
         266
-      ]
+      ],
+      "note": "the crop stopped at x 551 while the painting runs to 586, so a 34-unit strip of the castle was left as flat ground and the card beside it looked adrift. Every other row on this page meets its neighbour within four units."
     },
     {
       "id": "realm_bonuses",

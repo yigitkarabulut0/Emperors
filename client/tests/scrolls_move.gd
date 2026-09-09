@@ -42,6 +42,7 @@ func _initialize() -> void:
 	_a_scroll_built_by_hand_sets_its_deadzone()
 	_nothing_stands_on_a_scroll_and_eats_its_drags()
 	_a_card_that_is_all_button_passes_the_drag_on()
+	_a_rows_first_card_starts_inside_the_window()
 	if _fails > 0:
 		print("FAIL  %d check(s)" % _fails)
 		quit(1)
@@ -103,6 +104,29 @@ func _the_army_row_is_longer_than_its_window() -> void:
 			% [maxs, window])
 	print("  army row: %d slots x %.0f + %.0f = %.0f units in a %.0f window"
 		% [maxs, pitch, next_w, full, window])
+
+
+## A list places its rows from the template's own position, measured against the
+## window's. Put the window somewhere the template is not and the first row is
+## laid out above the top of it and clipped: the inventory's list was moved down
+## to give the filter chips room, the card was left where it was, and the top
+## item came out cut in half.
+func _a_rows_first_card_starts_inside_the_window() -> void:
+	# The screens that lay a list out from the painting's own coordinates:
+	# top = card.y - window.y, so a card above its window gives a negative top
+	# and the first row is drawn off the top of it.
+	const MEASURED := [["inventory", "list", "item_card"], ["collect", "job_list", "job_row"]]
+	for pair in MEASURED:
+		var window: Dictionary = _L.element(pair[0], pair[1])
+		var card: Dictionary = _L.find(pair[0], pair[2])
+		if window.is_empty() or card.is_empty():
+			_fail("%s: no %s or no %s" % [pair[0], pair[1], pair[2]])
+			continue
+		var w: Rect2 = _L.rect_of(window)
+		var c: Rect2 = _L.rect_of(card)
+		if c.position.y < w.position.y:
+			_fail("%s/%s starts at y %.0f and its window at y %.0f: the first row is drawn %.0f units above the top and clipped"
+				% [pair[0], pair[2], c.position.y, w.position.y, w.position.y - c.position.y])
 
 
 ## A button lying over a scrolling region takes the drags that start on it.

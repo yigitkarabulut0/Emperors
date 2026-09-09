@@ -16,7 +16,20 @@ const MIN_PT := 44.0
 
 ## The two the painting will not give room to, with what stops them. Listed
 ## rather than ignored: if a panel is ever redrawn, this is the list to empty.
+## The six that cannot reach 44 pt, with what stops each. All six are drawn over
+## a twin painted into the panel behind them, so growing one means growing it
+## around its own centre or the player sees the button twice -- and around the
+## centre there is something else in the way. A correctly placed button beats a
+## bigger one drawn twice. Empty this list if those panels are ever redrawn.
 const CRAMPED := {
+	"army/auto_equip":
+		"the slot row's window starts 24 units below it and would take the drags",
+	"attack/view_all":
+		"it sits at the top of the history panel; there is no panel above it",
+	"family/edit":
+		"the identity plate is only 95 units of height wide enough to hold it",
+	"family/equip_best":
+		"the gear panel's header band ends where the gear tiles begin",
 	"kingdom/lords_view_all":
 		"the lords panel's header band is 58 units and the rows under it are tap targets too",
 	"kingdom/upgrade":
@@ -86,3 +99,13 @@ func _check(screen: String, e: Dictionary, r: Rect2) -> void:
 			% [id, w, h, MIN_PT])
 	if not small and CRAMPED.has(id):
 		_fail("%s now fits (%.0fx%.0f pt); take it out of CRAMPED" % [id, w, h])
+	# A button is drawn centred in its rect, and nearly all of them have a twin
+	# painted into the panel behind. Move the centre and the player sees two --
+	# which is what AUTO EQUIP did after it was grown upward to reach 44 pt.
+	if e.has("paint_rect"):
+		var pr: Array = e["paint_rect"]
+		var painted := Vector2(float(pr[0]) + float(pr[2]) / 2.0, float(pr[1]) + float(pr[3]) / 2.0)
+		var now := r.position + r.size / 2.0
+		if now.distance_to(painted) > 1.0:
+			_fail("%s has moved %.0f units off where it is painted; it will be drawn twice"
+				% [id, now.distance_to(painted)])

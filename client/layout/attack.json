@@ -111,7 +111,13 @@
     "sample": "1",
     "only_when": "active"
    },
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    183,
+    284,
+    368,
+    78
+   ]
   },
   {
    "id": "tab_targets",
@@ -160,7 +166,13 @@
      }
     }
    },
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    553,
+    288,
+    368,
+    68
+   ]
   },
   {
    "id": "revenge_card",
@@ -296,7 +308,13 @@
       95
      ],
      "action": "attack_revenge",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      484,
+      135,
+      248,
+      68
+     ]
     }
    ]
   },
@@ -455,7 +473,13 @@
      ],
      "action": "attack",
      "only_when": "not shielded",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      498,
+      85,
+      233,
+      66
+     ]
     },
     {
      "id": "shield",
@@ -579,11 +603,17 @@
       610,
       0,
       120,
-      95
+      72
      ],
      "action": "history_all",
      "note": "label 'View All >' is baked",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      610,
+      18,
+      120,
+      36
+     ]
     },
     {
      "id": "row",

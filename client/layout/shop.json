@@ -59,7 +59,13 @@
     95
    ],
    "action": "reroll",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    664,
+    558,
+    260,
+    74
+   ]
   },
   {
    "id": "reroll_cost",
@@ -360,7 +366,13 @@
      "size": 34,
      "color": "#F2FBF2",
      "weight": 700,
-     "margin": 16
+     "margin": 16,
+     "paint_rect": [
+      186,
+      150,
+      160,
+      95
+     ]
     }
    ]
   },
@@ -449,7 +461,13 @@
       95
      ],
      "action": "buy_energy",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      238,
+      164,
+      110,
+      52
+     ]
     },
     {
      "id": "city_shield",
@@ -508,7 +526,13 @@
       95
      ],
      "action": "buy_shield",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      613,
+      164,
+      110,
+      52
+     ]
     }
    ]
   },

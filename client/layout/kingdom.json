@@ -53,7 +53,13 @@
    ],
    "action": "kingdom_rename",
    "note": "quill box is baked into header",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    678,
+    346,
+    38,
+    37
+   ]
   },
   {
    "id": "motto",
@@ -381,7 +387,13 @@
    ],
    "action": "kingdom_donate",
    "asset": "kingdom/btn_donate",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    228,
+    1071,
+    254,
+    58
+   ]
   },
   {
    "id": "reputation_card",
@@ -562,13 +574,19 @@
    "id": "lords_view_all",
    "kind": "button",
    "rect": [
-    400,
+    435,
     1147,
-    130,
-    42
+    95,
+    46
    ],
    "action": "kingdom_lords",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    440,
+    1155,
+    85,
+    30
+   ]
   },
   {
    "id": "lord_row",
@@ -733,7 +751,13 @@
     95
    ],
    "action": "kingdom_works",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    850,
+    1155,
+    80,
+    30
+   ]
   },
   {
    "id": "work_row",
@@ -833,11 +857,17 @@
       259,
       0,
       110,
-      69
+      66
      ],
      "action": "kingdom_upgrade",
      "asset": "kingdom/btn_upgrade",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      259,
+      8,
+      110,
+      50
+     ]
     }
    ]
   },
@@ -880,7 +910,13 @@
     95
    ],
    "action": "kingdom_rankings",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    795,
+    1585,
+    135,
+    30
+   ]
   },
   {
    "id": "foliage_bottom",

@@ -121,7 +121,13 @@
    ],
    "action": "hero_support_info",
    "baked": true,
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    866,
+    356,
+    40,
+    40
+   ]
   },
   {
    "id": "soldiers_panel",
@@ -309,7 +315,13 @@
         337
        ],
        "action": "select_soldier",
-       "pass_drag": true
+       "pass_drag": true,
+       "paint_rect": [
+        0,
+        0,
+        149,
+        337
+       ]
       }
      ]
     },
@@ -361,7 +373,13 @@
         96
        ],
        "action": "buy_slot",
-       "keep_texture_size": true
+       "keep_texture_size": true,
+       "paint_rect": [
+        8,
+        236,
+        128,
+        96
+       ]
       }
      ]
     }
@@ -389,12 +407,18 @@
    "asset": "army/auto_equip",
    "rect": [
     683,
-    452,
+    503,
     234,
-    95
+    49
    ],
    "action": "autoequip",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    683,
+    504,
+    234,
+    47
+   ]
   },
   {
    "id": "selected_panel",
@@ -653,7 +677,13 @@
       98,
       100
      ],
-     "action": "soldier_gear_slot"
+     "action": "soldier_gear_slot",
+     "paint_rect": [
+      0,
+      0,
+      98,
+      100
+     ]
     }
    ]
   },
@@ -696,7 +726,13 @@
     95
    ],
    "action": "dismiss",
-   "keep_texture_size": true
+   "keep_texture_size": true,
+   "paint_rect": [
+    728,
+    1144,
+    178,
+    78
+   ]
   },
   {
    "id": "recruit_panel",
@@ -938,7 +974,13 @@
        54
       ]
      ],
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      12,
+      165,
+      215,
+      54
+     ]
     }
    ]
   },

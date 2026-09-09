@@ -57,20 +57,32 @@ def containers(elements, bounds, out):
 
 
 def grow(r, others, bounds):
-    """Widens r toward TARGET on each short axis, stopping at a sibling control."""
+    """Widens r toward TARGET on each short axis, around its own centre.
+
+    Strictly symmetric, and that is the point. A button is drawn centred in its
+    rect, and almost every one of them has a twin painted into the panel behind
+    it -- the references are whole screens, so a panel crop carries whatever was
+    painted on it. Move a rect's centre and the drawn button slides off its
+    painted twin, and the player sees two. That shipped on the army screen:
+    AUTO EQUIP grew upward to reach 44 pt and appeared twice.
+
+    So a control never moves. If it cannot reach 44 pt without covering
+    something else that can be pressed, it stays as painted and is reported.
+    """
     out = list(r)
     for axis in (0, 1):
         size = 2 if axis == 0 else 3
         if out[size] >= TARGET:
             continue
-        want = TARGET - out[size]
-        for step in range(int(want), 0, -1):
-            lo = max(bounds[axis], out[axis] - step / 2.0)
-            hi = min(bounds[axis] + bounds[size], lo + out[size] + step)
-            lo = max(bounds[axis], hi - out[size] - step)
+        centre = out[axis] + out[size] / 2.0
+        for want in range(int(TARGET), int(out[size]), -1):
+            lo = centre - want / 2.0
+            hi = centre + want / 2.0
+            if lo < bounds[axis] or hi > bounds[axis] + bounds[size]:
+                continue
             cand = list(out)
             cand[axis] = lo
-            cand[size] = hi - lo
+            cand[size] = want
             if all(not overlaps(cand, o) for o in others):
                 out = cand
                 break
@@ -90,11 +102,17 @@ def main():
         changed = False
         for siblings, bounds in boxes:
             controls = [e for e in siblings if isinstance(e, dict) and e.get("kind") in CONTROLS]
+            # A scrolling region is an obstacle too, and a quieter one: a button
+            # lying over a row does not look wrong, it just takes the drags that
+            # start on it, and the row stops moving. AUTO EQUIP did that to the
+            # army's slots.
+            regions = [rect(e) for e in siblings
+                       if isinstance(e, dict) and e.get("kind") == "scroll"]
             for e in controls:
                 r = rect(e)
                 if min(r[2], r[3]) >= MIN_UNITS:
                     continue
-                others = [rect(o) for o in controls if o is not e]
+                others = [rect(o) for o in controls if o is not e] + regions
                 new = grow(r, others, bounds)
                 if new == r:
                     short += 1
@@ -107,6 +125,7 @@ def main():
                       f"{r[2]:.0f}x{r[3]:.0f} -> {new[2]:.0f}x{new[3]:.0f} "
                       f"({new[2]*PT:.0f}x{new[3]*PT:.0f} pt)")
                 if not args.check:
+                    e.setdefault("paint_rect", [round(v) for v in r])
                     e["rect"] = [round(v) for v in new]
                     # A picture keeps its size inside the bigger control; a plate
                     # with its own label is meant to stretch.

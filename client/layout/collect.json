@@ -568,7 +568,13 @@
       95
      ],
      "action": "collect",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      566,
+      13,
+      178,
+      76
+     ]
     },
     {
      "id": "mastery_1",

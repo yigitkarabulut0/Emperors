@@ -163,13 +163,19 @@
      "kind": "button",
      "asset": "family/btn_edit",
      "rect": [
-      665,
+      670,
       7,
-      95,
+      90,
       95
      ],
      "action": "rename",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      697,
+      26,
+      36,
+      57
+     ]
     }
    ]
   },
@@ -288,10 +294,16 @@
       482,
       0,
       248,
-      95
+      84
      ],
      "action": "equip_best",
-     "keep_texture_size": true
+     "keep_texture_size": true,
+     "paint_rect": [
+      482,
+      8,
+      248,
+      68
+     ]
     },
     {
      "id": "tile_weapon",
@@ -633,7 +645,13 @@
        ],
        "action": "upgrade",
        "note": "label MAX LEVEL is baked in the button; the card has the button region erased, so a buyable level can carry a different plate/text there (no separate art in reference)",
-       "keep_texture_size": true
+       "keep_texture_size": true,
+       "paint_rect": [
+        401,
+        147,
+        326,
+        90
+       ]
       }
      ]
     }

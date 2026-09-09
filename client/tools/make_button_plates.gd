@@ -18,6 +18,13 @@ extends SceneTree
 ##
 ## Run: godot --headless --path client --script tools/make_button_plates.gd
 
+## Plates that are a recolour of another rather than a fresh bake: a green
+## plate's red and green channels swapped is the same painting in crimson, with
+## its bevel, its gold frame and its edge blending untouched -- the frame is
+## red-dominant and the ground blue-dominant, so neither moves.
+const RECOLOURS := [
+	{"src": "shop/buy_plate", "dst": "shop/danger_plate"},
+]
 const JOBS := [
 	{"src": "inventory/btn_equip", "dst": "inventory/btn_equip_plate", "inset": 8},
 	{"src": "inventory/btn_sell", "dst": "inventory/btn_sell_plate", "inset": 8},
@@ -40,6 +47,17 @@ func _initialize() -> void:
 		img.convert(Image.FORMAT_RGBA8)
 		var err := img.save_png(ProjectSettings.globalize_path("res://assets/%s.png" % job["dst"]))
 		print("wrote %s err=%d masked=%d" % [job["dst"], err, _count(mask)])
+	for job in RECOLOURS:
+		var img := Image.load_from_file("res://assets/%s.png" % job["src"])
+		img.convert(Image.FORMAT_RGBAF)
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a > 0.004 and c.g > c.r and c.g > c.b:
+					img.set_pixel(x, y, Color(c.g, c.r, c.b, c.a))
+		img.convert(Image.FORMAT_RGBA8)
+		var e2 := img.save_png(ProjectSettings.globalize_path("res://assets/%s.png" % job["dst"]))
+		print("wrote %s err=%d (recoloured from %s)" % [job["dst"], e2, job["src"]])
 	quit()
 
 

@@ -104,6 +104,24 @@ static func tex_button(asset: String, rect: Rect2) -> TextureButton:
 ## choice rather than the texture's.
 static func plate_button(plate: String, word: String, rect: Rect2, size: int,
 		col: Color, weight: int = 600, margin: int = 14) -> Button:
+	var b := plate_face(plate, margin)
+	b.text = word
+	b.add_theme_font_override("font", settings(size, col, "title", weight).font)
+	b.add_theme_font_size_override("font_size", size)
+	b.add_theme_color_override("font_color", col)
+	b.add_theme_color_override("font_pressed_color", col)
+	b.add_theme_color_override("font_hover_color", col)
+	b.add_theme_color_override("font_disabled_color", Color(col, 0.5))
+	b.add_theme_constant_override("outline_size", 0)
+	place(b, rect)
+	return b
+
+
+## A button wearing a painted plate, sized by whatever lays it out rather than
+## by a rect. The plate goes into a StyleBoxTexture, which nine-patches: the
+## chamfered corners stay at their painted resolution and only the flat middle
+## stretches, so one 122x43 painting dresses a button of any shape.
+static func plate_face(plate: String, margin: int = 14) -> Button:
 	var b := Button.new()
 	var sb := StyleBoxTexture.new()
 	sb.texture = Art.tex(plate)
@@ -119,15 +137,6 @@ static func plate_button(plate: String, word: String, rect: Rect2, size: int,
 	var off := sb.duplicate()
 	off.modulate_color = Color(0.55, 0.55, 0.55)
 	b.add_theme_stylebox_override("disabled", off)
-	b.text = word
-	b.add_theme_font_override("font", settings(size, col, "title", weight).font)
-	b.add_theme_font_size_override("font_size", size)
-	b.add_theme_color_override("font_color", col)
-	b.add_theme_color_override("font_pressed_color", col)
-	b.add_theme_color_override("font_hover_color", col)
-	b.add_theme_color_override("font_disabled_color", Color(col, 0.5))
-	b.add_theme_constant_override("outline_size", 0)
-	place(b, rect)
 	return b
 
 ## An invisible tap target over a baked-in control (the "+" on a pill).

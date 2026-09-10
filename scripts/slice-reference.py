@@ -20,7 +20,8 @@ Manifest:
                      # a list gives each side its own inset: a painted frame is rarely as thick
                      # at the top (glow, a crest) as it is down the sides
                "mask": {"type": "chamfer", "size": 6} | {"type": "polygon", "points": [[x,y],...]}
-                     # alpha 0 outside; polygon points are relative to the crop
+                     | {"type": "ellipse", "box": [x0,y0,x1,y1]}, optionally with "feather": px
+                     # alpha 0 outside; points and box are relative to the crop
                "scale": [w, h]                      # optional: resize the result (LANCZOS)
   } ] }
 """
@@ -119,10 +120,17 @@ def apply_mask(im, mask):
     """
     ss = 4
     im = im.convert('RGBA'); w, h = im.size; m = Image.new('L', (w * ss, h * ss), 0); d = ImageDraw.Draw(m)
-    if mask['type'] == 'chamfer':
-        s = mask['size']; pts = [(s, 0), (w - s, 0), (w, s), (w, h - s), (w - s, h), (s, h), (0, h - s), (0, s)]
-    else: pts = [tuple(p) for p in mask['points']]
-    d.polygon([(x * ss, y * ss) for x, y in pts], fill=255)
+    if mask['type'] == 'ellipse':
+        x0, y0, x1, y1 = mask['box']; d.ellipse([x0 * ss, y0 * ss, x1 * ss, y1 * ss], fill=255)
+    else:
+        if mask['type'] == 'chamfer':
+            s = mask['size']; pts = [(s, 0), (w - s, 0), (w, s), (w, h - s), (w - s, h), (s, h), (0, h - s), (0, s)]
+        else: pts = [tuple(p) for p in mask['points']]
+        d.polygon([(x * ss, y * ss) for x, y in pts], fill=255)
+    if mask.get('feather'):
+        # A soft edge, for a mask that cuts through glow rather than along a rim.
+        from PIL import ImageFilter
+        m = m.filter(ImageFilter.GaussianBlur(mask['feather'] * ss))
     m = m.resize((w, h), Image.BOX)
     alpha = np.minimum(np.asarray(im)[..., 3], np.asarray(m)); arr = np.asarray(im).copy(); arr[..., 3] = alpha
     return Image.fromarray(arr, 'RGBA')

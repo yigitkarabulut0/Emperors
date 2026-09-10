@@ -1087,7 +1087,18 @@
     1433,
     142,
     162
-   ]
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     6,
+     8,
+     136,
+     156
+    ],
+    "feather": 7
+   },
+   "note": "the orb, feathered out to nothing at its rim: as a rectangle it carried the goods panel's ground and the edge of its frame into every card it was drawn on"
   },
   {
    "name": "shop/buy_small",

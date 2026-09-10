@@ -26,6 +26,15 @@ const BUCKET_ICON := {"collect_income_bp": "icons/gold_stack", "tax_income_bp": 
 	"soldier_spd_bp": "inventory/icon_speed", "shop_discount_bp": "icons/market_tent",
 	"steal_cap_bp": "icons/gold_pile", "ransom_bp": "icons/coin"}
 const ICON_BOX := Rect2(406, 75, 70, 78)
+## A card's level line: the level on its left at the painting's 24, what the
+## next level buys on its right (max, min size), this far apart at least, in a
+## row this wide from the level's left edge.
+const LEVEL_ROW_W := 246.0
+const NEXT_FIT := Vector2i(19, 15)
+const NEXT_CLEAR := 12.0
+const NEXT_GREEN := Color("#A8E070")
+## How far a button's word keeps from each end of its plate.
+const BUTTON_MARGIN := 28.0
 
 var _scroll: ScrollContainer
 var _content: Control
@@ -205,8 +214,19 @@ func _paint_cards() -> void:
 		var btxt := UI.label("", 26, UI.INK, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
 		UI.place(btxt, Rect2(Layout.rect_of(Layout.find(SCREEN, "button")).position, Vector2(326, 90)))
 		btxt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# The word keeps clear of the plate's chamfered ends.
+		btxt.set_meta("box_w", 326.0 - 2.0 * BUTTON_MARGIN)
 		built["node"].add_child(btxt)
 		built["btxt"] = btxt
+		# What the next level buys, at the right of the level line and in the
+		# green the paintings give a bonus. It shared one box with the level
+		# ("LEVEL 12 / 20  ·  NEXT +3%"), and the two were fitted together down
+		# to sixteen units.
+		var lv: Control = built["parts"]["level"]
+		var nxt := UI.label("", NEXT_FIT.x, NEXT_GREEN, "title", 600, HORIZONTAL_ALIGNMENT_RIGHT)
+		UI.place(nxt, Rect2(lv.position, Vector2(LEVEL_ROW_W, lv.size.y)))
+		built["node"].add_child(nxt)
+		built["next"] = nxt
 		_cards.append(built)
 	for i in _cards.size():
 		var c: Dictionary = _cards[i]
@@ -251,8 +271,8 @@ func _paint_card(c: Dictionary) -> void:
 			var per := int(d.get("per_level", 0))
 			# The level line says what the next level buys, so the price has
 			# something to be weighed against.
-			p["level"].text = "LEVEL %d / %d%s" % [int(d.get("level", 0)), int(d.get("max_level", 0)),
-				"" if maxed else "  ·  NEXT +%s" % (str(per) if flat else _pct(per) + "%")]
+			p["level"].text = "LEVEL %d / %d" % [int(d.get("level", 0)), int(d.get("max_level", 0))]
+			c["next"].text = "" if maxed else "NEXT +%s" % (str(per) if flat else _pct(per) + "%")
 			var effect := int(d.get("effect_now", 0))
 			p["bonus"].text = ("+%d %s" % [effect, label]) if flat else ("+%s%% %s" % [_pct(effect), label])
 			if not bool(_estates.get("upgrades_unlocked", true)):
@@ -262,6 +282,7 @@ func _paint_card(c: Dictionary) -> void:
 		"holding":
 			p["name"].text = str(d.get("name", "")).to_upper()
 			p["level"].text = "LEVEL %d / %d" % [int(d.get("level", 0)), int(d.get("max_level", 0))]
+			c["next"].text = ""
 			var per_hour := int(d.get("yield_per_hour_milli", 0)) / 1000
 			var next_add := int(d.get("yield_per_level_milli", 0)) / 1000
 			if int(d.get("level", 0)) > 0:
@@ -275,6 +296,7 @@ func _paint_card(c: Dictionary) -> void:
 		"treasury":
 			var t: Dictionary = _estates.get("treasury", {})
 			p["name"].text = "ROYAL TREASURY"
+			c["next"].text = ""
 			p["level"].text = "VAULT  %s" % UI.short_number(int(str(t.get("vault", GameState.player().get("treasury", "0")))))
 			p["bonus"].text = "RAID-PROOF  ·  %s FEE" % (_pct(int(t.get("deposit_fee_bp", 0))) + "%")
 			if bool(t.get("unlocked", true)) or int(str(t.get("vault", "0"))) > 0:
@@ -284,7 +306,8 @@ func _paint_card(c: Dictionary) -> void:
 		"legacy":
 			p["name"].text = "LEGACY"
 			p["level"].text = "STACKS %d / %d" % [int(d.get("stacks", 0)), int(d.get("max_stacks", 0))]
-			p["bonus"].text = "+%s%% INCOME  ·  NEXT +%s%%" % [_pct(int(d.get("income_bp", 0))), _pct(int(d.get("next_bp", 0)))]
+			c["next"].text = "NEXT +%s%%" % _pct(int(d.get("next_bp", 0))) if int(d.get("next_bp", 0)) > 0 else ""
+			p["bonus"].text = "+%s%% INCOME" % _pct(int(d.get("income_bp", 0)))
 			if bool(d.get("available", false)):
 				_set_button(c, false, "BEGIN A LEGACY", false)
 			elif int(d.get("stacks", 0)) >= int(d.get("max_stacks", 1)):
@@ -292,7 +315,12 @@ func _paint_card(c: Dictionary) -> void:
 			else:
 				_set_button(c, false, "AT LEVEL %d" % int(d.get("level_cap", 60)), true)
 	UI.fit_label(p["name"], 36, 16)
-	UI.fit_label(p["level"], 24, 16)
+	var nxt: Label = c["next"]
+	UI.fit_label(nxt, NEXT_FIT.x, NEXT_FIT.y)
+	var ns := nxt.label_settings
+	var next_w := ns.font.get_string_size(nxt.text, HORIZONTAL_ALIGNMENT_LEFT, -1, ns.font_size).x if nxt.text != "" else 0.0
+	p["level"].set_meta("box_w", LEVEL_ROW_W - (next_w + NEXT_CLEAR if next_w > 0.0 else 0.0))
+	UI.fit_label(p["level"], 24, 18)
 	UI.fit_label(p["bonus"], 22, 15)
 
 
@@ -322,7 +350,7 @@ func _set_button(c: Dictionary, maxed: bool, text: String, disabled: bool) -> vo
 		t.text = text
 		b.disabled = disabled
 		b.modulate = Color(0.6, 0.6, 0.6) if disabled else Color.WHITE
-	t.label_settings.font_size = 26 if text.length() <= 18 else 21
+	UI.fit_label(t, 26, 18)
 
 
 func _pct(bp: int) -> String:

@@ -307,12 +307,12 @@ NAMES = {
     # walks through the whole table (see ART_DESIGNS), so these are ordered to
     # match the shape each slot actually receives; SHAPE_WORDS enforces it below.
     "weapon": [
-        ["Rusted Arming Sword", "Farmhand's Falchion", "Notched Broadsword"],
+        ["Rusted Arming Sword", "Farmhand's Falchion", "Notched Spear"],
         ["Guard's Greatsword", "Tempered Flamberge", "Oathkeeper's Rapier"],
         ["Riverbend Leafblade", "Silvered Arming Sword", "Warden's Falchion"],
-        ["Duskfang Broadsword", "Bastion Greatsword", "Kingsguard Flamberge"],
+        ["Duskfang Spear", "Bastion Greatsword", "Kingsguard Flamberge"],
         ["Dawnbreaker Rapier", "Ashfang Leafblade", "The Gilded Verdict"],
-        ["Starfall Falchion", "Wyrmtongue Broadsword", "The Sundering"],
+        ["Starfall Falchion", "Wyrmtongue Spear", "The Sundering"],
         ["Crown of Flame", "Emperor's Mercy", "The Last Word"],
     ],
     # Ordered to match the design walk: item i is drawn as design (i % 7) + 1,
@@ -366,7 +366,7 @@ for slot, tiers in NAMES.items():
 # drawn as that shape: rotating the design pool through the table silently broke
 # this once, and a "Tempered Falchion" rendered as a wavy flamberge.
 SHAPE_WORDS = {
-    "weapon": {"arming sword": 1, "falchion": 2, "broadsword": 3,
+    "weapon": {"arming sword": 1, "falchion": 2, "spear": 3,
                "greatsword": 4, "flamberge": 5, "rapier": 6, "leafblade": 7},
     "armor": {"gambeson": 1, "jerkin": 2, "hauberk": 3,
               "breastplate": 4, "cuirass": 5, "harness": 6, "aegis": 7},
@@ -466,7 +466,7 @@ def half_up(num, den):
 
 SOLDIER_TYPES = [
     # base cost is chosen so recruit_cost(1) matches the design table exactly
-    {"id": "peasant",   "name": "Peasant",   "base_cost": 150,  "attack": 8,  "defense": 8,  "hp": 40,
+    {"id": "peasant",   "name": "Villager",   "base_cost": 150,  "attack": 8,  "defense": 8,  "hp": 40,
      "weights": {"common": 100.0, "uncommon": 30.0, "rare": 7.0, "epic": 1.5,
                  "legendary": 0.25, "mystic": 0.03, "special": 0.002}, "luck_coef": 0.010},
     {"id": "mercenary", "name": "Mercenary", "base_cost": 900,  "attack": 14, "defense": 12, "hp": 55,
@@ -614,7 +614,7 @@ UPGRADES = [
     ("stables",    "Stables",             "soldier_spd_bp",    12,  400, 2500,  1.48, "Your riders move first."),
     ("merchant",   "Merchant Ties",       "shop_discount_bp",  10,  200, 4000,  1.60, "The market asks less of you."),
     ("war_chest",  "War Chest",           "steal_cap_bp",       8,  800, 8000,  1.75, "Carry more away from a raid."),
-    ("coffers",    "Ransom Coffers",      "ransom_bp",          8,  500, 6000,  1.72, "Losing a defence still pays."),
+    ("coffers",    "Ransom Coffers",      "ransom_bp",          8,  500, 6000,  1.72, "Holding off a raid pays more."),
 ]
 
 upgrades = []

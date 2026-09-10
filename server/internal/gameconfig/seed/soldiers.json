@@ -62,7 +62,7 @@
   "types": [
     {
       "id": "peasant",
-      "name": "Peasant",
+      "name": "Villager",
       "base_cost": 150,
       "attack": 8,
       "defense": 8,

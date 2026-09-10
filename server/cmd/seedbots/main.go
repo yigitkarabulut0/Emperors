@@ -94,7 +94,10 @@ func run(want int) error {
 		// A face each, walked round the roster. Every bot wearing the default
 		// portrait would make the raid list read as one anonymous stranger
 		// repeated, which is the opposite of what portraits are for.
-		avatars := bundle.Progression.Avatars
+		//
+		// Every bot's name is a man's, so the three women's portraits are left
+		// out: walking the whole roster drew "Wulfric the Bold" as a queen.
+		avatars := mensAvatars(bundle.Progression.Avatars)
 		avatar := "knight"
 		if len(avatars) > 0 {
 			avatar = avatars[i%len(avatars)]
@@ -139,4 +142,18 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// womensAvatars are the portrait ids the client draws as a woman
+// (client/scripts/autoload/art.gd, AVATAR_FACE).
+var womensAvatars = map[string]bool{"queen": true, "princess": true, "witch": true}
+
+func mensAvatars(all []string) []string {
+	out := make([]string, 0, len(all))
+	for _, a := range all {
+		if !womensAvatars[a] {
+			out = append(out, a)
+		}
+	}
+	return out
 }

@@ -267,7 +267,7 @@
       "bucket": "ransom_bp",
       "max_level": 8,
       "per_level": 500,
-      "blurb": "Losing a defence still pays.",
+      "blurb": "Holding off a raid pays more.",
       "costs": [
         6000,
         10320,

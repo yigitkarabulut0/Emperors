@@ -12,7 +12,8 @@ var api_base_url: String = _DEV_DEFAULT
 var build_version: String = "dev"
 
 ## Command-line user args, parsed once: --dev-login <user> <pw>, --capture <path>,
-## --capture-after <seconds>, --tab <name>. Only honoured in non-release builds.
+## --capture-after <seconds>, --tab <name>, --page <name>. Only honoured in
+## non-release builds.
 var args: Dictionary = {}
 
 
@@ -54,6 +55,9 @@ func _parse_args() -> void:
 			i += 2
 		elif a == "--replay-last":
 			args["replay_last"] = true
+		elif a == "--page" and i + 1 < raw.size():
+			# Opens one of the pages over the game on arrival, for a capture.
+			args["page"] = raw[i + 1]
 			i += 1
 		elif a.begins_with("--api="):
 			api_base_url = a.substr(6)

@@ -368,6 +368,9 @@ func _beat() -> void:
 ## Arriving: what happened while the game was closed, and for a new lord the
 ## tour of the realm.
 func _arrive() -> void:
+	if Env.args.has("page"):
+		_dev_page(str(Env.args["page"]))
+		return
 	if Env.args.has("capture"):
 		return
 	var since := int(Prefs.get_value("last_seen", 0))
@@ -379,6 +382,26 @@ func _arrive() -> void:
 		return
 	var away: GDScript = load("res://scenes/pages/away_page.gd")
 	away.check(self, since, func() -> void: open("attack"))
+
+
+## Dev: --page <name> opens a page on arrival, so a capture can show it with
+## the live server's data.
+func _dev_page(name: String) -> void:
+	var pg := "res://scenes/pages/%s.gd"
+	match name:
+		"profile": load(pg % "profile_page").open(self)
+		"ranks": load(pg % "leaderboard_page").open(self)
+		"stats": load(pg % "stats_page").open(self)
+		"tour": load(pg % "onboarding").open(self)
+		"daily": _diamonds_popup()
+		"wall":
+			var inv: Api.Response = await Api.get_json("/v1/inventory")
+			load(pg % "collection_page").open(self, inv.data if inv.ok else {})
+		"history":
+			var h: Api.Response = await Api.get_json("/v1/attack/history")
+			load(pg % "history_page").open(self, h.data.get("entries", []) if h.ok else [], func(_e): pass)
+		"away":
+			load(pg % "away_page").check(self, int(Time.get_unix_time_from_system()) - 7 * 86400, func() -> void: pass)
 
 
 func _notification(what: int) -> void:

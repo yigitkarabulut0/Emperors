@@ -198,6 +198,10 @@ else:
                 _, tv2 = call("GET", "/v1/attack/targets", token=B)
                 check("and the score is settled", all(r.get("player_id") != a_id for r in tv2["revenge"]), tv2["revenge"])
 
+# Leave nothing on the live rankings: the three test lords delete themselves.
+for t in (A, B, C):
+    call("POST", "/v1/account/delete", {"password": "battery horse staple"}, token=t)
+
 print()
 if FAILURES:
     print(f"{len(FAILURES)} FAILED: " + ", ".join(FAILURES))

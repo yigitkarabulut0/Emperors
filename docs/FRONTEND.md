@@ -102,15 +102,46 @@ own and fold into the Family ledger as cards in the GRANARY card's style.
 
 | Rail | Script | Server section | What it does |
 |---|---|---|---|
-| Family | `family.gd` | `hero` | name (the quill buys a new one for diamonds; price from `snapshot.prices`), level, XP bar, stats (tap a cell to spend a point), gear tiles → chooser, EQUIP BEST, then the ledger: 11 Family upgrades, the Royal Treasury (deposit/withdraw), 8 estate holdings, the Legacy |
+| Family | `family.gd` | `hero` | name (the quill buys a new one for diamonds; price from `snapshot.prices`), level, XP bar, stats (a tap opens the stat-points page), gear tiles → the gear page, EQUIP BEST, then the ledger: 11 Family upgrades, the Royal Treasury (its page), 8 estate holdings, the Legacy. Each card wears its group's scene (`family/granary_art`, `art_army`, `art_realm`) and an icon for its bucket; gates and the vault's fee are the estates view's |
 | Collect | `collect.gd` | `jobs` | today's three quests (tap to claim), fifteen job rows (six paintings cycle), optimistic COLLECT; each row's mastery track fills toward the next threshold and its three markers read reached / next / after from `job.mastery` |
-| Inventory | `inventory.gd` | `items` | equipped gear (tap to unequip), rarity chips, item grid: EQUIP / SELL; the sliders button opens the Collection (donate) |
-| Shop | `shop.gd` | `shop` | six offers on the 5-minute window, reroll for diamonds, Diamond Goods (energy refill, shield) |
+| Inventory | `inventory.gd` | `items` | equipped gear (tap to unequip), rarity chips, the bag's size, item grid (gear anyone wears is left out): EQUIP / SELL; the sliders button (WALL) opens the Collection page |
+| Shop | `shop.gd` | `shop` | six offers on the 5-minute window with each one's stat and Power, reroll for diamonds (dimmed when it cannot be paid), Diamond Goods (titles, captions and amounts are the store's; buying goes through `scripts/ui/goods.gd`, as the energy pill's "+" does) |
 | Army | `army.gd` | `army` | might, hero support, a sideways-scrolling row of every soldier slot with the next one to unlock after it (a tap selects; a drag never does), selected soldier (gear, REROLL, DISMISS), recruit cards with the tier range; the painted (i) shows every type's published odds. REROLL opens `scenes/army/reroll_panel.gd`: one roll per request (`POST /v1/army/reroll`), or AUTO ROLL until a chosen tier, only while the game is on screen |
-| Attack | `attack.gd` | `fight` | REVENGE / TARGETS tabs, revenge card, three targets with the power bar, battle history |
+| Attack | `attack.gd` | `fight` | a scrolling flow: REVENGE lists one card per raider then the other targets, TARGETS the targets alone, each with an empty state; the history says raids made and raids suffered; View All opens the history page, the notice's (i) the rules page. Every figure on a card (take, rate, energy) is the server's |
 | Kingdom | `kingdom.gd` | `house` | in a kingdom: identity, renown/treasury/members and the REALM / LORDS / WORKS / RANKS tabs (`scenes/kingdom/kingdom_section.gd`; LORDS carries join requests, the king's OPEN / BY REQUEST choice and MANAGE). With none: the hall (`scenes/kingdom/kingdom_hall.gd`) -- invitations, search, suggested kingdoms and founding, every button the one its card's `action` names. The page is three layers (`_top`, `_realm`, `_hall`); show and hide the layer, never a node in it |
 
-Unlock levels come from the server's `sections` on `/v1/state`.
+Unlock levels come from the server's `sections` on `/v1/state`, and whether a
+tab is open is its `unlocked` flag (a kingdom member keeps the Kingdom tab).
+
+### Pages over the game
+
+Everything that is not one of the seven screens is a **page**: `scripts/ui/sheet.gd`
+(`Sheet.open(host, title, subtitle)`), the dialogs' plate as tall as the phone
+with a body that scrolls and a foot for buttons, on its own CanvasLayer. The
+pages live in `scenes/pages/`:
+
+| Page | Opened from | Reads |
+|---|---|---|
+| `profile_page.gd` | the rail portrait | snapshot; `POST /v1/avatar`, rename, sign out, `POST /v1/account/delete` (password) |
+| `leaderboard_page.gd` | the profile page | `GET /v1/leaderboards/{might,level,wealth}` |
+| `daily_page.gd` | the diamond pill, and on arrival when a reward waits | `GET /v1/daily` |
+| `stats_page.gd` | Family's stat strip, the level-up ceremony | `snapshot.prices.stat_gains`; `POST /v1/stats/spend` |
+| `treasury_page.gd` | Family's vault card | the estates view's `treasury`; deposit / withdraw |
+| `item_picker.gd` | a gear tile (Family, Army) | `/v1/inventory`'s `equipped_on`, `worn_by`, `power` |
+| `collection_page.gd` | Inventory's WALL | `GET /v1/collection` |
+| `history_page.gd` | Attack's View All | `GET /v1/attack/history` |
+| `rules_page.gd` | Attack's notice | the Attack view's `rules` |
+| `away_page.gd` | arriving, or coming back from the background | `GET /v1/away?since=` |
+| `onboarding.gd` | a new lord's first arrival (once, `Prefs`) | nothing |
+
+`ceremony.gd` plays a level-up or a mastery milestone (queued, one after
+another). Layers: pages 60/70, the battle 90, ceremonies 95, dialogs 100, the
+toast 110. `Nav.go` clears every overlay layer on a scene change.
+
+The rail carries count bubbles from the heartbeat (`POST /v1/presence` answers
+with `badges`): quests to claim, raiders to answer, join requests; a dot on the
+diamond pill for the daily reward. Under the pills: the next energy and the
+shield's time left. While the API does not answer, a banner stays with a retry.
 
 ---
 
@@ -209,3 +240,13 @@ documented fields.
 - Hardcode an asset path or a coordinate — both come from the layout files.
 - Redraw, regenerate or scale a painting. If a screen needs art the paintings do
   not contain, that is a new painting to cut, not a shape to draw.
+- Draw a layout text's `sample`. It is the painting's copy, kept to measure the
+  type by; `Layout` builds every text part empty unless it is marked `"static"`
+  (fixed copy such as a button's word). The lint fails a text part nothing sets.
+- Build a bare `Button` or a `StyleBoxFlat` in a scene. Buttons are
+  `UI.plate_button` / `plate_face` / `tex_button` / `hotspot`, fields are
+  `UI.field`; the lint fails anything else.
+- Clear a screen's `_busy` between an action and the reload after it (the lint
+  checks this too): a second tap would act on a card the first already changed.
+- Name a class (`Sheet`, `Dialog`, `Goods`) in a test script. It is compiled
+  before the autoloads exist; `load()` the script at run time instead.

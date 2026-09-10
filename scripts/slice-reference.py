@@ -21,6 +21,7 @@ Manifest:
                      # at the top (glow, a crest) as it is down the sides
                "mask": {"type": "chamfer", "size": 6} | {"type": "polygon", "points": [[x,y],...]}
                      | {"type": "ellipse", "box": [x0,y0,x1,y1]}, optionally with "feather": px
+                     | a list of those, which keeps their union
                      # alpha 0 outside; points and box are relative to the crop
                "scale": [w, h]                      # optional: resize the result (LANCZOS)
   } ] }
@@ -112,7 +113,9 @@ def apply_hollow(im, inset):
     return Image.fromarray(arr, 'RGBA')
 
 def apply_mask(im, mask):
-    """Clears everything outside a chamfer or polygon.
+    """Clears everything outside a chamfer, polygon or ellipse -- or outside
+    all of a list of them, which keeps their union (a portrait's ring and the
+    crown standing on it).
 
     The mask is drawn at four times the crop's size and averaged down, so a
     diagonal edge -- a badge's chamfered corner -- is anti-aliased instead of
@@ -120,17 +123,20 @@ def apply_mask(im, mask):
     """
     ss = 4
     im = im.convert('RGBA'); w, h = im.size; m = Image.new('L', (w * ss, h * ss), 0); d = ImageDraw.Draw(m)
-    if mask['type'] == 'ellipse':
-        x0, y0, x1, y1 = mask['box']; d.ellipse([x0 * ss, y0 * ss, x1 * ss, y1 * ss], fill=255)
-    else:
-        if mask['type'] == 'chamfer':
-            s = mask['size']; pts = [(s, 0), (w - s, 0), (w, s), (w, h - s), (w - s, h), (s, h), (0, h - s), (0, s)]
-        else: pts = [tuple(p) for p in mask['points']]
+    shapes = mask if isinstance(mask, list) else [mask]
+    for sh in shapes:
+        if sh['type'] == 'ellipse':
+            x0, y0, x1, y1 = sh['box']; d.ellipse([x0 * ss, y0 * ss, x1 * ss, y1 * ss], fill=255)
+            continue
+        if sh['type'] == 'chamfer':
+            s = sh['size']; pts = [(s, 0), (w - s, 0), (w, s), (w, h - s), (w - s, h), (s, h), (0, h - s), (0, s)]
+        else: pts = [tuple(p) for p in sh['points']]
         d.polygon([(x * ss, y * ss) for x, y in pts], fill=255)
-    if mask.get('feather'):
+    feather = max(float(sh.get('feather', 0)) for sh in shapes)
+    if feather:
         # A soft edge, for a mask that cuts through glow rather than along a rim.
         from PIL import ImageFilter
-        m = m.filter(ImageFilter.GaussianBlur(mask['feather'] * ss))
+        m = m.filter(ImageFilter.GaussianBlur(feather * ss))
     m = m.resize((w, h), Image.BOX)
     alpha = np.minimum(np.asarray(im)[..., 3], np.asarray(m)); arr = np.asarray(im).copy(); arr[..., 3] = alpha
     return Image.fromarray(arr, 'RGBA')

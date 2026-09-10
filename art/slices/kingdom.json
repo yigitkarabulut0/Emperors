@@ -632,7 +632,80 @@
         1178,
         76,
         76
-      ]
+      ],
+      "mask": [
+        {
+          "type": "ellipse",
+          "box": [
+            2.5,
+            9.5,
+            69.5,
+            76.5
+          ]
+        },
+        {
+          "type": "polygon",
+          "points": [
+            [
+              24,
+              13
+            ],
+            [
+              24.5,
+              5
+            ],
+            [
+              21.5,
+              -0.5
+            ],
+            [
+              25.5,
+              -0.5
+            ],
+            [
+              29.5,
+              4.5
+            ],
+            [
+              32.5,
+              4.5
+            ],
+            [
+              32.5,
+              -0.5
+            ],
+            [
+              38.5,
+              -0.5
+            ],
+            [
+              39,
+              4.5
+            ],
+            [
+              42,
+              4.5
+            ],
+            [
+              42.5,
+              -0.5
+            ],
+            [
+              49,
+              -0.5
+            ],
+            [
+              47.5,
+              5
+            ],
+            [
+              47.5,
+              13
+            ]
+          ]
+        }
+      ],
+      "note": "the ring and the crown on it; the square of panel behind them is cut away"
     },
     {
       "name": "portraits/lord_aldric",
@@ -641,7 +714,17 @@
         1255,
         76,
         68
-      ]
+      ],
+      "mask": {
+        "type": "ellipse",
+        "box": [
+          2.5,
+          0.5,
+          69.5,
+          67.5
+        ]
+      },
+      "note": "cut to the painted ring: the square carried the panel's gold corner bracket into every row"
     },
     {
       "name": "portraits/lord_seraphine",
@@ -650,7 +733,17 @@
         1324,
         76,
         68
-      ]
+      ],
+      "mask": {
+        "type": "ellipse",
+        "box": [
+          2.5,
+          0.5,
+          68.5,
+          66.5
+        ]
+      },
+      "note": "cut to the painted ring"
     },
     {
       "name": "portraits/lord_darian",
@@ -659,7 +752,17 @@
         1393,
         76,
         68
-      ]
+      ],
+      "mask": {
+        "type": "ellipse",
+        "box": [
+          2.5,
+          0.5,
+          69.5,
+          67.5
+        ]
+      },
+      "note": "cut to the painted ring"
     },
     {
       "name": "icons/crown_king_small",

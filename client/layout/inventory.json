@@ -418,11 +418,12 @@
        "id": "badge",
        "kind": "image",
        "rect": [
-        266,
-        14,
-        99,
-        47
-       ]
+        268,
+        18,
+        93,
+        38
+       ],
+       "note": "cut to its rim, drawn at its own size; the rim sits where the painting has it"
       },
       {
        "id": "name",

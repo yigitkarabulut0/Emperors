@@ -65,9 +65,10 @@ func _ready() -> void:
 		parts["frame"].visible = false
 		_cards[i]["frame_pieces"] = []
 		# What the item is worth, under its painting: the card showed a name and
-		# a price and nothing to weigh the price against.
+		# a price and nothing to weigh the price against. It ends short of the
+		# BUY plate, which starts at 184.
 		var stat := UI.label("", 21, Color("#E6DFD2"), "body", 600, HORIZONTAL_ALIGNMENT_CENTER)
-		UI.place(stat, Rect2(10, 207, 176, 34))
+		UI.place(stat, Rect2(12, 207, 164, 34))
 		_cards[i]["node"].add_child(stat)
 		_cards[i]["stat"] = stat
 		_cards[i]["home"] = _cards[i]["node"].position
@@ -79,9 +80,11 @@ func _ready() -> void:
 	dp["shield_buy"].pressed.connect(_buy_good.bind("shield"))
 	# The goods' headings were painted -- "30M SHIELD" over a server that sells
 	# hours -- and are painted out now, so the server's title is the one shown.
+	# The painting sets each heading at the left edge of its caption, a size
+	# under the caption's own weight of line.
 	var panel: Control = _ui["diamond_panel"]
-	for pair in [["energy_refill", Rect2(146, 68, 206, 34)], ["shield", Rect2(486, 68, 226, 34)]]:
-		var t := UI.label("", 25, Color("#F4EFE6"), "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
+	for pair in [["energy_refill", Rect2(159, 68, 196, 34)], ["shield", Rect2(532, 68, 186, 34)]]:
+		var t := UI.label("", 21, Color("#F4EFE6"), "title", 600)
 		UI.place(t, pair[1])
 		panel.add_child(t)
 		_titles[pair[0]] = t
@@ -176,10 +179,10 @@ func _paint() -> void:
 		var buyable := bool(g.get("useful", true)) and bool(g.get("affordable", true))
 		if _titles.has(id):
 			_titles[id].text = str(g.get("title", g.get("name", ""))).to_upper()
-			UI.fit_label(_titles[id], 25, 16)
+			UI.fit_label(_titles[id], 21, 16)
 		if id == "energy_refill":
 			dp["energy_desc"].text = str(g.get("caption", ""))
-			UI.fit_label(dp["energy_desc"], 22, 15)
+			UI.fit_label(dp["energy_desc"], 20, 15)
 			dp["energy_amount"].text = UI.grouped(int(g.get("amount", 0)))
 			dp["energy_price"].text = str(int(g.get("diamonds", 0)))
 			dp["energy_buy"].modulate = Color.WHITE if buyable else Color(0.5, 0.5, 0.5)

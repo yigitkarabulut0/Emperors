@@ -287,6 +287,12 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 					int(p.get("size", 26)), Color(str(p.get("color", "#F4EFE6"))),
 					int(p.get("weight", 600)), int(p.get("margin", 14)))
 				pb.set_meta("action", str(p.get("action", "")))
+				if p.has("paint_rect"):
+					# The rect is the thumb's; the plate is drawn where the
+					# painting has it, which may be smaller.
+					var pr := rect_of({"rect": p["paint_rect"]})
+					if not pr.is_equal_approx(r):
+						UI.inset_plate(pb, r, pr)
 				return pb
 			var b := UI.tex_button(asset, r)
 			if bool(p.get("pass_drag", false)):

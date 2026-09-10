@@ -614,65 +614,93 @@
   {
    "name": "inventory/badge_epic",
    "rect": [
-    443,
-    736,
-    90,
-    47
-   ]
+    445,
+    741,
+    86,
+    38
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
   },
   {
    "name": "inventory/badge_legendary",
    "rect": [
-    825,
-    737,
-    99,
-    45
-   ]
+    828,
+    741,
+    93,
+    38
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
   },
   {
    "name": "inventory/badge_rare",
    "rect": [
-    443,
-    947,
-    90,
-    46
-   ]
+    448,
+    951,
+    83,
+    38
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
   },
   {
    "name": "inventory/badge_uncommon",
    "rect": [
-    825,
-    947,
-    99,
-    46
-   ]
+    828,
+    951,
+    93,
+    38
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
   },
   {
    "name": "inventory/badge_common",
    "rect": [
-    442,
-    1158,
-    91,
-    45
-   ]
+    445,
+    1161,
+    86,
+    38
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
   },
   {
    "name": "inventory/badge_special",
    "rect": [
-    825,
-    1158,
-    99,
-    45
-   ]
+    828,
+    1161,
+    93,
+    39
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
   },
   {
    "name": "inventory/badge_mystic",
    "rect": [
-    442,
-    1369,
-    91,
-    44
-   ]
+    445,
+    1372,
+    86,
+    39
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
   },
   {
    "name": "inventory/btn_equip",

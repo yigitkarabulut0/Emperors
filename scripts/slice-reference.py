@@ -111,11 +111,19 @@ def apply_hollow(im, inset):
     return Image.fromarray(arr, 'RGBA')
 
 def apply_mask(im, mask):
-    im = im.convert('RGBA'); w, h = im.size; m = Image.new('L', (w, h), 0); d = ImageDraw.Draw(m)
+    """Clears everything outside a chamfer or polygon.
+
+    The mask is drawn at four times the crop's size and averaged down, so a
+    diagonal edge -- a badge's chamfered corner -- is anti-aliased instead of
+    a staircase of whole pixels.
+    """
+    ss = 4
+    im = im.convert('RGBA'); w, h = im.size; m = Image.new('L', (w * ss, h * ss), 0); d = ImageDraw.Draw(m)
     if mask['type'] == 'chamfer':
         s = mask['size']; pts = [(s, 0), (w - s, 0), (w, s), (w, h - s), (w - s, h), (s, h), (0, h - s), (0, s)]
     else: pts = [tuple(p) for p in mask['points']]
-    d.polygon(pts, fill=255)
+    d.polygon([(x * ss, y * ss) for x, y in pts], fill=255)
+    m = m.resize((w, h), Image.BOX)
     alpha = np.minimum(np.asarray(im)[..., 3], np.asarray(m)); arr = np.asarray(im).copy(); arr[..., 3] = alpha
     return Image.fromarray(arr, 'RGBA')
 

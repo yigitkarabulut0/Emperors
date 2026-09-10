@@ -88,8 +88,8 @@ static func _load(s: Sheet) -> void:
 static func _set_row(s: Sheet, set: Dictionary) -> void:
 	var row := s.slot(ROW_H)
 	var tier := str(set.get("tier", "common"))
-	var badge := UI.image("inventory/badge_" + tier, Rect2(16, 12, 99, 47))
-	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	var badge := UI.image("inventory/badge_" + tier, Rect2(18, 16, 93, 38))
+	badge.size = badge.texture.get_size()
 	row.add_child(badge)
 	if bool(set.get("complete", false)):
 		Sheet.put(row, "SET COMPLETE", Rect2(128, 12, 300, 44), 20, UI.GOLD, "title", 700)

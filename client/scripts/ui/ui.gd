@@ -145,6 +145,25 @@ static func plate_face(plate: String, margin: int = 14) -> Button:
 	b.add_theme_stylebox_override("disabled", off)
 	return b
 
+
+## Draws a plate button's plate, and centres its word, in `paint` while the
+## button keeps `rect` as its tap area. A thumb needs 95 units and most plates
+## are painted about 58 tall: grown to the tap area the Shop's BUY filled its
+## card to the border. Negative expand margins draw a style box inside its
+## control, and every state (pressed, disabled) keeps the same inset.
+static func inset_plate(b: Button, rect: Rect2, paint: Rect2) -> void:
+	var inset := [paint.position.x - rect.position.x, paint.position.y - rect.position.y,
+		rect.end.x - paint.end.x, rect.end.y - paint.end.y]
+	var seen := {}
+	for state in ["normal", "hover", "focus", "pressed", "disabled"]:
+		var sb := b.get_theme_stylebox(state)
+		if sb == null or seen.has(sb):
+			continue
+		seen[sb] = true
+		for side in 4:
+			sb.set_expand_margin(side, -float(inset[side]))
+			sb.set_content_margin(side, float(inset[side]))
+
 ## A text field in the game's paint: the Attack painting's dark, copper-edged
 ## tab slot, nine-patched to whatever size it is given, lit a little when it
 ## has the keyboard. The fields were flat navy boxes with a drawn border --

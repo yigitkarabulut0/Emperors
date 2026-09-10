@@ -54,8 +54,8 @@ static func _row(s: Sheet, it: Dictionary, worn: Dictionary, compare: bool) -> N
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(pic)
 	row.add_child(UI.image("inventory/frame_" + tier, Rect2(16, 16, 144, 144)))
-	var badge := UI.image("inventory/badge_" + tier, Rect2(176, 14, 99, 47))
-	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	var badge := UI.image("inventory/badge_" + tier, Rect2(178, 18, 93, 38))
+	badge.size = badge.texture.get_size()
 	row.add_child(badge)
 	var right := s.inner_w - 220.0
 	Sheet.put(row, str(it.get("name", "")), Rect2(176, 58, right - 176, 40), 27, UI.INK, "body", 700)

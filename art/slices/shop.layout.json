@@ -35,18 +35,19 @@
    "id": "refresh_time",
    "kind": "text",
    "rect": [
-    518,
-    580,
+    525,
+    576,
     80,
     34
    ],
    "font": "body",
    "size": 28,
-   "weight": 500,
+   "weight": 400,
    "color": "#F1EEE8",
    "align": "left",
    "valign": "center",
-   "sample": "04:37"
+   "sample": "04:37",
+   "note": "the live minutes and seconds on the painted line: ink at x 526, capitals 585..602 like the painting's 04:37, at its regular weight"
   },
   {
    "id": "reroll",
@@ -269,12 +270,12 @@
      "kind": "image",
      "asset": "inventory/badge_{tier}",
      "rect": [
-      12,
-      9,
-      99,
-      47
+      15,
+      13,
+      93,
+      38
      ],
-     "note": "already baked into every painting; only needed when a painting lacks one"
+     "note": "the rarity badge cut to its rim (no ground around it), drawn at its own size; the rim sits where the old crop drew it"
     },
     {
      "id": "name",
@@ -292,7 +293,8 @@
      "align": "left",
      "valign": "center",
      "sample": "Dragonblade",
-     "wrap": true
+     "wrap": true,
+     "line_height": 1.0
     },
     {
      "id": "type_icon",
@@ -363,16 +365,17 @@
      ],
      "action": "buy",
      "label": "BUY",
-     "size": 34,
+     "size": 27,
      "color": "#F2FBF2",
      "weight": 700,
      "margin": 16,
      "paint_rect": [
-      186,
-      150,
-      160,
-      95
-     ]
+      184,
+      169,
+      164,
+      57
+     ],
+     "note": "the tap area runs from the price pill to the card's foot (95 units); the plate is drawn at the painting's size (172x58 in the reference, narrowed to clear the card's border), centred in it"
     }
    ]
   },
@@ -409,8 +412,8 @@
       22
      ],
      "font": "body",
-     "size": 22,
-     "weight": 500,
+     "size": 20,
+     "weight": 400,
      "color": "#E5E1D8",
      "align": "left",
      "valign": "center",
@@ -427,7 +430,7 @@
      ],
      "font": "body",
      "size": 24,
-     "weight": 700,
+     "weight": 500,
      "color": "#F4F1EA",
      "align": "left",
      "valign": "center",
@@ -491,12 +494,13 @@
       44
      ],
      "font": "body",
-     "size": 22,
-     "weight": 500,
+     "size": 20,
+     "weight": 400,
      "color": "#E5E1D8",
      "align": "left",
      "valign": "center",
-     "sample": "Protects your city\nfor 30 minutes"
+     "sample": "Protects your city\nfor 30 minutes",
+     "line_height": 21
     },
     {
      "id": "shield_price",

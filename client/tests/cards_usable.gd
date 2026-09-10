@@ -26,6 +26,10 @@ const OVER := {"painting": "tile", "price": "price_pill"}
 ## over a photograph.
 const GROUNDS := ["frame", "tile", "painting"]
 
+## A plate set in type is drawn inside its card with this much room: the Shop's
+## BUY, stretched to the 95 units a thumb needs, ran down to the card's border.
+const PLATE_MARGIN := 6.0
+
 ## The longest text each field really has to carry, from balance/items.json.
 var _longest_name := ""
 
@@ -42,6 +46,7 @@ func _initialize() -> void:
 		_no_part_overlaps_another(screen, CARDS[screen])
 		_every_button_is_thumb_sized(screen, CARDS[screen])
 		_the_name_fits(screen, CARDS[screen])
+		_plates_sit_inside_the_card(screen, CARDS[screen])
 	if _fails > 0:
 		print("FAIL  %d check(s)" % _fails)
 		quit(1)
@@ -117,6 +122,30 @@ func _every_button_is_thumb_sized(screen: String, tpl_id: String) -> void:
 		if h < MIN_TAP_PT or w < MIN_TAP_PT:
 			_fail("%s/%s: %s is %.0fx%.0f pt on the phone, under the %.0f pt a thumb needs"
 				% [screen, tpl_id, str(p.get("id", "")), w, h, MIN_TAP_PT])
+
+
+## A plate button is drawn at its painted size ("paint_rect") inside its tap
+## area, and the plate lies inside the card with room to spare.
+func _plates_sit_inside_the_card(screen: String, tpl_id: String) -> void:
+	var tpl: Dictionary = _L.find(screen, tpl_id)
+	var card := Rect2(Vector2.ZERO, _L.rect_of(tpl).size)
+	var built: Dictionary = _L.instantiate(tpl)
+	for p in tpl.get("parts", []):
+		if str(p.get("kind", "")) != "button" or not p.has("label"):
+			continue
+		var id := str(p.get("id", ""))
+		var pr: Array = p.get("paint_rect", p["rect"])
+		var paint := Rect2(float(pr[0]), float(pr[1]), float(pr[2]), float(pr[3]))
+		if not card.grow(-PLATE_MARGIN).encloses(paint):
+			_fail("%s/%s: the %s plate at %s is not inside the card %s with %.0f units to spare"
+				% [screen, tpl_id, id, paint, card, PLATE_MARGIN])
+		var b: Button = built["parts"].get(id)
+		var sb := b.get_theme_stylebox("normal")
+		var drawn := Rect2(b.position, b.size).grow_individual(sb.get_expand_margin(SIDE_LEFT),
+			sb.get_expand_margin(SIDE_TOP), sb.get_expand_margin(SIDE_RIGHT), sb.get_expand_margin(SIDE_BOTTOM))
+		if not drawn.is_equal_approx(paint):
+			_fail("%s/%s: the %s plate is drawn at %s, the painting has it at %s" % [screen, tpl_id, id, drawn, paint])
+	built["node"].free()
 
 
 ## The longest name the game can actually produce must fit the box at a size a

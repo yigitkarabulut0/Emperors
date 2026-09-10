@@ -312,11 +312,15 @@ func _paint_selected() -> void:
 	var s := _slot(_selected)
 	var soldier: Variant = s.get("soldier", null) if not s.is_empty() else null
 	var has := soldier is Dictionary
-	for id in ["sel_numeral", "sel_tier_chip", "dismiss", "sel_troop_bar"]:
+	for id in ["sel_tier_chip", "sel_troop_bar"]:
 		_ui[id].visible = has
-	# REROLL stays: its plate covers where HUNT was painted. It dims when there
-	# is nobody to roll.
+	# REROLL and DISMISS stay, dimmed when there is nobody to roll or dismiss:
+	# the panel is cut with both taken off, and an empty slot used to show the
+	# painting's DISMISS at full strength beside an empty troop bar that read
+	# full.
 	_ui["reroll"].modulate = Color.WHITE if has else Color(0.5, 0.5, 0.5)
+	_ui["dismiss"].modulate = Color.WHITE if has else Color(0.5, 0.5, 0.5)
+	_ui["dismiss"].disabled = not has
 	var portrait: TextureRect = _ui["sel_portrait"]
 	if not has:
 		_ui["sel_name"].text = "EMPTY SLOT"
@@ -326,6 +330,11 @@ func _paint_selected() -> void:
 			_ui[k].text = "-"
 		_ui["sel_troop_text"].text = ""
 		_sel_numeral_label.visible = false
+		# A blank plate over the painted "I" the villager's portrait carries:
+		# an empty slot has no tier.
+		_ui["sel_numeral"].visible = true
+		_ui["sel_numeral"].texture = Art.tex("army/numeral_large_blank")
+		_ui["sel_numeral"].modulate = Color(0.45, 0.45, 0.5)
 		# The villager's painting, dimmed: the panel has it baked under the
 		# portrait, so hiding the portrait would show it undimmed.
 		portrait.visible = true
@@ -356,6 +365,8 @@ func _paint_selected() -> void:
 		_sel_small.texture = Art.tex(PORTRAIT.get(type, PORTRAIT["peasant"]))
 		_sel_small.visible = true
 	# Only tier I exists as a large painted numeral; the rest use the blank plate.
+	_ui["sel_numeral"].visible = true
+	_ui["sel_numeral"].modulate = Color.WHITE
 	if tier == 1:
 		_ui["sel_numeral"].texture = Art.tex("army/numeral_large_1")
 		_sel_numeral_label.visible = false

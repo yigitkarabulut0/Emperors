@@ -567,12 +567,13 @@
       779,
       968,
       130,
-      40
+      36
      ],
      "sample_x": [
       906,
       911
-     ]
+     ],
+     "_note": "the troop count, stopping above the troop bar's top frame (row 1004): at 40 tall it took that edge, which nothing showed while the bar was always full"
     },
     {
      "rect": [
@@ -627,6 +628,57 @@
      "rect": [
       816,
       1054,
+      90,
+      82
+     ],
+     "sample_x": [
+      905,
+      910
+     ]
+    },
+    {
+     "rect": [
+      553,
+      970,
+      86,
+      32
+     ],
+     "sample_x": [
+      660,
+      700
+     ],
+     "_note": "the tier chip's plate: drawn live when a soldier is selected, and an empty slot's title ran into the painted one"
+    },
+    {
+     "rect": [
+      734,
+      1006,
+      167,
+      16
+     ],
+     "sample_x": [
+      906,
+      911
+     ],
+     "_note": "the troop bar's green: an empty track inside the gold frame, which the live bar fills; an empty slot showed a full bar"
+    },
+    {
+     "rect": [
+      726,
+      1142,
+      90,
+      82
+     ],
+     "sample_x": [
+      719,
+      724
+     ],
+     "_note": "DISMISS, drawn live over it and dimmed when the slot is empty"
+    },
+    {
+     "rect": [
+      816,
+      1142,
       90,
       82
      ],

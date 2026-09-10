@@ -32,7 +32,7 @@ const addKingdomTreasury = `-- name: AddKingdomTreasury :one
 UPDATE app.kingdoms
 SET treasury = treasury + $2, xp = xp + $3, level = $4
 WHERE id = $1
-RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at
+RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at, join_policy
 `
 
 type AddKingdomTreasuryParams struct {
@@ -60,6 +60,7 @@ func (q *Queries) AddKingdomTreasury(ctx context.Context, arg AddKingdomTreasury
 		&i.Treasury,
 		&i.Reputation,
 		&i.CreatedAt,
+		&i.JoinPolicy,
 	)
 	return i, err
 }
@@ -69,7 +70,7 @@ UPDATE app.players
 SET kingdom_rep_today = CASE WHEN kingdom_day = $3 THEN kingdom_rep_today + $2 ELSE $2 END,
     kingdom_day = $3
 WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type BumpMemberReputationParams struct {
@@ -127,6 +128,7 @@ func (q *Queries) BumpMemberReputation(ctx context.Context, arg BumpMemberReputa
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
@@ -186,10 +188,23 @@ func (q *Queries) CountKingdomMembers(ctx context.Context, kingdomID *uuid.UUID)
 	return count, err
 }
 
-const createInvite = `-- name: CreateInvite :exec
-INSERT INTO app.kingdom_invites (kingdom_id, player_id, invited_by)
-VALUES ($1, $2, $3)
-ON CONFLICT (kingdom_id, player_id) DO UPDATE SET created_at = now(), invited_by = EXCLUDED.invited_by
+const countRequestsForPlayer = `-- name: CountRequestsForPlayer :one
+SELECT count(*) FROM app.kingdom_invites WHERE player_id = $1 AND direction = 'request'
+`
+
+func (q *Queries) CountRequestsForPlayer(ctx context.Context, playerID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countRequestsForPlayer, playerID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createInvite = `-- name: CreateInvite :execrows
+INSERT INTO app.kingdom_invites (kingdom_id, player_id, invited_by, direction)
+VALUES ($1, $2, $3, 'invite')
+ON CONFLICT (kingdom_id, player_id) DO UPDATE
+SET created_at = now(), invited_by = EXCLUDED.invited_by
+WHERE app.kingdom_invites.direction = 'invite'
 `
 
 type CreateInviteParams struct {
@@ -198,13 +213,38 @@ type CreateInviteParams struct {
 	InvitedBy *uuid.UUID
 }
 
-func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) error {
-	_, err := q.db.Exec(ctx, createInvite, arg.KingdomID, arg.PlayerID, arg.InvitedBy)
-	return err
+// An invitation and a request share one row per (kingdom, player). Refreshing
+// an invitation must never turn a pending request into one -- the WHERE on the
+// update is what stops it -- so zero rows means a request was standing.
+func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createInvite, arg.KingdomID, arg.PlayerID, arg.InvitedBy)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const createJoinRequest = `-- name: CreateJoinRequest :execrows
+INSERT INTO app.kingdom_invites (kingdom_id, player_id, invited_by, direction)
+VALUES ($1, $2, NULL, 'request')
+ON CONFLICT (kingdom_id, player_id) DO NOTHING
+`
+
+type CreateJoinRequestParams struct {
+	KingdomID uuid.UUID
+	PlayerID  uuid.UUID
+}
+
+func (q *Queries) CreateJoinRequest(ctx context.Context, arg CreateJoinRequestParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createJoinRequest, arg.KingdomID, arg.PlayerID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const createKingdom = `-- name: CreateKingdom :one
-INSERT INTO app.kingdoms (name, tag, leader_id) VALUES ($1, $2, $3) RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at
+INSERT INTO app.kingdoms (name, tag, leader_id) VALUES ($1, $2, $3) RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at, join_policy
 `
 
 type CreateKingdomParams struct {
@@ -226,6 +266,7 @@ func (q *Queries) CreateKingdom(ctx context.Context, arg CreateKingdomParams) (A
 		&i.Treasury,
 		&i.Reputation,
 		&i.CreatedAt,
+		&i.JoinPolicy,
 	)
 	return i, err
 }
@@ -241,18 +282,22 @@ func (q *Queries) DecayReputation(ctx context.Context, dollar_1 interface{}) err
 	return err
 }
 
-const deleteInvite = `-- name: DeleteInvite :exec
-DELETE FROM app.kingdom_invites WHERE kingdom_id = $1 AND player_id = $2
+const deleteInvite = `-- name: DeleteInvite :execrows
+DELETE FROM app.kingdom_invites WHERE kingdom_id = $1 AND player_id = $2 AND direction = $3
 `
 
 type DeleteInviteParams struct {
 	KingdomID uuid.UUID
 	PlayerID  uuid.UUID
+	Direction string
 }
 
-func (q *Queries) DeleteInvite(ctx context.Context, arg DeleteInviteParams) error {
-	_, err := q.db.Exec(ctx, deleteInvite, arg.KingdomID, arg.PlayerID)
-	return err
+func (q *Queries) DeleteInvite(ctx context.Context, arg DeleteInviteParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteInvite, arg.KingdomID, arg.PlayerID, arg.Direction)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteInvitesForPlayer = `-- name: DeleteInvitesForPlayer :exec
@@ -264,6 +309,23 @@ func (q *Queries) DeleteInvitesForPlayer(ctx context.Context, playerID uuid.UUID
 	return err
 }
 
+const deleteKingdomIfEmpty = `-- name: DeleteKingdomIfEmpty :execrows
+DELETE FROM app.kingdoms k
+WHERE k.id = $1
+  AND NOT EXISTS (SELECT 1 FROM app.players p WHERE p.kingdom_id = k.id)
+`
+
+// A kingdom is deleted when its last lord leaves -- and only then. The guard is
+// not a courtesy: players_kingdom_role_consistent would abort a delete that
+// nulled a member's kingdom_id under a role that is still 'member'.
+func (q *Queries) DeleteKingdomIfEmpty(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteKingdomIfEmpty, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const donateGold = `-- name: DonateGold :one
 UPDATE app.players
 SET gold = gold - $2,
@@ -273,7 +335,7 @@ SET gold = gold - $2,
     kingdom_favour = kingdom_favour + $4,
     action_seq = $5
 WHERE id = $1 AND gold >= $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type DonateGoldParams struct {
@@ -341,12 +403,14 @@ func (q *Queries) DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlay
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
 
 const getInvite = `-- name: GetInvite :one
-SELECT kingdom_id, player_id, invited_by, created_at FROM app.kingdom_invites WHERE kingdom_id = $1 AND player_id = $2
+SELECT kingdom_id, player_id, invited_by, created_at, direction FROM app.kingdom_invites
+WHERE kingdom_id = $1 AND player_id = $2 AND direction = 'invite'
 `
 
 type GetInviteParams struct {
@@ -354,6 +418,8 @@ type GetInviteParams struct {
 	PlayerID  uuid.UUID
 }
 
+// Only an invitation. Unscoped, /accept would seat a player in a kingdom they
+// had merely asked to join.
 func (q *Queries) GetInvite(ctx context.Context, arg GetInviteParams) (AppKingdomInvite, error) {
 	row := q.db.QueryRow(ctx, getInvite, arg.KingdomID, arg.PlayerID)
 	var i AppKingdomInvite
@@ -362,12 +428,36 @@ func (q *Queries) GetInvite(ctx context.Context, arg GetInviteParams) (AppKingdo
 		&i.PlayerID,
 		&i.InvitedBy,
 		&i.CreatedAt,
+		&i.Direction,
+	)
+	return i, err
+}
+
+const getJoinRequest = `-- name: GetJoinRequest :one
+SELECT kingdom_id, player_id, invited_by, created_at, direction FROM app.kingdom_invites
+WHERE kingdom_id = $1 AND player_id = $2 AND direction = 'request'
+`
+
+type GetJoinRequestParams struct {
+	KingdomID uuid.UUID
+	PlayerID  uuid.UUID
+}
+
+func (q *Queries) GetJoinRequest(ctx context.Context, arg GetJoinRequestParams) (AppKingdomInvite, error) {
+	row := q.db.QueryRow(ctx, getJoinRequest, arg.KingdomID, arg.PlayerID)
+	var i AppKingdomInvite
+	err := row.Scan(
+		&i.KingdomID,
+		&i.PlayerID,
+		&i.InvitedBy,
+		&i.CreatedAt,
+		&i.Direction,
 	)
 	return i, err
 }
 
 const getKingdom = `-- name: GetKingdom :one
-SELECT id, name, tag, leader_id, level, xp, treasury, reputation, created_at FROM app.kingdoms WHERE id = $1
+SELECT id, name, tag, leader_id, level, xp, treasury, reputation, created_at, join_policy FROM app.kingdoms WHERE id = $1
 `
 
 func (q *Queries) GetKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error) {
@@ -383,6 +473,7 @@ func (q *Queries) GetKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, err
 		&i.Treasury,
 		&i.Reputation,
 		&i.CreatedAt,
+		&i.JoinPolicy,
 	)
 	return i, err
 }
@@ -404,15 +495,24 @@ func (q *Queries) GrantXPBoost(ctx context.Context, arg GrantXPBoostParams) erro
 	return err
 }
 
-const leaveKingdom = `-- name: LeaveKingdom :one
+const kickFromKingdom = `-- name: KickFromKingdom :one
 UPDATE app.players
-SET kingdom_id = NULL, kingdom_role = 'none', kingdom_joined_at = NULL
-WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+SET kingdom_id = NULL, kingdom_role = 'none', kingdom_joined_at = NULL,
+    kingdom_left_at = $1
+WHERE id = $2 AND kingdom_id = $3
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
-func (q *Queries) LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, error) {
-	row := q.db.QueryRow(ctx, leaveKingdom, id)
+type KickFromKingdomParams struct {
+	LeftAt    *time.Time
+	ID        uuid.UUID
+	KingdomID *uuid.UUID
+}
+
+// Removal by a king or captain. Guarded by the kingdom, so a removal that races
+// the lord's own leave-and-join cannot take them out of the kingdom they moved to.
+func (q *Queries) KickFromKingdom(ctx context.Context, arg KickFromKingdomParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, kickFromKingdom, arg.LeftAt, arg.ID, arg.KingdomID)
 	var i AppPlayer
 	err := row.Scan(
 		&i.ID,
@@ -460,28 +560,113 @@ func (q *Queries) LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, er
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
+	)
+	return i, err
+}
+
+const leaveKingdom = `-- name: LeaveKingdom :one
+UPDATE app.players
+SET kingdom_id = NULL, kingdom_role = 'none', kingdom_joined_at = NULL,
+    kingdom_left_at = $1
+WHERE id = $2
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+`
+
+type LeaveKingdomParams struct {
+	LeftAt *time.Time
+	ID     uuid.UUID
+}
+
+// Leaving stamps the time, which is what the rejoin cooldown is measured from.
+func (q *Queries) LeaveKingdom(ctx context.Context, arg LeaveKingdomParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, leaveKingdom, arg.LeftAt, arg.ID)
+	var i AppPlayer
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.Level,
+		&i.Xp,
+		&i.Gold,
+		&i.TreasuryGold,
+		&i.Diamonds,
+		&i.EnergyMilli,
+		&i.EnergyUpdatedAt,
+		&i.StatEnergy,
+		&i.StatAttack,
+		&i.StatDefense,
+		&i.StatPointsUnspent,
+		&i.ShieldUntil,
+		&i.ActionSeq,
+		&i.State,
+		&i.ResetOffsetMinutes,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.SoldierSlots,
+		&i.FreeSlotClaimed,
+		&i.FreeRecruitClaimed,
+		&i.IsBot,
+		&i.TaxMilliAccrued,
+		&i.TaxUpdatedAt,
+		&i.KingdomID,
+		&i.KingdomRole,
+		&i.KingdomJoinedAt,
+		&i.KingdomDonatedTotal,
+		&i.KingdomFavour,
+		&i.KingdomRepToday,
+		&i.KingdomDonatedToday,
+		&i.KingdomDay,
+		&i.Avatar,
+		&i.TaxMilliPerHour,
+		&i.TaxUnlogged,
+		&i.LuckBp,
+		&i.LuckExpiresAt,
+		&i.XpBoostBp,
+		&i.XpBoostExpiresAt,
+		&i.DailyStreak,
+		&i.DailyClaimedOn,
+		&i.Might,
+		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
 
 const listInvitesForPlayer = `-- name: ListInvitesForPlayer :many
-SELECT i.kingdom_id, i.created_at, k.name, k.tag, k.level, k.reputation
+SELECT k.id, k.name, k.tag, k.level, k.reputation, k.join_policy, i.created_at,
+       (SELECT count(*) FROM app.players m WHERE m.kingdom_id = k.id)::int AS members,
+       coalesce((SELECT u.level FROM app.kingdom_upgrades u
+                 WHERE u.kingdom_id = k.id AND u.upgrade_id = $1), 0)::int AS court_level,
+       coalesce((SELECT m.display_name FROM app.players m
+                 WHERE m.kingdom_id = k.id AND m.kingdom_role = 'king' LIMIT 1), '')::text AS king_name
 FROM app.kingdom_invites i JOIN app.kingdoms k ON k.id = i.kingdom_id
-WHERE i.player_id = $1
+WHERE i.player_id = $2 AND i.direction = 'invite'
 ORDER BY i.created_at DESC
 `
 
+type ListInvitesForPlayerParams struct {
+	CourtID  string
+	PlayerID uuid.UUID
+}
+
 type ListInvitesForPlayerRow struct {
-	KingdomID  uuid.UUID
-	CreatedAt  time.Time
+	ID         uuid.UUID
 	Name       string
 	Tag        string
 	Level      int32
 	Reputation int64
+	JoinPolicy string
+	CreatedAt  time.Time
+	Members    int32
+	CourtLevel int32
+	KingName   string
 }
 
-func (q *Queries) ListInvitesForPlayer(ctx context.Context, playerID uuid.UUID) ([]ListInvitesForPlayerRow, error) {
-	rows, err := q.db.Query(ctx, listInvitesForPlayer, playerID)
+// The invitations a kingdomless player holds, as cards: everything the hall
+// shows about a kingdom, so an invitation reads like any other kingdom.
+func (q *Queries) ListInvitesForPlayer(ctx context.Context, arg ListInvitesForPlayerParams) ([]ListInvitesForPlayerRow, error) {
+	rows, err := q.db.Query(ctx, listInvitesForPlayer, arg.CourtID, arg.PlayerID)
 	if err != nil {
 		return nil, err
 	}
@@ -490,12 +675,16 @@ func (q *Queries) ListInvitesForPlayer(ctx context.Context, playerID uuid.UUID) 
 	for rows.Next() {
 		var i ListInvitesForPlayerRow
 		if err := rows.Scan(
-			&i.KingdomID,
-			&i.CreatedAt,
+			&i.ID,
 			&i.Name,
 			&i.Tag,
 			&i.Level,
 			&i.Reputation,
+			&i.JoinPolicy,
+			&i.CreatedAt,
+			&i.Members,
+			&i.CourtLevel,
+			&i.KingName,
 		); err != nil {
 			return nil, err
 		}
@@ -580,8 +769,73 @@ func (q *Queries) ListKingdomUpgrades(ctx context.Context, kingdomID uuid.UUID) 
 	return items, nil
 }
 
+const listRequestsForKingdom = `-- name: ListRequestsForKingdom :many
+SELECT p.id, p.display_name, p.level, i.created_at
+FROM app.kingdom_invites i JOIN app.players p ON p.id = i.player_id
+WHERE i.kingdom_id = $1 AND i.direction = 'request' AND p.kingdom_id IS NULL
+ORDER BY i.created_at
+LIMIT 50
+`
+
+type ListRequestsForKingdomRow struct {
+	ID          uuid.UUID
+	DisplayName string
+	Level       int32
+	CreatedAt   time.Time
+}
+
+// Who has asked to join, oldest first: the Lords tab answers them in order.
+func (q *Queries) ListRequestsForKingdom(ctx context.Context, kingdomID uuid.UUID) ([]ListRequestsForKingdomRow, error) {
+	rows, err := q.db.Query(ctx, listRequestsForKingdom, kingdomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRequestsForKingdomRow{}
+	for rows.Next() {
+		var i ListRequestsForKingdomRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DisplayName,
+			&i.Level,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRequestsForPlayer = `-- name: ListRequestsForPlayer :many
+SELECT kingdom_id FROM app.kingdom_invites WHERE player_id = $1 AND direction = 'request'
+`
+
+func (q *Queries) ListRequestsForPlayer(ctx context.Context, playerID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listRequestsForPlayer, playerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var kingdom_id uuid.UUID
+		if err := rows.Scan(&kingdom_id); err != nil {
+			return nil, err
+		}
+		items = append(items, kingdom_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockKingdom = `-- name: LockKingdom :one
-SELECT id, name, tag, leader_id, level, xp, treasury, reputation, created_at FROM app.kingdoms WHERE id = $1 FOR UPDATE
+SELECT id, name, tag, leader_id, level, xp, treasury, reputation, created_at, join_policy FROM app.kingdoms WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) LockKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error) {
@@ -597,6 +851,7 @@ func (q *Queries) LockKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, er
 		&i.Treasury,
 		&i.Reputation,
 		&i.CreatedAt,
+		&i.JoinPolicy,
 	)
 	return i, err
 }
@@ -606,7 +861,7 @@ UPDATE app.players
 SET gold = gold - $2, kingdom_id = $3, kingdom_role = $4,
     kingdom_joined_at = now(), action_seq = $5
 WHERE id = $1 AND gold >= $2 AND kingdom_id IS NULL
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type PayAndJoinKingdomParams struct {
@@ -674,8 +929,78 @@ func (q *Queries) PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomPa
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
+}
+
+const recommendKingdoms = `-- name: RecommendKingdoms :many
+SELECT k.id, k.name, k.tag, k.level, k.reputation, k.join_policy,
+       count(p.id)::int AS members,
+       (count(p.id) FILTER (WHERE p.last_seen_at > $1))::int AS active,
+       coalesce((SELECT u.level FROM app.kingdom_upgrades u
+                 WHERE u.kingdom_id = k.id AND u.upgrade_id = $2), 0)::int AS court_level,
+       coalesce(max(p.display_name) FILTER (WHERE p.kingdom_role = 'king'), '')::text AS king_name
+FROM app.kingdoms k
+JOIN app.players p ON p.kingdom_id = k.id
+GROUP BY k.id
+ORDER BY active DESC, k.reputation DESC, k.level DESC, k.created_at
+LIMIT $3
+`
+
+type RecommendKingdomsParams struct {
+	ActiveSince time.Time
+	CourtID     string
+	MaxRows     int32
+}
+
+type RecommendKingdomsRow struct {
+	ID         uuid.UUID
+	Name       string
+	Tag        string
+	Level      int32
+	Reputation int64
+	JoinPolicy string
+	Members    int32
+	Active     int32
+	CourtLevel int32
+	KingName   string
+}
+
+// Kingdoms worth suggesting to someone with none: every kingdom that still has
+// lords, the busiest first -- a kingdom whose members were here this week is a
+// kingdom that will answer, which a big quiet one will not -- then by renown.
+// The service drops the full ones against the real cap, Royal Court included,
+// which SQL cannot see; hence more candidates than it shows.
+func (q *Queries) RecommendKingdoms(ctx context.Context, arg RecommendKingdomsParams) ([]RecommendKingdomsRow, error) {
+	rows, err := q.db.Query(ctx, recommendKingdoms, arg.ActiveSince, arg.CourtID, arg.MaxRows)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RecommendKingdomsRow{}
+	for rows.Next() {
+		var i RecommendKingdomsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Tag,
+			&i.Level,
+			&i.Reputation,
+			&i.JoinPolicy,
+			&i.Members,
+			&i.Active,
+			&i.CourtLevel,
+			&i.KingName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const refillEnergy = `-- name: RefillEnergy :exec
@@ -699,7 +1024,7 @@ const renameKingdom = `-- name: RenameKingdom :one
 UPDATE app.kingdoms
 SET name = $1
 WHERE id = $2 AND leader_id = $3
-RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at
+RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at, join_policy
 `
 
 type RenameKingdomParams struct {
@@ -723,33 +1048,49 @@ func (q *Queries) RenameKingdom(ctx context.Context, arg RenameKingdomParams) (A
 		&i.Treasury,
 		&i.Reputation,
 		&i.CreatedAt,
+		&i.JoinPolicy,
 	)
 	return i, err
 }
 
 const searchKingdoms = `-- name: SearchKingdoms :many
-SELECT k.id, k.name, k.tag, k.leader_id, k.level, k.xp, k.treasury, k.reputation, k.created_at, (SELECT count(*) FROM app.players p WHERE p.kingdom_id = k.id) AS members
+SELECT k.id, k.name, k.tag, k.level, k.reputation, k.join_policy,
+       count(p.id)::int AS members,
+       coalesce((SELECT u.level FROM app.kingdom_upgrades u
+                 WHERE u.kingdom_id = k.id AND u.upgrade_id = $1), 0)::int AS court_level,
+       coalesce(max(p.display_name) FILTER (WHERE p.kingdom_role = 'king'), '')::text AS king_name
 FROM app.kingdoms k
-WHERE lower(k.name) LIKE lower($1) OR lower(k.tag) LIKE lower($1)
-ORDER BY k.reputation DESC
+JOIN app.players p ON p.kingdom_id = k.id
+WHERE lower(k.name) LIKE $2::text ESCAPE '\'
+   OR lower(k.tag) LIKE $2::text ESCAPE '\'
+GROUP BY k.id
+ORDER BY (lower(k.tag) = $3::text) DESC, k.reputation DESC, k.level DESC
 LIMIT 20
 `
+
+type SearchKingdomsParams struct {
+	CourtID string
+	Pattern string
+	Exact   string
+}
 
 type SearchKingdomsRow struct {
 	ID         uuid.UUID
 	Name       string
 	Tag        string
-	LeaderID   *uuid.UUID
 	Level      int32
-	Xp         int64
-	Treasury   int64
 	Reputation int64
-	CreatedAt  time.Time
-	Members    int64
+	JoinPolicy string
+	Members    int32
+	CourtLevel int32
+	KingName   string
 }
 
-func (q *Queries) SearchKingdoms(ctx context.Context, lower string) ([]SearchKingdomsRow, error) {
-	rows, err := q.db.Query(ctx, searchKingdoms, lower)
+// Kingdoms by name or tag. The pattern arrives escaped and lower-cased from the
+// service ('%', '_' and '\' are literal in a name), and an exact tag reads first:
+// someone typing LION wants [LION], not every kingdom with a lion in its name.
+func (q *Queries) SearchKingdoms(ctx context.Context, arg SearchKingdomsParams) ([]SearchKingdomsRow, error) {
+	rows, err := q.db.Query(ctx, searchKingdoms, arg.CourtID, arg.Pattern, arg.Exact)
 	if err != nil {
 		return nil, err
 	}
@@ -761,13 +1102,12 @@ func (q *Queries) SearchKingdoms(ctx context.Context, lower string) ([]SearchKin
 			&i.ID,
 			&i.Name,
 			&i.Tag,
-			&i.LeaderID,
 			&i.Level,
-			&i.Xp,
-			&i.Treasury,
 			&i.Reputation,
-			&i.CreatedAt,
+			&i.JoinPolicy,
 			&i.Members,
+			&i.CourtLevel,
+			&i.KingName,
 		); err != nil {
 			return nil, err
 		}
@@ -779,8 +1119,22 @@ func (q *Queries) SearchKingdoms(ctx context.Context, lower string) ([]SearchKin
 	return items, nil
 }
 
+const setJoinPolicy = `-- name: SetJoinPolicy :exec
+UPDATE app.kingdoms SET join_policy = $2 WHERE id = $1
+`
+
+type SetJoinPolicyParams struct {
+	ID         uuid.UUID
+	JoinPolicy string
+}
+
+func (q *Queries) SetJoinPolicy(ctx context.Context, arg SetJoinPolicyParams) error {
+	_, err := q.db.Exec(ctx, setJoinPolicy, arg.ID, arg.JoinPolicy)
+	return err
+}
+
 const setKingdomRole = `-- name: SetKingdomRole :one
-UPDATE app.players SET kingdom_role = $2 WHERE id = $1 AND kingdom_id = $3 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+UPDATE app.players SET kingdom_role = $2 WHERE id = $1 AND kingdom_id = $3 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type SetKingdomRoleParams struct {
@@ -838,15 +1192,30 @@ func (q *Queries) SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) 
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
+}
+
+const setLeader = `-- name: SetLeader :exec
+UPDATE app.kingdoms SET leader_id = $2 WHERE id = $1
+`
+
+type SetLeaderParams struct {
+	ID       uuid.UUID
+	LeaderID *uuid.UUID
+}
+
+func (q *Queries) SetLeader(ctx context.Context, arg SetLeaderParams) error {
+	_, err := q.db.Exec(ctx, setLeader, arg.ID, arg.LeaderID)
+	return err
 }
 
 const setPlayerKingdom = `-- name: SetPlayerKingdom :one
 UPDATE app.players
 SET kingdom_id = $2, kingdom_role = $3, kingdom_joined_at = $4
-WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+WHERE id = $1 AND kingdom_id IS NULL
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type SetPlayerKingdomParams struct {
@@ -856,6 +1225,10 @@ type SetPlayerKingdomParams struct {
 	KingdomJoinedAt *time.Time
 }
 
+// Seats a player. The kingdom_id IS NULL guard is the last word on "one
+// kingdom at a time": a king answering a request seats someone other than
+// himself, and that someone may have joined elsewhere a moment before. Zero
+// rows means they had.
 func (q *Queries) SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error) {
 	row := q.db.QueryRow(ctx, setPlayerKingdom,
 		arg.ID,
@@ -910,6 +1283,7 @@ func (q *Queries) SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomPara
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
@@ -918,7 +1292,7 @@ const spendFavour = `-- name: SpendFavour :one
 UPDATE app.players
 SET kingdom_favour = kingdom_favour - $1, action_seq = $2
 WHERE id = $3 AND kingdom_favour >= $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type SpendFavourParams struct {
@@ -978,12 +1352,13 @@ func (q *Queries) SpendFavour(ctx context.Context, arg SpendFavourParams) (AppPl
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
 
 const spendKingdomTreasury = `-- name: SpendKingdomTreasury :one
-UPDATE app.kingdoms SET treasury = treasury - $2 WHERE id = $1 AND treasury >= $2 RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at
+UPDATE app.kingdoms SET treasury = treasury - $2 WHERE id = $1 AND treasury >= $2 RETURNING id, name, tag, leader_id, level, xp, treasury, reputation, created_at, join_policy
 `
 
 type SpendKingdomTreasuryParams struct {
@@ -1004,32 +1379,44 @@ func (q *Queries) SpendKingdomTreasury(ctx context.Context, arg SpendKingdomTrea
 		&i.Treasury,
 		&i.Reputation,
 		&i.CreatedAt,
+		&i.JoinPolicy,
 	)
 	return i, err
 }
 
 const topKingdoms = `-- name: TopKingdoms :many
-SELECT k.id, k.name, k.tag, k.leader_id, k.level, k.xp, k.treasury, k.reputation, k.created_at, (SELECT count(*) FROM app.players p WHERE p.kingdom_id = k.id) AS members
+SELECT k.id, k.name, k.tag, k.level, k.xp, k.treasury, k.reputation, k.join_policy,
+       (SELECT count(*) FROM app.players p WHERE p.kingdom_id = k.id)::int AS members,
+       coalesce((SELECT u.level FROM app.kingdom_upgrades u
+                 WHERE u.kingdom_id = k.id AND u.upgrade_id = $1), 0)::int AS court_level
 FROM app.kingdoms k
+WHERE EXISTS (SELECT 1 FROM app.players p WHERE p.kingdom_id = k.id)
 ORDER BY k.reputation DESC, k.xp DESC
-LIMIT $1
+LIMIT $2
 `
+
+type TopKingdomsParams struct {
+	CourtID string
+	MaxRows int32
+}
 
 type TopKingdomsRow struct {
 	ID         uuid.UUID
 	Name       string
 	Tag        string
-	LeaderID   *uuid.UUID
 	Level      int32
 	Xp         int64
 	Treasury   int64
 	Reputation int64
-	CreatedAt  time.Time
-	Members    int64
+	JoinPolicy string
+	Members    int32
+	CourtLevel int32
 }
 
-func (q *Queries) TopKingdoms(ctx context.Context, limit int32) ([]TopKingdomsRow, error) {
-	rows, err := q.db.Query(ctx, topKingdoms, limit)
+// The table. A kingdom whose last lord has gone is not a kingdom, so it is not
+// ranked, however much renown it left behind.
+func (q *Queries) TopKingdoms(ctx context.Context, arg TopKingdomsParams) ([]TopKingdomsRow, error) {
+	rows, err := q.db.Query(ctx, topKingdoms, arg.CourtID, arg.MaxRows)
 	if err != nil {
 		return nil, err
 	}
@@ -1041,13 +1428,13 @@ func (q *Queries) TopKingdoms(ctx context.Context, limit int32) ([]TopKingdomsRo
 			&i.ID,
 			&i.Name,
 			&i.Tag,
-			&i.LeaderID,
 			&i.Level,
 			&i.Xp,
 			&i.Treasury,
 			&i.Reputation,
-			&i.CreatedAt,
+			&i.JoinPolicy,
 			&i.Members,
+			&i.CourtLevel,
 		); err != nil {
 			return nil, err
 		}

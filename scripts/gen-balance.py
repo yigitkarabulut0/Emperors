@@ -856,6 +856,20 @@ emit("kingdoms.json", json.dumps({
         "daily_cap_per_member": 150,
         "decay_bp_per_day": 200,
     },
+    # Joining without an invitation. A king chooses 'open' (anyone joins while
+    # there is room) or 'request' (a king or captain answers each one).
+    #
+    # The cooldown is what keeps that honest. Kingdom-mates cannot raid each
+    # other, so without a wait a lord under attack could join the attacker's
+    # kingdom for the length of the raid and leave again -- and a king removing
+    # someone from an open kingdom would watch them walk straight back in. An
+    # hour is long enough to spoil both and short enough that a lord who simply
+    # chose badly is not punished for it. economy.md 12.5 suggests 24 h, which
+    # was for a game where joining granted a bonus; this one grants none.
+    "rejoin_cooldown_minutes": 60,
+    # Requests a player may have out at once. Enough to ask the three or four
+    # kingdoms that look right; not enough to knock on every door in the realm.
+    "max_join_requests": 5,
 }, indent=2) + "\n")
 
 print(f"kingdoms.json  : {len(k_upgrades)} upgrades, {KINGDOM_MAX_LEVEL} levels")

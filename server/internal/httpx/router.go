@@ -124,6 +124,7 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/army/odds", a.recruitOdds)
 			r.Post("/army/train", a.trainGone)
 			r.Post("/army/dismiss", a.dismissSoldier)
+			r.Post("/army/reroll", a.rerollSoldier)
 			r.Post("/army/equip", a.equipSoldier)
 			r.Post("/army/autoequip", a.autoEquip)
 
@@ -137,8 +138,10 @@ func NewRouter(d Deps) http.Handler {
 
 			r.Get("/kingdom", a.kingdom)
 			r.Get("/kingdom/search", a.kingdomSearch)
+			r.Get("/kingdoms/search", a.kingdomsSearch)
 			r.Post("/kingdom/found", a.found)
-			for _, act := range []string{"invite", "accept", "leave", "role", "donate", "upgrade", "rename"} {
+			for _, act := range []string{"invite", "accept", "leave", "role", "donate", "upgrade", "rename",
+				"join", "request/cancel", "decline", "requests/answer", "kick", "policy"} {
 				name := act
 				r.Post("/kingdom/"+name, func(w http.ResponseWriter, req *http.Request) {
 					a.kingdomAction(w, req, name)

@@ -69,3 +69,10 @@ RETURNING *;
 
 -- name: DeleteSoldier :exec
 DELETE FROM app.soldiers WHERE id = $1 AND player_id = $2;
+
+-- A reroll: the soldier keeps its id, slot, type and gear, and takes a new tier.
+-- name: SetSoldierTier :one
+UPDATE app.soldiers
+SET tier = sqlc.arg(tier), rolled_config_version = sqlc.arg(rolled_config_version)
+WHERE id = sqlc.arg(id) AND player_id = sqlc.arg(player_id)
+RETURNING *;

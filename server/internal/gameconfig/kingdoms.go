@@ -14,6 +14,13 @@ type KingdomsConfig struct {
 	// What a donor gets back personally. Without it, donating is pure cost to
 	// the individual and pure gain to the collective, and nobody donates.
 	FavourShop []FavourGood `json:"favour_shop"`
+	// How long a lord who left or was removed waits before joining any kingdom.
+	// Open joining makes a kingdom a shield -- join your attacker's and they
+	// cannot raid you -- and a removal meaningless, without it.
+	RejoinCooldownMinutes int `json:"rejoin_cooldown_minutes"`
+	// How many kingdoms a player may be asking to join at once, so one player
+	// cannot knock on every door in the realm.
+	MaxJoinRequests int `json:"max_join_requests"`
 }
 
 type KingdomLevel struct {
@@ -23,9 +30,9 @@ type KingdomLevel struct {
 }
 
 type DonationConfig struct {
-	XPPerGold        int64 `json:"xp_per_gold"`
-	XPPerReputation  int64 `json:"xp_per_reputation"`
-	FavourPerGold    int64 `json:"favour_per_gold"`
+	XPPerGold       int64 `json:"xp_per_gold"`
+	XPPerReputation int64 `json:"xp_per_reputation"`
+	FavourPerGold   int64 `json:"favour_per_gold"`
 }
 
 // FavourGood is one line of the Kingdom Shop.

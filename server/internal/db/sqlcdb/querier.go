@@ -143,13 +143,18 @@ type Querier interface {
 	// How many raids landed on this player since a given moment, for the
 	// "while you were away" summary. Counts only fights they did not start.
 	CountRaidsSince(ctx context.Context, arg CountRaidsSinceParams) (CountRaidsSinceRow, error)
+	CountRequestsForPlayer(ctx context.Context, playerID uuid.UUID) (int64, error)
 	CreateAdminSession(ctx context.Context, arg CreateAdminSessionParams) (AdminSession, error)
 	CreateAdminUser(ctx context.Context, arg CreateAdminUserParams) (AdminUser, error)
 	CreateBalanceVersion(ctx context.Context, arg CreateBalanceVersionParams) (AdminBalanceVersion, error)
 	CreateBoost(ctx context.Context, arg CreateBoostParams) (AdminServerBoost, error)
 	CreateBot(ctx context.Context, arg CreateBotParams) (AppPlayer, error)
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) (AppIdentity, error)
-	CreateInvite(ctx context.Context, arg CreateInviteParams) error
+	// An invitation and a request share one row per (kingdom, player). Refreshing
+	// an invitation must never turn a pending request into one -- the WHERE on the
+	// update is what stops it -- so zero rows means a request was standing.
+	CreateInvite(ctx context.Context, arg CreateInviteParams) (int64, error)
+	CreateJoinRequest(ctx context.Context, arg CreateJoinRequestParams) (int64, error)
 	CreateKingdom(ctx context.Context, arg CreateKingdomParams) (AppKingdom, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (AppPlayer, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (AppSession, error)
@@ -172,8 +177,12 @@ type Querier interface {
 	// Nightly decay. 2% a day is what stops a kingdom that quit in month one from
 	// squatting at rank 1 forever.
 	DecayReputation(ctx context.Context, dollar_1 interface{}) error
-	DeleteInvite(ctx context.Context, arg DeleteInviteParams) error
+	DeleteInvite(ctx context.Context, arg DeleteInviteParams) (int64, error)
 	DeleteInvitesForPlayer(ctx context.Context, playerID uuid.UUID) error
+	// A kingdom is deleted when its last lord leaves -- and only then. The guard is
+	// not a courtesy: players_kingdom_role_consistent would abort a delete that
+	// nulled a member's kingdom_id under a role that is still 'member'.
+	DeleteKingdomIfEmpty(ctx context.Context, id uuid.UUID) (int64, error)
 	DeletePlayerItem(ctx context.Context, arg DeletePlayerItemParams) error
 	DeleteSoldier(ctx context.Context, arg DeleteSoldierParams) error
 	// Donating: take the gold, credit the treasury, and record the daily total in
@@ -213,8 +222,11 @@ type Querier interface {
 	GetBattle(ctx context.Context, id uuid.UUID) (AppBattle, error)
 	GetCooldown(ctx context.Context, arg GetCooldownParams) (AppAttackCooldown, error)
 	GetIdentityBySubject(ctx context.Context, arg GetIdentityBySubjectParams) (AppIdentity, error)
+	// Only an invitation. Unscoped, /accept would seat a player in a kingdom they
+	// had merely asked to join.
 	GetInvite(ctx context.Context, arg GetInviteParams) (AppKingdomInvite, error)
 	GetJobProgress(ctx context.Context, arg GetJobProgressParams) (AppPlayerJobProgress, error)
+	GetJoinRequest(ctx context.Context, arg GetJoinRequestParams) (AppKingdomInvite, error)
 	GetKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error)
 	GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error)
 	GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error)
@@ -236,7 +248,11 @@ type Querier interface {
 	// afterwards.
 	InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
-	LeaveKingdom(ctx context.Context, id uuid.UUID) (AppPlayer, error)
+	// Removal by a king or captain. Guarded by the kingdom, so a removal that races
+	// the lord's own leave-and-join cannot take them out of the kingdom they moved to.
+	KickFromKingdom(ctx context.Context, arg KickFromKingdomParams) (AppPlayer, error)
+	// Leaving stamps the time, which is what the rejoin cooldown is measured from.
+	LeaveKingdom(ctx context.Context, arg LeaveKingdomParams) (AppPlayer, error)
 	// How the population is spread across the level ladder, in bands of ten.
 	LevelBands(ctx context.Context) ([]LevelBandsRow, error)
 	ListAudit(ctx context.Context, limit int32) ([]AdminAuditLog, error)
@@ -254,7 +270,9 @@ type Querier interface {
 	ListDevices(ctx context.Context, playerID uuid.UUID) ([]ListDevicesRow, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
-	ListInvitesForPlayer(ctx context.Context, playerID uuid.UUID) ([]ListInvitesForPlayerRow, error)
+	// The invitations a kingdomless player holds, as cards: everything the hall
+	// shows about a kingdom, so an invitation reads like any other kingdom.
+	ListInvitesForPlayer(ctx context.Context, arg ListInvitesForPlayerParams) ([]ListInvitesForPlayerRow, error)
 	ListItemsForSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListJobProgress(ctx context.Context, playerID uuid.UUID) ([]AppPlayerJobProgress, error)
 	// Ordered by rank then contribution, which is the order the roster should read:
@@ -262,6 +280,9 @@ type Querier interface {
 	ListKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) ([]ListKingdomMembersRow, error)
 	ListKingdomUpgrades(ctx context.Context, kingdomID uuid.UUID) ([]AppKingdomUpgrade, error)
 	ListPlayerItems(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
+	// Who has asked to join, oldest first: the Lords tab answers them in order.
+	ListRequestsForKingdom(ctx context.Context, kingdomID uuid.UUID) ([]ListRequestsForKingdomRow, error)
+	ListRequestsForPlayer(ctx context.Context, playerID uuid.UUID) ([]uuid.UUID, error)
 	// Live, unspent tokens with the person to be avenged upon resolved in the same
 	// round trip.
 	ListRevenge(ctx context.Context, playerID uuid.UUID) ([]ListRevengeRow, error)
@@ -304,6 +325,12 @@ type Querier interface {
 	// The players seen recently, to repopulate the presence registry after a
 	// restart. Without it a deploy shows every player leaving at once.
 	RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time) ([]RecentlySeenPlayersRow, error)
+	// Kingdoms worth suggesting to someone with none: every kingdom that still has
+	// lords, the busiest first -- a kingdom whose members were here this week is a
+	// kingdom that will answer, which a big quiet one will not -- then by renown.
+	// The service drops the full ones against the real cap, Royal Court included,
+	// which SQL cannot see; hence more candidates than it shows.
+	RecommendKingdoms(ctx context.Context, arg RecommendKingdomsParams) ([]RecommendKingdomsRow, error)
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
 	RefillEnergy(ctx context.Context, arg RefillEnergyParams) error
 	// Registers a device, or re-points one that moved to another account.
@@ -336,15 +363,26 @@ type Querier interface {
 	// Revokes an entire rotation chain. Presenting an already-rotated refresh token
 	// means the token was captured, so every descendant of that family is burned.
 	RevokeSessionFamily(ctx context.Context, arg RevokeSessionFamilyParams) error
-	SearchKingdoms(ctx context.Context, lower string) ([]SearchKingdomsRow, error)
+	// Kingdoms by name or tag. The pattern arrives escaped and lower-cased from the
+	// service ('%', '_' and '\' are literal in a name), and an exact tag reads first:
+	// someone typing LION wants [LION], not every kingdom with a lion in its name.
+	SearchKingdoms(ctx context.Context, arg SearchKingdomsParams) ([]SearchKingdomsRow, error)
 	SearchPlayers(ctx context.Context, lower string) ([]SearchPlayersRow, error)
 	SetAvatar(ctx context.Context, arg SetAvatarParams) (AppPlayer, error)
 	SetHeroEquipped(ctx context.Context, arg SetHeroEquippedParams) error
+	SetJoinPolicy(ctx context.Context, arg SetJoinPolicyParams) error
 	SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) (AppPlayer, error)
+	SetLeader(ctx context.Context, arg SetLeaderParams) error
 	SetMight(ctx context.Context, arg SetMightParams) error
+	// Seats a player. The kingdom_id IS NULL guard is the last word on "one
+	// kingdom at a time": a king answering a request seats someone other than
+	// himself, and that someone may have joined elsewhere a moment before. Zero
+	// rows means they had.
 	SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error)
 	SetSoldierEquipped(ctx context.Context, arg SetSoldierEquippedParams) error
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
+	// A reroll: the soldier keeps its id, slot, type and gear, and takes a new tier.
+	SetSoldierTier(ctx context.Context, arg SetSoldierTierParams) (AppSoldier, error)
 	// Rewrites the cached hourly rate. Must be called only after CreditTax, so the
 	// time already earned is paid at the OLD rate.
 	SetTaxRate(ctx context.Context, arg SetTaxRateParams) error
@@ -358,7 +396,9 @@ type Querier interface {
 	// Spends level-up points. The WHERE clause carries the affordability check, so
 	// the balance cannot go negative even under a concurrent double-tap.
 	SpendStatPoints(ctx context.Context, arg SpendStatPointsParams) (AppPlayer, error)
-	TopKingdoms(ctx context.Context, limit int32) ([]TopKingdomsRow, error)
+	// The table. A kingdom whose last lord has gone is not a kingdom, so it is not
+	// ranked, however much renown it left behind.
+	TopKingdoms(ctx context.Context, arg TopKingdomsParams) ([]TopKingdomsRow, error)
 	// How many accounts exist at all, for the "of N registered" denominator.
 	TotalRegistered(ctx context.Context) (int64, error)
 	TouchAdminLogin(ctx context.Context, id uuid.UUID) error

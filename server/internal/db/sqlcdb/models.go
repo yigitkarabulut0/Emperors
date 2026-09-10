@@ -137,6 +137,7 @@ type AppKingdom struct {
 	Treasury   int64
 	Reputation int64
 	CreatedAt  time.Time
+	JoinPolicy string
 }
 
 type AppKingdomInvite struct {
@@ -144,6 +145,7 @@ type AppKingdomInvite struct {
 	PlayerID  uuid.UUID
 	InvitedBy *uuid.UUID
 	CreatedAt time.Time
+	Direction string
 }
 
 type AppKingdomUpgrade struct {
@@ -205,6 +207,7 @@ type AppPlayer struct {
 	DailyClaimedOn      pgtype.Date
 	Might               int64
 	Legacy              int32
+	KingdomLeftAt       *time.Time
 }
 
 type AppPlayerCollection struct {

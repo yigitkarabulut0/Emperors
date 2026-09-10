@@ -136,6 +136,24 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusForbidden, "not_permitted", "your rank does not allow that")
 	case errors.Is(err, service.ErrKingdomNameTaken):
 		WriteProblem(w, r, http.StatusConflict, "name_taken", "that name or tag is taken")
+	case errors.Is(err, service.ErrBadKingdomName):
+		WriteProblem(w, r, http.StatusBadRequest, "invalid_name", err.Error())
+	case errors.Is(err, service.ErrKingdomEmpty):
+		WriteProblem(w, r, http.StatusConflict, "kingdom_empty", "that kingdom has no lords left")
+	case errors.Is(err, service.ErrAlreadyRequested):
+		WriteProblem(w, r, http.StatusConflict, "already_requested", "you have already asked to join")
+	case errors.Is(err, service.ErrTooManyRequests):
+		WriteProblem(w, r, http.StatusConflict, "too_many_requests", err.Error())
+	case errors.Is(err, service.ErrRejoinCooldown):
+		WriteProblem(w, r, http.StatusConflict, "rejoin_cooldown", err.Error())
+	case errors.Is(err, service.ErrTargetInKingdom):
+		WriteProblem(w, r, http.StatusConflict, "target_in_kingdom", "that lord already belongs to a kingdom")
+	case errors.Is(err, service.ErrBadRole):
+		WriteProblem(w, r, http.StatusBadRequest, "bad_role", "no such rank")
+	case errors.Is(err, service.ErrBadPolicy):
+		WriteProblem(w, r, http.StatusBadRequest, "bad_policy", "a kingdom is either open or joins by request")
+	case errors.Is(err, service.ErrBadTarget):
+		WriteProblem(w, r, http.StatusBadRequest, "bad_target", err.Error())
 	case errors.Is(err, service.ErrNotAtCap), errors.Is(err, service.ErrLegacyMaxed):
 		WriteProblem(w, r, http.StatusConflict, "legacy_unavailable", err.Error())
 	case errors.Is(err, service.ErrAlreadyCollected):
@@ -1027,10 +1045,9 @@ func (a *api) found(w http.ResponseWriter, r *http.Request) {
 	}
 	v, err := a.s().Found(r.Context(), pid, req.Name, req.Tag, req.ActionSeq)
 	if err != nil {
-		if !isKnownServiceError(err) {
-			WriteProblem(w, r, http.StatusBadRequest, "invalid_name", err.Error())
-			return
-		}
+		// A bad name is a typed error now, mapped in fail like any other.
+		// Every unknown error used to be answered as invalid_name with its own
+		// text, which turned a database failure into a message about spelling.
 		a.fail(w, r, err)
 		return
 	}
@@ -1044,6 +1061,10 @@ type kingdomTargetReq struct {
 	Name      string `json:"name,omitempty"`
 	Amount    int64  `json:"amount,omitempty"`
 	ID        string `json:"id,omitempty"`
+	// Answering a request: a pointer, so a body that forgot it is refused
+	// rather than read as a refusal.
+	Accept    *bool  `json:"accept,omitempty"`
+	Policy    string `json:"policy,omitempty"`
 	ActionSeq int64  `json:"action_seq,omitempty"`
 }
 
@@ -1096,6 +1117,42 @@ func (a *api) kingdomAction(w http.ResponseWriter, r *http.Request, name string)
 		v, err = a.s().BuyKingdomUpgrade(r.Context(), pid, req.ID)
 	case "rename":
 		v, err = a.s().RenameKingdom(r.Context(), pid, req.Name)
+	case "join":
+		kid, ok := parse(req.KingdomID)
+		if !ok {
+			return
+		}
+		v, err = a.s().Join(r.Context(), pid, kid)
+	case "request/cancel":
+		kid, ok := parse(req.KingdomID)
+		if !ok {
+			return
+		}
+		v, err = a.s().CancelRequest(r.Context(), pid, kid)
+	case "decline":
+		kid, ok := parse(req.KingdomID)
+		if !ok {
+			return
+		}
+		v, err = a.s().DeclineInvite(r.Context(), pid, kid)
+	case "requests/answer":
+		tid, ok := parse(req.PlayerID)
+		if !ok {
+			return
+		}
+		if req.Accept == nil {
+			WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "say whether to accept")
+			return
+		}
+		v, err = a.s().AnswerRequest(r.Context(), pid, tid, *req.Accept)
+	case "kick":
+		tid, ok := parse(req.PlayerID)
+		if !ok {
+			return
+		}
+		v, err = a.s().Kick(r.Context(), pid, tid)
+	case "policy":
+		v, err = a.s().SetPolicy(r.Context(), pid, req.Policy)
 	}
 	if err != nil {
 		a.fail(w, r, err)
@@ -1119,12 +1176,44 @@ func isKnownServiceError(err error) bool {
 		service.ErrNotInvited, service.ErrNotPermitted, service.ErrKingdomNameTaken,
 		service.ErrLastKing, service.ErrSameKingdom,
 		service.ErrBadName, service.ErrSameName,
+		service.ErrBadKingdomName, service.ErrKingdomEmpty, service.ErrAlreadyRequested,
+		service.ErrTooManyRequests, service.ErrRejoinCooldown, service.ErrTargetInKingdom,
+		service.ErrBadRole, service.ErrBadPolicy, service.ErrBadTarget,
 	} {
 		if errors.Is(err, e) {
 			return true
 		}
 	}
 	return false
+}
+
+type rerollReq struct {
+	SoldierID string `json:"soldier_id"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+// rerollSoldier draws a soldier's tier again, once.
+func (a *api) rerollSoldier(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req rerollReq
+	if !decode(w, r, &req) {
+		return
+	}
+	sid, err := uuid.Parse(req.SoldierID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "expected a uuid")
+		return
+	}
+	res, err := a.s().RerollSoldier(r.Context(), pid, sid, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
 }
 
 // avatars lists the pickable portraits and which one is worn.
@@ -1223,6 +1312,21 @@ func (a *api) treasuryMove(w http.ResponseWriter, r *http.Request, in bool) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, v)
+}
+
+// kingdomsSearch finds kingdoms by name or tag, for a player looking for one.
+func (a *api) kingdomsSearch(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	list, err := a.s().SearchKingdoms(r.Context(), pid, r.URL.Query().Get("q"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"kingdoms": list})
 }
 
 // kingdomSearch turns a name into a player id so a king can invite someone.

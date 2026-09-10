@@ -342,6 +342,46 @@ func (b *Bundle) Validate() error {
 			taxBP, MaxTaxIncomeBP))
 	}
 
+	// --- joining a kingdom ---
+	//
+	// Both read as zero when the generator gained them and was not re-run, and
+	// zero is not a setting here: no cooldown makes a kingdom a raid shield
+	// anyone can step behind, and a cap of zero refuses every request.
+	if b.Kingdoms.RejoinCooldownMinutes <= 0 {
+		p = append(p, "kingdoms rejoin_cooldown_minutes must be positive — without it a kingdom is a shield anyone can join mid-raid")
+	}
+	if b.Kingdoms.MaxJoinRequests <= 0 {
+		p = append(p, "kingdoms max_join_requests must be positive — no request could ever be sent")
+	}
+
+	// --- soldiers ---
+	//
+	// Recruiting and rerolling are priced off base_cost and rolled off the
+	// weights, and a reroll costs the recruit price less the dismiss refund. A
+	// zero anywhere in that chain prices an action at nothing or rolls from an
+	// empty table rather than refusing to load.
+	if len(b.Soldiers.Types) == 0 {
+		p = append(p, "no soldier types defined")
+	}
+	for _, t := range b.Soldiers.Types {
+		if t.BaseCost <= 0 {
+			p = append(p, fmt.Sprintf("soldier %q: base_cost must be positive", t.ID))
+		}
+		var sum float64
+		for tier, w := range t.Weights {
+			if w < 0 {
+				p = append(p, fmt.Sprintf("soldier %q: weight for %q is negative", t.ID, tier))
+			}
+			sum += w
+		}
+		if sum <= 0 {
+			p = append(p, fmt.Sprintf("soldier %q: tier weights sum to nothing — a recruit could not roll", t.ID))
+		}
+	}
+	if b.Items.Price.SellRatioBP >= 10000 {
+		p = append(p, "items price.sell_ratio_bp is 10000 or more — a dismiss would refund the whole recruit and a reroll would cost nothing")
+	}
+
 	if len(p) > 0 {
 		return fmt.Errorf("invalid game config:\n  - %s", strings.Join(p, "\n  - "))
 	}

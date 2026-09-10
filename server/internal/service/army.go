@@ -55,6 +55,8 @@ type UnitView struct {
 	HP       int64                `json:"hp"`
 	EHP      int64                `json:"ehp"`
 	Equipped map[string]*ItemView `json:"equipped"`
+	// What one reroll of this soldier costs. Soldiers only.
+	RerollCost int64 `json:"reroll_cost,omitempty"`
 }
 
 type NextSlot struct {
@@ -227,12 +229,18 @@ func (d Deps) soldierUnit(p sqlcdb.AppPlayer, s sqlcdb.AppSoldier, gear map[stri
 	spd = spd * (10000 + eff.SoldierSpdBP) / 10000
 	hp := army.UnitHP(d.Config, baseHP, def, int64(p.Level))
 
-	// No Level. A soldier's tier IS its rank, and it does not move.
+	var reroll int64
+	if t := d.Config.SoldierType(s.TypeID); t != nil {
+		reroll = soldierRerollCost(d.Config, t, int64(p.Level))
+	}
+
+	// No Level. A soldier's tier IS its rank, and it moves only when rerolled.
 	return UnitView{
 		ID: s.ID.String(), Name: s.Name, Type: s.TypeID, Tier: s.Tier,
 		Attack: atk, Defense: def, Speed: spd, HP: hp,
-		EHP:      army.EffectiveHP(d.Config, hp, def, int64(p.Level)),
-		Equipped: gear,
+		EHP:        army.EffectiveHP(d.Config, hp, def, int64(p.Level)),
+		Equipped:   gear,
+		RerollCost: reroll,
 	}
 }
 

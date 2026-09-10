@@ -101,7 +101,7 @@ func (q *Queries) ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]Act
 }
 
 const adminAdjustCurrency = `-- name: AdminAdjustCurrency :one
-UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type AdminAdjustCurrencyParams struct {
@@ -159,6 +159,7 @@ func (q *Queries) AdminAdjustCurrency(ctx context.Context, arg AdminAdjustCurren
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
@@ -170,7 +171,7 @@ SET gold                = gold + $1::bigint,
     xp                  = GREATEST(0, xp + $3::bigint),
     stat_points_unspent = GREATEST(0, stat_points_unspent + $4::int)
 WHERE id = $5
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type AdminAdjustPlayerParams struct {
@@ -244,12 +245,13 @@ func (q *Queries) AdminAdjustPlayer(ctx context.Context, arg AdminAdjustPlayerPa
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
 
 const adminGetPlayer = `-- name: AdminGetPlayer :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy FROM app.players WHERE id = $1
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at FROM app.players WHERE id = $1
 `
 
 // Everything the detail page shows about one player.
@@ -302,6 +304,7 @@ func (q *Queries) AdminGetPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, 
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
@@ -311,7 +314,7 @@ UPDATE app.players
 SET energy_milli      = $1::bigint,
     energy_updated_at = $2::timestamptz
 WHERE id = $3
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type AdminSetEnergyParams struct {
@@ -371,6 +374,7 @@ func (q *Queries) AdminSetEnergy(ctx context.Context, arg AdminSetEnergyParams) 
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
@@ -380,7 +384,7 @@ UPDATE app.players
 SET level = $1::int,
     xp    = 0
 WHERE id = $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type AdminSetLevelParams struct {
@@ -440,6 +444,7 @@ func (q *Queries) AdminSetLevel(ctx context.Context, arg AdminSetLevelParams) (A
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
@@ -449,7 +454,7 @@ UPDATE app.players
 SET luck_bp         = $1::int,
     luck_expires_at = $2
 WHERE id = $3
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type AdminSetLuckParams struct {
@@ -507,12 +512,13 @@ func (q *Queries) AdminSetLuck(ctx context.Context, arg AdminSetLuckParams) (App
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }
 
 const adminSetPlayerState = `-- name: AdminSetPlayerState :one
-UPDATE app.players SET state = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy
+UPDATE app.players SET state = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
 `
 
 type AdminSetPlayerStateParams struct {
@@ -569,6 +575,7 @@ func (q *Queries) AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerSta
 		&i.DailyClaimedOn,
 		&i.Might,
 		&i.Legacy,
+		&i.KingdomLeftAt,
 	)
 	return i, err
 }

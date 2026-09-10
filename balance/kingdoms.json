@@ -220,5 +220,7 @@
   "reputation": {
     "daily_cap_per_member": 150,
     "decay_bp_per_day": 200
-  }
+  },
+  "rejoin_cooldown_minutes": 60,
+  "max_join_requests": 5
 }

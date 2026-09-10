@@ -15,7 +15,14 @@ import (
 )
 
 // Invite offers membership. Only a Marshal or the King may invite.
+//
+// When the lord invited has already asked to join, the invitation is the answer
+// to that request: they are seated at once rather than left holding an invite
+// and a request that say the same thing.
 func (d Deps) Invite(ctx context.Context, playerID, targetID uuid.UUID) (*KingdomView, error) {
+	if playerID == targetID {
+		return nil, ruleError{kind: ErrBadTarget, msg: "you are already one of your own lords"}
+	}
 	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
 		q := sqlcdb.New(tx)
 
@@ -29,32 +36,44 @@ func (d Deps) Invite(ctx context.Context, playerID, targetID uuid.UUID) (*Kingdo
 		if me.KingdomRole != "king" && me.KingdomRole != "marshal" {
 			return ErrNotPermitted
 		}
+		kid := *me.KingdomID
 
-		target, err := q.GetPlayerByID(ctx, targetID)
+		target, err := q.LockPlayer(ctx, targetID)
 		if err != nil {
 			return ErrNotFound
 		}
 		if target.KingdomID != nil {
-			return ErrAlreadyInKingdom
+			return ErrTargetInKingdom
+		}
+
+		if _, err := q.GetJoinRequest(ctx, sqlcdb.GetJoinRequestParams{
+			KingdomID: kid, PlayerID: targetID,
+		}); err == nil {
+			return d.joinKingdom(ctx, q, target, kid, true)
+		} else if !errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("read request: %w", err)
 		}
 
 		// Checked at invite time as a courtesy, and again at accept time because
 		// the roster can fill in between.
-		count, err := q.CountKingdomMembers(ctx, me.KingdomID)
+		count, err := q.CountKingdomMembers(ctx, &kid)
 		if err != nil {
 			return err
 		}
-		k, err := q.GetKingdom(ctx, *me.KingdomID)
+		k, err := q.GetKingdom(ctx, kid)
 		if err != nil {
 			return err
 		}
-		if int(count) >= d.Config.KingdomMemberCap(int(k.Level), d.courtBonus(ctx, q, k.ID)) {
+		if int(count) >= d.memberCap(int(k.Level), d.courtLevel(ctx, q, k.ID)) {
 			return ErrKingdomFull
 		}
 
-		return q.CreateInvite(ctx, sqlcdb.CreateInviteParams{
-			KingdomID: *me.KingdomID, PlayerID: targetID, InvitedBy: &playerID,
-		})
+		if _, err := q.CreateInvite(ctx, sqlcdb.CreateInviteParams{
+			KingdomID: kid, PlayerID: targetID, InvitedBy: &playerID,
+		}); err != nil {
+			return fmt.Errorf("create invite: %w", err)
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -62,7 +81,7 @@ func (d Deps) Invite(ctx context.Context, playerID, targetID uuid.UUID) (*Kingdo
 	return d.GetKingdom(ctx, playerID)
 }
 
-// AcceptInvite joins a kingdom.
+// AcceptInvite joins a kingdom that invited this player.
 func (d Deps) AcceptInvite(ctx context.Context, playerID, kingdomID uuid.UUID) (*KingdomView, error) {
 	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
 		q := sqlcdb.New(tx)
@@ -74,6 +93,8 @@ func (d Deps) AcceptInvite(ctx context.Context, playerID, kingdomID uuid.UUID) (
 		if p.KingdomID != nil {
 			return ErrAlreadyInKingdom
 		}
+		// An invitation only. A request is the player's own ask and is no
+		// licence to seat themselves.
 		if _, err := q.GetInvite(ctx, sqlcdb.GetInviteParams{
 			KingdomID: kingdomID, PlayerID: playerID,
 		}); err != nil {
@@ -82,30 +103,7 @@ func (d Deps) AcceptInvite(ctx context.Context, playerID, kingdomID uuid.UUID) (
 			}
 			return err
 		}
-
-		// The kingdom row is locked before the count, so two people accepting the
-		// last seat at the same instant cannot both get in.
-		k, err := q.LockKingdom(ctx, kingdomID)
-		if err != nil {
-			return ErrNotFound
-		}
-		count, err := q.CountKingdomMembers(ctx, &kingdomID)
-		if err != nil {
-			return err
-		}
-		if int(count) >= d.Config.KingdomMemberCap(int(k.Level), d.courtBonus(ctx, q, k.ID)) {
-			return ErrKingdomFull
-		}
-
-		now := d.Now()
-		if _, err := q.SetPlayerKingdom(ctx, sqlcdb.SetPlayerKingdomParams{
-			ID: playerID, KingdomID: &kingdomID, KingdomRole: "member", KingdomJoinedAt: &now,
-		}); err != nil {
-			return err
-		}
-		// Every other invite is dropped: holding stale offers would let a player
-		// appear to belong to several kingdoms at once in the UI.
-		return q.DeleteInvitesForPlayer(ctx, playerID)
+		return d.joinKingdom(ctx, q, p, kingdomID, false)
 	})
 	if err != nil {
 		return nil, err
@@ -113,7 +111,9 @@ func (d Deps) AcceptInvite(ctx context.Context, playerID, kingdomID uuid.UUID) (
 	return d.GetKingdom(ctx, playerID)
 }
 
-// Leave resigns from a kingdom.
+// Leave resigns from a kingdom. The last lord out turns off the lights: a
+// kingdom with nobody in it is deleted, which frees its name and tag and keeps
+// it off the table and out of the hall.
 func (d Deps) Leave(ctx context.Context, playerID uuid.UUID) (*KingdomView, error) {
 	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
 		q := sqlcdb.New(tx)
@@ -125,8 +125,15 @@ func (d Deps) Leave(ctx context.Context, playerID uuid.UUID) (*KingdomView, erro
 		if p.KingdomID == nil {
 			return ErrNotInKingdom
 		}
+		kid := *p.KingdomID
+		// Locked before the count, so nobody can be seated between the count
+		// and the leaving -- that is how a kingdom would end up with lords and
+		// no king.
+		if _, err := q.LockKingdom(ctx, kid); err != nil {
+			return fmt.Errorf("lock kingdom: %w", err)
+		}
 		if p.KingdomRole == "king" {
-			count, err := q.CountKingdomMembers(ctx, p.KingdomID)
+			count, err := q.CountKingdomMembers(ctx, &kid)
 			if err != nil {
 				return err
 			}
@@ -136,8 +143,14 @@ func (d Deps) Leave(ctx context.Context, playerID uuid.UUID) (*KingdomView, erro
 				return ErrLastKing
 			}
 		}
-		_, err = q.LeaveKingdom(ctx, playerID)
-		return err
+		now := d.Now()
+		if _, err := q.LeaveKingdom(ctx, sqlcdb.LeaveKingdomParams{ID: playerID, LeftAt: &now}); err != nil {
+			return fmt.Errorf("leave: %w", err)
+		}
+		if _, err := q.DeleteKingdomIfEmpty(ctx, kid); err != nil {
+			return fmt.Errorf("disband: %w", err)
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -150,7 +163,13 @@ func (d Deps) SetRole(ctx context.Context, playerID, targetID uuid.UUID, role st
 	switch role {
 	case "member", "marshal", "king":
 	default:
-		return nil, ErrNotFound
+		return nil, ErrBadRole
+	}
+	// A king naming himself anything would step himself down -- to king, the
+	// handover demotes him to marshal -- and leave the kingdom with no king,
+	// which nothing in the game can repair.
+	if playerID == targetID {
+		return nil, ruleError{kind: ErrBadTarget, msg: "hand the crown to another lord instead"}
 	}
 
 	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
@@ -180,10 +199,17 @@ func (d Deps) SetRole(ctx context.Context, playerID, targetID uuid.UUID, role st
 			return err
 		}
 		// Handing over the crown steps the old king down in the same
-		// transaction, so a kingdom never has two.
+		// transaction, so a kingdom never has two -- and moves leader_id, which
+		// is what a rename is permitted by. It never used to, so a new king
+		// could not rename the kingdom he ruled.
 		if role == "king" {
 			if _, err := q.SetKingdomRole(ctx, sqlcdb.SetKingdomRoleParams{
 				ID: playerID, KingdomRole: "marshal", KingdomID: me.KingdomID,
+			}); err != nil {
+				return err
+			}
+			if err := q.SetLeader(ctx, sqlcdb.SetLeaderParams{
+				ID: *me.KingdomID, LeaderID: &targetID,
 			}); err != nil {
 				return err
 			}
@@ -323,25 +349,6 @@ func (d Deps) BuyKingdomUpgrade(ctx context.Context, playerID uuid.UUID, upgrade
 		return nil, err
 	}
 	return d.GetKingdom(ctx, playerID)
-}
-
-// courtBonus reads the Royal Court's member-cap bonus. Best-effort: a failure
-// here should shrink the roster, never block the action.
-func (d Deps) courtBonus(ctx context.Context, q *sqlcdb.Queries, kingdomID uuid.UUID) int {
-	ups, err := q.ListKingdomUpgrades(ctx, kingdomID)
-	if err != nil {
-		return 0
-	}
-	u := d.Config.KingdomUpgrade(courtUpgradeID)
-	if u == nil {
-		return 0
-	}
-	for _, r := range ups {
-		if r.UpgradeID == courtUpgradeID {
-			return int(u.PerLevel) * int(r.Level)
-		}
-	}
-	return 0
 }
 
 // SearchablePlayer is one result from the invite search.

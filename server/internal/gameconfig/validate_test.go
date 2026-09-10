@@ -67,3 +67,62 @@ func TestValidateRejectsAFreeRename(t *testing.T) {
 		t.Errorf("rejected for the wrong reason: %v", err)
 	}
 }
+
+// The two joining settings read as zero when the generator gained them and was
+// not re-run -- the same failure that once shipped an action for one gold.
+// Zero is not a setting for either: no cooldown makes a kingdom a raid shield,
+// and a request cap of zero refuses every request.
+func TestValidateRejectsMissingJoinSettings(t *testing.T) {
+	for _, c := range []struct {
+		field string
+		zero  func(b *Bundle)
+	}{
+		{"rejoin_cooldown_minutes", func(b *Bundle) { b.Kingdoms.RejoinCooldownMinutes = 0 }},
+		{"max_join_requests", func(b *Bundle) { b.Kingdoms.MaxJoinRequests = 0 }},
+	} {
+		b, _ := LoadSeed()
+		c.zero(b)
+		if err := b.build(); err != nil {
+			t.Fatal(err)
+		}
+		err := b.Validate()
+		if err == nil {
+			t.Fatalf("Validate accepted a zero %s", c.field)
+		}
+		if !strings.Contains(err.Error(), c.field) {
+			t.Errorf("%s: rejected for the wrong reason: %v", c.field, err)
+		}
+	}
+}
+
+// A reroll costs the recruit price less the dismiss refund, and both come off
+// base_cost and sell_ratio_bp. Each of these would price it at nothing or roll
+// it from an empty table.
+func TestValidateRejectsAFreeOrEmptyRecruit(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		break_ func(b *Bundle)
+		want   string
+	}{
+		{"free soldier", func(b *Bundle) { b.Soldiers.Types[0].BaseCost = 0 }, "base_cost must be positive"},
+		{"empty weights", func(b *Bundle) {
+			for k := range b.Soldiers.Types[1].Weights {
+				b.Soldiers.Types[1].Weights[k] = 0
+			}
+		}, "tier weights sum to nothing"},
+		{"full refund", func(b *Bundle) { b.Items.Price.SellRatioBP = 10000 }, "reroll would cost nothing"},
+	} {
+		b, _ := LoadSeed()
+		c.break_(b)
+		if err := b.build(); err != nil {
+			t.Fatal(err)
+		}
+		err := b.Validate()
+		if err == nil {
+			t.Fatalf("%s: Validate accepted it", c.name)
+		}
+		if !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: rejected for the wrong reason: %v", c.name, err)
+		}
+	}
+}

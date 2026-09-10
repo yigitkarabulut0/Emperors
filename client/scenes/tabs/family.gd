@@ -12,6 +12,21 @@ const BUCKET_LABEL := {
 	"steal_cap_bp": "RAID STEAL CAP", "ransom_bp": "RANSOM",
 }
 
+## Each card's painting, by what the upgrade is for. All twenty-one cards used
+## to wear the granary, so the ledger read as one card repeated; three scenes
+## cut from the paintings split it into what it is -- the estate's income, the
+## army, and the realm.
+const CARD_ART := {"income": "family/granary_art", "army": "family/art_army", "realm": "family/art_realm"}
+const BUCKET_GROUP := {"soldier_atk_bp": "army", "soldier_def_bp": "army", "soldier_spd_bp": "army",
+	"steal_cap_bp": "army", "ransom_bp": "army", "xp_bp": "realm", "energy_regen_bp": "realm"}
+## And the mark beside the level, by what it raises.
+const BUCKET_ICON := {"collect_income_bp": "icons/gold_stack", "tax_income_bp": "icons/gold_pile",
+	"xp_bp": "icons/quest_scroll", "energy_regen_bp": "icons/energy", "max_energy_flat": "icons/energy_potion",
+	"soldier_atk_bp": "icons/might_swords", "soldier_def_bp": "icons/shield_small",
+	"soldier_spd_bp": "inventory/icon_speed", "shop_discount_bp": "icons/market_tent",
+	"steal_cap_bp": "icons/gold_pile", "ransom_bp": "icons/coin"}
+const ICON_BOX := Rect2(406, 75, 70, 78)
+
 var _scroll: ScrollContainer
 var _content: Control
 var _ui: Dictionary = {}
@@ -211,8 +226,21 @@ func _paint_cards() -> void:
 func _paint_card(c: Dictionary) -> void:
 	var p: Dictionary = c["parts"]
 	var d: Dictionary = c["data"]
-	p["art"].texture = Art.tex("family/granary_art")
-	p["icon"].texture = Art.tex("icons/gold_stack")
+	var group := "income"
+	var icon := "icons/gold_stack"
+	match c["kind"]:
+		"upgrade":
+			var b := str(d.get("bucket", ""))
+			group = str(BUCKET_GROUP.get(b, "income"))
+			icon = str(BUCKET_ICON.get(b, icon))
+		"treasury":
+			group = "realm"
+			icon = "icons/city_shield"
+		"legacy":
+			group = "realm"
+			icon = "icons/crown_small"
+	p["art"].texture = Art.tex(CARD_ART[group])
+	_set_icon(p["icon"], icon)
 	match c["kind"]:
 		"upgrade":
 			p["name"].text = str(d.get("name", "")).to_upper()
@@ -266,6 +294,19 @@ func _paint_card(c: Dictionary) -> void:
 	UI.fit_label(p["name"], 36, 16)
 	UI.fit_label(p["level"], 24, 16)
 	UI.fit_label(p["bonus"], 22, 15)
+
+
+## An icon in the card's slot at no more than one and a half times its own
+## size: the marks are painted small, and filling the slot with a 32-unit sword
+## blew it up into a smear.
+func _set_icon(img: TextureRect, asset: String) -> void:
+	var tex := Art.tex(asset)
+	img.texture = tex
+	var native := tex.get_size()
+	var k := minf(minf(ICON_BOX.size.x / native.x, ICON_BOX.size.y / native.y), 1.5)
+	var sz := native * k
+	img.position = ICON_BOX.position + (ICON_BOX.size - sz) / 2.0
+	img.size = sz
 
 
 func _set_button(c: Dictionary, maxed: bool, text: String, disabled: bool) -> void:

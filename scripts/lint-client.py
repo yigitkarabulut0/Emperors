@@ -109,5 +109,22 @@ for f in sorted(glob.glob(os.path.join(CLIENT, "scenes", "**", "*.gd"), recursiv
 for e in early: fail(f"_busy is cleared before the reload: {e}")
 if not early: ok("every action holds its screen until the reload")
 
+# 7. one button system
+#
+# A button is a painted plate with its word in type (UI.plate_button /
+# plate_face), a painted crop (UI.tex_button), or an invisible hotspot over
+# paint (UI.hotspot) -- all made in scripts/ui/. A bare Button.new() elsewhere
+# is a fourth kind, drawn in Godot's default theme or a flat stylebox, and the
+# auth screen shipped two of them.
+bare = []
+for f in sorted(glob.glob(os.path.join(CLIENT, "scenes", "**", "*.gd"), recursive=True)):
+    for n, l in enumerate(open(f).read().splitlines(), 1):
+        if "Button.new()" in l and not any(k in l for k in ("TextureButton", "CheckButton", "OptionButton", "LinkButton")):
+            bare.append(f"{os.path.relpath(f, CLIENT)}:{n}")
+        if "StyleBoxFlat.new()" in l:
+            bare.append(f"{os.path.relpath(f, CLIENT)}:{n} (StyleBoxFlat)")
+for b in bare: fail(f"a control drawn outside the painted kit: {b}")
+if not bare: ok("every button and field is one of the painted kit's")
+
 print(f"\n{fails} FAILED" if fails else "\nclient lint clean")
 sys.exit(1 if fails else 0)

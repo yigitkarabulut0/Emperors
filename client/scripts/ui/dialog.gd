@@ -187,23 +187,14 @@ class _Modal:
 		return str(cfg.get("confirm_text", "")) in ["OK", "Close", "Done"]
 
 	func _field(cfg: Dictionary, mode: String) -> LineEdit:
-		_input = LineEdit.new()
-		_input.placeholder_text = str(cfg.get("placeholder", "Amount" if mode == "amount" else ""))
+		_input = UI.field(str(cfg.get("placeholder", "Amount" if mode == "amount" else "")), 34,
+			false, HORIZONTAL_ALIGNMENT_CENTER)
 		if cfg.has("max_length"):
 			_input.max_length = int(cfg["max_length"])
-		_input.custom_minimum_size = Vector2(0, 84)
-		_input.add_theme_font_override("font", UI.font("body", 600))
-		_input.add_theme_font_size_override("font_size", 34)
-		_input.add_theme_color_override("font_color", UI.INK)
-		_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var isb := StyleBoxFlat.new()
-		isb.bg_color = Color("#08121A")
-		isb.border_color = UI.GOLD_DIM
-		isb.set_border_width_all(2)
-		isb.set_corner_radius_all(6)
-		isb.set_content_margin_all(12)
-		_input.add_theme_stylebox_override("normal", isb)
-		_input.add_theme_stylebox_override("focus", isb)
+		if mode == "amount":
+			# The number pad, not the whole keyboard, for an amount of gold.
+			_input.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
+		_input.custom_minimum_size = Vector2(0, 88)
 		if cfg.has("preset"):
 			_input.text = str(cfg["preset"])
 		if mode == "text":

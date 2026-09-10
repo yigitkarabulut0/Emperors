@@ -59,8 +59,21 @@
       600,
       700
      ]
+    },
+    {
+     "rect": [
+      176,
+      331,
+      744,
+      167
+     ],
+     "sample_x": [
+      421,
+      424
+     ]
     }
-   ]
+   ],
+   "note": "The three painted quest cards are erased: the live cards are drawn in their place, and until the day's quests arrived the painting's own -- 'Spend 30 energy, +50 diamonds' -- showed as the player's."
   },
   {
    "name": "collect/quest_card",

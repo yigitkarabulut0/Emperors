@@ -371,26 +371,14 @@
     },
     {
      "rect": [
-      634,
-      1396,
-      262,
-      30
+      572,
+      1388,
+      334,
+      82
      ],
      "sample_x": [
       880,
       900
-     ]
-    },
-    {
-     "rect": [
-      634,
-      1438,
-      274,
-      30
-     ],
-     "sample_x": [
-      895,
-      910
      ]
     },
     {
@@ -417,7 +405,8 @@
       912
      ]
     }
-   ]
+   ],
+   "note": "Everything live is erased: the name, the level and bonus rows, the icon beside them, the painting and the button. The card is the frame and its navy body."
   },
   {
    "name": "family/granary_art",
@@ -436,7 +425,29 @@
     70,
     78
    ],
-   "mode": "darkkey"
+   "mode": "darkkey",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      60,
+      0
+     ],
+     [
+      60,
+      68
+     ],
+     [
+      0,
+      68
+     ]
+    ]
+   },
+   "note": "Masked to the stack: the rect reaches the L of the painted LEVEL, the + of its bonus and the button's top edge, and darkkey kept all three -- a gold sliver beside every card's level."
   },
   {
    "name": "family/btn_max_level",
@@ -499,6 +510,36 @@
     40,
     34
    ]
+  },
+  {
+   "name": "family/art_army",
+   "src": "attack.png",
+   "rect": [
+    640,
+    95,
+    301,
+    179
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "The Attack header's right side -- the castle on its hill, helmets and banners -- for the army upgrades' cards. Clear of the title, the pills and the tabs."
+  },
+  {
+   "name": "family/art_realm",
+   "src": "kingdom.png",
+   "rect": [
+    404,
+    92,
+    300,
+    178
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "The Kingdom header's castle and bridge, for the realm's cards (Scriptorium, Beacons, the vault, the Legacy). Clear of the pills, the column and the banner."
   }
  ]
 }

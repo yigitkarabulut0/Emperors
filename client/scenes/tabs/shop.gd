@@ -20,6 +20,12 @@ const FRAME_FALLBACK := {"common": "uncommon", "mystic": "epic", "special": "leg
 const BADGE_PREFIX := "inventory/badge_"
 ## Not "SWORD": one of the seven weapon designs is a spear.
 const TYPE_WORD := {"weapon": "WEAPON", "armor": "ARMOR", "horse": "HORSE"}
+## An offer's own stat, the one its slot is for, printed under its painting.
+const STAT := {"weapon": ["attack", "ATK"], "armor": ["defense", "DEF"], "horse": ["speed", "SPD"]}
+## A phone taller than the design gets its extra height between the rows,
+## up to these, rather than all of it as bare ground under the Diamond Goods.
+const ROW_GAP_MAX := 34.0
+const GOODS_GAP_MAX := 56.0
 
 var _scroll: ScrollContainer
 var _content: Control
@@ -30,6 +36,7 @@ var _store: Dictionary = {}
 var _loaded_ms := -100000
 var _busy := false
 var _titles: Dictionary = {}       ## good id -> its live heading on the panel
+var _goods_home := 0.0
 
 
 func _ready() -> void:
@@ -48,10 +55,7 @@ func _ready() -> void:
 	# the design's, with ground under them.
 	# The scroll took its size when its anchors were set, above, so the hook is
 	# applied once by hand as well as on every later resize.
-	var fit_page := func() -> void:
-		_content.custom_minimum_size.y = maxf(1694.0, _scroll.size.y)
-	_scroll.resized.connect(fit_page)
-	fit_page.call()
+	_scroll.resized.connect(_fit_page)
 	_ui = Layout.build(SCREEN, _content)
 	_cards = _ui["offer_card"]
 	for i in _cards.size():
@@ -60,7 +64,16 @@ func _ready() -> void:
 		# The frame is stitched per tier; the template's single frame image is replaced.
 		parts["frame"].visible = false
 		_cards[i]["frame_pieces"] = []
+		# What the item is worth, under its painting: the card showed a name and
+		# a price and nothing to weigh the price against.
+		var stat := UI.label("", 21, Color("#E6DFD2"), "body", 600, HORIZONTAL_ALIGNMENT_CENTER)
+		UI.place(stat, Rect2(10, 207, 176, 34))
+		_cards[i]["node"].add_child(stat)
+		_cards[i]["stat"] = stat
+		_cards[i]["home"] = _cards[i]["node"].position
 	_ui["reroll"].pressed.connect(_reroll)
+	_goods_home = _ui["diamond_panel"].position.y
+	_fit_page()
 	var dp: Dictionary = _ui["diamond_panel"].get_meta("parts")
 	dp["energy_buy"].pressed.connect(_buy_good.bind("energy_refill"))
 	dp["shield_buy"].pressed.connect(_buy_good.bind("shield"))
@@ -73,6 +86,24 @@ func _ready() -> void:
 		panel.add_child(t)
 		_titles[pair[0]] = t
 	set_process(true)
+
+
+## The page is at least as tall as the screen, so the bottom-anchored footer
+## sits at the screen's foot. What a taller phone adds is shared out: some
+## between the three rows of offers, some above the Diamond Goods, the rest
+## under them -- rather than all of it as one band of bare ground.
+func _fit_page() -> void:
+	var h := maxf(1694.0, _scroll.size.y)
+	_content.custom_minimum_size.y = h
+	if _cards.is_empty():
+		return
+	var extra := h - 1694.0
+	var row_gap := minf(ROW_GAP_MAX, extra / 5.0)
+	var goods_gap := minf(GOODS_GAP_MAX, maxf(0.0, extra - row_gap * 3.0) / 2.0)
+	for i in _cards.size():
+		var home: Vector2 = _cards[i]["home"]
+		_cards[i]["node"].position.y = home.y + row_gap * float(i / 2 + 1)
+	_ui["diamond_panel"].position.y = _goods_home + row_gap * 3.0 + goods_gap
 
 
 func refresh() -> void:
@@ -132,6 +163,9 @@ func _paint() -> void:
 		p["type"].text = TYPE_WORD.get(slot, slot.to_upper())
 		p["price"].text = UI.short_number(int(offer.get("price", 0)))
 		UI.fit_label(p["type"], int(p["type"].label_settings.font_size), 14)
+		var st: Array = STAT.get(slot, ["attack", "ATK"])
+		c["stat"].text = "%s %s  ·  PWR %s" % [st[1], UI.grouped(int(item.get(st[0], 0))), UI.grouped(int(offer.get("power", 0)))]
+		UI.fit_label(c["stat"], 21, 15)
 		var sold := bool(offer.get("purchased", false))
 		c["node"].modulate = Color(0.45, 0.45, 0.45) if sold else Color.WHITE
 		p["buy"].disabled = sold

@@ -110,8 +110,21 @@
       686,
       694
      ]
+    },
+    {
+     "rect": [
+      168,
+      599,
+      762,
+      8
+     ],
+     "sample_x": [
+      932,
+      938
+     ]
     }
-   ]
+   ],
+   "note": "Its last rows held the tops of the painted chips below it; the live chips sit lower in their thumb-sized targets, so those tops showed as loose strips over the row. Erased to the navy."
   },
   {
    "name": "items/royal_longsword",

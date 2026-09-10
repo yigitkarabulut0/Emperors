@@ -175,23 +175,8 @@ func _build_search() -> void:
 	_search_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_list.add_child(_search_row)
 
-	_field = LineEdit.new()
-	_field.placeholder_text = "Search kingdoms by name or tag"
+	_field = UI.field("Search kingdoms by name or tag", 30)
 	_field.max_length = 24
-	_field.add_theme_font_override("font", UI.font("body", 600))
-	_field.add_theme_font_size_override("font_size", 30)
-	_field.add_theme_color_override("font_color", UI.INK)
-	_field.add_theme_color_override("font_placeholder_color", Color(UI.DIM, 0.7))
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("#08121A")
-	sb.border_color = UI.GOLD_DIM
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(6)
-	sb.set_content_margin_all(18)
-	_field.add_theme_stylebox_override("normal", sb)
-	var lit := sb.duplicate()
-	lit.border_color = UI.GOLD
-	_field.add_theme_stylebox_override("focus", lit)
 	# PASS, not the default STOP: a tap still reaches the field, but a drag
 	# that starts on it carries on to the page, which is what a thumb that
 	# happens to land there means.

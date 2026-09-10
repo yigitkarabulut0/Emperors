@@ -145,6 +145,41 @@ static func plate_face(plate: String, margin: int = 14) -> Button:
 	b.add_theme_stylebox_override("disabled", off)
 	return b
 
+## A text field in the game's paint: the Attack painting's dark, copper-edged
+## tab slot, nine-patched to whatever size it is given, lit a little when it
+## has the keyboard. The fields were flat navy boxes with a drawn border --
+## the one thing on their screens that was not cut from a painting.
+const FIELD_PLATE := "attack/tab_inactive_frame"
+
+
+static func field(placeholder: String, size: int = 30, secret: bool = false,
+		align: int = HORIZONTAL_ALIGNMENT_LEFT) -> LineEdit:
+	var e := LineEdit.new()
+	e.placeholder_text = placeholder
+	e.secret = secret
+	e.alignment = align
+	e.add_theme_font_override("font", font("body", 600))
+	e.add_theme_font_size_override("font_size", size)
+	e.add_theme_color_override("font_color", INK)
+	e.add_theme_color_override("font_placeholder_color", Color(DIM, 0.75))
+	e.add_theme_color_override("caret_color", GOLD)
+	e.add_theme_color_override("selection_color", Color(GOLD_DIM, 0.45))
+	var sb := StyleBoxTexture.new()
+	sb.texture = Art.tex(FIELD_PLATE)
+	for side in ["left", "right", "top", "bottom"]:
+		sb.set("texture_margin_" + side, 14)
+	sb.content_margin_left = 22
+	sb.content_margin_right = 22
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	e.add_theme_stylebox_override("normal", sb)
+	e.add_theme_stylebox_override("read_only", sb)
+	var lit := sb.duplicate()
+	lit.modulate_color = Color(1.25, 1.15, 1.05)
+	e.add_theme_stylebox_override("focus", lit)
+	return e
+
+
 ## An invisible tap target over a baked-in control (the "+" on a pill).
 ## An invisible tap target. `pass_drag` lets the touch carry on to whatever is
 ## behind it, which a control inside a scrolling row must do: a Button consumes

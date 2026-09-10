@@ -34,6 +34,8 @@ var _rail: Control
 var _plate: TextureRect
 var _entries: Dictionary = {}       ## id -> TextureRect (unlit icon+label)
 var _locks: Dictionary = {}         ## id -> Label
+var _badges: Dictionary = {}        ## id -> the count bubble over a rail entry
+var _daily_dot: TextureRect         ## the day's reward is waiting, on the diamond pill
 var _tabs: Dictionary = {}          ## id -> Control (instantiated lazily)
 var _current := ""
 var _gold: Label
@@ -41,7 +43,8 @@ var _diamonds: Label
 var _energy: Label
 var _level: Label
 var _toast: Label
-var _toast_timer: SceneTreeTimer
+var _toast_plate: NinePatchRect
+var _toast_tween: Tween
 
 
 var _inset_top := 0.0
@@ -79,7 +82,7 @@ func _ready() -> void:
 	tick.start()
 	var heartbeat := Timer.new()
 	heartbeat.wait_time = 30.0
-	heartbeat.timeout.connect(func() -> void: Api.post_json("/v1/presence", {}))
+	heartbeat.timeout.connect(_beat)
 	add_child(heartbeat)
 	heartbeat.start()
 
@@ -87,6 +90,7 @@ func _ready() -> void:
 	open(str(Env.args.get("tab", "collect")))
 	_preload_tabs.call_deferred()
 	_daily_on_boot.call_deferred()
+	_beat.call_deferred()
 
 
 # --- diamonds, energy, the daily reward ------------------------------------------------
@@ -242,6 +246,15 @@ func _build_rail() -> void:
 		var hit := UI.hotspot(Rect2(0, CENTER[id] - 92, 156, 184))
 		hit.pressed.connect(open.bind(id))
 		_rail.add_child(hit)
+		# What is waiting on this tab, in the painting's own count bubble.
+		var bubble := UI.image("icons/count_bubble", Rect2(98, CENTER[id] - 90, 42, 42))
+		var n := UI.label("", 24, Color("#FFF4EC"), "title", 800, HORIZONTAL_ALIGNMENT_CENTER)
+		UI.place(n, Rect2(0, 0, 42, 40))
+		bubble.add_child(n)
+		bubble.set_meta("count", n)
+		bubble.visible = false
+		_rail.add_child(bubble)
+		_badges[id] = bubble
 
 
 func _set_active(id: String) -> void:
@@ -273,14 +286,19 @@ func _build_pills() -> void:
 	UI.place(_energy, Rect2(732, 26, 110, 46))
 	for l in [_gold, _diamonds, _energy]:
 		top.add_child(l)
-	var plus_gold := UI.hotspot(Rect2(354, 24, 38, 52))
+	# The whole pill is the button, a thumb tall. Only the painted "+" was, and
+	# at 38x52 units that is 18x24 pt -- under half of what a thumb needs.
+	var plus_gold := UI.hotspot(Rect2(180, 0, 225, 100))
 	plus_gold.pressed.connect(open.bind("collect"))
-	var plus_gems := UI.hotspot(Rect2(598, 24, 38, 52))
+	var plus_gems := UI.hotspot(Rect2(430, 0, 222, 100))
 	plus_gems.pressed.connect(_diamonds_popup)
-	var plus_energy := UI.hotspot(Rect2(848, 24, 38, 52))
+	var plus_energy := UI.hotspot(Rect2(660, 0, 236, 100))
 	plus_energy.pressed.connect(_energy_popup)
 	for h in [plus_gold, plus_gems, plus_energy]:
 		top.add_child(h)
+	_daily_dot = UI.image("icons/count_bubble", Rect2(622, 12, 24, 24))
+	_daily_dot.visible = false
+	top.add_child(_daily_dot)
 
 
 func _tick() -> void:
@@ -298,6 +316,24 @@ func _paint_pills() -> void:
 
 # --- tabs -------------------------------------------------------------------------
 
+## The heartbeat, which answers with the rail's badges.
+func _beat() -> void:
+	var res: Api.Response = await Api.post_json("/v1/presence", {})
+	if res.ok and res.data.get("badges", null) is Dictionary:
+		_paint_badges(res.data["badges"])
+
+
+func _paint_badges(b: Dictionary) -> void:
+	var counts := {"collect": int(b.get("quests", 0)), "attack": int(b.get("revenge", 0)),
+		"kingdom": int(b.get("requests", 0))}
+	for id in _badges:
+		var n: int = counts.get(id, 0)
+		var bubble: TextureRect = _badges[id]
+		bubble.visible = n > 0 and not _is_locked(id)
+		(bubble.get_meta("count") as Label).text = str(n) if n < 10 else "9+"
+	_daily_dot.visible = bool(b.get("daily", false))
+
+
 func open(id: String) -> void:
 	if not TABS.has(id):
 		id = "collect"
@@ -310,6 +346,8 @@ func open(id: String) -> void:
 		var old: Control = _tabs[_current]
 		old.visible = false
 		old.process_mode = Node.PROCESS_MODE_DISABLED
+		# Whatever was done on the tab being left may have cleared a badge.
+		_beat.call_deferred()
 	var cur: Control = _ensure_tab(id)
 	cur.visible = true
 	cur.process_mode = Node.PROCESS_MODE_INHERIT
@@ -371,37 +409,59 @@ func _on_changed() -> void:
 
 # --- toast --------------------------------------------------------------------------
 
+## The toast wears the dialogs' plate: a flat navy box with a drawn border was
+## the one thing on the game screens not cut from a painting. It sizes itself
+## to what it says, sits over the page (clear of the rail), and fades.
+const TOAST_MAX_W := 720.0
+const TOAST_PAD := Vector2(34, 18)
+
+
 func _build_toast() -> void:
+	var plate := NinePatchRect.new()
+	plate.texture = Art.tex(Dialog.PLATE)
+	for m in ["left", "top", "right", "bottom"]:
+		plate.set("patch_margin_" + m, Dialog.PLATE_MARGIN)
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Pinned to the bottom of the screen the player actually has: a taller phone
+	# gets more canvas below the 1672 design, and the toast belongs at its foot.
+	plate.anchor_top = 1.0
+	plate.anchor_bottom = 1.0
+	plate.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	plate.visible = false
+	add_child(plate)
 	_toast = UI.label("", 28, UI.INK, "body", 600, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_toast, Rect2(180, 1590, 720, 56))
-	# Pinned to the bottom of the screen the player actually has: a taller
-	# phone gets more canvas below the 1672 design, and the toast belongs at
-	# its foot, not floating a few hundred units above it.
-	_toast.anchor_top = 1.0
-	_toast.anchor_bottom = 1.0
-	_toast.offset_top = -82
-	_toast.offset_bottom = -26
-	_toast.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_toast.visible = false
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.03, 0.06, 0.1, 0.92)
-	sb.border_color = UI.GOLD_DIM
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(8)
-	_toast.add_theme_stylebox_override("normal", sb)
-	add_child(_toast)
+	_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	plate.add_child(_toast)
+	_toast_plate = plate
 
 
 func toast(message: String) -> void:
 	if message == "":
 		return
+	var plate := _toast_plate
 	_toast.text = message
-	_toast.visible = true
-	_toast_timer = get_tree().create_timer(2.5)
-	var t := _toast_timer
-	t.timeout.connect(func() -> void:
-		if _toast_timer == t:
-			_toast.visible = false)
+	var s := _toast.label_settings
+	var one_line := s.font.get_string_size(message, HORIZONTAL_ALIGNMENT_LEFT, -1, s.font_size).x
+	var text_w := minf(one_line + 4.0, TOAST_MAX_W - TOAST_PAD.x * 2.0)
+	_toast.custom_minimum_size = Vector2(text_w, 0)
+	_toast.size = Vector2(text_w, 0)
+	var text_h := s.font.get_multiline_string_size(message, HORIZONTAL_ALIGNMENT_CENTER, text_w, s.font_size).y
+	var sz := Vector2(text_w + TOAST_PAD.x * 2.0, text_h + TOAST_PAD.y * 2.0)
+	plate.offset_top = -40.0 - sz.y
+	plate.offset_bottom = -40.0
+	plate.offset_left = 550.0 - sz.x / 2.0
+	plate.offset_right = 550.0 + sz.x / 2.0
+	_toast.position = TOAST_PAD
+	_toast.size = Vector2(text_w, text_h)
+	plate.visible = true
+	if _toast_tween != null:
+		_toast_tween.kill()
+	plate.modulate.a = 0.0
+	_toast_tween = create_tween()
+	_toast_tween.tween_property(plate, "modulate:a", 1.0, 0.14)
+	_toast_tween.tween_interval(2.4)
+	_toast_tween.tween_property(plate, "modulate:a", 0.0, 0.3)
+	_toast_tween.tween_callback(func() -> void: plate.visible = false)
 
 
 func _on_level_up(level: int, _levels: int, _points: int, _gems: int) -> void:

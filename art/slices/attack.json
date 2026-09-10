@@ -693,6 +693,141 @@
     80
    ],
    "note": "Banners, helmets and the castle from the Attack header, above its title and below the pills: the only band of that painting with no text in it. The battle screen stands its champions in front of it."
+  },
+  {
+   "name": "icons/count_bubble",
+   "rect": [
+    447,
+    282,
+    44,
+    44
+   ],
+   "inpaint": [
+    [
+     458,
+     288,
+     20,
+     30
+    ]
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      43.5,
+      22.0
+     ],
+     [
+      43.0,
+      26.8
+     ],
+     [
+      41.4,
+      31.3
+     ],
+     [
+      38.8,
+      35.4
+     ],
+     [
+      35.4,
+      38.8
+     ],
+     [
+      31.3,
+      41.4
+     ],
+     [
+      26.8,
+      43.0
+     ],
+     [
+      22.0,
+      43.5
+     ],
+     [
+      17.2,
+      43.0
+     ],
+     [
+      12.7,
+      41.4
+     ],
+     [
+      8.6,
+      38.8
+     ],
+     [
+      5.2,
+      35.4
+     ],
+     [
+      2.6,
+      31.3
+     ],
+     [
+      1.0,
+      26.8
+     ],
+     [
+      0.5,
+      22.0
+     ],
+     [
+      1.0,
+      17.2
+     ],
+     [
+      2.6,
+      12.7
+     ],
+     [
+      5.2,
+      8.6
+     ],
+     [
+      8.6,
+      5.2
+     ],
+     [
+      12.7,
+      2.6
+     ],
+     [
+      17.2,
+      1.0
+     ],
+     [
+      22.0,
+      0.5
+     ],
+     [
+      26.8,
+      1.0
+     ],
+     [
+      31.3,
+      2.6
+     ],
+     [
+      35.4,
+      5.2
+     ],
+     [
+      38.8,
+      8.6
+     ],
+     [
+      41.4,
+      12.7
+     ],
+     [
+      43.0,
+      17.2
+     ]
+    ]
+   },
+   "note": "The REVENGE tab's bubble, emptied and cut round, for the counts the rail carries (quests to claim, raiders to answer, lords asking to join)."
   }
  ]
 }

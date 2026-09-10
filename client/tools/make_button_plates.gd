@@ -16,7 +16,8 @@ extends SceneTree
 ## gradient around it, so the plate keeps its own shading rather than a flat
 ## fill.
 ##
-## Run: godot --headless --path client --script tools/make_button_plates.gd
+## Run: godot --headless --path client --script tools/make_button_plates.gd [-- <dst>...]
+## Naming plates after "--" bakes only those; with none, every plate is baked.
 
 ## Plates that are a recolour of another rather than a fresh bake: a green
 ## plate's red and green channels swapped is the same painting in crimson, with
@@ -25,17 +26,27 @@ extends SceneTree
 const RECOLOURS := [
 	{"src": "shop/buy_plate", "dst": "shop/danger_plate"},
 ]
+## "clear" is a rect, in the plate's own pixels, emptied whole and filled from
+## around it -- for a painted icon, which the near-white word mask cannot see.
+## The REROLL plate is HUNT's: the slicer cuts the painted button into
+## army/reroll_plate (art/slices/army.json), and this takes its crosshair and
+## its word off, in place. Re-cut it and this has to run again.
 const JOBS := [
 	{"src": "inventory/btn_equip", "dst": "inventory/btn_equip_plate", "inset": 8},
 	{"src": "inventory/btn_sell", "dst": "inventory/btn_sell_plate", "inset": 8},
 	{"src": "shop/buy", "dst": "shop/buy_plate", "inset": 10},
+	{"src": "army/reroll_plate", "dst": "army/reroll_plate", "inset": 6,
+		"clear": Rect2i(18, 10, 132, 57)},
 ]
 const DILATE := 5
 const PASSES := 700
 
 
 func _initialize() -> void:
+	var only := OS.get_cmdline_user_args()
 	for job in JOBS:
+		if not only.is_empty() and not only.has(str(job["dst"])):
+			continue
 		var img := Image.load_from_file("res://assets/%s.png" % job["src"])
 		img.convert(Image.FORMAT_RGBAF)
 		var w := img.get_width()
@@ -43,11 +54,18 @@ func _initialize() -> void:
 		var inset: int = job["inset"]
 		var inner := Rect2i(inset, inset, w - 2 * inset, h - 2 * inset)
 		var mask := _word_mask(img, w, h, inner)
+		if job.has("clear"):
+			var r: Rect2i = job["clear"]
+			for y in range(r.position.y, r.end.y):
+				for x in range(r.position.x, r.end.x):
+					mask[y][x] = true
 		_inpaint(img, mask, w, h, inner)
 		img.convert(Image.FORMAT_RGBA8)
 		var err := img.save_png(ProjectSettings.globalize_path("res://assets/%s.png" % job["dst"]))
 		print("wrote %s err=%d masked=%d" % [job["dst"], err, _count(mask)])
 	for job in RECOLOURS:
+		if not only.is_empty() and not only.has(str(job["dst"])):
+			continue
 		var img := Image.load_from_file("res://assets/%s.png" % job["src"])
 		img.convert(Image.FORMAT_RGBAF)
 		for y in img.get_height():

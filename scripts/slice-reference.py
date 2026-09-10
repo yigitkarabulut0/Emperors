@@ -16,7 +16,9 @@ Manifest:
                "soften": [ [x,y,w,h], ... ],        # replace with a very low-frequency version of the same
                      # region: keeps the painting's own colours and the shape of its light, loses everything
                      # with an edge. For lifting a whole painted object off its field, which Telea smears.
-               "hollow": 14,                        # clear everything inside this inset -> a frame, not a tile
+               "hollow": 14 | [l, t, r, b],         # clear everything inside this inset -> a frame, not a tile
+                     # a list gives each side its own inset: a painted frame is rarely as thick
+                     # at the top (glow, a crest) as it is down the sides
                "mask": {"type": "chamfer", "size": 6} | {"type": "polygon", "points": [[x,y],...]}
                      # alpha 0 outside; polygon points are relative to the crop
                "scale": [w, h]                      # optional: resize the result (LANCZOS)
@@ -104,7 +106,8 @@ def apply_hollow(im, inset):
     """
     im = im.convert('RGBA')
     arr = np.asarray(im).copy()
-    arr[inset:arr.shape[0] - inset, inset:arr.shape[1] - inset, 3] = 0
+    l, t, r, b = (inset, inset, inset, inset) if isinstance(inset, int) else inset
+    arr[t:arr.shape[0] - b, l:arr.shape[1] - r, 3] = 0
     return Image.fromarray(arr, 'RGBA')
 
 def apply_mask(im, mask):
@@ -134,7 +137,9 @@ for mpath in a.manifests:
         if mode == 'darkkey': out = darkkey(crop, float(c.get('k', 90)), c.get('bg'))
         elif mode == 'rect': out = crop
         else: raise SystemExit(f"unknown mode {mode} for {c['name']}")
-        if c.get('hollow'): out = apply_hollow(out, int(c['hollow']))
+        if c.get('hollow'):
+            hv = c['hollow']
+            out = apply_hollow(out, [int(v) for v in hv] if isinstance(hv, list) else int(hv))
         if c.get('mask'): out = apply_mask(out, c['mask'])
         if c.get('scale'): out = out.resize(tuple(c['scale']), Image.LANCZOS)
         dst = os.path.join(a.out, c['name'] + '.png'); os.makedirs(os.path.dirname(dst), exist_ok=True)

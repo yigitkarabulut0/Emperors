@@ -155,12 +155,12 @@
      "id": "soldier_card",
      "kind": "template",
      "rect": [
-      0,
+      2,
       7,
       149,
       337
      ],
-     "pitch": 151,
+     "pitch": 153,
      "parts": [
       {
        "id": "frame",
@@ -178,33 +178,18 @@
        "kind": "image",
        "asset": "portraits/soldier_{type}",
        "rect": [
-        5,
-        7,
-        139,
-        166
+        3,
+        11,
+        133,
+        164
        ],
        "fit": "stretch",
        "types": {
         "villager": "portraits/soldier_villager",
         "mercenary": "portraits/soldier_mercenary",
         "gladiator": "portraits/soldier_gladiator"
-       }
-      },
-      {
-       "id": "numeral",
-       "kind": "image",
-       "asset": "army/numeral_{tier}",
-       "rect": [
-        4,
-        8,
-        50,
-        50
-       ],
-       "tiers_available": [
-        1,
-        2,
-        3
-       ]
+       },
+       "note": "The card frame's own window (x 483..615, y 570..733 on the painting). Each portrait is cut inside its own card's window and drawn here; the villager's window is five rows shorter, so it is the only one that stretches, by three percent."
       },
       {
        "id": "name",
@@ -292,18 +277,35 @@
        "asset": "army/card_selected_frame",
        "rect": [
         -2,
-        -11,
+        -3,
         153,
-        349
+        341
        ],
-       "margins": [
+       "draw_center": true,
+       "margin": [
+        9,
+        9,
+        7,
+        5
+       ],
+       "note": "A hollow ring (hollow [9,9,7,5] in army.json): it was the whole painted villager card with its centre switched off, and its edge slices still carried the portrait."
+      },
+      {
+       "id": "numeral",
+       "kind": "image",
+       "asset": "army/numeral_{tier}",
+       "rect": [
+        0,
         8,
-        14,
-        10,
-        14
+        50,
+        50
        ],
-       "draw_center": false,
-       "when": "selected"
+       "tiers_available": [
+        1,
+        2,
+        3
+       ],
+       "note": "Every badge's diamond centred at (25,33) on its card, where the painting's own diamonds sit on theirs; the crops are centred on their diamonds, so the box goes where the diamond goes."
       },
       {
        "id": "tap",
@@ -323,7 +325,8 @@
         337
        ]
       }
-     ]
+     ],
+     "note": "Cards stand where the painting puts them (the frame's top at y 559) and two units in from the strip's edge, so the selection ring round the first one is not cut. Pitch 153: the ring reaches two units past each side and must not sit under the next card."
     },
     {
      "id": "next_slot_card",
@@ -426,10 +429,11 @@
    "asset": "army/selected_panel",
    "rect": [
     170,
-    888,
+    898,
     771,
-    398
-   ]
+    388
+   ],
+   "note": "Cut from below the painted cards' feet, so no painted card edge -- and no gold of the painting's selection -- is drawn over the live row."
   },
   {
    "id": "sel_portrait",
@@ -442,6 +446,29 @@
     301
    ],
    "note": "frame+portrait; only villager exists"
+  },
+  {
+   "id": "sel_window",
+   "kind": "group",
+   "rect": [
+    183,
+    966,
+    202,
+    286
+   ],
+   "note": "The window inside the ring: where a soldier without a large painting is drawn, cover-fitted."
+  },
+  {
+   "id": "sel_frame",
+   "kind": "image",
+   "asset": "army/sel_frame",
+   "rect": [
+    178,
+    960,
+    211,
+    297
+   ],
+   "note": "The large portrait's gold ring alone. A mercenary or gladiator has no large painting, so it is drawn in the window under this ring (sel_window) rather than stretched over the villager's frame."
   },
   {
    "id": "sel_numeral",
@@ -506,7 +533,7 @@
    "rect": [
     398,
     1010,
-    316,
+    304,
     56
    ],
    "font": "body",
@@ -716,6 +743,70 @@
    "fill": "left"
   },
   {
+   "id": "reroll",
+   "kind": "group",
+   "rect": [
+    726,
+    1056,
+    179,
+    77
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "army/reroll_plate",
+     "rect": [
+      0,
+      0,
+      179,
+      77
+     ]
+    },
+    {
+     "id": "icon",
+     "kind": "image",
+     "asset": "icons/reroll_arrows",
+     "rect": [
+      18,
+      21,
+      37,
+      35
+     ]
+    },
+    {
+     "id": "label",
+     "kind": "text",
+     "rect": [
+      60,
+      19,
+      110,
+      40
+     ],
+     "font": "title",
+     "size": 26,
+     "weight": 700,
+     "color": "#F4EFE6",
+     "align": "center",
+     "valign": "center",
+     "sample": "REROLL"
+    }
+   ],
+   "note": "HUNT's painted plate with its crosshair and word taken off, the shop's reroll arrows, and the word in type -- the same object as DISMISS under it."
+  },
+  {
+   "id": "reroll_tap",
+   "kind": "button",
+   "rect": [
+    728,
+    1041,
+    178,
+    95
+   ],
+   "action": "reroll",
+   "note": "The tap target: 95 tall, from the troop bar's foot to DISMISS's top, so the two never share a pixel."
+  },
+  {
    "id": "dismiss",
    "kind": "button",
    "asset": "army/dismiss",
@@ -804,7 +895,7 @@
      "asset": "army/recruit_chip",
      "rect": [
       101,
-      43,
+      66,
       95,
       25
      ],
@@ -814,33 +905,14 @@
       8,
       6
      ],
-     "instance_rects": [
-      [
-       279,
-       1384,
-       95,
-       25
-      ],
-      [
-       526,
-       1384,
-       106,
-       25
-      ],
-      [
-       778,
-       1384,
-       109,
-       25
-      ]
-     ]
+     "note": "Centred between the baked name and the price now that the odds line under it is gone: the chip is the card's one statement of tier."
     },
     {
      "id": "chip_text",
      "kind": "text",
      "rect": [
       101,
-      43,
+      66,
       95,
       25
      ],
@@ -850,62 +922,7 @@
      "color": "#D8E1EA",
      "align": "center",
      "sample": "TIER I - III",
-     "instance_rects": [
-      [
-       279,
-       1384,
-       95,
-       25
-      ],
-      [
-       526,
-       1384,
-       106,
-       25
-      ],
-      [
-       778,
-       1384,
-       109,
-       25
-      ]
-     ]
-    },
-    {
-     "id": "odds",
-     "kind": "text",
-     "rect": [
-      82,
-      75,
-      144,
-      26
-     ],
-     "font": "body",
-     "size": 22,
-     "weight": 500,
-     "color": "#D2D8DF",
-     "align": "center",
-     "sample": "80% T1    20% T2",
-     "instance_rects": [
-      [
-       260,
-       1416,
-       144,
-       26
-      ],
-      [
-       504,
-       1416,
-       150,
-       26
-      ],
-      [
-       750,
-       1416,
-       154,
-       26
-      ]
-     ]
+     "note": "Centred between the baked name and the price now that the odds line under it is gone: the chip is the card's one statement of tier."
     },
     {
      "id": "price",
@@ -983,6 +1000,18 @@
      ]
     }
    ]
+  },
+  {
+   "id": "recruit_info",
+   "kind": "button",
+   "rect": [
+    630,
+    1282,
+    300,
+    95
+   ],
+   "action": "odds",
+   "note": "The painted (i) Get random tier soldiers: a tap shows every type's full published odds, which the cards no longer print."
   },
   {
    "id": "bottom",

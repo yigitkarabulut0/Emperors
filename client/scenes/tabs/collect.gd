@@ -17,12 +17,22 @@ var _quests: Array = []
 var _quest_cards: Array = []
 var _quests_loaded_ms := -100000
 
-## The reward row's geometry, from layout/collect.json's quest_card parts.
-## reward_icon sits at x 57 and the reward text at x 104..224, so the row a
-## claimed quest fills runs from 57 to 224.
-const REWARD_TEXT_X := 104.0
-const REWARD_TEXT_W := 120.0
-const REWARD_ROW_W := 167.0
+## A quest card's reward row: experience and gold, each an icon and a figure,
+## centred as a pair in the row the layout gives them and shrunk together until
+## both fit. The done card used to say "CLAIM +396 XP" in a 30-point box that
+## started a third of the way across a 241-unit card, and ran off its edge.
+##
+## The crown alone means experience, as it does on every job row: "+396" beside
+## a crown is the game's own vocabulary, and dropping the word is what lets the
+## figures stay at the painting's size.
+const REWARD_SIZE := Vector2i(28, 18)
+const REWARD_GAP := 16.0
+const ICON_GAP := 4.0
+const IN_PROGRESS := Color("#E9E3D5")
+## A finished bar is full, and full is gold, so the word on it is dark ink --
+## gold type on a gold bar could not be read.
+const ON_FULL_BAR := Color("#2E1D05")
+const READY := Color("#F0D27A")
 
 ## Font sizes a row's name and its collect counter are fitted between (max, min):
 ## the painting's size when the text fits its box, smaller only when it would not.
@@ -30,6 +40,8 @@ const NAME_FIT := Vector2i(24, 14)
 const COUNTER_FIT := Vector2i(24, 16)
 var _built := false
 var _busy := false
+## The gentle pulse on a card whose reward is waiting, one per card.
+var _pulses: Dictionary = {}
 
 
 func _ready() -> void:
@@ -251,44 +263,94 @@ func _load_quests() -> void:
 
 func _paint_quests() -> void:
 	for i in _quest_cards.size():
-		var p: Dictionary = _quest_cards[i]["parts"]
+		var card: Dictionary = _quest_cards[i]
+		var p: Dictionary = card["parts"]
 		if i >= _quests.size():
-			_quest_cards[i]["node"].visible = false
+			card["node"].visible = false
+			_pulse(i, false)
 			continue
-		_quest_cards[i]["node"].visible = true
+		card["node"].visible = true
 		var q: Dictionary = _quests[i]
 		var target := int(q.get("target", 0))
 		var progress := mini(int(q.get("progress", 0)), target)
-		p["title"].text = _quest_title(q)
-		p["progress"].text = "%d / %d" % [progress, target]
-		Layout.set_fill(p["bar_fill"], float(progress) / maxf(1.0, float(target)))
-		p["reward_icon"].texture = Art.tex("icons/reward_crown")
 		var claimed := bool(q.get("claimed", false))
-		var done := bool(q.get("done", false))
-		var reward: Label = p["reward"]
-		var icon: TextureRect = p["reward_icon"]
-		if claimed:
-			# CLAIMED is a state, not a reward, so it takes the whole reward row
-			# and loses the crown. Left-aligned beside an icon it read as pushed
-			# to one side, because it was: the box starts where a "+100 XP"
-			# begins, and there is nothing to its left any more.
-			reward.text = "CLAIMED"
-			reward.label_settings.font_color = UI.DIM
-			reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			reward.position.x = icon.position.x
-			reward.size.x = REWARD_ROW_W
-			icon.visible = false
-		else:
-			reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-			reward.position.x = REWARD_TEXT_X
-			reward.size.x = REWARD_TEXT_W
-			icon.visible = true
-			if done:
-				reward.text = "CLAIM +%d XP" % int(q.get("xp", 0))
-				reward.label_settings.font_color = UI.GREEN
-			else:
-				reward.text = "+%d XP" % int(q.get("xp", 0))
-				reward.label_settings.font_color = Color("#F3EDE0")
+		var done := bool(q.get("done", false)) and not claimed
+		p["title"].text = _quest_title(q)
+		Layout.set_fill(p["bar_fill"], 1.0 if claimed else float(progress) / maxf(1.0, float(target)))
+
+		# The bar says where the task stands; the row under it says what it pays,
+		# in all three states, so a claimed card still shows what it gave.
+		var bar: Label = p["progress"]
+		if not bar.has_meta("font"):
+			bar.set_meta("font", bar.label_settings.font)
+		var full := claimed or done
+		bar.text = "CLAIMED" if claimed else ("TAP TO CLAIM" if done else "%d / %d" % [progress, target])
+		bar.label_settings.font_color = ON_FULL_BAR if full else IN_PROGRESS
+		bar.label_settings.font = UI.font("body", 800) if full else bar.get_meta("font")
+		bar.label_settings.shadow_color = Color(1, 0.9, 0.6, 0.35) if full else Color(0, 0, 0, 0.45)
+		_paint_rewards(p["reward_row"], int(q.get("xp", 0)), int(q.get("gold", 0)),
+			UI.GREEN if done else (UI.DIM if claimed else Color("#F3EDE0")))
+
+		# A claimed card steps back; a waiting one breathes, so the eye finds it.
+		card["node"].modulate = Color(0.62, 0.62, 0.66) if claimed else Color.WHITE
+		_pulse(i, done)
+
+
+## Lays out the experience and the gold a task pays, centred as a pair.
+static func _paint_rewards(row: Control, xp: int, gold: int, col: Color) -> void:
+	var parts: Dictionary = row.get_meta("parts", {})
+	var xp_icon: Control = parts["xp_icon"]
+	var gold_icon: Control = parts["gold_icon"]
+	var xp_label: Label = parts["xp"]
+	var gold_label: Label = parts["gold"]
+	var xp_text := "+%s" % UI.short_number(xp)
+	var gold_text := "+%s" % UI.short_number(gold)
+	var room := row.size.x - 8.0
+	var font := xp_label.label_settings.font
+	var size := REWARD_SIZE.x
+	var widths := Vector2.ZERO
+	while true:
+		widths = Vector2(font.get_string_size(xp_text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x,
+			font.get_string_size(gold_text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x)
+		var total := xp_icon.size.x + ICON_GAP + widths.x + REWARD_GAP \
+			+ gold_icon.size.x + ICON_GAP + widths.y
+		if total <= room or size <= REWARD_SIZE.y:
+			break
+		size -= 1
+	var total_w := xp_icon.size.x + ICON_GAP + widths.x + REWARD_GAP \
+		+ gold_icon.size.x + ICON_GAP + widths.y
+	var x := (row.size.x - total_w) / 2.0
+	for pair in [[xp_icon, xp_label, xp_text, widths.x], [gold_icon, gold_label, gold_text, widths.y]]:
+		var icon: Control = pair[0]
+		var label: Label = pair[1]
+		icon.position = Vector2(x, (row.size.y - icon.size.y) / 2.0)
+		x += icon.size.x + ICON_GAP
+		label.text = pair[2]
+		label.label_settings.font_size = size
+		label.label_settings.font_color = col
+		label.position = Vector2(x, label.position.y)
+		label.size.x = float(pair[3]) + 2.0
+		x += float(pair[3]) + REWARD_GAP
+
+
+## Starts or stops the breathing of a card whose reward is waiting.
+func _pulse(i: int, on: bool) -> void:
+	var frame: CanvasItem = _quest_cards[i]["parts"]["frame"]
+	var running: Tween = _pulses.get(i, null)
+	if on == (running != null and running.is_valid()):
+		return
+	if running != null:
+		running.kill()
+		_pulses.erase(i)
+	frame.modulate = Color.WHITE
+	if not on:
+		return
+	var t := create_tween().set_loops()
+	t.tween_property(frame, "modulate", Color(1.35, 1.28, 1.05), 0.7) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(frame, "modulate", Color.WHITE, 0.7) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_pulses[i] = t
 
 
 func _quest_title(q: Dictionary) -> String:
@@ -300,6 +362,8 @@ func _quest_title(q: Dictionary) -> String:
 		return "Spend\n%d energy" % n
 	if id.begins_with("win_"):
 		return "Defeat\n%d rival%s" % [n, "" if n == 1 else "s"]
+	if id.begins_with("buy_"):
+		return "Buy\n%d item%s" % [n, "" if n == 1 else "s"]
 	return str(q.get("name", ""))
 
 
@@ -313,8 +377,30 @@ func _claim_quest(i: int) -> void:
 	var res: Api.Response = await GameState.act("/v1/quests/claim", {"slot": int(q.get("slot", i))})
 	_busy = false
 	if res.ok:
-		GameState.action_failed.emit("Quest reward claimed")
-		await _load_quests()
+		var xp := int(q.get("xp", 0))
+		var gold := int(q.get("gold", 0))
+		_float_reward(i, "+%s XP   +%s gold" % [UI.grouped(xp), UI.grouped(gold)])
+		GameState.action_failed.emit("Task done: +%s XP and +%s gold" % [UI.grouped(xp), UI.grouped(gold)])
+		# The server's answer is the day's board, already claimed.
+		var got: Array = res.data.get("quests", [])
+		if not got.is_empty():
+			_quests = got
+			_paint_quests()
+		else:
+			await _load_quests()
+
+
+## The reward rises off the card and fades, so the tap is answered where the
+## thumb is rather than only in a toast at the foot of the screen.
+func _float_reward(i: int, text: String) -> void:
+	var card: Control = _quest_cards[i]["node"]
+	var l := UI.label(text, 26, READY, "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(l, Rect2(card.position.x - 30.0, card.position.y + 100.0, card.size.x + 60.0, 40))
+	add_child(l)
+	var t := create_tween().set_parallel()
+	t.tween_property(l, "position:y", l.position.y - 90.0, 1.2).set_ease(Tween.EASE_OUT)
+	t.tween_property(l, "modulate:a", 0.0, 1.2).set_ease(Tween.EASE_IN)
+	t.chain().tween_callback(l.queue_free)
 
 
 func _seconds_to_local_midnight() -> int:

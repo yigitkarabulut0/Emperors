@@ -87,13 +87,11 @@
       333
      ],
      "assets": {
-      "icon": "icons/quest_scroll",
-      "reward_icon": "icons/reward_crown"
+      "icon": "icons/quest_scroll"
      },
      "texts": {
       "title": "Collect\n20 times",
-      "progress": "0 / 20",
-      "reward": "+100 XP"
+      "progress": "0 / 20"
      }
     },
     {
@@ -102,21 +100,13 @@
       333
      ],
      "assets": {
-      "icon": "icons/quest_bolt",
-      "reward_icon": "icons/reward_diamond"
+      "icon": "icons/quest_bolt"
      },
      "texts": {
       "title": "Spend\n30 energy",
-      "progress": "0 / 30",
-      "reward": "+50"
+      "progress": "0 / 30"
      },
      "rects": {
-      "reward_icon": [
-       55,
-       119,
-       56,
-       34
-      ],
       "icon": [
        22,
        11,
@@ -131,13 +121,11 @@
       333
      ],
      "assets": {
-      "icon": "icons/quest_swords",
-      "reward_icon": "icons/reward_crown"
+      "icon": "icons/quest_swords"
      },
      "texts": {
       "title": "Defeat\n1 rival",
-      "progress": "0 / 1",
-      "reward": "+150 XP"
+      "progress": "0 / 1"
      },
      "rects": {
       "icon": [
@@ -221,32 +209,73 @@
      "sample": "0 / 20"
     },
     {
-     "id": "reward_icon",
-     "kind": "image",
-     "asset": "icons/reward_crown",
+     "id": "reward_row",
+     "kind": "group",
      "rect": [
-      57,
-      117,
-      48,
-      36
-     ]
-    },
-    {
-     "id": "reward",
-     "kind": "text",
-     "rect": [
-      104,
-      116,
-      120,
-      38
+      12,
+      110,
+      217,
+      48
      ],
-     "font": "body",
-     "size": 30,
-     "weight": 500,
-     "color": "#F3EDE0",
-     "align": "left",
-     "valign": "center",
-     "sample": "+100 XP"
+     "note": "What the task pays, experience and gold, centred as a pair and shrunk together to fit the card. The painting shows one reward per card and a diamond on one of them; the server pays experience and gold on every task, and the gold was never shown.",
+     "parts": [
+      {
+       "id": "xp_icon",
+       "kind": "image",
+       "asset": "icons/reward_crown",
+       "rect": [
+        0,
+        8,
+        42,
+        32
+       ]
+      },
+      {
+       "id": "xp",
+       "kind": "text",
+       "rect": [
+        46,
+        0,
+        70,
+        48
+       ],
+       "font": "body",
+       "size": 28,
+       "weight": 600,
+       "color": "#F3EDE0",
+       "align": "left",
+       "valign": "center",
+       "sample": "+100 XP"
+      },
+      {
+       "id": "gold_icon",
+       "kind": "image",
+       "asset": "icons/coin_small",
+       "rect": [
+        120,
+        9,
+        30,
+        30
+       ]
+      },
+      {
+       "id": "gold",
+       "kind": "text",
+       "rect": [
+        154,
+        0,
+        60,
+        48
+       ],
+       "font": "body",
+       "size": 28,
+       "weight": 600,
+       "color": "#F3EDE0",
+       "align": "left",
+       "valign": "center",
+       "sample": "+300"
+      }
+     ]
     }
    ]
   },

@@ -45,6 +45,12 @@ func _ready() -> void:
 		add_child(l)
 		_chip_labels[t] = l
 	_ui["sliders"].pressed.connect(_open_collection)
+	# The painted button is a set of sliders, which reads as a filter; it opens
+	# the Collection's wall, and says so under the mark.
+	var wall := UI.label("WALL", 18, UI.GOLD_DIM, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
+	var sl: Control = _ui["sliders"]
+	UI.place(wall, Rect2(sl.position.x, sl.position.y + sl.size.y - 58, sl.size.x, 28))
+	add_child(wall)
 	var sc: ScrollContainer = _ui["list"]
 	sc.scroll_deadzone = 14
 	_ui["list"].set_meta("origin", Layout.rect_of(Layout.element(SCREEN, "list")).position)
@@ -280,51 +286,10 @@ func _post(path: String, body: Dictionary) -> Api.Response:
 	return res
 
 
-## The Collection takes one of each design, for good, and pays in luck.
-##
-## Offers only what the server would take: an item nobody is wearing, of a
-## design not already on the wall. It used to offer the first eight items of
-## any kind -- worn ones the server refuses, duplicates it refuses -- and no
-## more than eight, in no order.
+## The Collection: the wall of every design, and what in the bags it would take.
 func _open_collection() -> void:
 	if _busy:
 		return
-	var res: Api.Response = await Api.get_json("/v1/collection")
-	if not res.ok:
-		return
-	var held_ids := {}
-	for set in res.data.get("sets", []):
-		for e in set.get("entries", []):
-			if bool(e.get("held", false)):
-				held_ids[str(e.get("def_id", ""))] = true
-	var items: Array = []
-	var seen := {}
-	for it in _inventory.get("items", []):
-		var def := str(it.get("def_id", ""))
-		if str(it.get("equipped_on", "")) != "" or held_ids.has(def) or seen.has(def):
-			continue
-		seen[def] = true
-		items.append(it)
-	items.sort_custom(func(a, b):
-		var ra := TIERS.find(str(a.get("tier", "common")))
-		var rb := TIERS.find(str(b.get("tier", "common")))
-		return ra > rb if ra != rb else str(a.get("name", "")) < str(b.get("name", "")))
-	var held := int(res.data.get("held", 0))
-	var total := int(res.data.get("total", 0))
-	var luck := int(res.data.get("luck_bp", 0))
-	var intro := "%d of %d designs on the wall, +%s luck on every roll.\nA donated item is gone for good; its design stays." % [
-		held, total, ("%d%%" % (luck / 100)) if luck % 100 == 0 else ("%.1f%%" % (luck / 100.0))]
-	if items.is_empty():
-		await Dialog.ask(self, {"title": "The Collection", "body": intro + "\n\nNothing in your bags is new to the wall.", "confirm_text": "OK"})
-		return
-	var options: Array = []
-	for it in items:
-		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")),
-			"sub": "%s %s · new to the wall" % [str(it.get("tier", "")).to_upper(), str(it.get("slot", "")).to_upper()]})
-	var pick := await Dialog.choose(self, {"title": "The Collection  %d / %d" % [held, total],
-		"body": intro, "options": options})
-	if pick == "":
-		return
-	var res2 := await _post("/v1/collection/donate", {"item_id": pick})
-	if res2.ok:
-		GameState.toast("Added to the Collection")
+	var page: GDScript = load("res://scenes/pages/collection_page.gd")
+	var sheet: Control = page.open(self, _inventory)
+	sheet.closed.connect(func() -> void: _load())

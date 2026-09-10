@@ -60,7 +60,7 @@ static func prompt_amount(host: Node, cfg: Dictionary) -> Dictionary:
 	return {"action": action, "value": d.value}
 
 
-## {title, body, placeholder, preset, max_length, confirm_text} -> {"action": "confirm"|"", "text": String}
+## {title, body, placeholder, preset, max_length, secret, confirm_text} -> {"action": "confirm"|"", "text": String}
 ## The text is trimmed, never validated: the server holds the rules for what a
 ## name may be and answers with the one that was broken.
 static func prompt_text(host: Node, cfg: Dictionary) -> Dictionary:
@@ -92,7 +92,9 @@ class _Modal:
 
 	func _init(host: Node, cfg: Dictionary, mode: String) -> void:
 		_layer = CanvasLayer.new()
-		_layer.layer = 50
+		# Over everything but the toast: a dialog is asked from a screen, from a
+		# page over it (60), or from the battle (90), and must be on top of all.
+		_layer.layer = 100
 		Nav.overlay_parent().add_child(_layer)
 
 		var back := ColorRect.new()
@@ -191,6 +193,7 @@ class _Modal:
 			false, HORIZONTAL_ALIGNMENT_CENTER)
 		if cfg.has("max_length"):
 			_input.max_length = int(cfg["max_length"])
+		_input.secret = bool(cfg.get("secret", false))
 		if mode == "amount":
 			# The number pad, not the whole keyboard, for an amount of gold.
 			_input.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER

@@ -224,6 +224,39 @@ static func fade_top(node: Control, height: float) -> TextureRect:
 	return r
 
 
+## The canvas the game is laid out on, in units: the topmost Control above
+## `host` (the shell, filling the screen), or the running scene, or the
+## capture viewport. Not the viewport's rect -- on a stretched desktop window
+## that is the window's pixels.
+static func canvas_size(host: Node) -> Vector2:
+	var top: Control = host as Control
+	while top != null and top.get_parent() is Control:
+		top = top.get_parent()
+	if top != null and top.size.x > 0:
+		return top.size
+	var tree := host.get_tree() if host != null and host.is_inside_tree() else null
+	if tree != null:
+		var cs := tree.current_scene as Control
+		if cs != null and cs.size.x > 0:
+			return cs.size
+	if Nav.host != null:
+		return Vector2(Nav.host.size)
+	return Vector2(941, 1672)
+
+
+## How far down the canvas the notch or the Dynamic Island reaches, in canvas
+## units; 0 off a phone. The shell moves the game down by this, and an overlay
+## laid out from the top of the canvas has to as well.
+static func safe_top(canvas: Vector2) -> float:
+	if not OS.has_feature("mobile"):
+		return 0.0
+	var sa := DisplayServer.get_display_safe_area()
+	var win := DisplayServer.window_get_size()
+	if win.x <= 0 or sa.position.y <= 0:
+		return 0.0
+	return float(sa.position.y) * canvas.x / float(win.x)
+
+
 ## Shrinks a label's font until its text fits its width (never below min_size).
 static func fit_label(l: Label, max_size: int, min_size: int = 14) -> void:
 	var s := l.label_settings

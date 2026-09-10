@@ -556,9 +556,8 @@ func _auto_equip() -> void:
 
 
 ## This soldier's gear for one slot: everything that fits and is not already on
-## them, best first. A piece someone else wears -- the hero, another soldier --
-## is offered with their name on it and taking it asks first; it used to be
-## offered as if it were spare, the first eight in no order.
+## them, best first, on the gear page. A piece someone else wears -- the hero,
+## another soldier -- is shown with their name on it and taking it asks first.
 func _choose_gear(slot: String) -> void:
 	var soldier: Variant = _slot(_selected).get("soldier", null)
 	if _busy or not (soldier is Dictionary):
@@ -579,18 +578,8 @@ func _choose_gear(slot: String) -> void:
 			continue
 		items.append(it)
 	items.sort_custom(func(a, b): return int(a.get("power", 0)) > int(b.get("power", 0)))
-	var options: Array = []
-	for it in items:
-		var worn := str(it.get("worn_by", ""))
-		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")),
-			"sub": "%s · Power %s%s" % [str(it.get("tier", "")).to_upper(), UI.grouped(int(it.get("power", 0))),
-				(" · worn by " + worn) if worn != "" else ""]})
-	if not wearing.is_empty():
-		options.append({"id": "__unequip", "label": "Take off %s" % str(wearing.get("name", ""))})
-	if options.is_empty():
-		GameState.action_failed.emit("Nothing in your bags fits this slot")
-		return
-	var pick := await Dialog.choose(self, {"title": "%s for this soldier" % slot.capitalize(), "options": options})
+	var picker: GDScript = load("res://scenes/pages/item_picker.gd")
+	var pick: String = await picker.pick(self, "%s FOR THIS SOLDIER" % slot.to_upper(), items, wearing)
 	if pick == "":
 		return
 	var path := "/v1/army/equip"

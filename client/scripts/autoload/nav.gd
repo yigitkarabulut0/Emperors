@@ -13,6 +13,12 @@ func overlay_parent() -> Node:
 
 
 func go(path: String) -> void:
+	# Pages, dialogs and the battle hang off the root on their own layers, not
+	# off the scene, so a scene change would leave them standing over the next
+	# screen -- a profile page over the sign-in form after signing out.
+	for c in overlay_parent().get_children():
+		if c is CanvasLayer:
+			c.queue_free()
 	if host == null:
 		get_tree().change_scene_to_file(path)
 		return

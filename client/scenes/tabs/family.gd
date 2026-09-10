@@ -350,21 +350,9 @@ func _on_card_button(i: int) -> void:
 				return
 			await _act("/v1/estates/holding", {"id": str(d.get("id", ""))})
 		"treasury":
-			var t: Dictionary = _estates.get("treasury", {})
-			var open := bool(t.get("unlocked", true))
-			var cfg := {"title": "Royal Treasury",
-				"body": "On hand: %s   Vault: %s\n%s" % [
-					UI.grouped(GameState.display_gold()), UI.grouped(int(str(t.get("vault", "0")))),
-					("Deposits cost %s. Vault gold cannot be stolen." % (_pct(int(t.get("deposit_fee_bp", 0))) + "%")) if open
-						else "Deposits open at level %d. What is in the vault is yours to take." % int(t.get("unlock_level", 1))],
-				"placeholder": "Amount of gold", "confirm_text": "Deposit" if open else "Withdraw"}
-			if open:
-				cfg["second_text"] = "Withdraw"
-			var r := await Dialog.prompt_amount(self, cfg)
-			if r["action"] == "" or int(r["value"]) <= 0:
-				return
-			var deposit: bool = open and r["action"] == "confirm"
-			await _act("/v1/treasury/" + ("deposit" if deposit else "withdraw"), {"amount": int(r["value"])})
+			var page: GDScript = load("res://scenes/pages/treasury_page.gd")
+			var sheet: Control = page.open(self, _estates.get("treasury", {}))
+			sheet.closed.connect(func() -> void: _load())
 		"legacy":
 			var resets: Array = d.get("resets", [])
 			var keeps: Array = d.get("keeps", [])
@@ -397,16 +385,14 @@ func _act(path: String, body: Dictionary, done: String = "") -> Api.Response:
 
 # --- stats, gear, name ---------------------------------------------------------------------
 
-func _spend_point(stat: String) -> void:
+## Tapping a stat, when there are points to place, opens the page that places
+## them -- all three stats side by side with what a point buys.
+func _spend_point(_stat: String) -> void:
 	if _busy or int(GameState.player().get("stat_points_unspent", 0)) <= 0:
 		return
-	var names := {"attack": "Attack", "defense": "Defence", "energy": "Max Energy"}
-	if not await Dialog.ask(self, {"title": "Spend a point on %s?" % names[stat],
-			"body": "Stat points cannot be moved once they are spent.", "confirm_text": "Spend"}):
-		return
-	var body := {"energy": 0, "attack": 0, "defense": 0}
-	body[stat] = 1
-	await _act("/v1/stats/spend", body)
+	var page: GDScript = load("res://scenes/pages/stats_page.gd")
+	var sheet: Control = page.open(self)
+	sheet.closed.connect(func() -> void: _load())
 
 
 func _equip_best() -> void:
@@ -430,23 +416,14 @@ func _choose_gear(slot: String) -> void:
 		if str(it.get("slot", "")) == slot and str(it.get("equipped_on", "")) != "hero":
 			items.append(it)
 	items.sort_custom(func(a, b): return int(a.get("power", 0)) > int(b.get("power", 0)))
-	var options: Array = []
-	for it in items:
-		var worn := str(it.get("worn_by", ""))
-		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")),
-			"sub": "%s · Power %s%s" % [str(it.get("tier", "")).to_upper(), UI.grouped(int(it.get("power", 0))),
-				(" · worn by " + worn) if worn != "" else ""]})
 	var worn_now: Variant = _inventory.get("equipped", {}).get(slot, null)
-	if worn_now is Dictionary:
-		options.append({"id": "__unequip", "label": "Take off %s" % str(worn_now.get("name", ""))})
-	if options.is_empty():
-		GameState.action_failed.emit("Nothing in your bags fits this slot")
-		return
-	var pick := await Dialog.choose(self, {"title": slot.capitalize(), "options": options})
+	var worn: Dictionary = worn_now if worn_now is Dictionary else {}
+	var picker: GDScript = load("res://scenes/pages/item_picker.gd")
+	var pick: String = await picker.pick(self, "YOUR %s" % slot.to_upper(), items, worn)
 	if pick == "":
 		return
 	if pick == "__unequip":
-		await _act("/v1/inventory/unequip", {"item_id": str(worn_now.get("id", ""))})
+		await _act("/v1/inventory/unequip", {"item_id": str(worn.get("id", ""))})
 		return
 	for it in items:
 		if str(it.get("id", "")) == pick and str(it.get("worn_by", "")) != "":

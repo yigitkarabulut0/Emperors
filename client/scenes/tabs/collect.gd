@@ -99,7 +99,7 @@ func _ensure_rows() -> void:
 	var pitch := float(tpl.get("pitch", 168))
 	for i in jobs.size():
 		var job: Dictionary = jobs[i]
-		var built := Layout.instantiate(tpl, {"assets": {"tile": _painting_for(job, i)}})
+		var built := Layout.instantiate(tpl, {"assets": {"tile": painting_for(job, i)}})
 		built["node"].position = origin + Vector2(0, i * pitch)
 		content.add_child(built["node"])
 		built["job_id"] = str(job.get("id", ""))
@@ -147,7 +147,9 @@ func _set_empty(row: Dictionary, empty: bool) -> void:
 	btn.texture_normal = Art.tex("collect/collect_button_empty" if empty else "collect/collect_button")
 
 
-func _painting_for(job: Dictionary, index: int) -> String:
+## The painting for a job, by the words in its id or name, else by its place.
+## Static: the mastery ceremony draws the same painting.
+static func painting_for(job: Dictionary, index: int) -> String:
 	var key := (str(job.get("id", "")) + " " + str(job.get("name", ""))).to_lower()
 	for word in PAINTING_BY_WORD:
 		if key.contains(word):

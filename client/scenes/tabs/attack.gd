@@ -66,6 +66,9 @@ func _ready() -> void:
 	# _fit_page, which is the screen's foot or further down when the flow is
 	# longer than the screen.
 	_unanchor(_ui["notice_bar"])
+	var rules := UI.hotspot(Rect2(0, -16, 744, 96), true)
+	rules.pressed.connect(_open_rules)
+	_ui["notice_bar"].add_child(rules)
 	_unanchor(_ui["ground_bottom"])
 	_content.move_child(_ui["ground_bottom"], 0)
 	UI.fade_top(_ui["ground_bottom"], 70.0)
@@ -401,11 +404,8 @@ func _dress_history_row(r: Dictionary, i: int) -> void:
 
 
 func _history_words(e: Dictionary) -> Array:
-	var won := bool(e.get("won", false))
-	var name := str(e.get("opponent_name", ""))
-	if bool(e.get("raided", false)):
-		return ["Held off" if won else "Raided by", name, UI.GREEN if won else UI.RED]
-	return ["Victory" if won else "Defeat", "vs. " + name, UI.GREEN if won else UI.RED]
+	var page: GDScript = load("res://scenes/pages/history_page.gd")
+	return page.words(e)
 
 
 func _paint_history() -> void:
@@ -495,10 +495,14 @@ func _attack(t: Dictionary, revenge: bool) -> void:
 
 
 func _replay(i: int) -> void:
-	if _busy or i >= _history.size():
+	if i < _history.size():
+		await _replay_entry(_history[i])
+
+
+func _replay_entry(e: Dictionary) -> void:
+	if _busy:
 		return
 	_busy = true
-	var e: Dictionary = _history[i]
 	var res: Api.Response = await Api.get_json("/v1/battles/%s" % str(e.get("battle_id", "")))
 	if res.ok:
 		await _show_replay(res.data, {"name": str(e.get("opponent_name", "")),
@@ -515,12 +519,11 @@ func _show_replay(result: Dictionary, opponent: Dictionary) -> void:
 
 
 func _view_all_history() -> void:
-	var lines: Array = []
-	for e in _history.slice(0, 20):
-		var words := _history_words(e)
-		var gold := int(str(e.get("gold", "0")))
-		lines.append("%s %s   %s   %s" % [words[0], words[1],
-			(("+" if gold > 0 else "") + UI.grouped(gold)) if gold != 0 else "-",
-			UI.ago(_seconds_since(str(e.get("at", ""))))])
-	await Dialog.ask(self, {"title": "Battle history",
-		"body": "\n".join(lines) if not lines.is_empty() else "No battles yet.", "confirm_text": "Close"})
+	var page: GDScript = load("res://scenes/pages/history_page.gd")
+	page.open(self, _history, _replay_entry)
+
+
+## The (i) on the notice: the rules of raiding, with the server's numbers.
+func _open_rules() -> void:
+	var page: GDScript = load("res://scenes/pages/rules_page.gd")
+	page.open(self, _data.get("rules", {}))

@@ -17,6 +17,8 @@ signal mastery_reached(job_id: String, collects: int, bonus_bp: int)
 
 var snapshot: Dictionary = {}
 var loading := false
+## The sections the last level-up opened, for the ceremony to name.
+var last_unlocked: Array = []
 
 var _pending: Array[Dictionary] = []
 const BATCH_MAX := 32
@@ -46,10 +48,18 @@ func adopt(snap: Dictionary) -> void:
 		levels = int(after.get("level", 1)) - int(before.get("level", 1))
 		points = int(after.get("stat_points_unspent", 0)) - int(before.get("stat_points_unspent", 0))
 		gems = int(after.get("diamonds", 0)) - int(before.get("diamonds", 0))
+	var was_open := {}
+	for sec in snapshot.get("sections", []):
+		if bool(sec.get("unlocked", false)):
+			was_open[str(sec.get("id", ""))] = true
 	snapshot = snap
 	_energy_at_ms = Time.get_ticks_msec()
 	_gold_at_ms = _energy_at_ms
 	if levelled:
+		last_unlocked = []
+		for sec in snap.get("sections", []):
+			if bool(sec.get("unlocked", false)) and not was_open.has(str(sec.get("id", ""))):
+				last_unlocked.append(str(sec.get("id", "")))
 		level_up.emit(int(after.get("level", 1)), levels, points, gems)
 
 
@@ -176,6 +186,14 @@ func display_seconds_to_full() -> int:
 		return 0
 	var gone := (Time.get_ticks_msec() - _energy_at_ms) / 1000
 	return maxi(0, secs - gone)
+
+
+## Seconds of protection left, counted down from the snapshot.
+func display_shield_seconds() -> int:
+	var secs := int(player().get("shield_seconds", 0))
+	if secs <= 0:
+		return 0
+	return maxi(0, secs - (Time.get_ticks_msec() - _energy_at_ms) / 1000)
 
 
 func max_energy() -> int:

@@ -584,6 +584,19 @@
      46
     ]
    ]
+  },
+  {
+   "name": "icons/diamond",
+   "src": "collect.png",
+   "rect": [
+    448,
+    30,
+    48,
+    40
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "note": "The diamond pill's gem on its own, for the daily calendar and anything else that counts diamonds."
   }
  ]
 }

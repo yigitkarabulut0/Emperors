@@ -36,6 +36,9 @@ var _entries: Dictionary = {}       ## id -> TextureRect (unlit icon+label)
 var _locks: Dictionary = {}         ## id -> Label
 var _badges: Dictionary = {}        ## id -> the count bubble over a rail entry
 var _daily_dot: TextureRect         ## the day's reward is waiting, on the diamond pill
+var _energy_timer: Label            ## "+1 in 2:31" under the energy pill
+var _shield_timer: Control          ## "Shielded 7h 59m" under the gold pill
+var _offline: Control               ## the banner while the realm does not answer
 var _tabs: Dictionary = {}          ## id -> Control (instantiated lazily)
 var _current := ""
 var _gold: Label
@@ -72,8 +75,13 @@ func _ready() -> void:
 	GameState.level_up.connect(_on_level_up)
 	GameState.mastery_reached.connect(_on_mastery)
 	Session.signed_out.connect(_on_signed_out)
-	Api.offline.connect(func() -> void: toast("Connection lost"))
-	Api.online.connect(func() -> void: toast("Connected"))
+	# Offline is a state, not news: a banner that stays until the realm answers,
+	# with a way to ask again, rather than a toast that says it once and goes.
+	Api.offline.connect(func() -> void: _offline.visible = true)
+	Api.online.connect(func() -> void:
+		if _offline.visible:
+			_offline.visible = false
+			toast("Connected"))
 
 	var tick := Timer.new()
 	tick.wait_time = 0.25
@@ -91,6 +99,7 @@ func _ready() -> void:
 	_preload_tabs.call_deferred()
 	_daily_on_boot.call_deferred()
 	_beat.call_deferred()
+	_arrive.call_deferred()
 
 
 # --- diamonds, energy, the daily reward ------------------------------------------------
@@ -99,8 +108,8 @@ var _busy_popup := false
 var _daily_shown := false
 
 
-## Diamonds are earned, never bought: level-ups and the daily calendar. The "+"
-## on the pill opens the calendar with a claim when one is due.
+## Diamonds are earned, never bought: level-ups and the daily calendar. The
+## diamond pill opens the calendar.
 func _diamonds_popup() -> void:
 	if _busy_popup:
 		return
@@ -110,24 +119,8 @@ func _diamonds_popup() -> void:
 	if not res.ok:
 		toast(res.error)
 		return
-	var d := res.data
-	var rewards: Array = d.get("rewards", [])
-	var day := int(d.get("day", 1))
-	var lines: Array = []
-	for i in rewards.size():
-		var mark := "●" if i + 1 < day or (i + 1 == day and not bool(d.get("claimable", false))) else ("▶" if i + 1 == day else "○")
-		lines.append("%s Day %d   %d diamonds" % [mark, i + 1, int(rewards[i])])
-	var body := "Diamonds come from levelling up and from the daily reward.\nStreak: %d days.\n\n%s" % [int(d.get("streak", 0)), "\n".join(lines)]
-	if bool(d.get("claimable", false)):
-		if await Dialog.ask(self, {"title": "Daily reward", "body": body, "confirm_text": "Claim %d diamonds" % int(d.get("reward", 0)), "cancel_text": "Later"}):
-			var c: Api.Response = await Api.post_json("/v1/daily/claim", {})
-			if c.ok:
-				toast("+%d diamonds" % int(d.get("reward", 0)))
-				await GameState.refresh()
-			elif c.code != "already_claimed":
-				toast(c.error)
-	else:
-		await Dialog.ask(self, {"title": "Diamonds", "body": body + "\n\nToday's reward is already claimed.", "confirm_text": "OK"})
+	var page: GDScript = load("res://scenes/pages/daily_page.gd")
+	page.open(self, res.data, _beat)
 
 
 ## The "+" on energy sells the refill from the Diamond Goods, through the same
@@ -219,6 +212,13 @@ func _build_rail() -> void:
 		_rail.add_child(UI.image("chrome/rail_divider", Rect2(20, mid - 4, 110, 8)))
 
 	_rail.add_child(UI.image("chrome/avatar", Rect2(14, 6, 132, 190)))
+	# The portrait opens the lord's own page: the face others see, the name,
+	# the rankings, signing out and deleting the account.
+	var me := UI.hotspot(Rect2(0, 0, 156, 204))
+	me.pressed.connect(func() -> void:
+		var page: GDScript = load("res://scenes/pages/profile_page.gd")
+		page.open(self))
+	_rail.add_child(me)
 	_level = UI.label("", 30, UI.INK, "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
 	# Centred on the plaque painted into chrome/avatar, measured off the source
 	# image rather than guessed at from the crop's own middle -- the plaque is
@@ -300,6 +300,38 @@ func _build_pills() -> void:
 	_daily_dot.visible = false
 	top.add_child(_daily_dot)
 
+	# What the pills cannot say in their own space: when the next energy comes,
+	# and how long the city is shielded. On the band under the pills, which
+	# every header leaves clear above its title.
+	_energy_timer = UI.label("", 19, UI.INK, "body", 700, HORIZONTAL_ALIGNMENT_RIGHT)
+	UI.place(_energy_timer, Rect2(666, 80, 222, 26))
+	top.add_child(_energy_timer)
+	_shield_timer = Control.new()
+	_shield_timer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UI.place(_shield_timer, Rect2(184, 80, 260, 26))
+	_shield_timer.add_child(UI.image("icons/shield_small", Rect2(0, 1, 20, 24)))
+	var sl := UI.label("", 19, UI.INK, "body", 700)
+	UI.place(sl, Rect2(26, 0, 230, 26))
+	_shield_timer.add_child(sl)
+	_shield_timer.set_meta("label", sl)
+	_shield_timer.visible = false
+	top.add_child(_shield_timer)
+
+	var banner := NinePatchRect.new()
+	banner.texture = Art.tex(Dialog.DANGER_PLATE)
+	for m in ["left", "top", "right", "bottom"]:
+		banner.set("patch_margin_" + m, 16)
+	UI.place(banner, Rect2(250, 84, 560, 56))
+	banner.visible = false
+	var bl := UI.label("NO CONNECTION  ·  TAP TO RETRY", 21, Color("#F3FBF3"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(bl, Rect2(0, 0, 560, 56))
+	banner.add_child(bl)
+	var retry := UI.hotspot(Rect2(-20, -20, 600, 96))
+	retry.pressed.connect(func() -> void: GameState.refresh())
+	banner.add_child(retry)
+	top.add_child(banner)
+	_offline = banner
+
 
 func _tick() -> void:
 	GameState.tick_projection()
@@ -312,15 +344,58 @@ func _paint_pills() -> void:
 	_gold.text = UI.short_number(GameState.display_gold())
 	_diamonds.text = UI.grouped(int(GameState.player().get("diamonds", 0)))
 	_energy.text = "%d/%d" % [GameState.display_energy(), GameState.max_energy()]
+	var next := GameState.display_seconds_to_next()
+	_energy_timer.visible = next > 0 and not _offline.visible
+	_energy_timer.text = "+1 in %d:%02d" % [next / 60, next % 60]
+	var shield := GameState.display_shield_seconds()
+	_shield_timer.visible = shield > 0 and not _offline.visible
+	if shield > 0:
+		(_shield_timer.get_meta("label") as Label).text = "Shielded  " + UI.short_duration(shield)
 
 
 # --- tabs -------------------------------------------------------------------------
 
-## The heartbeat, which answers with the rail's badges.
+## The heartbeat, which answers with the rail's badges. It also marks the
+## game as seen, which is where "while you were away" is counted from.
 func _beat() -> void:
 	var res: Api.Response = await Api.post_json("/v1/presence", {})
 	if res.ok and res.data.get("badges", null) is Dictionary:
 		_paint_badges(res.data["badges"])
+	if res.ok:
+		Prefs.set_value("last_seen", int(Time.get_unix_time_from_system()))
+
+
+## Arriving: what happened while the game was closed, and for a new lord the
+## tour of the realm.
+func _arrive() -> void:
+	if Env.args.has("capture"):
+		return
+	var since := int(Prefs.get_value("last_seen", 0))
+	Prefs.set_value("last_seen", int(Time.get_unix_time_from_system()))
+	if not bool(Prefs.get_value("tour_seen", false)) and int(GameState.player().get("level", 1)) <= 3:
+		Prefs.set_value("tour_seen", true)
+		var tour: GDScript = load("res://scenes/pages/onboarding.gd")
+		tour.open(self)
+		return
+	var away: GDScript = load("res://scenes/pages/away_page.gd")
+	away.check(self, since, func() -> void: open("attack"))
+
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT:
+			if GameState.has_state():
+				Prefs.set_value("last_seen", int(Time.get_unix_time_from_system()))
+		NOTIFICATION_APPLICATION_RESUMED:
+			# Back from the background: the purse and the pool moved while the
+			# phone slept, and raids may have landed.
+			if GameState.has_state() and is_inside_tree():
+				var since := int(Prefs.get_value("last_seen", 0))
+				await GameState.refresh()
+				_beat()
+				if since > 0 and int(Time.get_unix_time_from_system()) - since > 60:
+					var away: GDScript = load("res://scenes/pages/away_page.gd")
+					away.check(self, since, func() -> void: open("attack"))
 
 
 func _paint_badges(b: Dictionary) -> void:
@@ -428,7 +503,16 @@ func _build_toast() -> void:
 	plate.anchor_bottom = 1.0
 	plate.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	plate.visible = false
-	add_child(plate)
+	# On a layer of its own above every page and dialog: what a page's action
+	# did is said here, and a toast under the page it came from is not said.
+	var layer := CanvasLayer.new()
+	layer.layer = 110
+	add_child(layer)
+	var frame := Control.new()
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(frame)
+	frame.add_child(plate)
 	_toast = UI.label("", 28, UI.INK, "body", 600, HORIZONTAL_ALIGNMENT_CENTER)
 	_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	plate.add_child(_toast)
@@ -464,22 +548,28 @@ func toast(message: String) -> void:
 	_toast_tween.tween_callback(func() -> void: plate.visible = false)
 
 
-func _on_level_up(level: int, _levels: int, _points: int, _gems: int) -> void:
-	toast("Level %d!" % level)
+## A level is a moment, not a toast: the ceremony says what it brought --
+## points, diamonds, a refilled pool, any tab it opened.
+func _on_level_up(level: int, levels: int, points: int, gems: int) -> void:
+	var ceremony: GDScript = load("res://scenes/pages/ceremony.gd")
+	ceremony.level_up({"level": level, "levels": levels, "points": points, "gems": gems,
+		"unlocked": GameState.last_unlocked.duplicate()})
 
 
 ## A mastery milestone is a permanent raise on one job. The server has reported
 ## it with every batch for months; nothing listened, so it arrived in silence.
 func _on_mastery(job_id: String, collects: int, bonus_bp: int) -> void:
-	var name := job_id.replace("_", " ").capitalize()
-	for j in GameState.jobs():
-		if str(j.get("id", "")) == job_id:
-			name = str(j.get("name", name))
-	toast("%s mastered: %s collects, +%s%% gold for good" % [name, UI.grouped(collects), _pct(bonus_bp)])
-
-
-static func _pct(bp: int) -> String:
-	return str(bp / 100) if bp % 100 == 0 else "%.1f" % (bp / 100.0)
+	var job: Dictionary = {"id": job_id, "name": job_id.replace("_", " ").capitalize()}
+	var index := 0
+	var jobs := GameState.jobs()
+	for i in jobs.size():
+		if str(jobs[i].get("id", "")) == job_id:
+			job = jobs[i]
+			index = i
+	var collect: GDScript = load("res://scenes/tabs/collect.gd")
+	var ceremony: GDScript = load("res://scenes/pages/ceremony.gd")
+	ceremony.mastery({"job": job, "collects": collects, "bonus_bp": bonus_bp,
+		"art": collect.painting_for(job, index)})
 
 
 ## The server ended the session (a refresh it refused). The shell is left with

@@ -18,6 +18,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/combat"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
 )
 
 var (
@@ -26,6 +27,8 @@ var (
 	ErrSelfAttack = errors.New("you cannot attack yourself")
 	ErrNoTargets  = errors.New("no targets available")
 	ErrNoRevenge  = errors.New("you have no score to settle with them")
+	// A lord below the Attack tab's level cannot raid and cannot be raided.
+	ErrTooNewToRaid = errors.New("that lord is too new to the realm to be raided")
 )
 
 // attackCooldown stops a strong player farming one weak target the moment each
@@ -41,7 +44,13 @@ type TargetView struct {
 	Might    int64  `json:"might"`
 	Gold     string `json:"gold_on_hand"`
 	Estimate int64  `json:"estimated_steal"`
-	IsBot    bool   `json:"is_bot"`
+	// The share of their purse a won raid takes, before the level cap. The card
+	// prints it ("Steal up to 3% gold"), and a revenge row's is higher.
+	StealRateBP int64 `json:"steal_rate_bp"`
+	// What this raid costs. Sent per row because a revenge row costs half, and
+	// the client must never work that out for itself.
+	EnergyCost int64 `json:"energy_cost"`
+	IsBot      bool  `json:"is_bot"`
 }
 
 // AttackView is the Attack tab.
@@ -76,6 +85,48 @@ const (
 // attackEnergyCost rises slowly with level: roughly a quarter of a top-tier job,
 // so attacking always competes with collecting rather than being free.
 func (d Deps) attackEnergyCost(level int64) int64 { return 6 + level/6 }
+
+// revengeEnergyCost is the half-price answer, never below one. The only place
+// it is worked out: the Attack tab prints it and the raid charges it, and the
+// client used to round it up while the server rounded it down.
+func (d Deps) revengeEnergyCost(level int64) int64 {
+	cost := d.attackEnergyCost(level) * revengeEnergyBP / 10000
+	if cost < 1 {
+		cost = 1
+	}
+	return cost
+}
+
+// raidTake is what a won raid carries off.
+//
+// The one place the take is decided, used by the preview on the Attack tab and
+// by the raid itself. They were two calls: the preview applied the War Chest
+// and the raid did not, so the War Chest raised the number the player read and
+// never the gold they got.
+func (d Deps) raidTake(attackerLevel, defenderGold int64, attacker estates.Effects, avenging bool) int64 {
+	stolen := d.estimateStealWithCap(attackerLevel, defenderGold, attacker.StealCapBP)
+	if avenging {
+		stolen = stolen * revengeStealBP / 10000
+		if stolen > defenderGold {
+			stolen = defenderGold
+		}
+	}
+	return stolen
+}
+
+// raidRansom is what a defender is paid for holding: forty per cent of the
+// ordinary take, raised by the DEFENDER's Ransom Coffers.
+//
+// Based on the take without the raider's War Chest, which is the raider's
+// upgrade and says nothing about what the defence was worth. The Coffers were
+// on sale for months and applied to nothing.
+func (d Deps) raidRansom(attackerLevel, defenderGold int64, defender estates.Effects) int64 {
+	ransom := d.estimateSteal(attackerLevel, defenderGold) * 40 / 100
+	if defender.RansomBP > 0 {
+		ransom = ransom * (10000 + defender.RansomBP) / 10000
+	}
+	return ransom
+}
 
 // GetTargets offers a shortlist to choose from.
 //
@@ -112,7 +163,7 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 		Targets:    []TargetView{},
 		Revenge:    []RevengeEntry{},
 	}
-	if rev, err := d.listRevenge(ctx, q, playerID); err == nil {
+	if rev, err := d.listRevenge(ctx, q, me, eff, now); err == nil {
 		view.Revenge = rev
 	}
 	if me.ShieldUntil != nil && me.ShieldUntil.After(now) {
@@ -123,12 +174,12 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 	// query, and at this population a band of +-4 levels already produces a
 	// spread of roughly 0.7x to 1.4x Might, which is the range where every fight
 	// is a live decision.
-	lo := int32(me.Level) - 4
-	if lo < 1 {
-		lo = 1
-	}
+	//
+	// Floored at the level that opens the Attack tab: below it a lord has no way
+	// to answer a raid, so they are not offered as a target at all.
+	lo, hi := raidBand(me.Level, int32(d.Config.SectionLevel(fightSection)))
 	rows, err := q.FindTargets(ctx, sqlcdb.FindTargetsParams{
-		ID: playerID, Level: lo, Level_2: int32(me.Level) + 4, Limit: 12,
+		ID: playerID, Level: lo, Level_2: hi, Limit: 12,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("find targets: %w", err)
@@ -170,8 +221,10 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 		tv := TargetView{
 			PlayerID: r.ID.String(), Name: r.DisplayName, Avatar: r.Avatar, Level: int64(r.Level),
 			Might: theirs.Totals.Might, Gold: itoa(r.Gold),
-			Estimate: d.estimateStealWithCap(int64(me.Level), r.Gold, eff.StealCapBP),
-			IsBot:    r.IsBot,
+			Estimate:    d.raidTake(int64(me.Level), r.Gold, eff, false),
+			StealRateBP: raidRateBP,
+			EnergyCost:  view.EnergyCost,
+			IsBot:       r.IsBot,
 		}
 		ratioBP := tv.Might * 10000 / myMight
 		cands = append(cands, candidate{
@@ -195,6 +248,29 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 	return view, nil
 }
 
+// raidBand is the level range a lord's targets are drawn from: four either side,
+// never below the level that opens the Attack tab. Empty (lo > hi) for a lord
+// who is under it themselves.
+func raidBand(level, fightAt int32) (lo, hi int32) {
+	if level < fightAt {
+		return fightAt, fightAt - 1
+	}
+	lo, hi = level-4, level+4
+	if lo < fightAt {
+		lo = fightAt
+	}
+	if lo < 1 {
+		lo = 1
+	}
+	return lo, hi
+}
+
+// raidRateBP is the share of a purse a won raid takes, before the cap.
+const raidRateBP = 300 // 3%
+
+// revengeRateBP is the same share on a revenge strike, rounded for the card.
+const revengeRateBP = (raidRateBP*revengeStealBP + 5000) / 10000
+
 // estimateSteal previews the take. Capped by the ATTACKER's level, which makes
 // it structurally impossible for a low-level alt to drain a rich player and
 // bounds the worst single loss to a fraction of a day's income.
@@ -216,9 +292,8 @@ func (d Deps) estimateSteal(attackerLevel, defenderGold int64) int64 {
 
 // estimateStealWithCap applies the War Chest bonus to the ceiling.
 func (d Deps) estimateStealWithCap(attackerLevel, defenderGold, capBonusBP int64) int64 {
-	const rateBP = 300 // 3%
 	const minSteal = minStealFloor
-	stolen := defenderGold * rateBP / 10000
+	stolen := defenderGold * raidRateBP / 10000
 	cap := 250 * (10000 + 3500*attackerLevel) / 10000
 	if capBonusBP > 0 {
 		cap = cap * (10000 + capBonusBP) / 10000
@@ -235,15 +310,29 @@ func (d Deps) estimateStealWithCap(attackerLevel, defenderGold, capBonusBP int64
 	return stolen
 }
 
+// fightSection is the navigation section that opens the Attack tab.
+const fightSection = "fight"
+
 // AttackResult is what the client animates and then celebrates.
+//
+// Told from the attacker's side, like a stored battle read back by the
+// attacker: perspective says whose story it is, and Gold is signed from this
+// player's purse. A ransom is the DEFENDER's -- it is reported so the loser can
+// read what their failed raid paid the other side, not so it can be counted as
+// theirs, which is what the result screen used to do.
 type AttackResult struct {
-	BattleID   string         `json:"battle_id"`
-	Won        bool           `json:"won"`
-	GoldStolen int64          `json:"gold_stolen"`
-	RansomPaid int64          `json:"ransom_paid"`
-	XPGained   int64          `json:"xp_gained"`
-	Replay     *combat.Replay `json:"replay"`
-	Snapshot   *Snapshot      `json:"snapshot"`
+	BattleID    string `json:"battle_id"`
+	Perspective string `json:"perspective"`
+	Won         bool   `json:"won"`
+	Revenge     bool   `json:"revenge"`
+	Gold        int64  `json:"gold"`
+	GoldStolen  int64  `json:"gold_stolen"`
+	RansomPaid  int64  `json:"ransom_paid"`
+	XPGained    int64  `json:"xp_gained"`
+	// The level-up grant, when the raid's experience crossed a level.
+	DiamondsGained int64          `json:"diamonds_gained,omitempty"`
+	Replay         *combat.Replay `json:"replay"`
+	Snapshot       *Snapshot      `json:"snapshot"`
 }
 
 // Attack resolves one raid.
@@ -294,6 +383,15 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		if me.KingdomID != nil && target.KingdomID != nil && *me.KingdomID == *target.KingdomID {
 			return ErrSameKingdom
 		}
+		// Both sides of a raid must have the Attack tab: the raider to start
+		// one, the target to be able to answer it.
+		fightAt := int32(d.Config.SectionLevel(fightSection))
+		if me.Level < fightAt {
+			return fmt.Errorf("%w: raiding opens at level %d", ErrLevelTooLow, fightAt)
+		}
+		if target.Level < fightAt {
+			return ErrTooNewToRaid
+		}
 		// A revenge strike is claimed FIRST, because claiming it is what lifts
 		// the two guards below. Zero rows back means there was no live token and
 		// this is an ordinary raid, which then has to obey them.
@@ -325,13 +423,15 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		if err != nil {
 			return err
 		}
+		// The defender's own estate decides what holding them off pays.
+		defEff, err := d.loadEffects(ctx, q, target)
+		if err != nil {
+			return err
+		}
 
 		cost := d.attackEnergyCost(int64(me.Level))
 		if avenging {
-			cost = cost * revengeEnergyBP / 10000
-			if cost < 1 {
-				cost = 1
-			}
+			cost = d.revengeEnergyCost(int64(me.Level))
 		}
 		settled, _, _ := settleEnergy(d.Config, me, eff, now)
 		spent, ok := economy.Spend(settled, cost)
@@ -356,18 +456,12 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		// stealable either — both give players a legitimate way to shelter.
 		var stolen, ransom int64
 		if won {
-			stolen = d.estimateSteal(int64(me.Level), target.Gold)
-			if avenging {
-				stolen = stolen * revengeStealBP / 10000
-				if stolen > target.Gold {
-					stolen = target.Gold
-				}
-			}
+			stolen = d.raidTake(int64(me.Level), target.Gold, eff, avenging)
 		} else {
 			// A ransom makes "you were attacked" sometimes good news, and it is the
 			// only thing that makes Defense points worth buying. Minted, not
 			// transferred, and small.
-			ransom = d.estimateSteal(int64(me.Level), target.Gold) * 40 / 100
+			ransom = d.raidRansom(int64(me.Level), target.Gold, defEff)
 		}
 
 		xp := (10 + 8*int64(target.Level)/10)
@@ -386,6 +480,10 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			StatPointsUnspent: int32(up.StatPoints),
 			EnergyMilli:       final.Milli, EnergyUpdatedAt: final.UpdatedAt,
 			ActionSeq: wantSeq,
+			// A level reached in a raid pays what a level reached anywhere pays.
+			// This was dropped, so a level-up won on the Attack tab granted its
+			// stat points and none of its diamonds.
+			Diamonds: up.Diamonds,
 		})
 		if err != nil {
 			return fmt.Errorf("apply attacker: %w", err)
@@ -491,8 +589,9 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		}
 
 		res = AttackResult{
-			BattleID: battleID.String(), Won: won,
-			GoldStolen: stolen, RansomPaid: ransom, XPGained: xp, Replay: replay,
+			BattleID: battleID.String(), Perspective: "attacker", Won: won, Revenge: avenging,
+			Gold: stolen, GoldStolen: stolen, RansomPaid: ransom, XPGained: xp,
+			DiamondsGained: up.Diamonds, Replay: replay,
 		}
 		return nil
 	})
@@ -680,12 +779,32 @@ func (d Deps) GetBattleLog(ctx context.Context, playerID uuid.UUID) (*BattleLog,
 	return out, nil
 }
 
+// BattleReplayView is one stored fight, told from the reader's side.
+//
+// The record knows an attacker and a defender; the screen needs to know which
+// of the two is looking. A defence used to be replayed with the reader's own
+// face on the raider, and the gold they lost read as "no spoils".
+type BattleReplayView struct {
+	BattleID string `json:"battle_id"`
+	// "attacker" when the reader started the fight, "defender" when they were
+	// raided. The replay's sides are the record's; this says which is "you".
+	Perspective string `json:"perspective"`
+	// From the reader's side.
+	Won bool `json:"won"`
+	// Signed, from the reader's purse: what arrived (a take, a ransom) or left.
+	Gold       int64          `json:"gold"`
+	GoldStolen int64          `json:"gold_stolen"`
+	RansomPaid int64          `json:"ransom_paid"`
+	XPGained   int64          `json:"xp_gained"`
+	Replay     *combat.Replay `json:"replay"`
+}
+
 // GetBattleReplay returns one stored fight so it can be watched again.
 //
 // Membership is checked here rather than in the query: a battle is readable by
 // the two people who fought it and nobody else, and that is an authorisation
 // rule, not a filter.
-func (d Deps) GetBattleReplay(ctx context.Context, playerID, battleID uuid.UUID) (*combat.Replay, error) {
+func (d Deps) GetBattleReplay(ctx context.Context, playerID, battleID uuid.UUID) (*BattleReplayView, error) {
 	q := sqlcdb.New(d.Pool)
 	b, err := q.GetBattle(ctx, battleID)
 	if err != nil {
@@ -704,32 +823,105 @@ func (d Deps) GetBattleReplay(ctx context.Context, playerID, battleID uuid.UUID)
 	if err := json.Unmarshal(b.Replay, &rep); err != nil {
 		return nil, fmt.Errorf("decode replay: %w", err)
 	}
-	return &rep, nil
+	return battleReplayView(b, playerID, &rep), nil
+}
+
+// battleReplayView tells a stored battle from one side. Pure, so the side-taking
+// is tested without a database.
+func battleReplayView(b sqlcdb.AppBattle, playerID uuid.UUID, rep *combat.Replay) *BattleReplayView {
+	v := &BattleReplayView{
+		BattleID:   b.ID.String(),
+		GoldStolen: b.GoldStolen, RansomPaid: b.RansomPaid,
+		Replay: rep,
+	}
+	if b.DefenderID == playerID && b.AttackerID != playerID {
+		v.Perspective = "defender"
+		v.Won = !b.AttackerWon
+		// Exactly one of the two is ever non-zero.
+		v.Gold = b.RansomPaid - b.GoldStolen
+		return v
+	}
+	v.Perspective = "attacker"
+	v.Won = b.AttackerWon
+	v.Gold = b.GoldStolen
+	v.XPGained = b.XpAwarded
+	return v
 }
 
 // RevengeEntry is one score left to settle.
+//
+// Shaped like a TargetView -- the same names for the same things -- because it
+// is drawn on the same card. It used to carry target_name, target_level and no
+// might or take at all, so the card read a blank name, level 1, 0 power and
+// "steal 0", and the ATTACK button sent an empty target id.
 type RevengeEntry struct {
-	BattleID     string `json:"battle_id"`
-	TargetID     string `json:"target_id"`
-	TargetName   string `json:"target_name"`
-	TargetAvatar string `json:"target_avatar"`
-	TargetLevel  int64  `json:"target_level"`
-	ExpiresAt    string `json:"expires_at"`
+	BattleID string `json:"battle_id"`
+	PlayerID string `json:"player_id"`
+	Name     string `json:"name"`
+	Avatar   string `json:"avatar"`
+	Level    int64  `json:"level"`
+	Might    int64  `json:"might"`
+	// With the revenge terms applied: a third more than an ordinary raid.
+	Estimate    int64  `json:"estimated_steal"`
+	StealRateBP int64  `json:"steal_rate_bp"`
+	EnergyCost  int64  `json:"energy_cost"`
+	ExpiresAt   string `json:"expires_at"`
+	// Seconds left, so the countdown needs no clock arithmetic on the phone.
+	ExpiresIn int64 `json:"expires_in"`
 }
 
-// listRevenge returns this player's live, unspent tokens.
-func (d Deps) listRevenge(ctx context.Context, q *sqlcdb.Queries, playerID uuid.UUID) ([]RevengeEntry, error) {
-	rows, err := q.ListRevenge(ctx, playerID)
+// revengeListMax bounds the Might lookups one Attack tab read will make.
+const revengeListMax = 6
+
+// listRevenge returns this player's live, unspent tokens, one per raider.
+//
+// One per raider because one strike settles them all: UseRevenge spends every
+// token held against that lord. Two rows for one raider would offer a second
+// strike that is already gone.
+func (d Deps) listRevenge(ctx context.Context, q *sqlcdb.Queries, me sqlcdb.AppPlayer,
+	eff estates.Effects, now time.Time) ([]RevengeEntry, error) {
+
+	rows, err := q.ListRevenge(ctx, me.ID)
 	if err != nil {
 		return nil, fmt.Errorf("revenge: %w", err)
 	}
 	out := make([]RevengeEntry, 0, len(rows))
+	at := map[uuid.UUID]int{}
 	for _, r := range rows {
+		// Somebody who has since joined your kingdom is an ally now, and the
+		// raid would be refused.
+		if me.KingdomID != nil && r.TargetKingdomID != nil && *me.KingdomID == *r.TargetKingdomID {
+			continue
+		}
+		left := int64(r.ExpiresAt.Sub(now) / time.Second)
+		if left <= 0 {
+			continue
+		}
+		if i, seen := at[r.TargetID]; seen {
+			// The strike settles every token, so the row shows the longest.
+			if left > out[i].ExpiresIn {
+				out[i].ExpiresIn = left
+				out[i].ExpiresAt = r.ExpiresAt.UTC().Format(time.RFC3339)
+			}
+			continue
+		}
+		if len(out) >= revengeListMax {
+			continue
+		}
+		var might int64
+		if theirs, err := d.GetArmy(ctx, r.TargetID); err == nil {
+			might = theirs.Totals.Might
+		}
+		at[r.TargetID] = len(out)
 		out = append(out, RevengeEntry{
-			BattleID: r.BattleID.String(), TargetID: r.TargetID.String(),
-			TargetName: r.TargetName, TargetAvatar: r.TargetAvatar,
-			TargetLevel: int64(r.TargetLevel),
+			BattleID: r.BattleID.String(), PlayerID: r.TargetID.String(),
+			Name: r.TargetName, Avatar: r.TargetAvatar, Level: int64(r.TargetLevel),
+			Might:       might,
+			Estimate:    d.raidTake(int64(me.Level), r.TargetGold, eff, true),
+			StealRateBP: revengeRateBP,
+			EnergyCost:  d.revengeEnergyCost(int64(me.Level)),
 			ExpiresAt:   r.ExpiresAt.UTC().Format(time.RFC3339),
+			ExpiresIn:   left,
 		})
 	}
 	return out, nil

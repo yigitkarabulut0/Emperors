@@ -55,6 +55,8 @@ type Querier interface {
 	AdminSetLevel(ctx context.Context, arg AdminSetLevelParams) (AppPlayer, error)
 	AdminSetLuck(ctx context.Context, arg AdminSetLuckParams) (AppPlayer, error)
 	AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerStateParams) (AppPlayer, error)
+	// Diamonds are the level-up grant, the same one a collect pays: a level reached
+	// in a raid is a level reached.
 	ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttackerParams) (AppPlayer, error)
 	ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefenderParams) (AppPlayer, error)
 	// Applies one collect: spends energy, credits gold and XP, and advances the

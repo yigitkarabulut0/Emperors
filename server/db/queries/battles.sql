@@ -14,12 +14,15 @@ LIMIT $4;
 -- name: LockTwoPlayers :many
 SELECT * FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE;
 
+-- Diamonds are the level-up grant, the same one a collect pays: a level reached
+-- in a raid is a level reached.
 -- name: ApplyBattleAttacker :one
 UPDATE app.players
 SET gold = gold + $2, xp = $3, level = $4,
     stat_points_unspent = stat_points_unspent + $5,
     energy_milli = $6, energy_updated_at = $7,
-    action_seq = $8
+    action_seq = $8,
+    diamonds = diamonds + sqlc.arg(diamonds)
 WHERE id = $1
 RETURNING *;
 
@@ -116,7 +119,9 @@ ON CONFLICT (battle_id) DO NOTHING;
 SELECT r.battle_id, r.target_id, r.expires_at,
        t.display_name AS target_name,
        t.avatar       AS target_avatar,
-       t.level        AS target_level
+       t.level        AS target_level,
+       t.gold         AS target_gold,
+       t.kingdom_id   AS target_kingdom_id
 FROM app.revenge_tokens r
 JOIN app.players t ON t.id = r.target_id
 WHERE r.player_id = sqlc.arg(player_id)

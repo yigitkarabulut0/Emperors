@@ -116,6 +116,8 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "on_cooldown", "you raided them too recently")
 	case errors.Is(err, service.ErrSelfAttack):
 		WriteProblem(w, r, http.StatusBadRequest, "self_attack", "you cannot attack yourself")
+	case errors.Is(err, service.ErrTooNewToRaid):
+		WriteProblem(w, r, http.StatusConflict, "too_new_to_raid", err.Error())
 	case errors.Is(err, service.ErrNoStatPoints):
 		WriteProblem(w, r, http.StatusConflict, "no_stat_points", "not enough stat points")
 	case errors.Is(err, service.ErrNothingToSpend):
@@ -1170,6 +1172,7 @@ func isKnownServiceError(err error) bool {
 		service.ErrShopStale, service.ErrItemEquipped, service.ErrNoSlot,
 		service.ErrSlotsMaxed, service.ErrLevelTooLow, service.ErrAlreadyMaxed,
 		service.ErrShielded, service.ErrOnCooldown, service.ErrSelfAttack,
+		service.ErrTooNewToRaid, service.ErrNoRevenge,
 		service.ErrNoStatPoints, service.ErrNothingToSpend,
 		service.ErrUpgradeMaxed, service.ErrNoTax,
 		service.ErrAlreadyInKingdom, service.ErrNotInKingdom, service.ErrKingdomFull,

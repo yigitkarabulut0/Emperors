@@ -115,6 +115,22 @@ type DailyLoginConfig struct {
 	ResetOnMiss bool    `json:"reset_on_miss"`
 }
 
+// SectionLevel is the level that opens a navigation section ("fight",
+// "estates"...), and 1 for a section the config does not gate.
+//
+// The client greys a tab out below it, but a gate only the client knows about
+// is not a rule: the raid band read nothing but levels, so a lord still two
+// levels short of their Attack tab could be raided by players they had no way
+// to answer.
+func (b *Bundle) SectionLevel(id string) int {
+	for _, s := range b.Progression.Sections {
+		if s.ID == id {
+			return s.Level
+		}
+	}
+	return 1
+}
+
 // HasAvatar reports whether a portrait id is one a player may choose.
 //
 // A player who picked a portrait that a LATER balance version drops keeps it:

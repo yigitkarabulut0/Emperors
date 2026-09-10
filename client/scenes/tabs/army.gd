@@ -471,29 +471,7 @@ func _odds_for(type: String) -> Array:
 ## player's level and luck. A recruit is paid-for chance, and the chance is shown
 ## before it is paid for; so is every reroll, which draws from the same table.
 func _show_odds() -> void:
-	var lines: Array = []
-	for type in RECRUIT_TYPES:
-		var parts: Array = []
-		for o in _odds_for(type):
-			var bp := int(o.get("bp", 0))
-			if bp <= 0:
-				continue
-			var ti := int(TIER_INDEX.get(str(o.get("tier", "common")), 1))
-			parts.append("%s %s" % [ROMAN[ti], _percent(bp)])
-		lines.append("%s\n%s" % [DISPLAY_NAME.get(type, type.to_upper()), "   ".join(parts)])
-	await Dialog.ask(self, {"title": "Recruit odds",
-		"body": "The tier a soldier is drawn at, recruited or rerolled, at your level.\n\n%s" % "\n\n".join(lines),
-		"confirm_text": "OK"})
-
-
-## 7179 basis points as "71.8%", 17 as "0.17%": a rare tier's chance is the
-## number a player most wants to read, and rounding it to 0% hides it.
-static func _percent(bp: int) -> String:
-	if bp >= 1000:
-		return "%.0f%%" % (bp / 100.0)
-	if bp >= 100:
-		return "%.1f%%" % (bp / 100.0)
-	return "%.2f%%" % (bp / 100.0)
+	load("res://scenes/pages/odds_page.gd").open(self, _odds, RECRUIT_TYPES, DISPLAY_NAME)
 
 
 # --- actions ------------------------------------------------------------------------

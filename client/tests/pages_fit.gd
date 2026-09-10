@@ -57,6 +57,11 @@ func _all(canvas: Vector2) -> void:
 			"opponent_name": "Wwwwwwwwwwwwwwww", "opponent_level": 60, "gold": -987654321, "at": "2026-09-10T09:00:00Z"}], func(_e): pass),
 		"rules": func(h: Control) -> Variant: return load(pg % "rules_page").open(h, {}),
 		"tour": func(h: Control) -> Variant: return load(pg % "onboarding").open(h),
+		"odds": func(h: Control) -> Variant: return load(pg % "odds_page").open(h, {"types": [
+			{"type_id": "peasant", "odds": [{"tier": "common", "bp": 7179}, {"tier": "uncommon", "bp": 2175}, {"tier": "rare", "bp": 512}, {"tier": "epic", "bp": 110}, {"tier": "legendary", "bp": 18}, {"tier": "mystic", "bp": 5}, {"tier": "special", "bp": 1}]},
+			{"type_id": "mercenary", "odds": [{"tier": "uncommon", "bp": 7000}, {"tier": "rare", "bp": 3000}]},
+			{"type_id": "gladiator", "odds": []}]}, ["peasant", "mercenary", "gladiator"],
+			{"peasant": "VILLAGER", "mercenary": "MERCENARY", "gladiator": "GLADIATOR"}),
 	}
 	for name in pages:
 		var host := Control.new()

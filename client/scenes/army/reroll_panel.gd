@@ -186,9 +186,9 @@ func _build() -> float:
 		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		UI.place(cell, Rect2(PAD + cell_w * i, y, cell_w, 96))
 		_plate.add_child(cell)
-		var badge := _numeral_badge(i + 1, Rect2((cell_w - 50) / 2.0, 0, 50, 50))
+		var badge := numeral_badge(i + 1, Rect2((cell_w - 50) / 2.0, 0, 50, 50))
 		cell.add_child(badge)
-		var pct := UI.label(_percent(_bp_of(i + 1)), 21, UI.INK, "body", 600, HORIZONTAL_ALIGNMENT_CENTER)
+		var pct := UI.label(percent(_bp_of(i + 1)), 21, UI.INK, "body", 600, HORIZONTAL_ALIGNMENT_CENTER)
 		UI.place(pct, Rect2(0, 56, cell_w, 30))
 		cell.add_child(pct)
 		_odds_cells.append(cell)
@@ -279,7 +279,7 @@ func _button(word: String, plate: String, col: Color, rect: Rect2) -> Button:
 
 ## A tier's numeral on its diamond: painted for I to III, set in type on the
 ## blank plate above that -- the same rule the soldier cards follow.
-func _numeral_badge(tier: int, rect: Rect2) -> TextureRect:
+static func numeral_badge(tier: int, rect: Rect2) -> TextureRect:
 	var t := UI.image("army/numeral_%d" % tier if tier <= 3 else "army/numeral_blank", rect)
 	if tier > 3:
 		var l := UI.label(ROMAN[tier], 20, Color("#F2E6C8"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
@@ -295,11 +295,15 @@ func _numeral_badge(tier: int, rect: Rect2) -> TextureRect:
 func _paint() -> void:
 	var cp: Dictionary = _card["parts"]
 	cp["name"].text = _name
-	UI.fit_label(cp["name"], 22, 15)
+	# Fitted as the Army's own strip fits the same card.
+	UI.fit_label(cp["name"], 18, 14)
 	cp["attack"].text = UI.grouped(int(_soldier.get("attack", 0)))
 	cp["defence"].text = UI.grouped(int(_soldier.get("defense", 0)))
 	cp["power"].text = UI.grouped(int(_soldier.get("might", _soldier.get("ehp", 0))))
 	cp["troop"].text = UI.grouped(int(_soldier.get("hp", 0)))
+	for k in ["attack", "defence", "power"]:
+		UI.fit_label(cp[k], 22, 16)
+	UI.fit_label(cp["troop"], 20, 15)
 	var plate: TextureRect = cp["numeral"]
 	if _tier <= 3:
 		plate.texture = Art.tex("army/numeral_%d" % _tier)
@@ -368,7 +372,7 @@ func _paint_history() -> void:
 	var size := 44.0
 	for i in mini(_history.size(), 14):
 		var tier: int = _history[i]
-		var b := _numeral_badge(tier, Rect2(x, 0, size, size))
+		var b := numeral_badge(tier, Rect2(x, 0, size, size))
 		b.modulate = HIT if tier >= _target else (Color.WHITE if i == 0 else Color(0.62, 0.62, 0.66))
 		_history_row.add_child(b)
 		x += size + 8.0
@@ -574,7 +578,7 @@ func _bp_of(tier: int) -> int:
 
 ## 7179 basis points as "72%", 17 as "0.17%": the rare tiers' chances are the
 ## ones a player most wants to read, and rounding them to 0% hides them.
-static func _percent(bp: int) -> String:
+static func percent(bp: int) -> String:
 	if bp <= 0:
 		return "—"
 	if bp >= 1000:

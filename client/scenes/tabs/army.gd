@@ -368,16 +368,16 @@ func _paint_selected() -> void:
 	UI.fit_label(_ui["sel_name"], 34, 20)
 	_ui["sel_tier_text"].text = "TIER " + ROMAN[clampi(tier, 1, 7)]
 	_ui["sel_description"].text = BLURB.get(type, "")
-	_ui["sel_description"].autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_ui["sel_description"].label_settings.font_size = 21
-	_ui["sel_description"].label_settings.line_spacing = -4
 	_ui["sel_attack"].text = UI.grouped(int(soldier.get("attack", 0)))
 	_ui["sel_defence"].text = UI.grouped(int(soldier.get("defense", 0)))
 	# POWER is the unit's own Might, the score the army and the raid band
 	# compare; it printed effective HP under the same word.
 	_ui["sel_power"].text = UI.grouped(int(soldier.get("might", soldier.get("ehp", 0))))
+	for k in ["sel_attack", "sel_defence", "sel_power"]:
+		UI.fit_label(_ui[k], 24, 16)
 	var hp := int(soldier.get("hp", 0))
 	_ui["sel_troop_text"].text = "%s / %s" % [UI.grouped(hp), UI.grouped(hp)]
+	UI.fit_label(_ui["sel_troop_text"], 23, 16)
 	Layout.set_fill(_ui["sel_troop_bar"], 1.0)
 	var eq: Dictionary = soldier.get("equipped", {})
 	for i in _gear_tiles.size():
@@ -408,21 +408,12 @@ const GEAR_WORDS := ["WEAPON", "ARMOR", "HORSE"]
 
 
 func _add_empty_face(t: Dictionary, i: int) -> void:
-	var node: Control = t["node"]
 	var paint: Control = t["parts"]["painting"]
-	var ghost := UI.image(GEAR_GHOSTS[i], Rect2(paint.position, paint.size))
-	ghost.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	ghost.modulate = Color(0.62, 0.7, 0.8, 0.24)
-	node.add_child(ghost)
-	node.move_child(ghost, paint.get_index())
-	var word := UI.label(GEAR_WORDS[i], 15, Color(0.74, 0.78, 0.84, 0.85), "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(word, Rect2(0, 72, node.size.x, 24))
-	node.add_child(word)
-	node.move_child(word, t["parts"]["tap"].get_index())
-	t["ghost"] = ghost
-	t["word"] = word
-	ghost.visible = false
-	word.visible = false
+	var node: Control = t["node"]
+	var face := UI.empty_slot_face(node, Rect2(paint.position, paint.size), GEAR_GHOSTS[i], GEAR_WORDS[i],
+		Rect2(0, 72, node.size.x, 24), t["parts"]["tap"])
+	t["ghost"] = face[0]
+	t["word"] = face[1]
 
 
 ## The recruit cards: the painting, the tier range on its chip, the price.

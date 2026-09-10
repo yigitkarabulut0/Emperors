@@ -146,6 +146,26 @@ static func plate_face(plate: String, margin: int = 14) -> Button:
 	return b
 
 
+## What an empty gear slot shows, on every screen that has one: a faint ghost
+## of the piece that goes in it, drawn in `paint`, and the slot's name in
+## `word_rect`. A bare dark tile read as broken rather than as a place waiting
+## for something. Both are added under `below` (the tile's tap target) and
+## start hidden; returns [ghost, word] for the screen to show when it is empty.
+static func empty_slot_face(tile: Control, paint: Rect2, ghost_asset: String, name: String,
+		word_rect: Rect2, below: Node = null) -> Array:
+	var ghost := image(ghost_asset, paint)
+	ghost.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ghost.modulate = Color(0.62, 0.7, 0.8, 0.24)
+	var word := label(name, 15, Color(0.74, 0.78, 0.84, 0.85), "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
+	place(word, word_rect)
+	for n in [ghost, word]:
+		tile.add_child(n)
+		if below != null and below.get_parent() == tile:
+			tile.move_child(n, below.get_index())
+		n.visible = false
+	return [ghost, word]
+
+
 ## Draws a plate button's plate, and centres its word, in `paint` while the
 ## button keeps `rect` as its tap area. A thumb needs 95 units and most plates
 ## are painted about 58 tall: grown to the tap area the Shop's BUY filled its

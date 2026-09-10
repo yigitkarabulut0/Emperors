@@ -58,18 +58,19 @@
    "id": "quests_reset",
    "kind": "text",
    "rect": [
-    730,
+    700,
     294,
-    190,
+    198,
     34
    ],
    "font": "body",
-   "size": 26,
+   "size": 22,
    "weight": 500,
    "color": "#B9C5D0",
    "align": "right",
    "valign": "center",
-   "sample": "Resets in 14:26:38"
+   "sample": "Resets in 14:26:38",
+   "note": "right-aligned to x 898, where the painting's own countdown ends, at its size"
   },
   {
    "id": "quest_card",

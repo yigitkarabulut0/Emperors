@@ -35,6 +35,9 @@ const NEXT_CLEAR := 12.0
 const NEXT_GREEN := Color("#A8E070")
 ## How far a button's word keeps from each end of its plate.
 const BUTTON_MARGIN := 28.0
+## What an empty gear slot shows (UI.empty_slot_face), as on the Army.
+const GEAR_GHOSTS := ["items/army_spear", "items/army_leather_armor", "items/army_horse"]
+const GEAR_WORDS := ["WEAPON", "ARMOR", "HORSE"]
 
 var _scroll: ScrollContainer
 var _content: Control
@@ -42,6 +45,7 @@ var _ui: Dictionary = {}
 var _identity: Dictionary
 var _stats: Dictionary
 var _gear: Dictionary
+var _empty_faces: Dictionary = {}     ## slot -> [ghost, word], shown while it is bare
 var _cards: Array = []            ## [{node, parts, kind, data}]
 var _footer: Control
 var _ground: Control
@@ -81,11 +85,17 @@ func _ready() -> void:
 
 	_identity["edit"].pressed.connect(_rename)
 	_gear["equip_best"].pressed.connect(_equip_best)
-	for slot in ["weapon", "armor", "horse"]:
-		var tile: Control = _gear_tile(slot)["node"]
+	for i in 3:
+		var slot: String = ["weapon", "armor", "horse"][i]
+		var t := _gear_tile(slot)
+		var tile: Control = t["node"]
 		var hit := UI.hotspot(Rect2(Vector2.ZERO, tile.size))
 		hit.pressed.connect(_choose_gear.bind(slot))
 		tile.add_child(hit)
+		# An empty slot shows what goes in it, as the Army's gear tiles do.
+		var paint: Control = t["parts"]["painting"]
+		_empty_faces[slot] = UI.empty_slot_face(tile, Rect2(paint.position, paint.size), GEAR_GHOSTS[i],
+			GEAR_WORDS[i], Rect2(0, tile.size.y - 46, tile.size.x, 24), hit)
 	# Stat points: tapping a cell spends one there once the server has granted any.
 	var strip: Control = _ui["stats"][0]["node"]
 	for entry in [["attack", Rect2(0, 0, 250, 190)], ["defense", Rect2(250, 0, 250, 190)], ["energy", Rect2(500, 0, 252, 190)]]:
@@ -170,6 +180,8 @@ func _paint_gear() -> void:
 		# The stone on the frame takes the worn item's tier colour, and sits
 		# unlit when the slot is bare.
 		parts["gem"].texture = Art.gem(str(item.get("tier", "")) if item is Dictionary else "")
+		for n in _empty_faces.get(slot, []):
+			n.visible = not (item is Dictionary)
 		if item is Dictionary:
 			painting.texture = Art.item(str(item.get("art", "")))
 			parts["lv"].text = "Lv. %d" % int(item.get("ilvl", 1))

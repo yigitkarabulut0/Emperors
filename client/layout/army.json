@@ -532,49 +532,53 @@
    "id": "sel_description",
    "kind": "text",
    "rect": [
-    398,
-    1010,
-    304,
-    56
+    408,
+    1006,
+    280,
+    54
    ],
    "font": "body",
-   "size": 24,
+   "size": 20,
    "weight": 500,
    "color": "#B3C2CD",
    "align": "left",
    "lines": 2,
-   "line_height": 23,
-   "sample": "Humble but reliable. The backbone\nof every army."
+   "line_height": 22,
+   "sample": "Humble but reliable. The backbone\nof every army.",
+   "wrap": true,
+   "note": "wraps from the start, so the label keeps the painting's width: set after its text, the wrap came too late and the label had already grown to one line's width, past the column's divider",
+   "valign": "top"
   },
   {
    "id": "sel_attack",
    "kind": "text",
    "rect": [
-    430,
-    1100,
-    80,
+    443,
+    1094,
+    84,
     34
    ],
    "font": "body",
-   "size": 32,
-   "weight": 500,
-   "color": "#C9CED2",
+   "size": 24,
+   "weight": 400,
+   "color": "#EEF0F3",
    "align": "left",
-   "sample": "215"
+   "sample": "215",
+   "note": "under the left edge of the painted ATTACK label, where the painting sets its figure"
   },
   {
    "id": "sel_defence",
    "kind": "text",
    "rect": [
-    530,
-    1100,
-    80,
+    542,
+    1094,
+    84,
     34
    ],
    "font": "body",
-   "size": 32,
-   "weight": 500,
-   "color": "#C9CED2",
+   "size": 24,
+   "weight": 400,
+   "color": "#EEF0F3",
    "align": "left",
    "sample": "176"
   },
@@ -582,15 +586,15 @@
    "id": "sel_power",
    "kind": "text",
    "rect": [
-    628,
-    1100,
-    76,
+    650,
+    1094,
+    64,
     34
    ],
    "font": "body",
-   "size": 32,
-   "weight": 500,
-   "color": "#C9CED2",
+   "size": 24,
+   "weight": 400,
+   "color": "#EEF0F3",
    "align": "left",
    "sample": "1,420"
   },
@@ -719,13 +723,13 @@
    "id": "sel_troop_text",
    "kind": "text",
    "rect": [
-    779,
+    763,
     968,
     130,
-    40
+    30
    ],
    "font": "body",
-   "size": 30,
+   "size": 23,
    "weight": 500,
    "color": "#BFC0C4",
    "align": "center",

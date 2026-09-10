@@ -12,7 +12,9 @@ What must hold, against the live API:
     defence, with the gold that left their purse;
   - a level reached in a raid pays its diamonds.
 """
-import json, sys, random, string, urllib.request, urllib.error
+import json, os, subprocess, sys, random, string, urllib.request, urllib.error
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8080"
 FAILURES = []
@@ -60,11 +62,26 @@ def grind(token, reserve=0, budget=4000):
     return s
 
 
+def grant(user, level=0, gold=0):
+    """Sets a level with the local devgrant tool, as smoke-m6 does: a fresh
+    account's energy runs out around level 8, and raids open at 10."""
+    env = dict(os.environ)
+    for line in open(os.path.join(ROOT, ".env")):
+        line = line.strip()
+        if "=" in line and not line.startswith("#"):
+            k, v = line.split("=", 1)
+            env[k] = v.strip().strip("'\"")
+    subprocess.run(["go", "run", "./cmd/devgrant", "-user", user,
+                    "-level", str(level), "-gold", str(gold)],
+                   cwd=os.path.join(ROOT, "server"), env=env,
+                   capture_output=True, check=True)
+
+
 def account(prefix):
     user = prefix + "".join(random.choices(string.ascii_lowercase, k=6))
     st, reg = call("POST", "/v1/auth/register", {"username": user, "password": "battery horse staple", "tz_offset_minutes": 0})
-    if st != 200:
-        print(f"cannot register {user}: {st} {reg}")
+    if st not in (200, 201):
+        print(f"cannot register {user}: {st} {reg.get('code', '')}")
         sys.exit(1)
     return user, reg["access_token"], reg["player_id"]
 
@@ -83,6 +100,12 @@ if pts:
     call("POST", "/v1/stats/spend", {"energy": 0, "attack": pts, "defense": 0, "action_seq": seq(A)}, token=A)
 sb = grind(B, reserve=30)
 fight = next((s["unlock_level"] for s in sa["sections"] if s["id"] == "fight"), 1)
+# Both lords are raised past the Attack tab's level, keeping the energy they
+# held back. The lord who never grinds (C) stays at 1.
+for u, t in ((a_user, A), (b_user, B)):
+    grant(u, level=fight + 10)
+sa = call("GET", "/v1/state", token=A)[1]
+sb = call("GET", "/v1/state", token=B)[1]
 la, lb = sa["player"]["level"], sb["player"]["level"]
 print(f"        {a_user} lv{la}, {b_user} lv{lb}, {c_user} lv1; raids open at lv{fight}")
 
@@ -105,13 +128,13 @@ if la < fight or lb < fight:
     print("\nSKIPPED the raid checks: the grind did not reach the Attack tab's level")
 else:
     print("\n== the take is the take ==")
-    # A bot's purse does not move between the list and the raid, so the
-    # estimate is exact against one.
+    # The raid follows the list by milliseconds, and the lords in this band are
+    # bots and idle test accounts, so the purse the estimate was made from is
+    # the purse the raid takes from.
     _, tv = call("GET", "/v1/attack/targets", token=A)
-    bots = [t for t in tv["targets"] if t.get("is_bot")]
-    if not bots:
-        print("        (no bot on the list this draw)")
-    for t in bots[:2]:
+    if not tv["targets"]:
+        print("        (nobody in the band this draw)")
+    for t in tv["targets"][:2]:
         _, before = call("GET", "/v1/state", token=A)
         st, res = call("POST", "/v1/attack", {"target_id": t["player_id"], "action_seq": seq(A)}, token=A)
         if st != 200:

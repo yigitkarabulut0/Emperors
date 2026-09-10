@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """End-to-end check of M3.5: the vertical slice — targets, battle, replay, shield."""
-import json, sys, urllib.request, urllib.error, random, string
+import json, os, subprocess, sys, urllib.request, urllib.error, random, string
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8080"
 FAILURES = []
@@ -27,6 +29,22 @@ def check(label, cond, detail=""):
     print(f"  {'PASS' if cond else 'FAIL'}  {label}{'' if cond else '  <- ' + str(detail)}")
     if not cond:
         FAILURES.append(label)
+
+
+def grant(user, level=0, gold=0):
+    """Sets a level with the local devgrant tool, as smoke-m6 does. A fresh
+    account's energy runs out around level 8; raids open at 10 and the vault
+    at 8, and both are enforced by the server."""
+    env = dict(os.environ)
+    for line in open(os.path.join(ROOT, ".env")):
+        line = line.strip()
+        if "=" in line and not line.startswith("#"):
+            k, v = line.split("=", 1)
+            env[k] = v.strip().strip("'\"")
+    subprocess.run(["go", "run", "./cmd/devgrant", "-user", user,
+                    "-level", str(level), "-gold", str(gold)],
+                   cwd=os.path.join(ROOT, "server"), env=env,
+                   capture_output=True, check=True)
 
 
 def seq(token):
@@ -61,6 +79,11 @@ token = reg["access_token"]
 print(f"\n== setup ==  ({user})")
 # Keep enough back for two raids: attacking costs 6 + level/6.
 s = grind(token, reserve=30)
+# Raids open with the Attack tab, which the grind alone does not reach.
+fight = next((x["unlock_level"] for x in s["sections"] if x["id"] == "fight"), 1)
+if s["player"]["level"] < fight:
+    grant(user, level=fight + 2)
+    _, s = call("GET", "/v1/state", token=token)
 call("POST", "/v1/army/slot", {"action_seq": seq(token)}, token=token)
 call("POST", "/v1/army/recruit", {"slot": 1, "type_id": "peasant", "action_seq": seq(token)}, token=token)
 st, a = call("GET", "/v1/army", token=token)

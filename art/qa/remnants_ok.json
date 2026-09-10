@@ -4,5 +4,6 @@
   "army/selected_panel:430,1100,80,34": "the painted GEAR label under the attack figure",
   "army/selected_panel:530,1100,80,34": "the defence shield beside the figure",
   "chrome/avatar:56,150,50,32": "the level plaque's gold chevron under its number",
-  "kingdom/header:539,425,349,2": "the level bar's own frame: its top highlight runs along the erase"
+  "kingdom/header:539,425,349,2": "the level bar's own frame: its top highlight runs along the erase",
+  "army/selected_panel:734,1006,167,16": "the troop bar's gold frame: its bottom highlight runs along the erased green"
 }

@@ -7,6 +7,12 @@ extends SceneTree
 ## call scaled the bar by the fraction of what the previous call had left: the
 ## Family XP bar crept backwards on every repaint while the XP figure stayed put.
 ##
+## A bar with a "track" runs the track, not the painted fill: the painted fill
+## is where the painting's progress stood (85% of the Kingdom's level bar), and
+## a bar measured by it stopped there when full. And the picture under a track
+## must not still hold the painting's fill: a founded kingdom at level 1 showed
+## an empty bar with a sliver of the painting's gold standing in it.
+##
 ## Run: godot --headless --path client --script tests/fill_bars.gd
 
 const SCREENS := ["army", "attack", "collect", "family", "inventory", "kingdom", "shop"]
@@ -81,13 +87,14 @@ func _layout_bars_are_clipped_wraps(screen: String) -> int:
 			continue
 		for node in found[id]:
 			n += 1
-			_check_bar(screen, id, node, float(expected[id]))
+			_check_bar(screen, id, node, expected[id])
 	host.free()
 	return n
 
 
-func _check_bar(screen: String, id: String, node: Control, want_w: float) -> void:
+func _check_bar(screen: String, id: String, node: Control, want: Dictionary) -> void:
 	var tag := "%s/%s" % [screen, id]
+	var want_w := float(want["w"])
 	if not node.has_meta("full"):
 		_fail(tag + ": built without a full-width meta, so set_fill() would compound")
 		return
@@ -96,10 +103,17 @@ func _check_bar(screen: String, id: String, node: Control, want_w: float) -> voi
 	var full: Vector2 = node.get_meta("full")
 	if not is_equal_approx(full.x, want_w):
 		_fail("%s: full width %.1f, the layout says %.1f" % [tag, full.x, want_w])
-	if node.get_child_count() != 1 or not (node.get_child(0) is TextureRect):
-		_fail(tag + ": expected exactly one TextureRect inside the clip")
-	elif not (node.get_child(0) as Control).size.is_equal_approx(full):
+	var tracked := bool(want["track"])
+	if node.get_child_count() != 1:
+		_fail(tag + ": expected exactly one picture inside the clip")
+	elif tracked and not (node.get_child(0) is NinePatchRect):
+		_fail(tag + ": a bar with a track must draw its fill as a nine-patch, so its painted end survives any length")
+	elif not tracked and not (node.get_child(0) is TextureRect):
+		_fail(tag + ": expected a TextureRect inside the clip")
+	elif not tracked and not (node.get_child(0) as Control).size.is_equal_approx(full):
 		_fail(tag + ": the image inside the clip is not drawn at its full size")
+	if tracked:
+		_track_is_empty_under(tag, node)
 	_L.set_fill(node, FRAC)
 	var once := node.size.x
 	_L.set_fill(node, FRAC)
@@ -110,6 +124,8 @@ func _check_bar(screen: String, id: String, node: Control, want_w: float) -> voi
 	_L.set_fill(node, 1.0)
 	if not is_equal_approx(node.size.x, full.x):
 		_fail("%s: set_fill(1.0) did not restore the full width" % tag)
+	if tracked and node.get_child_count() == 1 and not is_equal_approx((node.get_child(0) as Control).size.x, full.x):
+		_fail("%s: at 100%% the fill is %.1f long and the track %.1f" % [tag, (node.get_child(0) as Control).size.x, full.x])
 	_L.set_fill(node, 0.0)
 	if node.visible:
 		_fail("%s: an empty bar is still visible" % tag)
@@ -127,14 +143,51 @@ func _templates_in_spec(list: Array, out: Array) -> void:
 				_templates_in_spec(e[k], out)
 
 
-## id -> rect width, for every element in a layout that carries a "fill" side.
+## The pictures beside a bar with a track -- the plate the track is painted on
+## -- must show no fill inside it: the live fill is the only one. A painted fill
+## the erase missed shows through an empty or short bar as a sliver of gold.
+func _track_is_empty_under(tag: String, bar: Control) -> void:
+	var track := Rect2(bar.position, bar.get_meta("full"))
+	# The picture the bar is drawn on is the last one before it that covers the
+	# track; anything under that one is hidden by it.
+	var under: TextureRect = null
+	for sib in bar.get_parent().get_children():
+		if sib == bar:
+			break
+		if sib is TextureRect and (sib as TextureRect).texture != null \
+				and Rect2(sib.position, sib.size).encloses(track):
+			under = sib
+	if under == null:
+		_fail(tag + ": no picture under the track was found to check")
+		return
+	var at := Rect2(under.position, under.size)
+	var img := Image.load_from_file(under.texture.resource_path)
+	var k := Vector2(img.get_width() / at.size.x, img.get_height() / at.size.y)
+	var gold := 0
+	for y in range(int(track.position.y), int(track.end.y)):
+		for x in range(int(track.position.x), int(track.end.x)):
+			var c := img.get_pixel(int((x - at.position.x) * k.x), int((y - at.position.y) * k.y))
+			# The fills are gold: bright red and green, little blue. The track's
+			# ground and its silver frame are neither.
+			if c.r > 0.55 and c.g > 0.35 and c.r - c.b > 0.35:
+				gold += 1
+	if gold > 0:
+		_fail("%s: %d pixels of painted fill still stand in the empty track of %s" % [tag, gold, under.texture.resource_path])
+
+
+## id -> {w: full width, track: bool}, for every element in a layout that
+## carries a "fill" side. A bar with a track is as wide as its track.
 func _bars_in_spec(list: Array, out: Dictionary) -> void:
 	for e in list:
 		if not (e is Dictionary):
 			continue
 		if e.has("fill"):
 			var r: Array = e.get("rect", [0, 0, 0, 0])
-			out[str(e.get("id", ""))] = r[2] if r.size() == 4 else 0
+			var w: float = float(r[2]) if r.size() == 4 else 0.0
+			if e.has("track"):
+				var t: Array = e["track"]
+				w = float(t[0]) + float(t[2]) - float(r[0])
+			out[str(e.get("id", ""))] = {"w": w, "track": e.has("track")}
 		for k in ["parts", "content"]:
 			if e.has(k):
 				_bars_in_spec(e[k], out)

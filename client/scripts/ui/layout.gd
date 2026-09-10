@@ -193,9 +193,29 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 			UI.place(wrap, r)
 			wrap.clip_contents = true
 			wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			var img := UI.image(str(p.get("asset", "")), Rect2(Vector2.ZERO, r.size))
+			var full := r.size
+			var img: Control
+			if p.has("track"):
+				# The painted fill is where the painting's progress happened to
+				# stand -- 85% of the Kingdom's level bar, half of its renown bar --
+				# and a bar that measured itself by that image stopped there at
+				# 100%. A bar with a track runs the whole track: the fill is a
+				# nine-patch whose painted ends ("caps", [left, right]) keep their
+				# size, so its rounded tip closes the bar at every fraction.
+				var tr: Array = p["track"]
+				full.x = float(tr[0]) + float(tr[2]) - r.position.x
+				var np := NinePatchRect.new()
+				np.texture = Art.tex(str(p.get("asset", "")))
+				np.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				var caps: Array = p.get("caps", [4, 4])
+				np.patch_margin_left = int(caps[0])
+				np.patch_margin_right = int(caps[1])
+				np.size = full
+				img = np
+			else:
+				img = UI.image(str(p.get("asset", "")), Rect2(Vector2.ZERO, r.size))
 			wrap.add_child(img)
-			wrap.set_meta("full", r.size)
+			wrap.set_meta("full", full)
 			wrap.set_meta("img", img)
 			set_fill(wrap, float(p.get("ratio", 1.0)))
 			return wrap
@@ -360,6 +380,12 @@ static func set_fill(wrap: Control, frac: float) -> void:
 	# A zero-width clip rect does not clip at all, so an empty bar is hidden.
 	wrap.visible = w >= 1.0
 	wrap.size = Vector2(maxf(w, 1.0), full.y)
+	# A nine-patch fill is drawn at the bar's length so its painted tip ends the
+	# bar; shorter than its two caps it is drawn at their width and clipped.
+	var img: Variant = wrap.get_meta("img", null)
+	if img is NinePatchRect:
+		var np := img as NinePatchRect
+		np.size = Vector2(maxf(w, float(np.patch_margin_left + np.patch_margin_right)), full.y)
 
 
 static func _halign(a: String) -> int:

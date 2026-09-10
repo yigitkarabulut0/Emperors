@@ -133,13 +133,23 @@
      "kind": "image",
      "asset": "family/xp_fill",
      "rect": [
-      190,
-      121,
-      472,
-      20
+      188,
+      122,
+      477,
+      17
      ],
      "fill": "left",
-     "note": "full-width fill sample; draw a region 0..progress*472 wide"
+     "note": "the painted fill as a nine-patch across the inner track (reference x 356..877)",
+     "track": [
+      188,
+      122,
+      522,
+      17
+     ],
+     "caps": [
+      3,
+      4
+     ]
     },
     {
      "id": "xp_text",

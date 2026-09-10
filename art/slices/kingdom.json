@@ -62,10 +62,34 @@
         },
         {
           "rect": [
+            539,
+            425,
+            349,
+            2
+          ],
+          "sample_x": [
+            850,
+            880
+          ]
+        },
+        {
+          "rect": [
+            537,
+            427,
+            351,
+            10
+          ],
+          "sample_x": [
+            850,
+            880
+          ]
+        },
+        {
+          "rect": [
             538,
-            424,
-            300,
-            18
+            437,
+            350,
+            1
           ],
           "sample_x": [
             850,
@@ -86,11 +110,12 @@
     {
       "name": "kingdom/level_bar_fill",
       "rect": [
-        535,
-        424,
-        304,
-        18
-      ]
+        537,
+        426,
+        306,
+        12
+      ],
+      "note": "the painting's fill from its rounded left end to the shadow after its tip; drawn as a nine-patch across the track (537..889) with 3-px caps"
     },
     {
       "name": "icons/crest_kingdom",
@@ -403,14 +428,62 @@
           22
         ]
       ],
-      "note": "text bands lifted with inpaint: the card's ground is graded across, so a row-fill from one column band leaves a dark rectangle",
+      "note": "text bands lifted with inpaint: the card's ground is graded across, so a row-fill from one column band leaves a dark rectangle. The bar's whole inner track is erased row by row, each row starting where the frame's rounded corner ends, so the empty track is one piece and the corners keep their curve",
       "erase": [
         {
           "rect": [
-            673,
+            675,
             962,
-            125,
-            17
+            226,
+            1
+          ],
+          "sample_x": [
+            840,
+            880
+          ]
+        },
+        {
+          "rect": [
+            674,
+            963,
+            227,
+            1
+          ],
+          "sample_x": [
+            840,
+            880
+          ]
+        },
+        {
+          "rect": [
+            672,
+            964,
+            229,
+            12
+          ],
+          "sample_x": [
+            840,
+            880
+          ]
+        },
+        {
+          "rect": [
+            673,
+            976,
+            228,
+            1
+          ],
+          "sample_x": [
+            840,
+            880
+          ]
+        },
+        {
+          "rect": [
+            675,
+            977,
+            226,
+            1
           ],
           "sample_x": [
             840,
@@ -422,10 +495,10 @@
     {
       "name": "kingdom/rep_bar_fill",
       "rect": [
-        671,
-        961,
-        126,
-        19
+        672,
+        963,
+        125,
+        14
       ]
     },
     {

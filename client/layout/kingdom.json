@@ -85,12 +85,12 @@
       "rect": [
         418,
         413,
-        116,
+        106,
         32
       ],
       "font": "title",
       "size": 28,
-      "weight": 700,
+      "weight": 600,
       "color": "#F0D27A",
       "align": "left",
       "valign": "center",
@@ -101,19 +101,23 @@
       "kind": "image",
       "asset": "kingdom/level_bar_fill",
       "rect": [
-        535,
-        424,
-        304,
-        18
+        537,
+        426,
+        306,
+        12
       ],
       "fill": "left",
       "track": [
-        535,
-        424,
-        359,
-        18
+        537,
+        426,
+        353,
+        12
       ],
-      "note": "track (empty) is baked into header at track rect; clip fill width by progress"
+      "note": "the painted fill as a nine-patch across the whole inner track (537..889): its rounded end and the shadow after it close the bar at every fraction; the header has the track empty",
+      "caps": [
+        3,
+        3
+      ]
     },
     {
       "id": "stat_renown",
@@ -426,7 +430,7 @@
       ],
       "font": "title",
       "size": 22,
-      "weight": 700,
+      "weight": 600,
       "color": "#F2C94C",
       "align": "left",
       "valign": "center",
@@ -437,17 +441,21 @@
       "kind": "image",
       "asset": "kingdom/rep_bar_fill",
       "rect": [
-        671,
-        961,
-        126,
-        19
+        672,
+        963,
+        125,
+        14
       ],
       "fill": "left",
       "track": [
-        671,
-        961,
-        236,
-        19
+        672,
+        963,
+        232,
+        14
+      ],
+      "caps": [
+        4,
+        3
       ]
     },
     {

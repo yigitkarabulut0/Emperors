@@ -37,7 +37,10 @@ against `art/reference/<tab>.png` no matter how macOS clamps the window.
 **Design grid: 941 × 1672, portrait, locked.** `stretch/mode=canvas_items`,
 `aspect=expand`, so a taller phone gets *more* canvas below, never a scaled one.
 A source pixel in a reference painting is a layout unit in the game. On a phone
-the shell shifts everything down by the display's safe-area inset.
+the shell shifts everything down by the display's safe-area inset, and the tab
+host keeps its foot on the screen's (`tests/safe_area.gd`): moved with
+`position.y` a full-rect control keeps its height, and every tab once ran 141
+units past the bottom of an iPhone with a Dynamic Island.
 
 ---
 
@@ -162,8 +165,12 @@ coordinate: it asks for parts by id and fills in live values.
 
 Kinds: `image` (`fit: contain` keeps a painting's own proportions inside its
 box, for item designs drawn into a tile), `text`, `button` (a painted crop; with
-no asset, an invisible tap target), `ninepatch`, `fill` (a bar clipped from the left via
-`Layout.set_fill`; an `image` carrying a `fill` key is built as one), `scroll`,
+no asset, an invisible tap target; with a `label`, a plate with its word in
+type, and a `paint_rect` smaller than its `rect` draws the plate at the
+painting's size inside a tap area a thumb can hit), `ninepatch`, `fill` (a bar
+clipped from the left via `Layout.set_fill`; an `image` carrying a `fill` key is
+built as one; with a `track` it spans the track, its painted ends -- `caps` --
+held at their size so a full bar reaches the track's end), `scroll`,
 `group`, `template` (repeated component;
 `instances` may be `[x, y]` or `{pos|at, assets, texts, rects, data}`).
 Top-level rects are absolute; part rects are relative to their template.
@@ -190,8 +197,12 @@ name to its box — a Label grows to its text, so the box width is kept in meta.
 
 - `art/slices/<screen>.json` lists every crop: `rect` in source pixels, `mode`
   (`rect` opaque, `darkkey` alpha against the navy ground), `erase` (per-row fill
-  that removes baked dynamic text), `inpaint`, `mask`, `scale` (never used for
-  content).
+  that removes baked dynamic text), `inpaint`, `mask` (chamfer, polygon or
+  ellipse, `feather` for a soft edge, a list for their union; drawn at 4x and
+  averaged, so diagonals are smooth), `scale` (never used for content).
+- An erase must take all of what it lifts. `art/tools/remnants.py` (run by the
+  client lint) looks for ink cut by an erase's edge; the painting's own ink
+  standing against one is recorded, with why, in `art/qa/remnants_ok.json`.
 - `art/.venv/bin/python scripts/slice-reference.py art/slices/<screen>.json --refdir art/reference --out client/assets`
   cuts them; then import.
 - Buttons are cut *with* their painted labels (COLLECT, BUY, EQUIP…). Plates
@@ -218,7 +229,9 @@ portrait (the others are drawn in the large frame's window under
 `army/sel_frame`, never stretched over it), no lit hexagon but tier II (overlays
 tint the current tier). The soldier portraits are cut inside their own card's
 window with their painted diamond softened away: the painting's selection frame
-must never be in a crop, or it becomes a highlight that never moves.
+must never be in a crop, or it becomes a highlight that never moves. An empty
+gear slot shows a faint ghost of the piece that goes in it and the slot's name
+(`UI.empty_slot_face`), on the Army and the Family alike.
 
 ---
 

@@ -6,6 +6,12 @@ extends Control
 ## through GameState (confirmed + replay(pending) is what the pills show).
 
 const SCREEN := "collect"
+## Each task's own mark, by what the task asks for. The layout gives each of the
+## three cards the icon the painting drew in that position, so whatever task
+## landed in the middle card wore the energy bolt -- "Collect 20 times" with a
+## lightning bolt on it.
+const QUEST_ICON := {"collect_": "icons/quest_scroll", "energy_": "icons/quest_bolt",
+	"win_": "icons/quest_swords", "buy_": "icons/market_tent"}
 const PAINTINGS := ["collect/job_grapes", "collect/job_strawberries", "collect/job_wheat",
 	"collect/job_timber", "collect/job_stone", "collect/job_tax"]
 const PAINTING_BY_WORD := {"grape": 0, "berr": 1, "wheat": 2, "timber": 3, "wood": 3, "log": 3,
@@ -276,6 +282,13 @@ func _paint_quests() -> void:
 		var claimed := bool(q.get("claimed", false))
 		var done := bool(q.get("done", false)) and not claimed
 		p["title"].text = _quest_title(q)
+		var icon: TextureRect = p["icon"]
+		for prefix in QUEST_ICON:
+			if str(q.get("id", "")).begins_with(prefix):
+				icon.texture = Art.tex(QUEST_ICON[prefix])
+		# The marks are different shapes -- a scroll, a bolt, crossed swords, a
+		# tent -- and each card's box was measured for the one painted there.
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		Layout.set_fill(p["bar_fill"], 1.0 if claimed else float(progress) / maxf(1.0, float(target)))
 
 		# The bar says where the task stands; the row under it says what it pays,

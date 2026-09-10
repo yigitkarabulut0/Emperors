@@ -354,7 +354,7 @@
        "kind": "text",
        "rect": [
         48,
-        190,
+        216,
         92,
         36
        ],
@@ -363,7 +363,8 @@
        "weight": 700,
        "color": "#F2E851",
        "align": "left",
-       "sample": "2.50M"
+       "sample": "2.50M",
+       "note": "On the painted coin's line (the price the painting erased ran 768..804 in a tile cut from 559). It stood 26 units higher, floating over the coin."
       },
       {
        "id": "unlock",

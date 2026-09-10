@@ -41,6 +41,17 @@ var _press_travel := 0.0
 var _press_scrolled := false
 var _reroll: Control
 
+## A phone taller than the design gets its extra height as room between the
+## panels -- before the selected soldier, before the recruits and above the
+## ground -- instead of as one band of bare ground under the recruit cards. The
+## header, the hero support and the soldier strip stay together: the painting
+## shows its army between them. Below the strip the ground between panels is
+## plain, so a wider gap is more of the same ground. SECTION_STARTS are the
+## design heights where the two lower sections begin.
+const SECTION_STARTS := [890.0, 1278.0]
+const SECTION_GAP_MAX := 80.0
+var _sections: Array = [[], []]    ## per section, [node, its design y]
+
 
 func _ready() -> void:
 	_ui = Layout.build(SCREEN, self)
@@ -62,6 +73,7 @@ func _ready() -> void:
 	_gear_tiles = _ui["gear_tile"]
 	for i in _gear_tiles.size():
 		_gear_tiles[i]["parts"]["tap"].pressed.connect(_choose_gear.bind(["weapon", "armor", "horse"][i]))
+		_add_empty_face(_gear_tiles[i], i)
 	_recruit_cards = _ui["recruit_card"]
 	for i in _recruit_cards.size():
 		_recruit_cards[i]["parts"]["recruit"].pressed.connect(_recruit.bind(RECRUIT_TYPES[i]))
@@ -89,6 +101,25 @@ func _ready() -> void:
 	_sel_numeral_label.set_meta("box_w", LARGE_NUMERAL_ROOM)
 	_sel_numeral_label.visible = false
 	add_child(_sel_numeral_label)
+	# Everything on the page by the section it stands in; the ground, pinned
+	# to the foot, stays where it is.
+	for c in get_children():
+		var n := c as Control
+		if n == null or n.anchor_top > 0.0:
+			continue
+		for k in range(SECTION_STARTS.size() - 1, -1, -1):
+			if n.position.y >= SECTION_STARTS[k]:
+				_sections[k].append([n, n.position.y])
+				break
+	resized.connect(_fit_page)
+	_fit_page()
+
+
+func _fit_page() -> void:
+	var gap := clampf((size.y - 1672.0) / 3.0, 0.0, SECTION_GAP_MAX)
+	for k in _sections.size():
+		for pair in _sections[k]:
+			(pair[0] as Control).position.y = float(pair[1]) + gap * float(k + 1)
 
 
 func refresh() -> void:
@@ -229,11 +260,16 @@ func _paint_card(i: int) -> void:
 		p["portrait"].modulate = Color.WHITE
 		_numeral(p["numeral"], _numeral_labels[i], tier)
 		p["name"].text = DISPLAY_NAME.get(type, type.to_upper())
-		UI.fit_label(p["name"], 22, 15)
+		# At the painting's size, with its margins: at 22 GLADIATOR and
+		# MERCENARY ran from one edge of the card to the other.
+		UI.fit_label(p["name"], 18, 14)
 		p["attack"].text = UI.grouped(int(soldier.get("attack", 0)))
 		p["defence"].text = UI.grouped(int(soldier.get("defense", 0)))
 		p["power"].text = UI.grouped(int(soldier.get("might", soldier.get("ehp", 0))))
 		p["troop"].text = UI.grouped(int(soldier.get("hp", 0)))
+		for k in ["attack", "defence", "power"]:
+			UI.fit_label(p[k], 22, 16)
+		UI.fit_label(p["troop"], 20, 15)
 	else:
 		p["portrait"].texture = Art.tex("portraits/soldier_villager")
 		p["portrait"].modulate = Color(0.25, 0.25, 0.3)
@@ -304,6 +340,8 @@ func _paint_selected() -> void:
 			t["parts"]["painting"].visible = false
 			t["parts"]["art"].modulate = Color(0.4, 0.4, 0.45)
 			t["parts"]["level"].text = ""
+			t["ghost"].visible = false
+			t["word"].visible = false
 		return
 	var type := str(soldier.get("type", "peasant"))
 	var tier := int(TIER_INDEX.get(str(soldier.get("tier", "common")), 1))
@@ -351,13 +389,40 @@ func _paint_selected() -> void:
 		# drawn inset into it.
 		var painting: TextureRect = t["parts"]["painting"]
 		painting.visible = item is Dictionary
+		t["ghost"].visible = not (item is Dictionary)
+		t["word"].visible = not (item is Dictionary)
+		t["parts"]["art"].modulate = Color.WHITE
 		if item is Dictionary:
 			painting.texture = Art.item(str(item.get("art", "")))
-			t["parts"]["art"].modulate = Color.WHITE
 			t["parts"]["level"].text = "Lv. %d" % int(item.get("ilvl", 1))
 		else:
-			t["parts"]["art"].modulate = Color(0.4, 0.4, 0.45)
-			t["parts"]["level"].text = "none"
+			t["parts"]["level"].text = ""
+
+
+## What an empty gear tile shows: a faint ghost of the painting's own piece for
+## that slot and the slot's name under it. It said "none", lowercase, in the
+## corner of a tile dimmed nearly black -- which read as broken, not as a slot
+## waiting to be filled.
+const GEAR_GHOSTS := ["items/army_spear", "items/army_leather_armor", "items/army_horse"]
+const GEAR_WORDS := ["WEAPON", "ARMOR", "HORSE"]
+
+
+func _add_empty_face(t: Dictionary, i: int) -> void:
+	var node: Control = t["node"]
+	var paint: Control = t["parts"]["painting"]
+	var ghost := UI.image(GEAR_GHOSTS[i], Rect2(paint.position, paint.size))
+	ghost.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ghost.modulate = Color(0.62, 0.7, 0.8, 0.24)
+	node.add_child(ghost)
+	node.move_child(ghost, paint.get_index())
+	var word := UI.label(GEAR_WORDS[i], 15, Color(0.74, 0.78, 0.84, 0.85), "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(word, Rect2(0, 72, node.size.x, 24))
+	node.add_child(word)
+	node.move_child(word, t["parts"]["tap"].get_index())
+	t["ghost"] = ghost
+	t["word"] = word
+	ghost.visible = false
+	word.visible = false
 
 
 ## The recruit cards: the painting, the tier range on its chip, the price.
@@ -380,6 +445,7 @@ func _paint_recruits() -> void:
 				cost = int(r.get("cost", 0))
 				free = bool(r.get("free", false))
 		p["price"].text = "FREE" if free else UI.grouped(cost)
+		UI.fit_label(p["price"], 26, 18)
 
 
 ## The lowest and highest tier a type can be drawn at, by the server's odds.

@@ -10,7 +10,7 @@ extends RefCounted
 
 const TILE := 150.0
 const ROW_H := 250.0
-const SLOTS := [["weapon", "WEAPONS"], ["armor", "ARMOUR"], ["horse", "HORSES"]]
+const SLOTS := [["weapon", "WEAPONS"], ["armor", "ARMOR"], ["horse", "HORSES"]]
 const TIERS := ["common", "uncommon", "rare", "epic", "legendary", "mystic", "special"]
 
 

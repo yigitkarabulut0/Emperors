@@ -161,8 +161,19 @@ func _apply_safe_area() -> void:
 	var win := DisplayServer.window_get_size()
 	if win.x <= 0 or sa.position.y <= 0:
 		return
-	_inset_top = float(sa.position.y) * 941.0 / float(win.x)
-	_host.position.y = _inset_top
+	apply_inset(float(sa.position.y) * 941.0 / float(win.x))
+
+
+## Moves the game down by `inset` canvas units, keeping its foot on the
+## screen's. The tab host was moved with position.y, and a full-rect control
+## moved that way keeps its height: on an iPhone with a Dynamic Island every
+## tab ran 141 units past the bottom of the screen -- the Shop's and Collect's
+## footers, the Army's ground and the end of every list were drawn where
+## nobody could see them, and a list could not be scrolled to its last row.
+func apply_inset(inset: float) -> void:
+	_inset_top = inset
+	_host.offset_top = _inset_top
+	_host.offset_bottom = 0.0
 	_rail.offset_top = _inset_top
 	var band: TextureRect = _rail.get_child(0)
 	band.offset_top = -_inset_top

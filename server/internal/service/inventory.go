@@ -33,12 +33,16 @@ type ItemView struct {
 	SellPrice  int64  `json:"sell_price"`
 	// What one re-roll of its quality would cost. Sent with the item so the
 	// button can price itself without a second request.
-	Equipped     bool  `json:"equipped"`
+	Equipped bool `json:"equipped"`
 	// Who is wearing it: "hero", a soldier's uuid, or empty. `Equipped` alone
 	// only ever meant "on the hero", so a client could not tell a free item from
 	// one already on a soldier -- and offering the latter would silently strip
 	// whoever had it.
 	EquippedOn string `json:"equipped_on"`
+	// The same, in words: "Gladiator in slot 3". Only the inventory read fills
+	// it, because only it has the roster to hand; a client that needs to say
+	// who would otherwise have to fetch the army and match ids itself.
+	WornBy string `json:"worn_by,omitempty"`
 }
 
 // InventoryView is the Armory tab.
@@ -50,13 +54,19 @@ type InventoryView struct {
 	Hero     HeroStats            `json:"hero"`
 }
 
-// HeroStats is the player's own combat contribution: allocated stat points plus
-// whatever they are wearing.
+// HeroStats is the hero as the Army fights with them: the level's base, the
+// allocated stat points and whatever they are wearing.
+//
+// It used to be worked out here a second way -- three per stat point plus gear,
+// with no base at all -- so a level-30 hero who had put their points into energy
+// read 0 / 0 / 0 on the Family screen while the Army screen, which fights,
+// used the real numbers. Both now come from heroUnit.
 type HeroStats struct {
 	Attack  int64 `json:"attack"`
 	Defense int64 `json:"defense"`
 	Speed   int64 `json:"speed"`
-	Power   int64 `json:"power"`
+	// The hero's own Might -- the quantity the Army and the raid band compare.
+	Power int64 `json:"power"`
 }
 
 func (d Deps) GetInventory(ctx context.Context, playerID uuid.UUID) (*InventoryView, error) {
@@ -73,6 +83,14 @@ func (d Deps) GetInventory(ctx context.Context, playerID uuid.UUID) (*InventoryV
 	if err != nil {
 		return nil, fmt.Errorf("list items: %w", err)
 	}
+	soldiers, err := q.ListSoldiers(ctx, playerID)
+	if err != nil {
+		return nil, fmt.Errorf("list soldiers: %w", err)
+	}
+	wearer := make(map[uuid.UUID]string, len(soldiers))
+	for _, s := range soldiers {
+		wearer[s.ID] = fmt.Sprintf("%s in slot %d", d.soldierTypeName(s.TypeID), s.SlotIndex)
+	}
 
 	view := &InventoryView{
 		Items:    make([]ItemView, 0, len(rows)),
@@ -82,6 +100,12 @@ func (d Deps) GetInventory(ctx context.Context, playerID uuid.UUID) (*InventoryV
 	}
 	for _, r := range rows {
 		iv := d.itemView(r)
+		switch {
+		case r.EquippedOnHero:
+			iv.WornBy = "your hero"
+		case r.EquippedSoldierID != nil:
+			iv.WornBy = wearer[*r.EquippedSoldierID]
+		}
 		view.Items = append(view.Items, iv)
 		if r.EquippedOnHero {
 			copyOf := iv
@@ -90,6 +114,16 @@ func (d Deps) GetInventory(ctx context.Context, playerID uuid.UUID) (*InventoryV
 	}
 	view.Hero = d.heroStats(p, view.Equipped)
 	return view, nil
+}
+
+// soldierTypeName is a type's name as the config has it now, falling back to
+// the id. Read from the config rather than the name stored at recruitment, so a
+// renamed type reads the same on every soldier rather than by recruiting date.
+func (d Deps) soldierTypeName(typeID string) string {
+	if t := d.Config.SoldierType(typeID); t != nil && t.Name != "" {
+		return t.Name
+	}
+	return typeID
 }
 
 func (d Deps) itemView(r sqlcdb.AppPlayerItem) ItemView {
@@ -106,10 +140,10 @@ func (d Deps) itemView(r sqlcdb.AppPlayerItem) ItemView {
 		ID: r.ID.String(), DefID: r.DefID, Name: name, Slot: r.Slot, Tier: r.Tier, Art: art,
 		Ilvl: int64(r.Ilvl), QualityPct: int64(r.QualityPct), Masterwork: r.Masterwork,
 		Attack: r.Attack, Defense: r.Defense, Speed: r.Speed,
-		Power:        inst.Power(d.Config),
-		SellPrice:    items.SellPrice(d.Config, inst),
-		Equipped:     r.EquippedOnHero,
-		EquippedOn:   equippedOn(r),
+		Power:      inst.Power(d.Config),
+		SellPrice:  items.SellPrice(d.Config, inst),
+		Equipped:   r.EquippedOnHero,
+		EquippedOn: equippedOn(r),
 	}
 }
 
@@ -124,26 +158,11 @@ func equippedOn(r sqlcdb.AppPlayerItem) string {
 	}
 }
 
-// heroStats combines allocated stat points with equipped gear.
+// heroStats is heroUnit, trimmed to what the Family screen shows. One
+// implementation: the unit the Army fights with is the unit this describes.
 func (d Deps) heroStats(p sqlcdb.AppPlayer, equipped map[string]*ItemView) HeroStats {
-	// Stat points are worth more than a point of gear so that a player who never
-	// gets a lucky drop still progresses. The multiplier is a tuning knob.
-	const perStatPoint = 3
-
-	h := HeroStats{
-		Attack:  int64(p.StatAttack) * perStatPoint,
-		Defense: int64(p.StatDefense) * perStatPoint,
-	}
-	for _, iv := range equipped {
-		if iv == nil {
-			continue
-		}
-		h.Attack += iv.Attack
-		h.Defense += iv.Defense
-		h.Speed += iv.Speed
-	}
-	h.Power = h.Attack + h.Defense + h.Speed*d.Config.Items.SpeedPowerWeightBP/10000
-	return h
+	u := d.heroUnit(p, equipped)
+	return HeroStats{Attack: u.Attack, Defense: u.Defense, Speed: u.Speed, Power: u.Might}
 }
 
 // Equip puts an item in its slot, replacing whatever was there.
@@ -392,4 +411,3 @@ func (d Deps) SellMany(ctx context.Context, playerID uuid.UUID, itemIDs []uuid.U
 	}
 	return res, nil
 }
-

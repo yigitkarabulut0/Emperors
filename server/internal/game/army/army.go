@@ -152,8 +152,17 @@ func Sum(units []Unit) Totals {
 		t.EHP += u.EHP
 		t.Units++
 	}
-	t.Might = 2 * isqrt(t.Attack*t.EHP)
+	t.Might = UnitMight(t.Attack, t.EHP)
 	return t
+}
+
+// UnitMight is the same score for one unit on its own, so every "power" on the
+// screen -- the hero's, a soldier's, the army's -- is one quantity rather than
+// three. The Army and Family screens printed a soldier's effective HP and the
+// hero's summed stat points under the word POWER, and neither was the number
+// the raid band and the leaderboard actually compare.
+func UnitMight(attack, ehp int64) int64 {
+	return 2 * isqrt(attack*ehp)
 }
 
 // isqrt is an integer square root by Newton's method.

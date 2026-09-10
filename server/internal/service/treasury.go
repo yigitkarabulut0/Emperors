@@ -53,6 +53,11 @@ func (d Deps) Deposit(ctx context.Context, playerID uuid.UUID, amount, wantSeq i
 		if err := checkSeq(p, wantSeq); err != nil {
 			return err
 		}
+		// Only deposits are gated. A lord who began a Legacy is back under the
+		// bank's level with gold still in the vault, and it stays theirs to take.
+		if at := d.Config.SectionLevel(bankSection); int(p.Level) < at {
+			return fmt.Errorf("%w: the treasury opens at level %d", ErrLevelTooLow, at)
+		}
 
 		after, err := q.MoveToTreasury(ctx, sqlcdb.MoveToTreasuryParams{
 			ID: playerID, Gold: amount, TreasuryGold: banked, ActionSeq: wantSeq,

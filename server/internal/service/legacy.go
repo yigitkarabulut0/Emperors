@@ -28,7 +28,20 @@ type LegacyView struct {
 	Available bool  `json:"available"`
 	AtLevel   int   `json:"at_level"`
 	LevelCap  int   `json:"level_cap"`
+	// What a run takes and what it leaves, in the player's words. The offer
+	// used to say "your level, gold and gear are set aside", and a run touches
+	// neither the gold nor the gear -- BeginLegacy resets exactly the list below.
+	// Kept beside the query it describes, so the two are read together.
+	Resets []string `json:"resets"`
+	Keeps  []string `json:"keeps"`
 }
+
+// legacyResets and legacyKeeps describe BeginLegacy (db/queries/players.sql).
+var (
+	legacyResets = []string{"Your level and experience", "Your spent and unspent stat points"}
+	legacyKeeps  = []string{"Your gold and the vault", "Your gear and your soldiers",
+		"Your estates and upgrades", "Your kingdom and your diamonds"}
+)
 
 // GetLegacy describes the offer.
 func (d Deps) GetLegacy(ctx context.Context, playerID uuid.UUID) (*LegacyView, error) {
@@ -48,6 +61,7 @@ func (d Deps) GetLegacy(ctx context.Context, playerID uuid.UUID) (*LegacyView, e
 		Available: int(p.Level) >= d.Config.Progression.LevelCap &&
 			int(p.Legacy) < c.MaxStacks,
 		AtLevel: int(p.Level), LevelCap: d.Config.Progression.LevelCap,
+		Resets: legacyResets, Keeps: legacyKeeps,
 	}, nil
 }
 

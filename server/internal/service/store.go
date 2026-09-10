@@ -16,15 +16,26 @@ import (
 
 // StoreGood is one thing diamonds buy.
 type StoreGood struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// The card's heading and its two short lines. The Shop drew the painting's
+	// own "30M SHIELD" over a server that sells eight hours, and got the eight by
+	// running a regular expression over Blurb.
+	Title   string `json:"title"`
+	Caption string `json:"caption"`
+	// The quantity the card shows beside its icon: energy restored, or hours of
+	// protection.
+	Amount   int64  `json:"amount"`
 	Blurb    string `json:"blurb"`
 	Icon     string `json:"icon"`
 	Diamonds int64  `json:"diamonds"`
 	// Whether buying right now would do anything: a full pool cannot be refilled
 	// and a standing shield should not be paid for twice.
-	Useful bool   `json:"useful"`
-	Note   string `json:"note,omitempty"`
+	Useful bool `json:"useful"`
+	// Whether the player holds the diamonds for it, so BUY can say so before
+	// the tap rather than after it.
+	Affordable bool   `json:"affordable"`
+	Note       string `json:"note,omitempty"`
 }
 
 // StoreView is the diamond half of the Shop screen.
@@ -57,6 +68,7 @@ func (d Deps) GetStore(ctx context.Context, playerID uuid.UUID) (*StoreView, err
 
 	refill := StoreGood{
 		ID: "energy_refill", Name: "Full Energy", Icon: "currency/bolt",
+		Title: "ENERGY REFILL", Caption: "Refills your energy", Amount: maxEnergy,
 		Blurb:    fmt.Sprintf("Fill your pool back to %d right now.", maxEnergy),
 		Diamonds: cfg.EnergyRefillDiamonds, Useful: !full,
 	}
@@ -66,6 +78,9 @@ func (d Deps) GetStore(ctx context.Context, playerID uuid.UUID) (*StoreView, err
 
 	shield := StoreGood{
 		ID: "shield", Name: "Protection", Icon: "upgrades/bulwark",
+		Title:    fmt.Sprintf("%dH SHIELD", cfg.ShieldHours),
+		Caption:  fmt.Sprintf("Protects your city\nfor %d hours", cfg.ShieldHours),
+		Amount:   cfg.ShieldHours,
 		Blurb:    fmt.Sprintf("No one can raid you for %d hours.", cfg.ShieldHours),
 		Diamonds: cfg.ShieldDiamonds, Useful: !shielded,
 	}
@@ -73,6 +88,8 @@ func (d Deps) GetStore(ctx context.Context, playerID uuid.UUID) (*StoreView, err
 		shield.Note = "you are already protected"
 	}
 
+	refill.Affordable = p.Diamonds >= refill.Diamonds
+	shield.Affordable = p.Diamonds >= shield.Diamonds
 	return &StoreView{Diamonds: p.Diamonds, Goods: []StoreGood{refill, shield}}, nil
 }
 

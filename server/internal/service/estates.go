@@ -123,10 +123,30 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 }
 
 // EstatesView is the Keep tab (upgrades) and the Map tab (holdings).
+// The navigation sections that open the Family upgrades and the vault.
+const (
+	estatesSection = "estates"
+	bankSection    = "bank"
+)
+
 type EstatesView struct {
 	Upgrades []UpgradeView `json:"upgrades"`
 	Holdings []HoldingView `json:"holdings"`
 	Tax      TaxView       `json:"tax"`
+	// The Family upgrades open with the estates section, and the vault with the
+	// bank. The screen showed both from level 1 with working buttons.
+	UpgradesUnlockLevel int          `json:"upgrades_unlock_level"`
+	UpgradesUnlocked    bool         `json:"upgrades_unlocked"`
+	Treasury            TreasuryView `json:"treasury"`
+}
+
+// TreasuryView is the vault's card: what is in it, what a deposit costs, and
+// whether it is open yet. The fee was written into the client as "10%".
+type TreasuryView struct {
+	Vault        string `json:"vault"`
+	DepositFeeBP int64  `json:"deposit_fee_bp"`
+	UnlockLevel  int    `json:"unlock_level"`
+	Unlocked     bool   `json:"unlocked"`
 }
 
 type UpgradeView struct {
@@ -140,6 +160,9 @@ type UpgradeView struct {
 	NextCost int64  `json:"next_cost"`
 	Maxed    bool   `json:"maxed"`
 	Effect   int64  `json:"effect_now"`
+	// What the upgrade gives after the next level, so the card can say what the
+	// price buys. Zero when maxed.
+	EffectNext int64 `json:"effect_next"`
 }
 
 type HoldingView struct {
@@ -212,17 +235,32 @@ func (d Deps) GetEstates(ctx context.Context, playerID uuid.UUID) (*EstatesView,
 		return nil, err
 	}
 
+	upAt := d.Config.SectionLevel(estatesSection)
+	bankAt := d.Config.SectionLevel(bankSection)
 	view := &EstatesView{
-		Upgrades: make([]UpgradeView, 0, len(d.Config.Estates.Upgrades)),
-		Holdings: make([]HoldingView, 0, len(d.Config.Estates.Holdings)),
+		Upgrades:            make([]UpgradeView, 0, len(d.Config.Estates.Upgrades)),
+		Holdings:            make([]HoldingView, 0, len(d.Config.Estates.Holdings)),
+		UpgradesUnlockLevel: upAt,
+		UpgradesUnlocked:    int(p.Level) >= upAt,
+		Treasury: TreasuryView{
+			Vault:        itoa(p.TreasuryGold),
+			DepositFeeBP: d.Config.Progression.Treasury.DepositFeeBP,
+			UnlockLevel:  bankAt,
+			Unlocked:     int(p.Level) >= bankAt,
+		},
 	}
 	for _, u := range d.Config.Estates.Upgrades {
 		lv := upLevels[u.ID]
 		cost, ok := u.Cost(lv)
+		var next int64
+		if ok {
+			next = u.PerLevel * int64(lv+1)
+		}
 		view.Upgrades = append(view.Upgrades, UpgradeView{
 			ID: u.ID, Name: u.Name, Blurb: u.Blurb, Bucket: u.Bucket,
 			Level: lv, MaxLevel: u.MaxLevel, PerLevel: u.PerLevel,
 			NextCost: cost, Maxed: !ok, Effect: u.PerLevel * int64(lv),
+			EffectNext: next,
 		})
 	}
 	for _, h := range d.Config.Estates.Holdings {
@@ -246,6 +284,14 @@ func (d Deps) BuyUpgrade(ctx context.Context, playerID uuid.UUID, upgradeID stri
 	u := d.Config.Upgrade(upgradeID)
 	if u == nil {
 		return nil, ErrNotFound
+	}
+	// Read outside the purchase's transaction: a level only falls through a
+	// Legacy, which is its own transaction, so the worst race is a refusal a
+	// moment early.
+	if p, err := sqlcdb.New(d.Pool).GetPlayerByID(ctx, playerID); err == nil {
+		if at := d.Config.SectionLevel(estatesSection); int(p.Level) < at {
+			return nil, fmt.Errorf("%w: the estates open at level %d", ErrLevelTooLow, at)
+		}
 	}
 	if err := d.buyLevel(ctx, playerID, wantSeq, func(q *sqlcdb.Queries, level int) (int64, error) {
 		cost, ok := u.Cost(level)

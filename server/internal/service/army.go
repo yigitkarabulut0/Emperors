@@ -48,12 +48,15 @@ type UnitView struct {
 	Tier   string `json:"tier,omitempty"`
 	// Only the hero has one. Omitted for soldiers rather than sent as zero, so a
 	// client cannot render "level 0" next to a unit that has no level at all.
-	Level    int64                `json:"level,omitempty"`
-	Attack   int64                `json:"attack"`
-	Defense  int64                `json:"defense"`
-	Speed    int64                `json:"speed"`
-	HP       int64                `json:"hp"`
-	EHP      int64                `json:"ehp"`
+	Level   int64 `json:"level,omitempty"`
+	Attack  int64 `json:"attack"`
+	Defense int64 `json:"defense"`
+	Speed   int64 `json:"speed"`
+	HP      int64 `json:"hp"`
+	EHP     int64 `json:"ehp"`
+	// This unit's own Might: the army's score, for one unit. What every screen
+	// prints as POWER, so the hero's, a soldier's and the army's agree.
+	Might    int64                `json:"might"`
 	Equipped map[string]*ItemView `json:"equipped"`
 	// What one reroll of this soldier costs. Soldiers only.
 	RerollCost int64 `json:"reroll_cost,omitempty"`
@@ -202,10 +205,12 @@ func (d Deps) heroUnit(p sqlcdb.AppPlayer, gear map[string]*ItemView) UnitView {
 		spd += iv.Speed
 	}
 	hp := army.HeroHP(d.Config, int64(p.Level), def)
+	ehp := army.EffectiveHP(d.Config, hp, def, int64(p.Level))
 	return UnitView{
 		ID: p.ID.String(), Name: p.DisplayName, IsHero: true, Level: int64(p.Level),
 		Attack: atk, Defense: def, Speed: spd, HP: hp,
-		EHP:      army.EffectiveHP(d.Config, hp, def, int64(p.Level)),
+		EHP:      ehp,
+		Might:    army.UnitMight(atk, ehp),
 		Equipped: gear,
 	}
 }
@@ -235,10 +240,12 @@ func (d Deps) soldierUnit(p sqlcdb.AppPlayer, s sqlcdb.AppSoldier, gear map[stri
 	}
 
 	// No Level. A soldier's tier IS its rank, and it moves only when rerolled.
+	ehp := army.EffectiveHP(d.Config, hp, def, int64(p.Level))
 	return UnitView{
-		ID: s.ID.String(), Name: s.Name, Type: s.TypeID, Tier: s.Tier,
+		ID: s.ID.String(), Name: d.soldierTypeName(s.TypeID), Type: s.TypeID, Tier: s.Tier,
 		Attack: atk, Defense: def, Speed: spd, HP: hp,
-		EHP:        army.EffectiveHP(d.Config, hp, def, int64(p.Level)),
+		EHP:        ehp,
+		Might:      army.UnitMight(atk, ehp),
 		Equipped:   gear,
 		RerollCost: reroll,
 	}

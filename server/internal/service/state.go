@@ -199,7 +199,7 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 	return &Snapshot{
 		Player:   playerView(d.Config, p),
 		Energy:   energyView(settled, maxEnergy, period),
-		Sections: sectionViews(d.Config, int(p.Level)),
+		Sections: sectionViews(d.Config, int(p.Level), p.KingdomID != nil),
 		Jobs:     jobViews(d.Config, p, collects, eff.Bonuses),
 		Prices:   PricesView{RenameDiamonds: d.Config.Progression.Store.RenameDiamonds},
 		ServerAt: now.UTC(),
@@ -218,15 +218,28 @@ func settleEnergy(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, eff estates.Effect
 	return state, maxEnergy, period
 }
 
-func sectionViews(cfg *gameconfig.Bundle, level int) []SectionView {
+// sectionViews says which tabs are open. The client reads Unlocked rather than
+// comparing levels itself.
+//
+// A lord who belongs to a kingdom always has its tab: a Legacy puts them back
+// at level 1, far under the level that first opened it, and locking a king out
+// of his own kingdom for twenty levels is not a rule anyone would choose.
+func sectionViews(cfg *gameconfig.Bundle, level int, inKingdom bool) []SectionView {
 	out := make([]SectionView, 0, len(cfg.Progression.Sections))
 	for _, g := range cfg.Progression.Sections {
+		open := level >= g.Level
+		if g.ID == kingdomSection && inKingdom {
+			open = true
+		}
 		out = append(out, SectionView{
-			ID: g.ID, UnlockLevel: g.Level, Unlocked: level >= g.Level,
+			ID: g.ID, UnlockLevel: g.Level, Unlocked: open,
 		})
 	}
 	return out
 }
+
+// kingdomSection is the navigation section that opens the Kingdom tab.
+const kingdomSection = "house"
 
 func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {
 	return PlayerView{

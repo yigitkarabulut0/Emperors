@@ -58,9 +58,8 @@ static func _paint(s: Sheet) -> void:
 	del.pressed.connect(func() -> void: _delete(s))
 	s.body.add_child(del)
 
-	var version := str(ProjectSettings.get_setting("application/config/version", ""))
-	s.paragraph("Emperors%s  ·  signed in as %s" % [(" " + version) if version != "" else "",
-		str(p.get("username", ""))], 20, UI.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	s.paragraph("Emperors build %s  ·  signed in as %s" % [Env.build_version, str(p.get("username", ""))],
+		20, UI.DIM, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 static func _face_button(s: Sheet, face: String, id: String, current: bool) -> Control:

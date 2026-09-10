@@ -44,6 +44,23 @@ const READY := Color("#F0D27A")
 ## the painting's size when the text fits its box, smaller only when it would not.
 const NAME_FIT := Vector2i(24, 14)
 const COUNTER_FIT := Vector2i(24, 16)
+const NAME_CLEAR := 16.0
+## Below this a name that will not fit on one line takes two, in this height.
+const NAME_ONE_LINE_MIN := 18
+## The band (top, bottom) a two-line name's ink stands in: under the row's
+## border, over the payout icons.
+const NAME_TWO_LINES_INK := Vector2(8.0, 44.0)
+## Cinzel's capital height, as a fraction of its size (OS/2 sCapHeight 700/1000).
+const TITLE_CAP := 0.70
+## A row's payouts -- bolt, coin, crown, each with its figure. The painting
+## sets them for one-digit jobs; a late job pays thousands, and at the
+## painting's places "1,250" ran into the crown. Each pair stands where the
+## painting has it, or this far after the figure before it if that is further,
+## and all three figures shrink together (max, min) if they would reach the
+## COLLECT button.
+const PAYOUT_GAP := 20.0
+const PAYOUT_FIT := Vector2i(30, 20)
+const PAYOUT_CLEAR := 14.0
 var _built := false
 var _busy := false
 ## The gentle pulse on a card whose reward is waiting, one per card.
@@ -170,15 +187,11 @@ func _paint_rows() -> void:
 		if job.is_empty():
 			continue
 		var p: Dictionary = r["parts"]
-		var name: String = str(job.get("name", "")).to_upper()
-		var name_label: Label = p["name"]
-		name_label.text = name
-		# Fitted to the box the painting gives a name, so the longest ("PLUNDER THE
-		# DRAGON'S HOARD") stops where the counter begins instead of running under it.
-		UI.fit_label(name_label, NAME_FIT.x, NAME_FIT.y)
+		p["name"].text = str(job.get("name", "")).to_upper()
 		p["energy"].text = str(int(job.get("energy_cost", 0)))
-		p["gold"].text = UI.grouped(int(job.get("gold_payout", 0)))
-		p["xp"].text = UI.grouped(int(job.get("xp_payout", 0)))
+		p["gold"].text = UI.short_number(int(job.get("gold_payout", 0)))
+		p["xp"].text = UI.short_number(int(job.get("xp_payout", 0)))
+		flow_payouts(p)
 		var unlocked := bool(job.get("unlocked", false))
 		var next := int(job.get("next_milestone", 0))
 		# Confirmed plus the taps still in flight, the same sum the pills show.
@@ -189,11 +202,7 @@ func _paint_rows() -> void:
 			p["counter"].text = "%d / MAX" % collects
 		else:
 			p["counter"].text = "%d / %d" % [collects, next]
-		# The painting's counter reads "0 / 25"; "1500 / MAX" is twice as wide. The
-		# box ends where the painted figure does, 36 units clear of the button, and
-		# a long figure shrinks to stay inside it -- a Label grows to its text, so
-		# without this the count walked right until it sat on the COLLECT button.
-		UI.fit_label(p["counter"], COUNTER_FIT.x, COUNTER_FIT.y)
+		fit_top_line(p)
 		_paint_mastery(p, job.get("mastery", {}), collects)
 		r["node"].modulate = Color.WHITE if unlocked else Color(0.55, 0.55, 0.55)
 
@@ -203,6 +212,107 @@ func _paint_rows() -> void:
 		var short_of_energy := unlocked \
 			and GameState.display_energy() < int(job.get("energy_cost", 0))
 		_set_empty(r, short_of_energy)
+
+
+## A row's top line: the job's name on the left, the collect count on the right.
+##
+## The painting's counter reads "0 / 25"; "1500 / MAX" is twice as wide. Its box
+## ends where the painted figure does, 36 units clear of the button, and a long
+## count shrinks to stay inside it -- a Label grows to its text, so without this
+## the count walked right until it sat on the COLLECT button. The name then
+## stops NAME_CLEAR short of the count's first figure rather than of its box,
+## which is empty on its left: "ROYAL TAX PICKUP" ran straight into "0 / MAX".
+static func fit_top_line(p: Dictionary) -> void:
+	var counter: Label = p["counter"]
+	var name: Label = p["name"]
+	UI.fit_label(counter, COUNTER_FIT.x, COUNTER_FIT.y)
+	var s := counter.label_settings
+	var count_left := counter.position.x + float(counter.get_meta("box_w")) \
+		- s.font.get_string_size(counter.text, HORIZONTAL_ALIGNMENT_LEFT, -1, s.font_size).x
+	if not name.has_meta("home"):
+		name.set_meta("home", Rect2(name.position, name.size))
+		name.set_meta("layout_w", name.get_meta("box_w", name.size.x))
+	var home: Rect2 = name.get_meta("home")
+	var room := minf(float(name.get_meta("layout_w")), count_left - NAME_CLEAR - name.position.x)
+	name.set_meta("box_w", room)
+	name.label_settings.line_spacing = 0.0
+	name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name.position = home.position
+	name.size = home.size
+	UI.fit_label(name, NAME_FIT.x, NAME_FIT.y)
+	var words := name.text.split(" ")
+	if name.label_settings.font_size >= NAME_ONE_LINE_MIN or words.size() < 2:
+		return
+	# Two lines at a size a person can read beat one at a size nobody can:
+	# "PLUNDER THE DRAGON'S HOARD" beside "999 / 1000" was 14 units on one line,
+	# six and a half points on the phone. The break goes where the two lines
+	# come out most even, and the type is the largest at which both fit.
+	var f := name.label_settings.font
+	var lines := PackedStringArray()
+	var widest := INF
+	for i in range(1, words.size()):
+		var a := " ".join(words.slice(0, i))
+		var b := " ".join(words.slice(i))
+		var w := maxf(f.get_string_size(a, HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_FIT.x).x,
+			f.get_string_size(b, HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_FIT.x).x)
+		if w < widest:
+			widest = w
+			lines = PackedStringArray([a, b])
+	# The two lines' ink -- the first line's capitals to the second's baseline,
+	# 0.7 + 1.0 of the size in Cinzel -- stands in the band between the row's
+	# border and the payout icons.
+	var size := NAME_FIT.x
+	while size > NAME_FIT.y:
+		var w := maxf(f.get_string_size(lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x,
+			f.get_string_size(lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x)
+		if w <= room and size * (TITLE_CAP + 1.0) <= NAME_TWO_LINES_INK.y - NAME_TWO_LINES_INK.x:
+			break
+		size -= 1
+	name.text = "\n".join(lines)
+	var ls := name.label_settings
+	ls.font_size = size
+	ls.line_spacing = 0.0
+	ls.line_spacing = size - f.get_height(size)
+	name.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	var ink_h := size * (TITLE_CAP + 1.0)
+	var ink_top := (NAME_TWO_LINES_INK.x + NAME_TWO_LINES_INK.y - ink_h) / 2.0
+	name.position.y = ink_top - (f.get_ascent(size) - size * TITLE_CAP)
+	name.size = Vector2(room, f.get_height(size) + size)
+
+
+## Lays the payout pairs along the row (see PAYOUT_GAP). Every place is the
+## layout's: a pair's painted spot and its icon-to-figure offset are read off
+## the parts the first time, and the limit is the COLLECT button's left edge.
+static func flow_payouts(p: Dictionary) -> void:
+	var pairs := [[p["energy_icon"], p["energy"]], [p["gold_icon"], p["gold"]], [p["xp_icon"], p["xp"]]]
+	for pair in pairs:
+		for n in pair:
+			if not (n as Control).has_meta("home_x"):
+				(n as Control).set_meta("home_x", (n as Control).position.x)
+	var limit: float = (p["collect"] as Control).position.x - PAYOUT_CLEAR
+	var size := PAYOUT_FIT.x
+	while true:
+		var end := _place_payouts(pairs, size)
+		if end <= limit or size <= PAYOUT_FIT.y:
+			break
+		size -= 1
+
+
+## Places the pairs at one type size and returns where the last figure ends.
+static func _place_payouts(pairs: Array, size: int) -> float:
+	var end := -INF
+	for pair in pairs:
+		var icon: Control = pair[0]
+		var label: Label = pair[1]
+		var home: float = icon.get_meta("home_x")
+		var x := maxf(home, end + PAYOUT_GAP)
+		icon.position.x = x
+		label.label_settings.font_size = size
+		label.position.x = x + float(label.get_meta("home_x")) - home
+		var w := label.label_settings.font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		label.size.x = w + 2.0
+		end = label.position.x + w
+	return end
 
 
 ## The mastery track under a row: three painted markers labelled with the
@@ -303,6 +413,11 @@ func _paint_quests() -> void:
 		bar.label_settings.font_color = ON_FULL_BAR if full else IN_PROGRESS
 		bar.label_settings.font = UI.font("body", 800) if full else bar.get_meta("font")
 		bar.label_settings.shadow_color = Color(1, 0.9, 0.6, 0.35) if full else Color(0, 0, 0, 0.45)
+		# A part-filled bar is gold on its left and navy on its right, and "7 / 20"
+		# stands across the edge: pale type held its navy half and was lost on the
+		# gold. A dark outline reads on both.
+		bar.label_settings.outline_size = 0 if full else 5
+		bar.label_settings.outline_color = Color(0.03, 0.06, 0.09, 0.9)
 		_paint_rewards(p["reward_row"], int(q.get("xp", 0)), int(q.get("gold", 0)),
 			UI.GREEN if done else (UI.DIM if claimed else Color("#F3EDE0")))
 

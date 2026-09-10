@@ -229,54 +229,6 @@
     },
     {
      "rect": [
-      394,
-      566,
-      56,
-      36
-     ],
-     "sample_x": [
-      520,
-      555
-     ]
-    },
-    {
-     "rect": [
-      494,
-      566,
-      22,
-      36
-     ],
-     "sample_x": [
-      520,
-      555
-     ]
-    },
-    {
-     "rect": [
-      556,
-      566,
-      4,
-      36
-     ],
-     "sample_x": [
-      520,
-      555
-     ]
-    },
-    {
-     "rect": [
-      602,
-      566,
-      74,
-      36
-     ],
-     "sample_x": [
-      520,
-      555
-     ]
-    },
-    {
-     "rect": [
       640,
       531,
       82,
@@ -298,8 +250,21 @@
       470,
       500
      ]
+    },
+    {
+     "rect": [
+      356,
+      558,
+      370,
+      56
+     ],
+     "sample_x": [
+      690,
+      725
+     ]
     }
-   ]
+   ],
+   "note": "the name, the counter, the mastery figures and the whole payout band (bolt, coin, crown and their figures) are erased row by row: the row draws the icons live so a long figure can push the next pair along"
   },
   {
    "name": "collect/collect_button",

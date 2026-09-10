@@ -1054,7 +1054,22 @@
       782
      ]
     }
-   ]
+   ],
+   "inpaint": [
+    [
+     330,
+     1444,
+     178,
+     23
+    ],
+    [
+     700,
+     1444,
+     140,
+     23
+    ]
+   ],
+   "note": "Both titles are painted out and set live from the server's title: the painting sold a '30M SHIELD' while the server sells hours."
   },
   {
    "name": "icons/energy_potion",

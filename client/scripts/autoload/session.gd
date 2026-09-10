@@ -16,6 +16,9 @@ var access_token := ""
 var refresh_token := ""
 var player_id := ""
 var refresh_failed_offline := false
+## Why the last session ended, for the sign-in screen to say. Empty when the
+## player signed out themselves or never signed in.
+var ended_reason := ""
 var _refreshing := false
 
 
@@ -42,6 +45,7 @@ func login(username: String, password: String) -> String:
 func _consume(res: Api.Response) -> String:
 	if not res.ok:
 		return res.error
+	ended_reason = ""
 	access_token = str(res.data.get("access_token", ""))
 	refresh_token = str(res.data.get("refresh_token", ""))
 	player_id = str(res.data.get("player_id", ""))
@@ -63,6 +67,8 @@ func try_refresh() -> bool:
 	if not res.ok:
 		refresh_failed_offline = res.status == 0
 		if res.status == 401 or res.status == 403:
+			ended_reason = "Your session has ended. Please sign in again." if res.status == 401 \
+				else str(res.error if res.error != "" else "This account cannot sign in.")
 			sign_out()
 		return false
 	refresh_failed_offline = false
@@ -81,6 +87,8 @@ func sign_out() -> void:
 
 func _on_unauthorized() -> void:
 	if not _refreshing:
+		if is_signed_in():
+			ended_reason = "Your session has ended. Please sign in again."
 		sign_out()
 
 

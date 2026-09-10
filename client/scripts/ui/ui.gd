@@ -164,6 +164,31 @@ static func hotspot(rect: Rect2, pass_drag: bool = false) -> Button:
 	return b
 
 
+## Lays the page's own ground over the top of a painted strip, fading out over
+## `height`, so a crop cut out of a painting meets the navy behind it without a
+## seam. The paintings' ground is a few units lighter than the one the game
+## is drawn on, and the erased tops of the foot crops showed as a band.
+static func fade_top(node: Control, height: float) -> TextureRect:
+	var g := Gradient.new()
+	g.set_color(0, Color(GROUND, 1.0))
+	g.set_color(1, Color(GROUND, 0.0))
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill_from = Vector2(0, 0)
+	t.fill_to = Vector2(0, 1)
+	t.width = 4
+	t.height = 64
+	var r := TextureRect.new()
+	r.texture = t
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_SCALE
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r.position = Vector2.ZERO
+	r.size = Vector2(node.size.x, height)
+	node.add_child(r)
+	return r
+
+
 ## Shrinks a label's font until its text fits its width (never below min_size).
 static func fit_label(l: Label, max_size: int, min_size: int = 14) -> void:
 	var s := l.label_settings

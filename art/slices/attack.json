@@ -159,8 +159,15 @@
      452,
      120,
      42
+    ],
+    [
+     706,
+     430,
+     172,
+     23
     ]
-   ]
+   ],
+   "note": "The painted 'Steal up to 3% gold' is inpainted out: a revenge strike takes 4%, and the rate is drawn live from the server's steal_rate_bp."
   },
   {
    "name": "attack/target_card",
@@ -664,17 +671,18 @@
    "erase": [
     {
      "rect": [
-      180,
+      155,
       1470,
-      744,
+      786,
       70
      ],
      "sample_x": [
-      158,
-      174
+      926,
+      940
      ]
     }
-   ]
+   ],
+   "note": "The band above the notice is the history panel's foot, filled from the navy at the page's right edge -- not from the rail's grey border, which drew a dark bar across every tall phone."
   },
   {
    "name": "battle/horizon",

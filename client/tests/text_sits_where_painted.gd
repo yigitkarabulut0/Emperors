@@ -61,6 +61,10 @@ func _check_screen(screen: String) -> void:
 		if str(e.get("valign", "center")) != "center":
 			continue
 		var l: Label = ui[id]
+		# Built empty -- the painting's sample is never drawn as live text -- so
+		# the sample is put back to stand in for the words the screen will set,
+		# which are what has to sit on the painting's line.
+		l.text = str(e.get("sample", ""))
 		var r: Array = e["rect"]
 		var want := float(r[1]) + float(r[3]) / 2.0
 		# The block, not one line: a two-line description is given a rect that

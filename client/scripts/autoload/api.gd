@@ -83,10 +83,16 @@ func _send(method: int, path: String, body: Dictionary, authed: bool, may_retry:
 		res = await _once(lane, method, path, body, authed, timeout)
 	lane.busy = false
 
-	if res.status == 401 and authed and may_retry and Session.is_signed_in():
-		if await Session.try_refresh():
-			return await _send(method, path, body, authed, false, timeout)
 	if res.status == 401 and authed:
+		if may_retry and Session.is_signed_in():
+			if await Session.try_refresh():
+				return await _send(method, path, body, authed, false, timeout)
+			# A refresh that never reached the server is not a verdict on the
+			# session. It used to fall through to `unauthorized`, which signs the
+			# player out -- so a tunnel or a lift on the way to work ended the
+			# session. A refresh the server did refuse has already signed out.
+			if Session.is_signed_in():
+				return res
 		unauthorized.emit()
 	return res
 

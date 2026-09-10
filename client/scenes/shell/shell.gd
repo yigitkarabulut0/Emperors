@@ -65,7 +65,10 @@ func _ready() -> void:
 
 	GameState.changed.connect(_on_changed)
 	GameState.action_failed.connect(toast)
+	GameState.notice.connect(toast)
 	GameState.level_up.connect(_on_level_up)
+	GameState.mastery_reached.connect(_on_mastery)
+	Session.signed_out.connect(_on_signed_out)
 	Api.offline.connect(func() -> void: toast("Connection lost"))
 	Api.online.connect(func() -> void: toast("Connected"))
 
@@ -123,36 +126,22 @@ func _diamonds_popup() -> void:
 		await Dialog.ask(self, {"title": "Diamonds", "body": body + "\n\nToday's reward is already claimed.", "confirm_text": "OK"})
 
 
-## The "+" on energy offers the refill from the Diamond Goods directly.
+## The "+" on energy sells the refill from the Diamond Goods, through the same
+## flow the Shop's BUY uses.
 func _energy_popup() -> void:
 	if _busy_popup:
 		return
 	_busy_popup = true
 	var res: Api.Response = await Api.get_json("/v1/store")
-	_busy_popup = false
-	if not res.ok:
+	if res.ok:
+		var good := Goods.find(res.data, "energy_refill")
+		if good.is_empty():
+			open("shop")
+		else:
+			await Goods.buy(self, good)
+	else:
 		toast(res.error)
-		return
-	var good: Dictionary = {}
-	for g in res.data.get("goods", []):
-		if str(g.get("id", "")) == "energy_refill":
-			good = g
-	if good.is_empty():
-		open("shop")
-		return
-	var have := int(GameState.player().get("diamonds", 0))
-	var cost := int(good.get("diamonds", 0))
-	var body := "%s\nCosts %d diamonds. You have %d." % [str(good.get("blurb", "")), cost, have]
-	if not bool(good.get("useful", true)):
-		await Dialog.ask(self, {"title": "Energy refill", "body": body + "\nYour energy is already full.", "confirm_text": "OK"})
-		return
-	if have < cost:
-		await Dialog.ask(self, {"title": "Energy refill", "body": body + "\nNot enough diamonds. Tap the diamond pill to see how to earn them.", "confirm_text": "OK"})
-		return
-	if await Dialog.ask(self, {"title": "Energy refill", "body": body, "confirm_text": "Refill"}):
-		var r: Api.Response = await GameState.act("/v1/store/buy", {"good": "energy_refill"})
-		if r.ok:
-			toast("Energy refilled")
+	_busy_popup = false
 
 
 ## Once per session, when the day's reward is waiting, offer it on arrival.
@@ -365,7 +354,7 @@ func _unlock_level(id: String) -> int:
 
 
 func _is_locked(id: String) -> bool:
-	return int(GameState.player().get("level", 1)) < _unlock_level(id)
+	return not GameState.is_unlocked(SECTION_KEY.get(id, id))
 
 
 func _on_changed() -> void:
@@ -417,3 +406,26 @@ func toast(message: String) -> void:
 
 func _on_level_up(level: int, _levels: int, _points: int, _gems: int) -> void:
 	toast("Level %d!" % level)
+
+
+## A mastery milestone is a permanent raise on one job. The server has reported
+## it with every batch for months; nothing listened, so it arrived in silence.
+func _on_mastery(job_id: String, collects: int, bonus_bp: int) -> void:
+	var name := job_id.replace("_", " ").capitalize()
+	for j in GameState.jobs():
+		if str(j.get("id", "")) == job_id:
+			name = str(j.get("name", name))
+	toast("%s mastered: %s collects, +%s%% gold for good" % [name, UI.grouped(collects), _pct(bonus_bp)])
+
+
+static func _pct(bp: int) -> String:
+	return str(bp / 100) if bp % 100 == 0 else "%.1f" % (bp / 100.0)
+
+
+## The server ended the session (a refresh it refused). The shell is left with
+## no state to draw, so the game goes back to the sign-in screen and says why,
+## rather than sitting on empty frames.
+func _on_signed_out() -> void:
+	if not is_inside_tree():
+		return
+	Nav.go.call_deferred("res://scenes/auth/auth.tscn")

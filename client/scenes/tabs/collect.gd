@@ -388,12 +388,11 @@ func _claim_quest(i: int) -> void:
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/quests/claim", {"slot": int(q.get("slot", i))})
-	_busy = false
 	if res.ok:
 		var xp := int(q.get("xp", 0))
 		var gold := int(q.get("gold", 0))
 		_float_reward(i, "+%s XP   +%s gold" % [UI.grouped(xp), UI.grouped(gold)])
-		GameState.action_failed.emit("Task done: +%s XP and +%s gold" % [UI.grouped(xp), UI.grouped(gold)])
+		GameState.toast("Task done: +%s XP and +%s gold" % [UI.grouped(xp), UI.grouped(gold)])
 		# The server's answer is the day's board, already claimed.
 		var got: Array = res.data.get("quests", [])
 		if not got.is_empty():
@@ -401,6 +400,7 @@ func _claim_quest(i: int) -> void:
 			_paint_quests()
 		else:
 			await _load_quests()
+	_busy = false
 
 
 ## The reward rises off the card and fades, so the tap is answered where the

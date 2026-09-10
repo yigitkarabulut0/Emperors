@@ -70,3 +70,34 @@ func item(art_key: String) -> Texture2D:
 	if art_key == "":
 		return _clear_tex()
 	return tex("items/painted/" + art_key)
+
+
+## The painted face drawn for a player's portrait id (balance/progression.json
+## "avatars").
+##
+## The paintings hold four rival faces big enough for a card -- three men and
+## Lady Seraphine -- and no painting of a knave, a monk or a witch. Faces used to
+## be picked by hashing the player id, so a lord who chose the queen could be
+## drawn as a bearded baron and "Wulfric the Bold" as Seraphine. Every id now
+## names one face, and the three women's ids are the only ones drawn as a woman.
+const AVATAR_FACE := {
+	"queen": "portraits/rival_seraphine", "princess": "portraits/rival_seraphine",
+	"witch": "portraits/rival_seraphine",
+	"king": "portraits/rival_darius", "berserk": "portraits/rival_darius",
+	"knave": "portraits/rival_darius", "herald": "portraits/rival_darius",
+	"knight": "portraits/rival_malric", "templar": "portraits/rival_malric",
+	"captain": "portraits/rival_keldric", "archer": "portraits/rival_keldric",
+	"monk": "portraits/rival_keldric",
+}
+## The distinct faces a player may choose between, in the order a picker shows
+## them, each with the ids it stands for. The first id is the one a pick saves.
+const AVATAR_CHOICES := [
+	["portraits/rival_darius", ["king", "berserk", "knave", "herald"]],
+	["portraits/rival_keldric", ["captain", "archer", "monk"]],
+	["portraits/rival_malric", ["knight", "templar"]],
+	["portraits/rival_seraphine", ["queen", "princess", "witch"]],
+]
+
+
+func avatar(id: String) -> String:
+	return str(AVATAR_FACE.get(id, "portraits/rival_keldric"))

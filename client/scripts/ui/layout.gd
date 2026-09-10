@@ -200,6 +200,15 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 			set_fill(wrap, float(p.get("ratio", 1.0)))
 			return wrap
 		"text":
+			# A text part starts empty. Its "sample" is the painting's own copy --
+			# "Lord Darius", "278,000", "Restore 513 Energy" -- recorded to measure
+			# the type by, and it used to be drawn as the text until the server
+			# answered: a slow network or a failed request showed the painting's
+			# numbers as the player's. Only fixed copy (a button's word) is marked
+			# "static" and drawn from the start.
+			#
+			# The sample is still what the label is measured with, below: the
+			# centring works from the leading of real words, not of an empty line.
 			var l := UI.label(str(p.get("sample", "")), int(p.get("size", 24)), Color(str(p.get("color", "#F1E9DA"))),
 				str(p.get("font", "body")), int(p.get("weight", 500)), _halign(str(p.get("align", "left"))))
 			l.vertical_alignment = _valign(str(p.get("valign", "center")))
@@ -235,6 +244,8 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 			var block := l.get_minimum_size().y
 			if block > r.size.y and l.vertical_alignment == VERTICAL_ALIGNMENT_CENTER:
 				l.position.y = r.position.y - (block - r.size.y) / 2.0
+			if not bool(p.get("static", false)):
+				l.text = ""
 			return l
 		"button":
 			var asset := str(p.get("asset", ""))

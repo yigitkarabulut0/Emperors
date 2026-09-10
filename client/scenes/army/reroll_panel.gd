@@ -298,7 +298,7 @@ func _paint() -> void:
 	UI.fit_label(cp["name"], 22, 15)
 	cp["attack"].text = UI.grouped(int(_soldier.get("attack", 0)))
 	cp["defence"].text = UI.grouped(int(_soldier.get("defense", 0)))
-	cp["power"].text = UI.grouped(int(_soldier.get("ehp", 0)))
+	cp["power"].text = UI.grouped(int(_soldier.get("might", _soldier.get("ehp", 0))))
 	cp["troop"].text = UI.grouped(int(_soldier.get("hp", 0)))
 	var plate: TextureRect = cp["numeral"]
 	if _tier <= 3:

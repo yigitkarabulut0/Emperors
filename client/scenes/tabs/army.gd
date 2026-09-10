@@ -232,7 +232,7 @@ func _paint_card(i: int) -> void:
 		UI.fit_label(p["name"], 22, 15)
 		p["attack"].text = UI.grouped(int(soldier.get("attack", 0)))
 		p["defence"].text = UI.grouped(int(soldier.get("defense", 0)))
-		p["power"].text = UI.grouped(int(soldier.get("ehp", 0)))
+		p["power"].text = UI.grouped(int(soldier.get("might", soldier.get("ehp", 0))))
 		p["troop"].text = UI.grouped(int(soldier.get("hp", 0)))
 	else:
 		p["portrait"].texture = Art.tex("portraits/soldier_villager")
@@ -335,7 +335,9 @@ func _paint_selected() -> void:
 	_ui["sel_description"].label_settings.line_spacing = -4
 	_ui["sel_attack"].text = UI.grouped(int(soldier.get("attack", 0)))
 	_ui["sel_defence"].text = UI.grouped(int(soldier.get("defense", 0)))
-	_ui["sel_power"].text = UI.grouped(int(soldier.get("ehp", 0)))
+	# POWER is the unit's own Might, the score the army and the raid band
+	# compare; it printed effective HP under the same word.
+	_ui["sel_power"].text = UI.grouped(int(soldier.get("might", soldier.get("ehp", 0))))
 	var hp := int(soldier.get("hp", 0))
 	_ui["sel_troop_text"].text = "%s / %s" % [UI.grouped(hp), UI.grouped(hp)]
 	Layout.set_fill(_ui["sel_troop_bar"], 1.0)
@@ -480,12 +482,12 @@ func _recruit(type: String) -> void:
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/army/recruit", {"slot": target, "type_id": type})
-	_busy = false
 	if res.ok:
 		var s: Dictionary = res.data.get("soldier", {})
-		GameState.action_failed.emit("Recruited a %s %s" % [str(s.get("tier", "")).capitalize(), str(s.get("name", ""))])
+		GameState.toast("Recruited a %s %s" % [str(s.get("tier", "")).capitalize(), str(s.get("name", ""))])
 		_selected = target
 		await _load()
+	_busy = false
 
 
 func _buy_slot() -> void:
@@ -500,9 +502,9 @@ func _buy_slot() -> void:
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/army/slot", {})
-	_busy = false
 	if res.ok:
 		await _load()
+	_busy = false
 
 
 func _dismiss() -> void:
@@ -514,9 +516,9 @@ func _dismiss() -> void:
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/army/dismiss", {"soldier_id": str(soldier.get("id", ""))})
-	_busy = false
 	if res.ok:
 		await _load()
+	_busy = false
 
 
 ## Opens the reroll panel on the selected soldier. The Army screen stops
@@ -546,33 +548,66 @@ func _auto_equip() -> void:
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/army/autoequip", {"scope": "army"})
-	_busy = false
 	if res.ok:
 		var n := int(res.data.get("equipped", 0))
-		GameState.action_failed.emit("Nothing better to wear" if n == 0 else "Equipped %d item%s" % [n, "" if n == 1 else "s"])
+		GameState.toast("Nothing better to wear" if n == 0 else "Equipped %d item%s" % [n, "" if n == 1 else "s"])
 		await _load()
+	_busy = false
 
 
+## This soldier's gear for one slot: everything that fits and is not already on
+## them, best first. A piece someone else wears -- the hero, another soldier --
+## is offered with their name on it and taking it asks first; it used to be
+## offered as if it were spare, the first eight in no order.
 func _choose_gear(slot: String) -> void:
 	var soldier: Variant = _slot(_selected).get("soldier", null)
 	if _busy or not (soldier is Dictionary):
 		return
+	_busy = true
 	var inv: Api.Response = await Api.get_json("/v1/inventory")
+	_busy = false
 	if not inv.ok:
 		return
-	var options: Array = []
+	var sid := str(soldier.get("id", ""))
+	var items: Array = []
+	var wearing: Dictionary = {}
 	for it in inv.data.get("items", []):
-		if str(it.get("slot", "")) != slot or bool(it.get("equipped", false)):
+		if str(it.get("slot", "")) != slot:
 			continue
-		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")), "sub": "%s · Power %s" % [str(it.get("tier", "")).to_upper(), UI.grouped(int(it.get("power", 0)))]})
+		if str(it.get("equipped_on", "")) == sid:
+			wearing = it
+			continue
+		items.append(it)
+	items.sort_custom(func(a, b): return int(a.get("power", 0)) > int(b.get("power", 0)))
+	var options: Array = []
+	for it in items:
+		var worn := str(it.get("worn_by", ""))
+		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")),
+			"sub": "%s · Power %s%s" % [str(it.get("tier", "")).to_upper(), UI.grouped(int(it.get("power", 0))),
+				(" · worn by " + worn) if worn != "" else ""]})
+	if not wearing.is_empty():
+		options.append({"id": "__unequip", "label": "Take off %s" % str(wearing.get("name", ""))})
 	if options.is_empty():
-		GameState.action_failed.emit("No spare %s in your inventory" % slot)
+		GameState.action_failed.emit("Nothing in your bags fits this slot")
 		return
-	var pick := await Dialog.choose(self, {"title": "%s for this soldier" % slot.capitalize(), "options": options.slice(0, 8)})
+	var pick := await Dialog.choose(self, {"title": "%s for this soldier" % slot.capitalize(), "options": options})
 	if pick == "":
 		return
+	var path := "/v1/army/equip"
+	var body := {"soldier_id": sid, "item_id": pick}
+	if pick == "__unequip":
+		path = "/v1/inventory/unequip"
+		body = {"item_id": str(wearing.get("id", ""))}
+	else:
+		for it in items:
+			if str(it.get("id", "")) == pick and str(it.get("worn_by", "")) != "":
+				if not await Dialog.ask(self, {"title": "Take it from them?",
+						"body": "%s is worn by %s. They will fight without it." % [str(it.get("name", "")),
+							"your hero" if str(it.get("equipped_on", "")) == "hero" else "your " + str(it.get("worn_by", ""))],
+						"confirm_text": "Take it"}):
+					return
 	_busy = true
-	var res: Api.Response = await GameState.act("/v1/army/equip", {"soldier_id": str(soldier.get("id", "")), "item_id": pick})
-	_busy = false
+	var res: Api.Response = await GameState.act(path, body)
 	if res.ok:
 		await _load()
+	_busy = false

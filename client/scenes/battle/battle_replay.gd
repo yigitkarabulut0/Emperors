@@ -48,6 +48,11 @@ const THEATRE_Y := 820.0
 var _replay: Dictionary = {}
 var _result: Dictionary = {}
 var _target: Dictionary = {}
+## Which of the record's sides is the player watching: "a" when they raided,
+## "d" when they were raided. Their side stands on the left in green whichever
+## it is. It used to be the attacker's, always, so a defence was played back
+## with the player's own face on the lord who robbed them.
+var _you := "a"
 
 var _hp := {"a": 0, "d": 0}
 var _max := {"a": 1, "d": 1}
@@ -68,11 +73,18 @@ var _skip := false
 var _done := false
 
 
-## `result` is the /v1/attack response (or a stored battle: then it IS the replay).
+## `result` is the /v1/attack response or a stored battle (/v1/battles/{id}),
+## both told from the player's side; `target` is the other lord, for their name
+## and face.
 func setup(result: Dictionary, target: Dictionary = {}) -> void:
 	_result = result
 	_target = target
 	_replay = result if result.has("events") else result.get("replay", {})
+	_you = "d" if str(result.get("perspective", "")) == "defender" else "a"
+
+
+func _them() -> String:
+	return "d" if _you == "a" else "a"
 
 
 func _ready() -> void:
@@ -98,18 +110,24 @@ func _ready() -> void:
 	_root.add_child(veil)
 
 	var title := UI.label("BATTLE", 72, UI.GOLD, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(title, Rect2(0, 96, W, 96))
+	UI.place(title, Rect2(0, 56, W, 100))
 	_root.add_child(title)
 	_round_label = UI.label("", 30, UI.DIM, "title", 500, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_round_label, Rect2(0, 200, W, 44))
+	UI.place(_round_label, Rect2(0, 214, W, 42))
 	_root.add_child(_round_label)
 
-	_weapon["a"] = _weapon_for(_replay.get("attacker", {}))
-	_weapon["d"] = _weapon_for(_replay.get("defender", {}))
-	_side(_replay.get("attacker", {}), "a", LEFT_X, "portraits/hero_throne",
-		int(_replay.get("attacker_might", 0)))
-	_side(_replay.get("defender", {}), "d", RIGHT_X, _portrait_for(_replay.get("defender", {})),
-		int(_replay.get("defender_might", 0)))
+	var armies := {"a": _replay.get("attacker", {}), "d": _replay.get("defender", {})}
+	var mights := {"a": int(_replay.get("attacker_might", 0)), "d": int(_replay.get("defender_might", 0))}
+	_weapon["a"] = _weapon_for(armies["a"])
+	_weapon["d"] = _weapon_for(armies["d"])
+	_side(armies[_you], _you, LEFT_X, "portraits/hero_throne", mights[_you])
+	_side(armies[_them()], _them(), RIGHT_X, _portrait_for(armies[_them()]), mights[_them()])
+
+	# Whose fight this was, between the title and the round card.
+	var story := UI.label(_story(armies[_them()]), 26, UI.INK, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(story, Rect2(40, 164, W - 80, 40))
+	UI.fit_label(story, 26, 18)
+	_root.add_child(story)
 
 	var swords := UI.label("⚔", 66, UI.GOLD_DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
 	UI.place(swords, Rect2(W / 2.0 - 60, FACE_Y + PORTRAIT.size.y / 2.0 - 45, 120, 90))
@@ -165,13 +183,21 @@ func _plate_button(word: String, plate: String, col: Color, rect: Rect2) -> Butt
 	return b
 
 
-## Only the painted rival faces, which are 136 square. The lord portraits the
-## old list also drew from are 76x68 -- thumbnails for a kingdom roster, four
-## times too small for a face the screen is built around.
+## The other lord's own face: the portrait they chose, as the Attack cards draw
+## it. Only the painted rival faces, which are 136 square; the lord portraits
+## are 76x68 thumbnails, far too small for a face this screen is built around.
 func _portrait_for(army: Dictionary) -> String:
-	var names := ["portraits/rival_darius", "portraits/rival_seraphine",
-		"portraits/rival_keldric", "portraits/rival_malric"]
-	return names[absi(str(army.get("player_id", army.get("name", ""))).hash()) % names.size()]
+	return Art.avatar(str(_target.get("avatar", army.get("avatar", ""))))
+
+
+## One line on whose fight this was.
+func _story(them: Dictionary) -> String:
+	var name := str(_target.get("name", them.get("name", "")))
+	if _you == "d":
+		return "%s raided your city" % name
+	if bool(_result.get("revenge", false)):
+		return "Your revenge on %s" % name
+	return "Your raid on %s" % name
 
 
 ## The sword this side fights with, as the replay recorded it.
@@ -185,7 +211,7 @@ func _weapon_for(army: Dictionary) -> String:
 
 ## One champion: face, name, might, and the bar that says how it is going.
 func _side(army: Dictionary, side: String, x: float, portrait: String, might: int) -> void:
-	var accent := UI.GREEN if side == "a" else UI.RED
+	var accent := UI.GREEN if side == _you else UI.RED
 	var tex: Texture2D = Art.tex(portrait)
 	var frame := Rect2(x, FACE_Y, PORTRAIT.size.x, PORTRAIT.size.y)
 
@@ -198,7 +224,7 @@ func _side(army: Dictionary, side: String, x: float, portrait: String, might: in
 	_home[side] = frame.position
 	_centre[side] = frame.position + PORTRAIT.size / 2.0
 	# The rarity frames are hollow, so one of them makes a border for anything.
-	var ring := UI.image("inventory/frame_legendary" if side == "a" else "inventory/frame_special",
+	var ring := UI.image("inventory/frame_legendary" if side == _you else "inventory/frame_special",
 		frame)
 	_root.add_child(ring)
 
@@ -234,7 +260,7 @@ func _side(army: Dictionary, side: String, x: float, portrait: String, might: in
 	UI.place(ghost, bar)
 	ghost.clip_contents = true
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var gtex := UI.image("attack/bar_green" if side == "a" else "attack/bar_red",
+	var gtex := UI.image("attack/bar_green" if side == _you else "attack/bar_red",
 		Rect2(0, -4, bar.size.x, 30))
 	gtex.modulate = Color(1.0, 0.85, 0.75, 0.55)
 	ghost.add_child(gtex)
@@ -246,7 +272,7 @@ func _side(army: Dictionary, side: String, x: float, portrait: String, might: in
 	UI.place(wrap, bar)
 	wrap.clip_contents = true
 	wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	wrap.add_child(UI.image("attack/bar_green" if side == "a" else "attack/bar_red",
+	wrap.add_child(UI.image("attack/bar_green" if side == _you else "attack/bar_red",
 		Rect2(0, -4, bar.size.x, 30)))
 	wrap.set_meta("full", bar.size)
 	_root.add_child(wrap)
@@ -326,7 +352,7 @@ func _blow(side: String, damage: int, crit: bool) -> void:
 	var hit := "d" if side == "a" else "a"
 	if _skip:
 		return
-	var toward := 1.0 if side == "a" else -1.0
+	var toward := 1.0 if side == _you else -1.0
 	var face: Control = _face[side]
 	var home: Vector2 = _home[side]
 
@@ -374,7 +400,7 @@ func _dodge(side: String) -> void:
 	var miss := "d" if side == "a" else "a"
 	if _skip:
 		return
-	var toward := 1.0 if side == "a" else -1.0
+	var toward := 1.0 if side == _you else -1.0
 	var face: Control = _face[side]
 	var home: Vector2 = _home[side]
 	var target: Control = _face[miss]
@@ -498,7 +524,7 @@ func _number_at(side: String, damage: int, crit: bool) -> void:
 	l.pivot_offset = Vector2(170, (size + 30) / 2.0)
 	l.scale = Vector2(0.5, 0.5)
 	_floaters.add_child(l)
-	var away := 1.0 if side == "d" else -1.0
+	var away := -1.0 if side == _you else 1.0
 	var tw := create_tween()
 	tw.set_parallel(true)
 	tw.tween_property(l, "scale", Vector2(1.15, 1.15), 0.12).set_trans(Tween.TRANS_BACK) \
@@ -573,7 +599,7 @@ func _fall(side: String) -> void:
 	tw.tween_property(face, "modulate", Color(0.34, 0.29, 0.30, 0.55), 0.55)
 	tw.tween_property(face, "position:y", _home[side].y + 34.0, 0.55) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.tween_property(face, "rotation", deg_to_rad(7.0 if side == "d" else -7.0), 0.55)
+	tw.tween_property(face, "rotation", deg_to_rad(-7.0 if side == _you else 7.0), 0.55)
 	await _wait(0.75)
 
 
@@ -584,7 +610,7 @@ func _finish() -> void:
 	for side in ["a", "d"]:
 		_paint(side)
 	_skip_button.visible = false
-	var won: bool = bool(_result.get("won", str(_replay.get("winner", "")) == "a"))
+	var won: bool = bool(_result.get("won", str(_replay.get("winner", "")) == _you))
 
 	var plate := NinePatchRect.new()
 	plate.texture = Art.tex("inventory/card_frame")
@@ -593,7 +619,8 @@ func _finish() -> void:
 	UI.place(plate, Rect2(130, 1060, 681, 330))
 	_root.add_child(plate)
 
-	var head := UI.label("VICTORY" if won else "DEFEAT", 62, UI.GOLD if won else UI.RED,
+	var word := ("VICTORY" if won else "DEFEAT") if _you == "a" else ("HELD" if won else "RAIDED")
+	var head := UI.label(word, 62, UI.GOLD if won else UI.RED,
 		"title", 800, HORIZONTAL_ALIGNMENT_CENTER)
 	UI.place(head, Rect2(130, 1086, 681, 84))
 	_root.add_child(head)
@@ -603,23 +630,13 @@ func _finish() -> void:
 		24, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
 	UI.place(rounds, Rect2(130, 1182, 681, 34))
 	_root.add_child(rounds)
-
-	var spoils: Array = []
-	var gold := int(str(_result.get("gold_stolen", _result.get("gold", "0"))))
-	if gold > 0:
-		spoils.append(["+%s gold" % UI.grouped(gold), UI.GOLD])
-	var xp := int(_result.get("xp_gained", 0))
-	if xp > 0:
-		spoils.append(["+%s experience" % UI.grouped(xp), UI.INK])
-	var ransom := int(str(_result.get("ransom_paid", "0")))
-	if ransom > 0:
-		spoils.append(["+%s ransom" % UI.grouped(ransom), UI.GOLD_DIM])
-	if spoils.is_empty():
-		spoils.append(["No spoils" if not won else "The field is yours", UI.DIM])
+	var spoils := _spoils(won)
 	for i in spoils.size():
 		var row: Array = spoils[i]
-		var l := UI.label(str(row[0]), 30, row[1], "body", 700, HORIZONTAL_ALIGNMENT_CENTER)
-		UI.place(l, Rect2(130, 1228 + i * 40, 681, 38))
+		var l := UI.label(str(row[0]), 30 if i < 2 else 25, row[1], "body", 700 if i < 2 else 500,
+			HORIZONTAL_ALIGNMENT_CENTER)
+		UI.place(l, Rect2(150, 1226 + i * 40, 641, 38))
+		UI.fit_label(l, 30 if i < 2 else 25, 18)
 		_root.add_child(l)
 
 	var go := _plate_button("CONTINUE", "shop/buy_plate" if won else "inventory/btn_sell_plate",
@@ -628,3 +645,33 @@ func _finish() -> void:
 		finished.emit()
 		queue_free())
 	_root.add_child(go)
+
+
+## What the fight did to this player's purse, line by line, from their side.
+##
+## Gold is the server's signed figure for the reader. A ransom is the defender's:
+## a failed raid is told as what it paid the other side, not counted as the
+## raider's own spoils -- which is how the result screen used to read it.
+func _spoils(won: bool) -> Array:
+	var out: Array = []
+	var gold := int(str(_result.get("gold", _result.get("gold_stolen", "0"))))
+	var ransom := int(str(_result.get("ransom_paid", "0")))
+	var xp := int(_result.get("xp_gained", 0))
+	var gems := int(_result.get("diamonds_gained", 0))
+	if _you == "a":
+		if gold > 0:
+			out.append(["+%s gold" % UI.grouped(gold), UI.GOLD])
+		if xp > 0:
+			out.append(["+%s experience" % UI.grouped(xp), UI.INK])
+		if gems > 0:
+			out.append(["+%d diamonds for the level" % gems, Color("#9FD8FF")])
+		if not won and ransom > 0:
+			out.append(["Their defence earned them %s ransom" % UI.grouped(ransom), UI.DIM])
+	else:
+		if gold > 0:
+			out.append(["+%s ransom for holding" % UI.grouped(gold), UI.GOLD])
+		elif gold < 0:
+			out.append(["%s gold stolen" % UI.grouped(gold), UI.RED])
+	if out.is_empty():
+		out.append(["The field is yours" if won else "No spoils", UI.DIM])
+	return out

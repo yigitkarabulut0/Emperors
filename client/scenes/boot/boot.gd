@@ -31,6 +31,7 @@ var _clip: Control
 var _fill: TextureRect
 var _status: Label
 var _at := 0.0
+var _tries := 0
 
 
 func _ready() -> void:
@@ -125,6 +126,16 @@ func _boot() -> void:
 		if GameState.has_state():
 			_step_to(1.0)
 			Nav.go("res://scenes/shell/shell.tscn")
+			return
+		if Session.is_signed_in():
+			# Signed in, and the realm did not answer: a server restarting, a
+			# phone between networks. That used to fall through to the sign-in
+			# screen, which asked a signed-in player for their password.
+			_tries += 1
+			_step_to(0.45, "The realm is not answering. Trying again%s" % (
+				"..." if _tries < 3 else " (%d)..." % _tries))
+			await get_tree().create_timer(minf(3.0 * _tries, 15.0)).timeout
+			_boot()
 			return
 	_step_to(1.0)
 	Nav.go("res://scenes/auth/auth.tscn")

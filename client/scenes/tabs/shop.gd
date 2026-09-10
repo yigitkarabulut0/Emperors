@@ -18,7 +18,8 @@ const FRAME_FALLBACK := {"common": "uncommon", "mystic": "epic", "special": "leg
 ## mystic and special were never painted there. A player reading EPIC on a shop
 ## card and EPIC in their bags saw two different marks for one thing.
 const BADGE_PREFIX := "inventory/badge_"
-const TYPE_WORD := {"weapon": "SWORD", "armor": "ARMOR", "horse": "HORSE"}
+## Not "SWORD": one of the seven weapon designs is a spear.
+const TYPE_WORD := {"weapon": "WEAPON", "armor": "ARMOR", "horse": "HORSE"}
 
 var _scroll: ScrollContainer
 var _content: Control
@@ -28,6 +29,7 @@ var _shop: Dictionary = {}
 var _store: Dictionary = {}
 var _loaded_ms := -100000
 var _busy := false
+var _titles: Dictionary = {}       ## good id -> its live heading on the panel
 
 
 func _ready() -> void:
@@ -62,6 +64,14 @@ func _ready() -> void:
 	var dp: Dictionary = _ui["diamond_panel"].get_meta("parts")
 	dp["energy_buy"].pressed.connect(_buy_good.bind("energy_refill"))
 	dp["shield_buy"].pressed.connect(_buy_good.bind("shield"))
+	# The goods' headings were painted -- "30M SHIELD" over a server that sells
+	# hours -- and are painted out now, so the server's title is the one shown.
+	var panel: Control = _ui["diamond_panel"]
+	for pair in [["energy_refill", Rect2(146, 68, 206, 34)], ["shield", Rect2(486, 68, 226, 34)]]:
+		var t := UI.label("", 25, Color("#F4EFE6"), "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
+		UI.place(t, pair[1])
+		panel.add_child(t)
+		_titles[pair[0]] = t
 	set_process(true)
 
 
@@ -97,6 +107,9 @@ func _paint() -> void:
 	if _shop.is_empty():
 		return
 	_ui["reroll_cost"].text = str(int(_shop.get("reroll_cost", 0)))
+	# The server says whether the reroll can be paid for; the button says so
+	# before the tap instead of after it.
+	_ui["reroll"].modulate = Color.WHITE if bool(_shop.get("can_afford_reroll", true)) else Color(0.55, 0.55, 0.55)
 	var offers: Array = _shop.get("offers", [])
 	for i in _cards.size():
 		var c: Dictionary = _cards[i]
@@ -118,6 +131,7 @@ func _paint() -> void:
 		p["type_icon"].texture = Art.tex("shop/type_" + ("sword" if slot == "weapon" else slot))
 		p["type"].text = TYPE_WORD.get(slot, slot.to_upper())
 		p["price"].text = UI.short_number(int(offer.get("price", 0)))
+		UI.fit_label(p["type"], int(p["type"].label_settings.font_size), 14)
 		var sold := bool(offer.get("purchased", false))
 		c["node"].modulate = Color(0.45, 0.45, 0.45) if sold else Color.WHITE
 		p["buy"].disabled = sold
@@ -125,25 +139,20 @@ func _paint() -> void:
 	var goods: Array = _store.get("goods", [])
 	for g in goods:
 		var id := str(g.get("id", ""))
+		var buyable := bool(g.get("useful", true)) and bool(g.get("affordable", true))
+		if _titles.has(id):
+			_titles[id].text = str(g.get("title", g.get("name", ""))).to_upper()
+			UI.fit_label(_titles[id], 25, 16)
 		if id == "energy_refill":
-			dp["energy_desc"].text = "Restore %d Energy" % GameState.max_energy()
-			dp["energy_amount"].text = str(GameState.max_energy())
+			dp["energy_desc"].text = str(g.get("caption", ""))
+			UI.fit_label(dp["energy_desc"], 22, 15)
+			dp["energy_amount"].text = UI.grouped(int(g.get("amount", 0)))
 			dp["energy_price"].text = str(int(g.get("diamonds", 0)))
-			dp["energy_buy"].modulate = Color.WHITE if bool(g.get("useful", true)) else Color(0.5, 0.5, 0.5)
+			dp["energy_buy"].modulate = Color.WHITE if buyable else Color(0.5, 0.5, 0.5)
 		elif id == "shield":
-			dp["shield_desc"].text = _shield_blurb(str(g.get("blurb", "")))
+			dp["shield_desc"].text = str(g.get("caption", ""))
 			dp["shield_price"].text = str(int(g.get("diamonds", 0)))
-			dp["shield_buy"].modulate = Color.WHITE if bool(g.get("useful", true)) else Color(0.5, 0.5, 0.5)
-
-
-## "No one can raid you for 8 hours." -> "Protects your city\nfor 8 hours"
-func _shield_blurb(blurb: String) -> String:
-	var m := RegEx.new()
-	m.compile("for ([0-9]+ [a-z]+)")
-	var hit := m.search(blurb)
-	if hit:
-		return "Protects your city\nfor " + hit.get_string(1)
-	return "Protects your city\nfor a while"
+			dp["shield_buy"].modulate = Color.WHITE if buyable else Color(0.5, 0.5, 0.5)
 
 
 func _set_frame(c: Dictionary, tier: String) -> void:
@@ -174,43 +183,39 @@ func _buy(i: int) -> void:
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/shop/buy", {"slot": int(offer.get("slot", i))})
-	_busy = false
 	if res.ok:
-		GameState.action_failed.emit("Bought %s" % str(item.get("name", "")))
+		GameState.toast("Bought %s" % str(item.get("name", "")))
+	if res.ok or res.code == "shop_stale":
 		await _load()
-	elif res.code == "shop_stale":
-		await _load()
+	_busy = false
 
 
 func _reroll() -> void:
 	if _busy or _shop.is_empty():
 		return
 	var cost := int(_shop.get("reroll_cost", 0))
-	if not await Dialog.ask(self, {"title": "Reroll the market?", "body": "New offers for %d diamonds." % cost, "confirm_text": "Reroll"}):
+	var have := int(GameState.player().get("diamonds", 0))
+	if not bool(_shop.get("can_afford_reroll", true)):
+		await Dialog.ask(self, {"title": "Reroll the market",
+			"body": "New offers cost %d diamonds, and you have %d.\nDiamonds come with every level and with the daily reward." % [cost, have],
+			"confirm_text": "OK"})
+		return
+	if not await Dialog.ask(self, {"title": "Reroll the market?", "body": "New offers for %d diamonds. You have %d." % [cost, have], "confirm_text": "Reroll"}):
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/shop/reroll", {})
-	_busy = false
 	if res.ok:
 		await _load()
+	_busy = false
 
 
 func _buy_good(id: String) -> void:
 	if _busy:
 		return
-	var good: Dictionary = {}
-	for g in _store.get("goods", []):
-		if str(g.get("id", "")) == id:
-			good = g
+	var good := Goods.find(_store, id)
 	if good.is_empty():
 		return
-	if not bool(good.get("useful", true)):
-		GameState.action_failed.emit("Nothing to gain from that right now")
-		return
-	if not await Dialog.ask(self, {"title": str(good.get("name", "")), "body": "%s\n%d diamonds." % [str(good.get("blurb", "")), int(good.get("diamonds", 0))], "confirm_text": "Buy"}):
-		return
 	_busy = true
-	var res: Api.Response = await GameState.act("/v1/store/buy", {"good": id})
-	_busy = false
-	if res.ok:
+	if await Goods.buy(self, good):
 		await _load()
+	_busy = false

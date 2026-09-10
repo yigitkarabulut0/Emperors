@@ -7,8 +7,11 @@ const SCREEN := "inventory"
 const TIERS := ["all", "common", "uncommon", "rare", "epic", "legendary", "mystic", "special"]
 const CHIP_COLOR := {"all": "#FFFFFF", "common": "#FFFFFF", "uncommon": "#BCFF7D", "rare": "#B1ECFF",
 	"epic": "#FFD4FF", "legendary": "#FFFFEA", "mystic": "#EFD6FF", "special": "#FFDAD0"}
+## Each slot's own stat, as the server counts it. A horse's is a flat speed
+## score that decides who strikes first; it was printed "Move Speed +12%", a
+## unit the game has never had.
 const STAT_LINE := {"weapon": ["attack", "ATK", "inventory/icon_attack"], "armor": ["defense", "DEF", "inventory/icon_defence"],
-	"horse": ["speed", "Move Speed", "inventory/icon_speed"]}
+	"horse": ["speed", "SPEED", "inventory/icon_speed"]}
 
 var _ui: Dictionary = {}
 var _equipped: Array = []
@@ -17,6 +20,8 @@ var _chips: Dictionary = {}
 var _chip_labels: Dictionary = {}
 var _filter := "all"
 var _inventory: Dictionary = {}
+var _bag_label: Label
+var _empty_label: Label
 var _loaded_ms := -100000
 var _busy := false
 
@@ -43,6 +48,15 @@ func _ready() -> void:
 	var sc: ScrollContainer = _ui["list"]
 	sc.scroll_deadzone = 14
 	_ui["list"].set_meta("origin", Layout.rect_of(Layout.element(SCREEN, "list")).position)
+	# How full the bags are, on the right of the EQUIPPED GEAR banner: the cap
+	# is what makes selling a decision, and it was never on the screen.
+	_bag_label = UI.label("", 22, UI.DIM, "title", 600, HORIZONTAL_ALIGNMENT_RIGHT)
+	UI.place(_bag_label, Rect2(600, 234, 300, 34))
+	add_child(_bag_label)
+	_empty_label = UI.label("", 26, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
+	_empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UI.place(_empty_label, Rect2(60, 90, 666, 160))
+	(sc.get_meta("content") as Control).add_child(_empty_label)
 
 
 func refresh() -> void:
@@ -64,6 +78,14 @@ func _paint() -> void:
 	_paint_equipped()
 	_paint_chips()
 	_paint_grid()
+	if not _inventory.is_empty():
+		var worn := 0
+		for it in _inventory.get("items", []):
+			if str(it.get("equipped_on", "")) != "":
+				worn += 1
+		_bag_label.text = "BAG  %d / %d%s" % [int(_inventory.get("used", 0)), int(_inventory.get("cap", 0)),
+			"  ·  %d WORN" % worn if worn > 0 else ""]
+		_bag_label.label_settings.font_color = UI.RED if int(_inventory.get("used", 0)) >= int(_inventory.get("cap", 1)) else UI.DIM
 
 
 func _paint_equipped() -> void:
@@ -82,7 +104,7 @@ func _paint_equipped() -> void:
 			p["name"].text = str(item.get("name", ""))
 			UI.fit_label(p["name"], 21, 14)
 			var line: Array = STAT_LINE[slot]
-			p["stat"].text = "%s +%s" % [line[1] if slot != "horse" else "POWER", UI.grouped(int(item.get(line[0] if slot != "horse" else "power", 0)))]
+			p["stat"].text = "%s +%s" % [line[1], UI.grouped(int(item.get(line[0], 0)))]
 		else:
 			p["tile"].modulate = Color(0.55, 0.55, 0.55)
 			p["level"].text = ""
@@ -110,10 +132,14 @@ func _paint_chips() -> void:
 ## player has on were shown twice on one screen -- once in EQUIPPED GEAR at the
 ## top and again below it, with an EQUIP button that did nothing. The panel is
 ## where a worn piece lives; taking it off puts it back here.
+##
+## "Worn" is by anyone. Only the hero's gear was left out, so a soldier's sword
+## sat in the bag looking free: EQUIP stripped the soldier and SELL was refused.
+## A soldier's gear lives on the Army screen.
 func _items_shown() -> Array:
 	var out: Array = []
 	for it in _inventory.get("items", []):
-		if bool(it.get("equipped", false)):
+		if str(it.get("equipped_on", "")) != "" or bool(it.get("equipped", false)):
 			continue
 		if _filter == "all" or str(it.get("tier", "")) == _filter:
 			out.append(it)
@@ -186,15 +212,20 @@ func _paint_grid() -> void:
 		badge.size = badge.texture.get_size()
 		var line: Array = STAT_LINE[slot]
 		p["icon1"].texture = Art.tex(line[2])
-		p["stat1"].text = "%s +%s" % [line[1], UI.grouped(int(it.get(line[0], 0)))] if slot != "horse" \
-			else "POWER +%s" % UI.grouped(int(it.get("power", 0)))
-		p["icon2"].texture = Art.tex("inventory/icon_power" if slot != "horse" else "inventory/icon_speed")
-		p["stat2"].text = "Power +%s" % UI.grouped(int(it.get("power", 0))) if slot != "horse" \
-			else "Move Speed +%s%%" % UI.grouped(int(it.get("speed", 0)))
+		p["stat1"].text = "%s +%s" % [line[1], UI.grouped(int(it.get(line[0], 0)))]
+		p["icon2"].texture = Art.tex("inventory/icon_power")
+		p["stat2"].text = "Power +%s" % UI.grouped(int(it.get("power", 0)))
+		UI.fit_label(p["stat1"], 28, 18)
+		UI.fit_label(p["stat2"], 28, 18)
 	var rows := int(ceil(items.size() / float(cols.size())))
 	content.custom_minimum_size = Vector2(sc.size.x, top + rows * pitch + 20)
+	_empty_label.visible = items.is_empty() and not _inventory.is_empty()
 	if items.is_empty():
 		content.custom_minimum_size = Vector2(sc.size.x, sc.size.y)
+		if _filter != "all":
+			_empty_label.text = "Nothing %s in your bags." % _filter.to_upper()
+		else:
+			_empty_label.text = "Your bags are empty.\nThe Royal Market in the Shop sells new gear every few minutes."
 
 
 # --- actions ------------------------------------------------------------------------
@@ -215,8 +246,7 @@ func _equip(i: int) -> void:
 	var it := _item_at(i)
 	if _busy or it.is_empty():
 		return
-	if bool(it.get("equipped", false)):
-		GameState.action_failed.emit("Already equipped")
+	if str(it.get("equipped_on", "")) == "hero":
 		return
 	await _post("/v1/inventory/equip", {"item_id": str(it.get("id", ""))})
 
@@ -240,33 +270,61 @@ func _sell(i: int) -> void:
 	await _post("/v1/inventory/sell", {"item_id": str(it.get("id", ""))})
 
 
+## Held until the reload is in, so a second tap lands on the new list.
 func _post(path: String, body: Dictionary) -> Api.Response:
 	_busy = true
 	var res: Api.Response = await GameState.act(path, body)
-	_busy = false
 	if res.ok:
 		await _load()
+	_busy = false
 	return res
 
 
+## The Collection takes one of each design, for good, and pays in luck.
+##
+## Offers only what the server would take: an item nobody is wearing, of a
+## design not already on the wall. It used to offer the first eight items of
+## any kind -- worn ones the server refuses, duplicates it refuses -- and no
+## more than eight, in no order.
 func _open_collection() -> void:
 	if _busy:
 		return
 	var res: Api.Response = await Api.get_json("/v1/collection")
 	if not res.ok:
 		return
+	var held_ids := {}
+	for set in res.data.get("sets", []):
+		for e in set.get("entries", []):
+			if bool(e.get("held", false)):
+				held_ids[str(e.get("def_id", ""))] = true
+	var items: Array = []
+	var seen := {}
+	for it in _inventory.get("items", []):
+		var def := str(it.get("def_id", ""))
+		if str(it.get("equipped_on", "")) != "" or held_ids.has(def) or seen.has(def):
+			continue
+		seen[def] = true
+		items.append(it)
+	items.sort_custom(func(a, b):
+		var ra := TIERS.find(str(a.get("tier", "common")))
+		var rb := TIERS.find(str(b.get("tier", "common")))
+		return ra > rb if ra != rb else str(a.get("name", "")) < str(b.get("name", "")))
 	var held := int(res.data.get("held", 0))
 	var total := int(res.data.get("total", 0))
-	var options: Array = []
-	for it in _inventory.get("items", []):
-		if bool(it.get("equipped", false)):
-			continue
-		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")), "sub": "Donate to the Collection"})
-	if options.is_empty():
-		await Dialog.ask(self, {"title": "The Collection", "body": "%d of %d designs held. Donating an unequipped item you do not yet hold grants a permanent bonus." % [held, total], "confirm_text": "OK"})
+	var luck := int(res.data.get("luck_bp", 0))
+	var intro := "%d of %d designs on the wall, +%s luck on every roll.\nA donated item is gone for good; its design stays." % [
+		held, total, ("%d%%" % (luck / 100)) if luck % 100 == 0 else ("%.1f%%" % (luck / 100.0))]
+	if items.is_empty():
+		await Dialog.ask(self, {"title": "The Collection", "body": intro + "\n\nNothing in your bags is new to the wall.", "confirm_text": "OK"})
 		return
+	var options: Array = []
+	for it in items:
+		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")),
+			"sub": "%s %s · new to the wall" % [str(it.get("tier", "")).to_upper(), str(it.get("slot", "")).to_upper()]})
 	var pick := await Dialog.choose(self, {"title": "The Collection  %d / %d" % [held, total],
-		"body": "Donating a design you do not yet hold grants a permanent bonus; a duplicate is refused.", "options": options.slice(0, 8)})
+		"body": intro, "options": options})
 	if pick == "":
 		return
-	await _post("/v1/collection/donate", {"item_id": pick})
+	var res2 := await _post("/v1/collection/donate", {"item_id": pick})
+	if res2.ok:
+		GameState.toast("Added to the Collection")

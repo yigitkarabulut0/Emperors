@@ -33,6 +33,11 @@ func _ready() -> void:
 	UI.place(_msg, Rect2(120, 1100, 700, 60))
 	_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_msg)
+	# Arriving here because the server ended the session: say so, rather than
+	# dropping a player who was mid-game onto an empty form.
+	if Session.ended_reason != "":
+		_msg.text = Session.ended_reason
+		_msg.label_settings.font_color = UI.GOLD
 
 
 func _field(placeholder: String, rect: Rect2, secret: bool) -> LineEdit:
@@ -89,6 +94,7 @@ func _submit(create: bool) -> void:
 		return
 	_busy = true
 	_msg.text = ""
+	_msg.label_settings.font_color = UI.RED
 	var err: String
 	if create:
 		err = await Session.register(_user.text.strip_edges(), _pass.text)

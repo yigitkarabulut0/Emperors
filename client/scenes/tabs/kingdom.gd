@@ -462,15 +462,15 @@ func _hall_act(path: String, body: Dictionary) -> void:
 	match path:
 		"/v1/kingdom/join":
 			if str(res.data.get("result", "")) == "requested":
-				GameState.action_failed.emit("Your request is with %s" % name)
+				GameState.toast("Your request is with %s" % name)
 			else:
-				GameState.action_failed.emit("Welcome to %s" % name)
+				GameState.toast("Welcome to %s" % name)
 		"/v1/kingdom/accept":
-			GameState.action_failed.emit("Welcome to %s" % name)
+			GameState.toast("Welcome to %s" % name)
 		"/v1/kingdom/request/cancel":
-			GameState.action_failed.emit("Request withdrawn")
+			GameState.toast("Request withdrawn")
 		"/v1/kingdom/decline":
-			GameState.action_failed.emit("Invitation declined")
+			GameState.toast("Invitation declined")
 
 
 ## How tall the page has to be for whatever it is showing.
@@ -604,7 +604,7 @@ func _found() -> void:
 		return
 	var res := await _act("/v1/kingdom/found", {"name": text, "tag": tag.to_upper()})
 	if res.ok:
-		GameState.action_failed.emit("Long live %s" % text)
+		GameState.toast("Long live %s" % text)
 
 
 ## A kingdom's name outlives the moment it was chosen -- it is on the
@@ -668,10 +668,12 @@ func _upgrade(i: int) -> void:
 func _act(path: String, body: Dictionary) -> Api.Response:
 	_busy = true
 	var res: Api.Response = await GameState.act(path, body)
-	_busy = false
 	if res.ok:
 		# Whatever the answer changed -- a section rebuilds from the new data
 		# because its signature has moved.
 		_section_sig = ""
 		await _load()
+	# Held until the page is the new one, so a second tap cannot act on a row
+	# the first already changed.
+	_busy = false
 	return res

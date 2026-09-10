@@ -8,6 +8,10 @@ extends Node
 signal changed
 signal energy_changed(current: int)
 signal action_failed(message: String)
+## Good news for the toast: "Bought ...", "Equipped 2 items". It used to go out
+## on action_failed, which is why a success read like an error to anything
+## that listened for errors.
+signal notice(message: String)
 signal level_up(new_level: int, levels: int, stat_points: int, diamonds: int)
 signal mastery_reached(job_id: String, collects: int, bonus_bp: int)
 
@@ -86,6 +90,23 @@ func unlock_level(section_id: String) -> int:
 		if str(s.get("id", "")) == section_id:
 			return int(s.get("unlock_level", 1))
 	return 1
+
+
+## Whether the server has opened a section for this player. Its answer, not a
+## level comparison made here: a lord in a kingdom keeps its tab below the
+## level that first opened it (after a Legacy, say).
+func is_unlocked(section_id: String) -> bool:
+	for s in sections():
+		if str(s.get("id", "")) == section_id:
+			if s.has("unlocked"):
+				return bool(s["unlocked"])
+			return int(player().get("level", 1)) >= int(s.get("unlock_level", 1))
+	return true
+
+
+## Says something good on the toast.
+func toast(message: String) -> void:
+	notice.emit(message)
 
 
 func display_gold() -> int:
@@ -256,8 +277,12 @@ func act(path: String, body: Dictionary = {}) -> Api.Response:
 	b["action_seq"] = int(player().get("action_seq", 0)) + 1
 	var res: Api.Response = await Api.post_json(path, b)
 	if res.ok:
-		if res.data.has("snapshot"):
+		if res.data.get("snapshot", null) is Dictionary:
 			adopt(res.data["snapshot"])
+			changed.emit()
+		elif res.data.has("player") and res.data.has("energy"):
+			# A few actions answer with the snapshot itself (stats, rename).
+			adopt(res.data)
 			changed.emit()
 		else:
 			await refresh()

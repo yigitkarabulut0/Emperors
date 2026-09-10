@@ -790,7 +790,8 @@
      "color": "#F4EFE6",
      "align": "center",
      "valign": "center",
-     "sample": "REROLL"
+     "sample": "REROLL",
+     "static": true
     }
    ],
    "note": "HUNT's painted plate with its crosshair and word taken off, the shop's reroll arrows, and the word in type -- the same object as DISMISS under it."

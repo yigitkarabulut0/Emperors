@@ -108,15 +108,16 @@ func _paint_all() -> void:
 func _paint_identity() -> void:
 	var p := GameState.player()
 	var name_label: Label = _identity["name"]
-	var uname := str(p.get("username", "")).to_upper()
-	name_label.text = uname
-	# The plate's name slot fits about eight letters at the painting's size.
-	name_label.label_settings.font_size = 60 if uname.length() <= 8 else (46 if uname.length() <= 11 else 34)
+	name_label.text = str(p.get("username", "")).to_upper()
+	# The plate's name slot fits about eight letters at the painting's size; a
+	# longer name is set smaller rather than run under the quill.
+	UI.fit_label(name_label, 60, 28)
 	_identity["level"].text = "LEVEL %d" % int(p.get("level", 1))
 	var need := GameState.xp_to_next()
 	var xp := GameState.display_xp()
 	if need > 0:
 		_identity["xp_text"].text = "%s / %s XP" % [UI.grouped(xp), UI.grouped(need)]
+		UI.fit_label(_identity["xp_text"], 22, 14)
 		Layout.set_fill(_identity["xp_fill"], float(xp) / float(need))
 	else:
 		_identity["xp_text"].text = "LEVEL CAP"
@@ -210,49 +211,61 @@ func _paint_cards() -> void:
 func _paint_card(c: Dictionary) -> void:
 	var p: Dictionary = c["parts"]
 	var d: Dictionary = c["data"]
-	var level := int(GameState.player().get("level", 1))
 	p["art"].texture = Art.tex("family/granary_art")
 	p["icon"].texture = Art.tex("icons/gold_stack")
 	match c["kind"]:
 		"upgrade":
 			p["name"].text = str(d.get("name", "")).to_upper()
-			p["level"].text = "LEVEL %d" % int(d.get("level", 0))
 			var bucket := str(d.get("bucket", ""))
-			var effect := int(d.get("effect_now", 0))
 			var label: String = BUCKET_LABEL.get(bucket, bucket.replace("_bp", "").replace("_", " ").to_upper())
-			if bucket.ends_with("_flat"):
-				p["bonus"].text = "+%d %s" % [effect, label]
+			var flat := bucket.ends_with("_flat")
+			var maxed := bool(d.get("maxed", false))
+			var per := int(d.get("per_level", 0))
+			# The level line says what the next level buys, so the price has
+			# something to be weighed against.
+			p["level"].text = "LEVEL %d / %d%s" % [int(d.get("level", 0)), int(d.get("max_level", 0)),
+				"" if maxed else "  ·  NEXT +%s" % (str(per) if flat else _pct(per) + "%")]
+			var effect := int(d.get("effect_now", 0))
+			p["bonus"].text = ("+%d %s" % [effect, label]) if flat else ("+%s%% %s" % [_pct(effect), label])
+			if not bool(_estates.get("upgrades_unlocked", true)):
+				_set_button(c, false, "OPENS AT LEVEL %d" % int(_estates.get("upgrades_unlock_level", 1)), true)
 			else:
-				p["bonus"].text = "+%s%% %s" % [_pct(effect), label]
-			_set_button(c, bool(d.get("maxed", false)), "UPGRADE   %s" % UI.short_number(int(d.get("next_cost", 0))), false)
+				_set_button(c, maxed, "UPGRADE   %s" % UI.short_number(int(d.get("next_cost", 0))), false)
 		"holding":
 			p["name"].text = str(d.get("name", "")).to_upper()
-			p["level"].text = "LEVEL %d" % int(d.get("level", 0))
+			p["level"].text = "LEVEL %d / %d" % [int(d.get("level", 0)), int(d.get("max_level", 0))]
 			var per_hour := int(d.get("yield_per_hour_milli", 0)) / 1000
 			var next_add := int(d.get("yield_per_level_milli", 0)) / 1000
 			if int(d.get("level", 0)) > 0:
 				p["bonus"].text = "+%s GOLD / HOUR" % UI.grouped(per_hour)
 			else:
 				p["bonus"].text = "NEXT: +%s GOLD / HOUR" % UI.grouped(next_add)
-			var locked := level < int(d.get("unlock_level", 1))
-			if locked:
-				_set_button(c, false, "UNLOCKS AT LEVEL %d" % int(d.get("unlock_level", 1)), true)
+			if not bool(d.get("unlocked", true)):
+				_set_button(c, false, "OPENS AT LEVEL %d" % int(d.get("unlock_level", 1)), true)
 			else:
 				_set_button(c, bool(d.get("maxed", false)), "UPGRADE   %s" % UI.short_number(int(d.get("next_cost", 0))), false)
 		"treasury":
+			var t: Dictionary = _estates.get("treasury", {})
 			p["name"].text = "ROYAL TREASURY"
-			p["level"].text = "VAULT  %s" % UI.short_number(int(str(GameState.player().get("treasury", "0"))))
-			var tax := int(_estates.get("tax", {}).get("per_hour_milli", 0)) / 1000
-			p["bonus"].text = "+%s GOLD / HOUR · 10%% DEPOSIT FEE" % UI.grouped(tax)
-			_set_button(c, false, "DEPOSIT / WITHDRAW", false)
+			p["level"].text = "VAULT  %s" % UI.short_number(int(str(t.get("vault", GameState.player().get("treasury", "0")))))
+			p["bonus"].text = "RAID-PROOF  ·  %s FEE" % (_pct(int(t.get("deposit_fee_bp", 0))) + "%")
+			if bool(t.get("unlocked", true)) or int(str(t.get("vault", "0"))) > 0:
+				_set_button(c, false, "DEPOSIT / WITHDRAW", false)
+			else:
+				_set_button(c, false, "OPENS AT LEVEL %d" % int(t.get("unlock_level", 1)), true)
 		"legacy":
 			p["name"].text = "LEGACY"
 			p["level"].text = "STACKS %d / %d" % [int(d.get("stacks", 0)), int(d.get("max_stacks", 0))]
-			p["bonus"].text = "+%s%% INCOME · NEXT +%s%%" % [_pct(int(d.get("income_bp", 0))), _pct(int(d.get("next_bp", 0)))]
+			p["bonus"].text = "+%s%% INCOME  ·  NEXT +%s%%" % [_pct(int(d.get("income_bp", 0))), _pct(int(d.get("next_bp", 0)))]
 			if bool(d.get("available", false)):
 				_set_button(c, false, "BEGIN A LEGACY", false)
+			elif int(d.get("stacks", 0)) >= int(d.get("max_stacks", 1)):
+				_set_button(c, true, "", true)
 			else:
 				_set_button(c, false, "AT LEVEL %d" % int(d.get("level_cap", 60)), true)
+	UI.fit_label(p["name"], 36, 16)
+	UI.fit_label(p["level"], 24, 16)
+	UI.fit_label(p["bonus"], 22, 15)
 
 
 func _set_button(c: Dictionary, maxed: bool, text: String, disabled: bool) -> void:
@@ -296,27 +309,49 @@ func _on_card_button(i: int) -> void:
 				return
 			await _act("/v1/estates/holding", {"id": str(d.get("id", ""))})
 		"treasury":
-			var r := await Dialog.prompt_amount(self, {"title": "Royal Treasury",
-				"body": "On hand: %s   Vault: %s\nDeposits cost 10%%. Vault gold cannot be stolen." % [
-					UI.grouped(GameState.display_gold()), UI.grouped(int(str(GameState.player().get("treasury", "0"))))],
-				"placeholder": "Amount of gold", "confirm_text": "Deposit", "second_text": "Withdraw"})
+			var t: Dictionary = _estates.get("treasury", {})
+			var open := bool(t.get("unlocked", true))
+			var cfg := {"title": "Royal Treasury",
+				"body": "On hand: %s   Vault: %s\n%s" % [
+					UI.grouped(GameState.display_gold()), UI.grouped(int(str(t.get("vault", "0")))),
+					("Deposits cost %s. Vault gold cannot be stolen." % (_pct(int(t.get("deposit_fee_bp", 0))) + "%")) if open
+						else "Deposits open at level %d. What is in the vault is yours to take." % int(t.get("unlock_level", 1))],
+				"placeholder": "Amount of gold", "confirm_text": "Deposit" if open else "Withdraw"}
+			if open:
+				cfg["second_text"] = "Withdraw"
+			var r := await Dialog.prompt_amount(self, cfg)
 			if r["action"] == "" or int(r["value"]) <= 0:
 				return
-			await _act("/v1/treasury/" + ("deposit" if r["action"] == "confirm" else "withdraw"), {"amount": int(r["value"])})
+			var deposit: bool = open and r["action"] == "confirm"
+			await _act("/v1/treasury/" + ("deposit" if deposit else "withdraw"), {"amount": int(r["value"])})
 		"legacy":
-			if not await Dialog.ask(self, {"title": "Begin a Legacy?",
-					"body": "Your level, gold and gear are set aside for a permanent +%s%% income. This cannot be undone." % _pct(int(d.get("next_bp", 0))),
+			var resets: Array = d.get("resets", [])
+			var keeps: Array = d.get("keeps", [])
+			var body := "A permanent +%s%% income, for good." % _pct(int(d.get("next_bp", 0)))
+			if not resets.is_empty():
+				body += "\n\nBack to the start:\n" + "\n".join(resets)
+			if not keeps.is_empty():
+				body += "\n\nYou keep:\n" + "\n".join(keeps)
+			if not await Dialog.ask(self, {"title": "Begin a Legacy?", "body": body + "\n\nThis cannot be undone.",
 					"confirm_text": "Begin", "danger": true}):
 				return
 			await _act("/v1/legacy/begin", {})
 
 
-func _act(path: String, body: Dictionary) -> void:
+## Every change on this screen goes through GameState.act, which numbers the
+## action and adopts what the server sends back. Several went straight to the
+## API with a sequence number of their own and never adopted a snapshot, so the
+## pills lagged behind the purchase. `_busy` is held until the reload is in,
+## so a second tap cannot land on the card the first one already changed.
+func _act(path: String, body: Dictionary, done: String = "") -> Api.Response:
 	_busy = true
 	var res: Api.Response = await GameState.act(path, body)
-	_busy = false
 	if res.ok:
+		if done != "":
+			GameState.toast(done)
 		await _load()
+	_busy = false
+	return res
 
 
 # --- stats, gear, name ---------------------------------------------------------------------
@@ -330,68 +365,55 @@ func _spend_point(stat: String) -> void:
 		return
 	var body := {"energy": 0, "attack": 0, "defense": 0}
 	body[stat] = 1
-	_busy = true
-	var res: Api.Response = await Api.post_json("/v1/stats/spend", _with_seq(body))
-	_busy = false
-	if res.ok:
-		GameState.adopt(res.data)
-		GameState.changed.emit()
-		await _load()
-	else:
-		GameState.action_failed.emit(res.error)
-
-
-func _with_seq(body: Dictionary) -> Dictionary:
-	var b := body.duplicate()
-	b["action_seq"] = int(GameState.player().get("action_seq", 0)) + 1
-	return b
+	await _act("/v1/stats/spend", body)
 
 
 func _equip_best() -> void:
 	if _busy:
 		return
-	_busy = true
-	var res: Api.Response = await Api.post_json("/v1/army/autoequip", _with_seq({"scope": "hero"}))
-	_busy = false
+	var res := await _act("/v1/army/autoequip", {"scope": "hero"})
 	if res.ok:
 		var n := int(res.data.get("equipped", 0))
-		GameState.action_failed.emit("Nothing better to wear" if n == 0 else "Equipped %d item%s" % [n, "" if n == 1 else "s"])
-		await GameState.refresh()
-		await _load()
-	else:
-		GameState.action_failed.emit(res.error)
+		GameState.toast("Nothing better to wear" if n == 0 else "Equipped %d item%s" % [n, "" if n == 1 else "s"])
 
 
+## The hero's gear for one slot: everything that fits and is not on the hero
+## already, best first. A piece a soldier is wearing is offered too, named as
+## theirs, and taking it asks first -- it used to be offered as if it were free,
+## and equipping it silently stripped the soldier.
 func _choose_gear(slot: String) -> void:
 	if _busy:
 		return
-	var options: Array = []
+	var items: Array = []
 	for it in _inventory.get("items", []):
-		if str(it.get("slot", "")) != slot or it.get("equipped_by", null) != null:
-			continue
+		if str(it.get("slot", "")) == slot and str(it.get("equipped_on", "")) != "hero":
+			items.append(it)
+	items.sort_custom(func(a, b): return int(a.get("power", 0)) > int(b.get("power", 0)))
+	var options: Array = []
+	for it in items:
+		var worn := str(it.get("worn_by", ""))
 		options.append({"id": str(it.get("id", "")), "label": str(it.get("name", "")),
-			"sub": "%s · Power %s" % [str(it.get("tier", "")).to_upper(), UI.grouped(int(it.get("power", 0)))]})
-	var worn: Variant = _inventory.get("equipped", {}).get(slot, null)
-	if worn is Dictionary:
-		options.append({"id": "__unequip", "label": "Unequip %s" % str(worn.get("name", ""))})
+			"sub": "%s · Power %s%s" % [str(it.get("tier", "")).to_upper(), UI.grouped(int(it.get("power", 0))),
+				(" · worn by " + worn) if worn != "" else ""]})
+	var worn_now: Variant = _inventory.get("equipped", {}).get(slot, null)
+	if worn_now is Dictionary:
+		options.append({"id": "__unequip", "label": "Take off %s" % str(worn_now.get("name", ""))})
 	if options.is_empty():
-		GameState.action_failed.emit("Nothing to equip in this slot")
+		GameState.action_failed.emit("Nothing in your bags fits this slot")
 		return
 	var pick := await Dialog.choose(self, {"title": slot.capitalize(), "options": options})
 	if pick == "":
 		return
-	_busy = true
-	var res: Api.Response
 	if pick == "__unequip":
-		res = await Api.post_json("/v1/inventory/unequip", _with_seq({"item_id": str(worn.get("id", ""))}))
-	else:
-		res = await Api.post_json("/v1/inventory/equip", _with_seq({"item_id": pick}))
-	_busy = false
-	if res.ok:
-		await GameState.refresh()
-		await _load()
-	else:
-		GameState.action_failed.emit(res.error)
+		await _act("/v1/inventory/unequip", {"item_id": str(worn_now.get("id", ""))})
+		return
+	for it in items:
+		if str(it.get("id", "")) == pick and str(it.get("worn_by", "")) != "":
+			if not await Dialog.ask(self, {"title": "Take it from them?",
+					"body": "%s is worn by your %s. They will fight without it." % [str(it.get("name", "")), str(it.get("worn_by", ""))],
+					"confirm_text": "Take it"}):
+				return
+	await _act("/v1/inventory/equip", {"item_id": pick})
 
 
 ## The quill beside the name. A new name costs diamonds; the price is the
@@ -414,11 +436,4 @@ func _rename() -> void:
 	var name := str(r.get("text", ""))
 	if name == "":
 		return
-	_busy = true
-	var res: Api.Response = await Api.post_json("/v1/profile/rename", _with_seq({"name": name}))
-	_busy = false
-	if res.ok:
-		GameState.adopt(res.data)
-		GameState.changed.emit()
-	else:
-		GameState.action_failed.emit(res.error)
+	await _act("/v1/profile/rename", {"name": name}, "You are now %s" % name)

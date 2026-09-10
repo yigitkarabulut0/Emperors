@@ -95,8 +95,8 @@ check("the registered total is unchanged by presence",
 
 print("\n== the panel says how much it actually knows ==")
 check("a client with no heartbeat is marked inferred", row and row["inferred"] is True, row)
-st, _ = call(GAME, "POST", "/v1/presence", {"state": "foreground"}, token=tok)
-check("the heartbeat answers 204", st == 204, st)
+st, beat = call(GAME, "POST", "/v1/presence", {"state": "foreground"}, token=tok)
+check("the heartbeat answers with the rail's badges", st == 200 and "quests" in beat.get("badges", {}), (st, beat))
 time.sleep(0.4)
 row = find(board(), pid)
 check("and after one beat it is no longer inferred", row and row["inferred"] is False, row)

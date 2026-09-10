@@ -44,6 +44,9 @@ type ShopOffer struct {
 	Purchased bool           `json:"purchased"`
 	Price     int64          `json:"price"`
 	Item      items.Instance `json:"item"`
+	// The item's Power, the one number a card can compare offers by. The card
+	// showed a name and a price and nothing to weigh the price against.
+	Power int64 `json:"power"`
 }
 
 // inventoryCap bounds the largest player-owned table. It is also a design knob:
@@ -142,6 +145,7 @@ func (d Deps) rollOffers(playerID uuid.UUID, st sqlcdb.AppShopState, level int, 
 			Purchased: st.PurchasedMask&(1<<i) != 0,
 			Price:     items.BuyPrice(cfg, item, discountBP),
 			Item:      item,
+			Power:     item.Power(cfg),
 		})
 	}
 	return out

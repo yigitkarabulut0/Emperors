@@ -37,10 +37,10 @@ func MarkPresent(p Presenter) func(http.Handler) http.Handler {
 
 // presence is the heartbeat endpoint: POST /v1/presence.
 //
-// Deliberately the emptiest handler in the game. It exists so a player who is
-// holding the phone but not tapping still counts as being in the game -- the
-// client makes no other request while idle, so without this the live board would
-// show someone leaving while the app sits open in front of them.
+// It exists so a player who is holding the phone but not tapping still counts
+// as being in the game -- the client makes no other request while idle, so
+// without this the live board would show someone leaving while the app sits
+// open in front of them. An ordinary beat answers with the rail's badges.
 //
 // The body is optional. {"state":"leaving"} is the beacon iOS fires when the app
 // is backgrounded, which turns a ninety-second timeout into an instant
@@ -66,8 +66,16 @@ func (a *api) heartbeat(w http.ResponseWriter, r *http.Request) {
 	device := DeviceID(r.Context())
 	if body.State == "leaving" {
 		a.presence.Leave(pid, device)
-	} else {
-		a.presence.Touch(pid, device, true)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	a.presence.Touch(pid, device, true)
+	// The heartbeat is the one request an idle game makes, every half minute,
+	// so it carries the rail's badges back rather than a request of their own.
+	// A build that does not read them sees a body it ignores.
+	if b, err := a.s().GetBadges(r.Context(), pid); err == nil {
+		WriteJSON(w, http.StatusOK, map[string]any{"badges": b})
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

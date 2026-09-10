@@ -34,7 +34,10 @@ func _initialize() -> void:
 	for canvas in CANVASES:
 		for mode in ["lords", "works", "ranks"]:
 			await _check(mode, canvas)
+		await _the_hall_fits(canvas)
 	await _the_tabs_swap_what_the_page_shows()
+	await _realm_never_leaks_into_another_tab()
+	await _no_kingdom_shows_only_the_hall()
 	if _rows == 0:
 		_fail("no page built any rows, so nothing was measured")
 	else:
@@ -57,20 +60,47 @@ func _data() -> Dictionary:
 	var members: Array = []
 	for i in 6:
 		members.append({"player_id": "p%d" % i, "name": "Lord Number %d" % i,
-			"role": "king" if i == 0 else "lord", "level": 30 + i, "donated": str(1000 * i)})
+			"role": "king" if i == 0 else ("marshal" if i == 1 else "member"),
+			"level": 30 + i, "donated": str(1000 * i)})
 	var upgrades: Array = []
 	for i in 4:
 		upgrades.append({"id": "u%d" % i, "name": "Kingdom Work %d" % i, "level": i,
-			"effect_now": 500 * i, "effect_per_level": 250, "next_cost": 120000 * (i + 1),
+			"effect_now": 500 * i, "per_level": 250, "next_cost": 120000 * (i + 1),
 			"maxed": i == 3, "bucket": "collect_income_bp"})
 	var board: Array = []
 	for i in 10:
 		board.append({"id": "k%d" % i, "name": "A Kingdom Named %d" % i, "tag": "K%d" % i,
 			"level": 20 - i})
+	var asking: Array = []
+	for i in 2:
+		asking.append({"player_id": "r%d" % i, "name": "A Lord Who Asked %d" % i,
+			"level": 22 + i, "waiting": 3600 * (i + 1)})
 	return {"in_kingdom": true, "me": {"role": "king"},
 		"kingdom": {"id": "k0", "name": "Lion Banner", "tag": "LION", "members": 6,
-			"member_cap": 50, "level": 5},
-		"members": members, "upgrades": upgrades, "leaderboard": board}
+			"member_cap": 50, "level": 5, "join_policy": "request"},
+		"members": members, "upgrades": upgrades, "leaderboard": board, "requests": asking}
+
+
+## A player with no kingdom: an invitation, a cooldown running out, and every
+## kind of card the hall can be sent.
+func _hall_data(waiting: int = 0) -> Dictionary:
+	var cards: Array = []
+	var actions := ["join", "request", "requested", "full", "join", "request", "join", "join"]
+	for i in actions.size():
+		cards.append({"id": "k%d" % i, "kingdom_id": "k%d" % i,
+			"name": "The Kingdom of the Very Long Name %d" % i, "tag": "K%d" % i, "level": 1 + i,
+			"members": 4 + i, "member_cap": 20, "reputation": 1000 * i,
+			"join_policy": "request" if actions[i].begins_with("request") else "open",
+			"king": "Aldric the %d" % i, "action": "cooldown" if waiting > 0 else actions[i]})
+	var invite: Dictionary = cards[0].duplicate()
+	invite["id"] = "inv"
+	invite["kingdom_id"] = "inv"
+	invite["action"] = "cooldown" if waiting > 0 else "accept"
+	return {"in_kingdom": false, "kingdom": null, "members": [], "upgrades": [], "me": null,
+		"invites": [invite], "recommended": cards, "leaderboard": [], "requests": [],
+		"found_cost": 250000, "found_level": 20, "rejoin_in": waiting,
+		"can_found": false, "found_reason": "Reach level 20 to found a kingdom.",
+		"max_requests": 5}
 
 
 ## The goods the game actually sells, from the generator's own document, so a
@@ -133,12 +163,15 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 		return
 	page.set("_data", _data())
 	page.set("_shop", {"favour": 100, "goods": []})
+	page.set("_loaded_once", true)
+	page.call("_apply")
 
 	for mode in ["lords", "works", "ranks", "realm"]:
 		page.call("_show_section", mode)
 		for i in 3:
 			await process_frame
-		var realm_showing: bool = (ui["realm_card"] as Control).visible
+		# In the tree, not the node's own flag: a layer hides what is on it.
+		var realm_showing: bool = (ui["realm_card"] as Control).is_visible_in_tree()
 		if mode == "realm":
 			if not realm_showing:
 				_fail("the REALM tab does not show the realm card")
@@ -149,7 +182,7 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 				_fail("the %s tab still shows the realm card under it" % mode.to_upper())
 			if page.get("_section") == null:
 				_fail("the %s tab built nothing" % mode.to_upper())
-			if (ui["lords_panel"] as Control).visible:
+			if (ui["lords_panel"] as Control).is_visible_in_tree():
 				_fail("the %s tab left the half-width lords panel showing" % mode.to_upper())
 	# Nothing a tab shows may sit under the rail, and REALM has to use the room
 	# the other tabs use rather than stopping a third of the way down.
@@ -188,6 +221,132 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 	print("  the four tabs each swap the page's content, clear of the rail")
 	host.queue_free()
 	await process_frame
+
+
+## What the owner saw: the works rows and their UPGRADE buttons standing on the
+## Lords page. The shell refreshes the open tab whenever the game's state
+## changes and whenever the tab is reopened, and painting REALM used to switch
+## its rows back on whichever tab was showing.
+func _realm_never_leaks_into_another_tab() -> void:
+	var host := Control.new()
+	host.size = Vector2(941, 1672)
+	root.add_child(host)
+	var page: Control = load("res://scenes/tabs/kingdom.gd").new()
+	page.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.add_child(page)
+	for i in 3:
+		await process_frame
+	var ui: Dictionary = page.get("_ui")
+	page.set("_data", _data())
+	page.set("_shop", {"favour": 100, "goods": []})
+	page.set("_loaded_once", true)
+	page.call("_apply")
+	for mode in ["lords", "works", "ranks"]:
+		page.call("_show_section", mode)
+		for i in 3:
+			await process_frame
+		# A refresh the way the shell sends one: recent enough that it repaints
+		# rather than asking the server.
+		page.set("_loaded_ms", Time.get_ticks_msec())
+		page.call("refresh")
+		for i in 3:
+			await process_frame
+		for inst in ui["work_row"]:
+			if (inst["node"] as Control).is_visible_in_tree():
+				_fail("a REALM works row is standing on the %s tab after a refresh" % mode.to_upper())
+				break
+		for id in ["realm_card", "treasury_card", "rep_bar_fill", "donate"]:
+			if (ui[id] as Control).is_visible_in_tree():
+				_fail("REALM's %s shows on the %s tab after a refresh" % [id, mode.to_upper()])
+		if page.get("_section") == null:
+			_fail("the %s tab lost its section on a refresh" % mode.to_upper())
+	print("  a refresh on Lords, Works or Ranks leaves REALM hidden")
+	host.queue_free()
+	await process_frame
+
+
+## Without a kingdom there is no kingdom page to show: no crest, no stats, no
+## strip of tabs for a realm the player does not have. Only the hall.
+func _no_kingdom_shows_only_the_hall() -> void:
+	var host := Control.new()
+	host.size = Vector2(941, 1672)
+	root.add_child(host)
+	var page: Control = load("res://scenes/tabs/kingdom.gd").new()
+	page.set_anchors_preset(Control.PRESET_FULL_RECT)
+	host.add_child(page)
+	for i in 3:
+		await process_frame
+	var ui: Dictionary = page.get("_ui")
+	page.set("_data", _hall_data())
+	page.set("_loaded_once", true)
+	page.call("_apply")
+	for i in 4:
+		await process_frame
+	for id in ["header", "kingdom_name", "stat_members", "realm_card", "lords_panel"]:
+		if (ui[id] as Control).is_visible_in_tree():
+			_fail("with no kingdom, the page still shows the kingdom's %s" % id)
+	for inst in ui["tabs"]:
+		if (inst["node"] as Control).is_visible_in_tree():
+			_fail("with no kingdom, the page still shows the REALM/LORDS/WORKS/RANKS strip")
+			break
+	var hall: Control = page.get("_hall")
+	if hall == null or not hall.is_visible_in_tree():
+		_fail("with no kingdom, the hall is not shown")
+	else:
+		# All of it can be scrolled to: the page grew to hold it.
+		var content: Control = page.get("_content")
+		var bottom := hall.global_position.y + hall.size.y
+		if content.custom_minimum_size.y < bottom:
+			_fail("the hall runs to y %.0f but the page stops at %.0f -- its foot cannot be reached"
+				% [bottom, content.custom_minimum_size.y])
+	# And the kingdom it joins takes its place, opening on REALM.
+	page.set("_data", _data())
+	page.call("_apply")
+	for i in 3:
+		await process_frame
+	if page.get("_hall") != null:
+		_fail("joining a kingdom left the hall standing")
+	if not (ui["realm_card"] as Control).is_visible_in_tree():
+		_fail("joining a kingdom did not open on REALM")
+	print("  with no kingdom only the hall shows, and a kingdom replaces it")
+	host.queue_free()
+	await process_frame
+
+
+## The hall's rows fit the phone, and every button in it is one a thumb can hit.
+func _the_hall_fits(canvas: Vector2) -> void:
+	for waiting in [0, 2400]:
+		var host := Control.new()
+		host.size = canvas
+		root.add_child(host)
+		var hall: Control = load("res://scenes/kingdom/kingdom_hall.gd").new()
+		hall.setup("hall", _hall_data(waiting), {})
+		hall.position = Vector2(168, 312)
+		host.add_child(hall)
+		for i in 4:
+			await process_frame
+		_tag = "the hall%s on %dx%d" % [" (waiting)" if waiting > 0 else "", int(canvas.x), int(canvas.y)]
+		_screen = Rect2(Vector2.ZERO, canvas)
+		_band = Vector2(hall.global_position.x, hall.global_position.x + hall.size.x)
+		var before := _buttons
+		_walk(hall)
+		_nothing_eats_the_drag(hall)
+		if _buttons == before:
+			_fail("%s: built no buttons" % _tag)
+		if waiting > 0:
+			var live := 0
+			var stack: Array = [hall]
+			while not stack.is_empty():
+				var n: Node = stack.pop_back()
+				for c in n.get_children():
+					stack.append(c)
+				if n is Button and not (n as Button).disabled and (n as Button).text in ["JOIN", "REQUEST", "ACCEPT"]:
+					live += 1
+			if live > 0:
+				_fail("%s: %d join button(s) still answer while the player waits" % [_tag, live])
+		hall.queue_free()
+		host.queue_free()
+		await process_frame
 
 
 ## A tab taller than the phone has to scroll, and a ScrollContainer only sees a

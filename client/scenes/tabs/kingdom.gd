@@ -1,14 +1,25 @@
 extends Control
-## KINGDOM — the realm: identity, treasury, reputation, lords, works, ranking.
-## Layout: layout/kingdom.json. Without a kingdom the same page offers founding
-## and any invitations.
+## KINGDOM — the realm when the player has one, the hall when they do not.
+## Layout: layout/kingdom.json for the kingdom's own page (header, stats, the
+## tab strip and REALM); scenes/kingdom/kingdom_section.gd builds LORDS, WORKS
+## and RANKS under the strip; scenes/kingdom/kingdom_hall.gd builds the hall.
+##
+## The page is three layers, and what shows is decided per layer, never per
+## node:
+##   _top    the kingdom's header, stats and tab strip
+##   _realm  everything the painting draws below the strip
+##   _hall   what a player with no kingdom is offered instead of all of it
+## They used to be one flat list of nodes, and painting REALM switched its rows
+## back on whichever tab was showing -- the works rows and their UPGRADE buttons
+## turned up on the Lords page whenever the tab was reopened. Painting a hidden
+## layer draws nothing, so that cannot happen now.
 
 const SCREEN := "kingdom"
 ## The roster's faces, and the rule for choosing one, live with the section that
 ## also draws lords, so the two never disagree.
 const Faces := preload("res://scenes/kingdom/kingdom_section.gd")
+const HallScript := preload("res://scenes/kingdom/kingdom_hall.gd")
 const WORK_ART := ["kingdom/work_banner_hall", "kingdom/work_training_grounds", "kingdom/work_granary_law", "kingdom/work_royal_archives"]
-const ROLE_ICON := {"king": "icons/role_king", "captain": "icons/role_captain", "lord": "icons/role_lord"}
 ## Reputation ranks: name, threshold. The server stores a number; the ladder is presentation.
 const RANKS := [["NEUTRAL", 0], ["RESPECTED", 10000], ["HONORED", 50000], ["LEGENDARY", 200000]]
 const HEX_ASSETS := ["kingdom/rep_hex_1", "kingdom/rep_hex_2_lit", "kingdom/rep_hex_3", "kingdom/rep_hex_4"]
@@ -18,12 +29,22 @@ const HEX_LABELS := ["kingdom/rep_label_neutral", "kingdom/rep_label_respected",
 const HEX_RECTS := [[574, 1028, 47, 59], [656, 1024, 56, 66], [752, 1028, 49, 60], [847, 1028, 49, 60]]
 const LABEL_RECTS := [[562, 1090, 68, 22], [644, 1090, 78, 22], [744, 1090, 68, 22], [830, 1090, 82, 22]]
 const TAB_NAMES := ["realm", "lords", "works", "ranks"]
-## Everything the reference paints below the tab strip. All of it is REALM; the
-## header and the strip are the page rather than a section of it.
+## The kingdom's own header: the crest, the name, the stats and the strip.
+const TOP_PARTS := ["header", "kingdom_name", "edit_name", "motto", "level", "level_bar_fill",
+	"stat_renown", "stat_renown_value", "stat_treasury", "stat_treasury_value",
+	"stat_members", "stat_members_value", "tabs"]
+## Everything the reference paints below the tab strip. All of it is REALM.
 const REALM_PARTS := ["realm_card", "realm_bonuses", "bonus_income", "bonus_xp",
 	"realm_notice", "treasury_card", "donate", "reputation_card", "rep_rank_name",
-	"rep_bar_fill", "rep_progress", "lords_panel", "lords_view_all",
-	"works_panel", "works_view_all", "ranking_card", "rank", "view_rankings"]
+	"rep_bar_fill", "rep_progress", "rep_tiers", "lords_panel", "lords_view_all",
+	"lord_row", "works_panel", "works_view_all", "work_row", "ranking_card", "rank",
+	"view_rankings"]
+## The server's ranks, in the painting's words. The server says marshal and
+## member; the painting says CAPTAIN and LORD, and the painting is what a
+## player reads.
+const ROLE_WORD := {"king": "KING", "marshal": "CAPTAIN", "member": "LORD"}
+const ROLE_ICON := {"king": "icons/role_king", "marshal": "icons/role_captain", "member": "icons/role_lord"}
+const ROLE_ORDER := {"king": 0, "marshal": 1, "member": 2}
 ## Just under the tab strip, which ends at 624, and clear of the rail: it runs
 ## down x 0..160, and a section that started at 70 had the first ninety units of
 ## every row hidden behind it.
@@ -36,22 +57,34 @@ const ACTIVE_MARGIN := [14, 10, 14, 10]
 const IDLE_MARGIN := [12, 8, 12, 8]
 const MAX_NAME := 18
 const MAX_TAG := 4
+## The hall's header: the vista above the crest, then its title and a line
+## under it, then the rows. The vista is the painting's own width, the rows the
+## section's.
+const HALL_VISTA := Rect2(150, 0, 791, 174)
+const HALL_FADE := 76.0
+const HALL_TITLE_Y := 184.0
+const HALL_TOP := 318.0
 
 var _scroll: ScrollContainer
 var _content: Control
+var _top: Control
+var _realm: Control
+var _hall_layer: Control
+var _hall: Control
 var _ui: Dictionary = {}
 var _lords: Array = []
 var _works: Array = []
 var _hexes: Array = []
 var _data: Dictionary = {}
 var _shop: Dictionary = {}
-var _boards: Dictionary = {}
 var _loaded_ms := -100000
+var _loaded_once := false
 var _busy := false
 var _view := "realm"
 var _section: Control
-var _found_button: TextureButton
-var _found_label: Label
+## What the section showing was built from, so a refresh that brings the same
+## data leaves it alone rather than rebuilding it under the player's thumb.
+var _section_sig := ""
 var _widths: Array = []
 var _label_spots: Dictionary = {}
 
@@ -73,10 +106,11 @@ func _ready() -> void:
 	# The scroll took its size when its anchors were set, above, so the hook is
 	# applied once by hand as well as on every later resize.
 	var fit_page := func() -> void:
-		_content.custom_minimum_size.y = maxf(1672.0, _scroll.size.y)
+		_content.custom_minimum_size.y = maxf(_page_height(), _scroll.size.y)
 	_scroll.resized.connect(fit_page)
 	fit_page.call()
 	_ui = Layout.build(SCREEN, _content)
+	_layer_the_page()
 
 	_lords = _ui["lord_row"]
 	_works = _ui["work_row"]
@@ -87,14 +121,8 @@ func _ready() -> void:
 	_ui["lords_view_all"].pressed.connect(_show_section.bind("lords"))
 	_ui["works_view_all"].pressed.connect(_show_section.bind("works"))
 	_ui["view_rankings"].pressed.connect(_show_section.bind("ranks"))
-	# Tabs are anchors on a page that shows every section, and they show which
-	# section you are in.
-	#
-	# They used to be the four crops the reference painting happens to contain,
-	# which is REALM lit and the other three dark -- so REALM stayed lit however
-	# far you scrolled, and a tab bar that never answers is worse than no tab
-	# bar. The layout carries a plate for each state and a label for each name;
-	# the plate follows the scroll now.
+	# The layout carries a plate for each state and a label for each name; the
+	# lit plate follows the selected tab.
 	var tabs: Array = _ui["tabs"]
 	var strip: Dictionary = Layout.find(SCREEN, "tabs")
 	_widths = strip.get("widths", [206, 186, 197, 192])
@@ -118,36 +146,84 @@ func _ready() -> void:
 		var hit := UI.hotspot(Rect2(0, 0, w, TAB_H))
 		hit.pressed.connect(_jump.bind(TAB_NAMES[i]))
 		node.add_child(hit)
-	_scroll.get_v_scroll_bar().value_changed.connect(func(_v: float) -> void: _light_the_tab())
 	_light_the_tab()
-	# Reputation ladder overlays, drawn over the card's baked hexagons.
+	# Reputation ladder overlays, drawn over the card's baked hexagons -- in the
+	# realm layer, so they can never be left standing over another tab.
 	for i in HEX_RECTS.size():
 		var hr: Array = HEX_RECTS[i]
 		var hex := UI.image(HEX_ASSETS[i], Rect2(hr[0], hr[1], hr[2], hr[3]))
 		hex.visible = false
-		_content.add_child(hex)
+		_realm.add_child(hex)
 		var lr: Array = LABEL_RECTS[i]
 		var lab := UI.image(HEX_LABELS[i], Rect2(lr[0], lr[1], lr[2], lr[3]))
 		lab.visible = false
-		_content.add_child(lab)
+		_realm.add_child(lab)
 		_hexes.append({"hex": hex, "label": lab})
-	# Founding / invitations live on the realm card when there is no kingdom.
-	_found_button = UI.tex_button("family/btn_upgrade_plate", Rect2(190, 790, 326, 70))
-	_found_label = UI.label("FOUND A KINGDOM", 24, UI.INK, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_found_label, Rect2(190, 790, 326, 70))
-	_found_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_found_button.pressed.connect(_found_or_accept)
-	_found_button.visible = false
-	_found_label.visible = false
-	_content.add_child(_found_button)
-	_content.add_child(_found_label)
+	_build_hall_header()
+	# Nothing shows until the server has said whether there is a kingdom: the
+	# first frame used to be the Realm dashboard filled with dashes.
+	_top.visible = false
+	_realm.visible = false
+	_hall_layer.visible = false
+	# Coming back to the tab is a reason to ask again. A state change is not --
+	# the shell sends one on every collect -- and rebuilding a list under the
+	# player's thumb because their gold moved is how a page jumps.
+	visibility_changed.connect(func() -> void:
+		if is_visible_in_tree():
+			_loaded_ms = -100000)
+
+
+## Moves what Layout built into the page's layers, keeping the painting's order.
+func _layer_the_page() -> void:
+	_top = _layer()
+	_realm = _layer()
+	_hall_layer = _layer()
+	var top := _nodes_of(TOP_PARTS)
+	var realm := _nodes_of(REALM_PARTS)
+	for c in _content.get_children():
+		if c == _top or c == _realm or c == _hall_layer:
+			continue
+		if top.has(c):
+			c.reparent(_top)
+		elif realm.has(c):
+			c.reparent(_realm)
+	# Whatever is left -- the foliage along the foot, which is anchored to the
+	# screen's -- stays in the page and above every layer.
+	for c in _content.get_children():
+		if c != _top and c != _realm and c != _hall_layer:
+			_content.move_child(c, -1)
+
+
+## A full-page layer. It ignores the mouse, so the tab strip, the buttons and
+## the drag that scrolls the page all reach what is underneath.
+func _layer() -> Control:
+	var l := Control.new()
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.position = Vector2.ZERO
+	l.size = Vector2(941, 1672)
+	_content.add_child(l)
+	return l
+
+
+func _nodes_of(ids: Array) -> Dictionary:
+	var out := {}
+	for id in ids:
+		if not _ui.has(id):
+			continue
+		var v: Variant = _ui[id]
+		if v is Control:
+			out[v] = true
+		elif v is Array:
+			for inst in v:
+				out[inst["node"]] = true
+	return out
 
 
 func refresh() -> void:
 	if Time.get_ticks_msec() - _loaded_ms > 3000:
 		_load()
-	else:
-		_paint()
+	elif _loaded_once:
+		_apply()
 
 
 func _load() -> void:
@@ -155,11 +231,13 @@ func _load() -> void:
 	var res: Api.Response = await Api.get_json("/v1/kingdom")
 	if res.ok:
 		_data = res.data
-	if bool(_data.get("in_kingdom", false)):
+		_loaded_once = true
+	if _in_kingdom():
 		var sh: Api.Response = await Api.get_json("/v1/kingdom/shop")
 		if sh.ok:
 			_shop = sh.data
-	_paint()
+	if _loaded_once:
+		_apply()
 
 
 func _kingdom() -> Dictionary:
@@ -167,37 +245,44 @@ func _kingdom() -> Dictionary:
 	return k if k is Dictionary else {}
 
 
+func _in_kingdom() -> bool:
+	return bool(_data.get("in_kingdom", false)) and not _kingdom().is_empty()
+
+
+## Shows the page the data calls for: the kingdom, or the hall.
+func _apply() -> void:
+	if not _in_kingdom():
+		_top.visible = false
+		_realm.visible = false
+		_free_section()
+		_view = "realm"
+		_show_hall()
+		return
+	if _hall != null:
+		# The hall gives way to the kingdom it just joined, which opens on REALM.
+		_hall.queue_free()
+		_hall = null
+		_view = "realm"
+	_hall_layer.visible = false
+	_top.visible = true
+	_paint()
+	if _view == "realm":
+		_realm.visible = true
+		_fit_page()
+	elif _section == null or _signature(_view) != _section_sig:
+		_show_section(_view)
+
+
 func _paint() -> void:
 	var k := _kingdom()
-	var in_kingdom := bool(_data.get("in_kingdom", false)) and not k.is_empty()
-	_found_button.visible = not in_kingdom
-	_found_label.visible = not in_kingdom
-	if not in_kingdom:
-		_ui["kingdom_name"].text = "NO KINGDOM"
-		var invites: Array = _data.get("invites", [])
-		_ui["motto"].text = "Found one at level %d for %s gold%s" % [int(_data.get("found_level", 20)),
-			UI.short_number(int(_data.get("found_cost", 0))), (" · %d invitation%s" % [invites.size(), "" if invites.size() == 1 else "s"]) if not invites.is_empty() else ""]
-		_found_label.text = "ACCEPT INVITATION" if not invites.is_empty() else "FOUND A KINGDOM"
-		_ui["level"].text = "LEVEL -"
-		Layout.set_fill(_ui["level_bar_fill"], 0.0)
-		for id in ["stat_renown_value", "stat_treasury_value", "stat_members_value"]:
-			_ui[id].text = "-"
-		_ui["bonus_income"].text = "+0%"
-		_ui["bonus_xp"].text = "+0%"
-		_ui["rep_rank_name"].text = "-"
-		_ui["rep_progress"].text = ""
-		Layout.set_fill(_ui["rep_bar_fill"], 0.0)
-		for r in _lords:
-			r["node"].visible = false
-		for w in _works:
-			w["node"].visible = false
-		_ui["rank"].text = "#-"
-		return
-
 	_ui["kingdom_name"].text = str(k.get("name", "")).to_upper()
 	UI.fit_label(_ui["kingdom_name"], 48, 30)
-	_ui["motto"].text = "[%s] · Kingdom of %d lord%s" % [str(k.get("tag", "")), int(k.get("members", 1)), "" if int(k.get("members", 1)) == 1 else "s"]
+	var n := int(k.get("members", 1))
+	_ui["motto"].text = "[%s] · Kingdom of %d lord%s" % [str(k.get("tag", "")), n, "" if n == 1 else "s"]
 	_ui["level"].text = "LEVEL %d" % int(k.get("level", 1))
+	# Fitted to the plaque's box, which ends where the bar begins: at the
+	# painting's size a two-digit level ran onto the bar.
+	UI.fit_label(_ui["level"], 28, 20)
 	var need := int(k.get("xp_to_next", 0))
 	Layout.set_fill(_ui["level_bar_fill"], (float(int(k.get("xp", 0))) / float(need)) if need > 0 else 1.0)
 	_ui["stat_renown_value"].text = UI.grouped(int(k.get("reputation", 0)))
@@ -253,11 +338,10 @@ func _paint_reputation(rep: int) -> void:
 
 
 func _paint_lords() -> void:
-	var members: Array = _data.get("members", [])
+	var members: Array = _data.get("members", []).duplicate()
 	members.sort_custom(func(a, b):
-		var order := {"king": 0, "captain": 1, "lord": 2}
-		var ra: int = order.get(str(a.get("role", "lord")), 2)
-		var rb: int = order.get(str(b.get("role", "lord")), 2)
+		var ra: int = ROLE_ORDER.get(str(a.get("role", "member")), 2)
+		var rb: int = ROLE_ORDER.get(str(b.get("role", "member")), 2)
 		if ra != rb:
 			return ra < rb
 		return int(a.get("level", 0)) > int(b.get("level", 0)))
@@ -270,13 +354,13 @@ func _paint_lords() -> void:
 		if i >= members.size():
 			continue
 		var m: Dictionary = members[i]
-		p["portrait"].texture = Art.tex(Faces.face_for(str(m.get("player_id", "")), str(m.get("role", "lord"))))
+		p["portrait"].texture = Art.tex(Faces.face_for(str(m.get("player_id", "")), str(m.get("role", "member"))))
 		p["online"].texture = Art.tex("icons/dot_online" if str(m.get("player_id", "")) == Session.player_id else "icons/dot_offline")
 		p["name"].text = str(m.get("name", "")).to_upper()
 		UI.fit_label(p["name"], 24, 14)
-		var role := str(m.get("role", "lord"))
-		p["role_icon"].texture = Art.tex(ROLE_ICON.get(role, "icons/role_lord"))
-		p["role"].text = role.to_upper()
+		var role := str(m.get("role", "member"))
+		p["role_icon"].texture = Art.tex(str(ROLE_ICON.get(role, ROLE_ICON["member"])))
+		p["role"].text = str(ROLE_WORD.get(role, "LORD"))
 		p["might"].text = "LV %d" % int(m.get("level", 1))
 
 
@@ -311,14 +395,100 @@ func _bonus_text(u: Dictionary) -> String:
 	return "+%d%% %s" % [eff / 100, label]
 
 
+# --- the hall -----------------------------------------------------------------------
+
+## The hall's own header, built once: the vista above the crest, fading into the
+## ground, and the page's title. A kingdom's header shows its crest and its
+## name; a player with neither is shown the realm they could join.
+func _build_hall_header() -> void:
+	var vista := UI.image("kingdom/hall_vista", HALL_VISTA)
+	_hall_layer.add_child(vista)
+	# The crop stops where the crest begins, so its foot is a straight cut
+	# through the castle. It fades into the ground instead of ending on a line.
+	var fade := TextureRect.new()
+	var g := Gradient.new()
+	g.set_color(0, Color(UI.GROUND, 0.0))
+	g.set_color(1, UI.GROUND)
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.fill_from = Vector2(0, 0)
+	gt.fill_to = Vector2(0, 1)
+	gt.width = 4
+	gt.height = 64
+	fade.texture = gt
+	fade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	fade.stretch_mode = TextureRect.STRETCH_SCALE
+	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UI.place(fade, Rect2(HALL_VISTA.position.x, HALL_VISTA.end.y - HALL_FADE, HALL_VISTA.size.x, HALL_FADE + 2))
+	_hall_layer.add_child(fade)
+
+	var title := UI.label("JOIN A KINGDOM", 50, UI.GOLD, "title", 700)
+	UI.place(title, Rect2(SECTION_X + 16, HALL_TITLE_Y, 700, 64))
+	_hall_layer.add_child(title)
+	var line := UI.label("Stand with other lords and share their bonuses.", 26, UI.DIM, "body", 500)
+	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	line.custom_minimum_size = Vector2(730, 0)
+	UI.place(line, Rect2(SECTION_X + 18, HALL_TITLE_Y + 66, 730, 40))
+	_hall_layer.add_child(line)
+
+
+func _show_hall() -> void:
+	_hall_layer.visible = true
+	if _hall != null:
+		_hall.update(_data)
+		return
+	_hall = HallScript.new()
+	_hall.setup("hall", _data, {})
+	_hall.position = Vector2(SECTION_X, HALL_TOP)
+	_hall.acted.connect(_hall_act)
+	_hall.found_pressed.connect(_found)
+	_hall.reload_wanted.connect(func() -> void: _load())
+	_hall.grew.connect(func(_h: float) -> void: _fit_page())
+	_hall_layer.add_child(_hall)
+	await get_tree().process_frame
+	_fit_page()
+
+
+## A hall action, with the word the player should hear afterwards.
+func _hall_act(path: String, body: Dictionary) -> void:
+	var name := str(body.get("_name", ""))
+	body.erase("_name")
+	var res := await _act(path, body)
+	if not res.ok:
+		# Refused -- the toast has said why. The hall went busy when it asked.
+		if _hall != null:
+			_hall.update(_data)
+		return
+	match path:
+		"/v1/kingdom/join":
+			if str(res.data.get("result", "")) == "requested":
+				GameState.action_failed.emit("Your request is with %s" % name)
+			else:
+				GameState.action_failed.emit("Welcome to %s" % name)
+		"/v1/kingdom/accept":
+			GameState.action_failed.emit("Welcome to %s" % name)
+		"/v1/kingdom/request/cancel":
+			GameState.action_failed.emit("Request withdrawn")
+		"/v1/kingdom/decline":
+			GameState.action_failed.emit("Invitation declined")
+
+
+## How tall the page has to be for whatever it is showing.
+func _page_height() -> float:
+	if _hall != null and _hall_layer.visible:
+		return HALL_TOP + _hall.size.y + 150.0
+	if _section != null:
+		return SECTION_TOP + _section.size.y + 140.0
+	return 1672.0
+
+
+func _fit_page() -> void:
+	_content.custom_minimum_size.y = maxf(_page_height(), _scroll.size.y)
+
+
 # --- actions ------------------------------------------------------------------------
 
-## Lights whichever tab's section the page is showing.
 ## Lights the tab whose section is showing.
-##
-## It used to work the scroll position out against a table of section
-## positions, because the tabs were anchors down one long page. They select
-## now, so the lit one is simply the selected one.
 func _light_the_tab() -> void:
 	var at := maxi(0, TAB_NAMES.find(_view))
 	var tabs: Array = _ui["tabs"]
@@ -350,75 +520,67 @@ func _jump(section: String) -> void:
 
 ## Shows one section and hides the rest, in the page it is already on.
 ##
-## REALM is the page the reference painted: the realm card and its bonuses, the
-## treasury, the reputation ladder, the lords and works panels side by side with
-## their View All, and the ranking strip. It fills the screen because it was
-## drawn to, and it is a summary -- the other three tabs are where the whole
-## roster, the whole build list and the whole table live.
-##
-## Everything below the tab strip belongs to REALM, so switching away is hiding
-## all of it and putting one section in its place. _paint() only fills in what
-## REALM shows, which is why it is not called for the others: it used to run on
-## every tab and make the lords and works rows visible again, drawing four
-## building thumbnails across the reputation card.
+## REALM is the page the reference painted, and it is a summary -- the other
+## three tabs are where the whole roster, the whole build list and the whole
+## table live. Everything below the strip belongs to REALM, so switching away is
+## hiding that one layer and putting a section in its place.
 func _show_section(which: String) -> void:
 	_view = which
-	if _section != null:
-		_section.queue_free()
-		_section = null
+	_free_section()
 	var realm := which == "realm"
-	for id in REALM_PARTS:
-		if _ui.has(id):
-			_ui[id].visible = realm
-	# The panels' rows belong to REALM. Hiding them unconditionally left the
-	# painted ROYAL LORDS panel showing four faces with no names beside them,
-	# because the faces are baked into the panel and only the type is live.
-	for r in _lords:
-		r["node"].visible = realm
-	for w in _works:
-		w["node"].visible = realm
-	for h in _hexes:
-		h["hex"].visible = false
-		h["label"].visible = false
-	for inst in _ui.get("rep_tiers", []):
-		inst["node"].visible = realm
-
+	_realm.visible = realm and _in_kingdom()
 	_light_the_tab()
 	if realm:
-		_content.custom_minimum_size.y = maxf(1672.0, _scroll.size.y)
 		_paint()
+		_fit_page()
 		return
 
 	_section = load("res://scenes/kingdom/kingdom_section.gd").new()
 	_section.setup(which, _data, _shop)
+	_section_sig = _signature(which)
 	_section.position = Vector2(SECTION_X, SECTION_TOP)
+	# A success reloads, and the reload rebuilds the section from the new data.
+	# A refusal changes nothing, but the section went busy when it asked, so it
+	# is rebuilt as it was -- otherwise every button in it would stay dead.
 	_section.acted.connect(func(path: String, body: Dictionary) -> void:
-		await _act(path, body)
-		_show_section(_view))
-	_section.grew.connect(func(h: float) -> void:
-		_content.custom_minimum_size.y = maxf(_scroll.size.y, SECTION_TOP + h + 140.0))
+		var res := await _act(path, body)
+		if not res.ok:
+			_show_section(_view))
+	_section.grew.connect(func(_h: float) -> void: _fit_page())
 	_content.add_child(_section)
+	# Above the layers, below the foliage along the foot.
+	_content.move_child(_section, _hall_layer.get_index() + 1)
 	await get_tree().process_frame
-	_content.custom_minimum_size.y = maxf(_scroll.size.y,
-		SECTION_TOP + _section.size.y + 140.0)
+	_fit_page()
 
 
-func _found_or_accept() -> void:
+func _free_section() -> void:
+	if _section != null:
+		_section.queue_free()
+		_section = null
+	_section_sig = ""
+
+
+## What a section draws, as one string: a refresh that brings the same data
+## leaves the section standing.
+func _signature(which: String) -> String:
+	match which:
+		"lords":
+			return JSON.stringify([_data.get("members", []), _data.get("requests", []),
+				_data.get("me", {}), _kingdom().get("join_policy", "")])
+		"works":
+			return JSON.stringify([_data.get("upgrades", []), _shop])
+		"ranks":
+			return JSON.stringify(_data.get("leaderboard", []))
+	return ""
+
+
+## Founding: a name, a tag, and the price, each asked for in turn.
+func _found() -> void:
 	if _busy:
 		return
-	var invites: Array = _data.get("invites", [])
-	if not invites.is_empty():
-		var options: Array = []
-		for inv in invites:
-			options.append({"id": str(inv.get("kingdom_id", "")), "label": str(inv.get("name", "")), "sub": "[%s] · level %d" % [str(inv.get("tag", "")), int(inv.get("level", 1))]})
-		var pick := await Dialog.choose(self, {"title": "Invitations", "options": options})
-		if pick == "":
-			return
-		await _act("/v1/kingdom/accept", {"kingdom_id": pick})
-		return
-	var level := int(GameState.player().get("level", 1))
-	if level < int(_data.get("found_level", 20)):
-		GameState.action_failed.emit("Founding needs level %d" % int(_data.get("found_level", 20)))
+	if not bool(_data.get("can_found", true)):
+		GameState.action_failed.emit(str(_data.get("found_reason", "You cannot found a kingdom yet")))
 		return
 	# The name is the player's to choose, and it is typed rather than picked
 	# from anything: nothing here supplies a prefix or a pattern.
@@ -436,9 +598,13 @@ func _found_or_accept() -> void:
 	if tagged["action"] != "confirm" or str(tagged["text"]) == "":
 		return
 	var tag := str(tagged["text"])
-	if not await Dialog.ask(self, {"title": "Found %s?" % text, "body": "Costs %s gold." % UI.grouped(int(_data.get("found_cost", 0))), "confirm_text": "Found"}):
+	if not await Dialog.ask(self, {"title": "Found %s?" % text,
+			"body": "Costs %s gold. You will be its king." % UI.grouped(int(_data.get("found_cost", 0))),
+			"confirm_text": "Found"}):
 		return
-	await _act("/v1/kingdom/found", {"name": text, "tag": tag.to_upper()})
+	var res := await _act("/v1/kingdom/found", {"name": text, "tag": tag.to_upper()})
+	if res.ok:
+		GameState.action_failed.emit("Long live %s" % text)
 
 
 ## A kingdom's name outlives the moment it was chosen -- it is on the
@@ -498,9 +664,14 @@ func _upgrade(i: int) -> void:
 	await _act("/v1/kingdom/upgrade", {"id": str(u.get("id", ""))})
 
 
-func _act(path: String, body: Dictionary) -> void:
+## One action, then the page as the server now has it.
+func _act(path: String, body: Dictionary) -> Api.Response:
 	_busy = true
 	var res: Api.Response = await GameState.act(path, body)
 	_busy = false
 	if res.ok:
+		# Whatever the answer changed -- a section rebuilds from the new data
+		# because its signature has moved.
+		_section_sig = ""
 		await _load()
+	return res

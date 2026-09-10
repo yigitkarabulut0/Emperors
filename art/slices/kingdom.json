@@ -214,13 +214,31 @@
         206,
         68
       ],
-      "inpaint": [
-        [
-          203,
-          572,
-          104,
-          36
-        ]
+      "erase": [
+        {
+          "rect": [
+            203,
+            572,
+            52,
+            36
+          ],
+          "sample_x": [
+            176,
+            196
+          ]
+        },
+        {
+          "rect": [
+            255,
+            572,
+            52,
+            36
+          ],
+          "sample_x": [
+            310,
+            330
+          ]
+        }
       ]
     },
     {
@@ -231,13 +249,31 @@
         186,
         63
       ],
-      "inpaint": [
-        [
-          403,
-          572,
-          94,
-          36
-        ]
+      "erase": [
+        {
+          "rect": [
+            403,
+            572,
+            47,
+            36
+          ],
+          "sample_x": [
+            372,
+            394
+          ]
+        },
+        {
+          "rect": [
+            450,
+            572,
+            47,
+            36
+          ],
+          "sample_x": [
+            505,
+            527
+          ]
+        }
       ]
     },
     {
@@ -781,6 +817,36 @@
           ]
         }
       ]
+    },
+    {
+      "name": "kingdom/hall_vista",
+      "rect": [
+        150,
+        0,
+        791,
+        174
+      ],
+      "inpaint": [
+        [
+          169,
+          14,
+          224,
+          60
+        ],
+        [
+          400,
+          14,
+          208,
+          60
+        ],
+        [
+          615,
+          14,
+          246,
+          61
+        ]
+      ],
+      "_note": "The Kingdom hall's header: the vista above the lion crest, whose top ornament starts at y 177. A player with no kingdom has no crest to show."
     }
   ]
 }

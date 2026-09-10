@@ -215,15 +215,38 @@ func _fill() -> void:
 const KING_PORTRAIT := "portraits/lord_yigit"
 const LORD_PORTRAITS := ["portraits/lord_aldric", "portraits/lord_seraphine",
 	"portraits/lord_darian"]
-const ROLE_ICON := {"king": "icons/role_king", "captain": "icons/role_captain",
-	"lord": "icons/role_lord"}
+## The server's ranks are king, marshal and member; the painting calls them
+## KING, CAPTAIN and LORD, and the painting is what a player reads.
+const ROLE_ICON := {"king": "icons/role_king", "marshal": "icons/role_captain",
+	"member": "icons/role_lord"}
+const ROLE_WORD := {"king": "KING", "marshal": "CAPTAIN", "member": "LORD"}
 const ROW_H := 156.0
 const FACE := 122.0
+## A request row's face is smaller: the row carries two buttons, and the name
+## between them needs the room more than the portrait does.
+const ASK_FACE := 96.0
+const ACCEPT_W := 150.0
+const REFUSE_W := 140.0
+const BUTTON_GAP := 12.0
+const POLICY_H := 150.0
+const CHIP_W := 170.0
 
 
 func _fill_lords() -> void:
+	var my_role := str(me.get("role", ""))
+	var king := my_role == "king"
+	var leads := king or my_role == "marshal"
+
+	# Who is asking to join comes first: it is the one thing on this tab that is
+	# waiting for somebody.
+	var asking: Array = data.get("requests", [])
+	if leads and not asking.is_empty():
+		_heading("JOIN REQUESTS (%d)" % asking.size())
+		for r in asking:
+			_request_row(r)
+		_heading("THE LORDS")
+
 	var members: Array = data.get("members", [])
-	var king := str(me.get("role", "")) == "king"
 	for i in members.size():
 		var m: Dictionary = members[i]
 		var row := _row(ROW_H)
@@ -234,35 +257,109 @@ func _fill_lords() -> void:
 			str(m.get("role", ""))), Vector2(FACE, FACE), ROW_H)
 
 		var them := str(m.get("player_id", ""))
-		var can_rank := king and them != Session.player_id
+		var role := str(m.get("role", "member"))
+		var mine := them == Session.player_id
+		# The king manages everyone but himself; a captain may only remove the
+		# lords below him. Everyone else just reads the roster.
+		var action := ""
+		if king and not mine:
+			action = "MANAGE"
+		elif my_role == "marshal" and role == "member" and not mine:
+			action = "REMOVE"
 		var button_w := 200.0
 		var text_x := PAD + FACE + GUTTER
-		var text_w := _text_span(text_x, button_w if can_rank else 0.0)
+		var text_w := _text_span(text_x, button_w if action != "" else 0.0)
 
-		_text(row, str(m.get("name", "")), Rect2(text_x, 24, text_w, 44), 34, UI.INK,
-			"title", 700)
-		var role := str(m.get("role", "lord"))
-		row.add_child(UI.image(str(ROLE_ICON.get(role, ROLE_ICON["lord"])),
+		var name_label := _text(row, str(m.get("name", "")), Rect2(text_x, 24, text_w, 44), 34,
+			UI.INK, "title", 700)
+		UI.fit_label(name_label, 34, 22)
+		row.add_child(UI.image(str(ROLE_ICON.get(role, ROLE_ICON["member"])),
 			Rect2(text_x, 74, 32, 32)))
-		_text(row, role.to_upper(), Rect2(text_x + 42, 76, text_w - 42, 30), 25, UI.GOLD_DIM,
-			"title", 600)
+		_text(row, str(ROLE_WORD.get(role, "LORD")), Rect2(text_x + 42, 76, text_w - 42, 30), 25,
+			UI.GOLD_DIM, "title", 600)
 		_text(row, "Level %d  ·  %s given" % [int(m.get("level", 1)),
 			UI.short_number(int(str(m.get("donated", "0"))))],
 			Rect2(text_x, 112, text_w, 30), 24, UI.DIM)
 
-		if can_rank:
-			_action(row, "RANK", "inventory/btn_sell_plate", UI.INK, button_w, ROW_H) \
-				.pressed.connect(_set_role.bind(them, str(m.get("name", ""))))
+		match action:
+			"MANAGE":
+				_action(row, "MANAGE", "inventory/btn_sell_plate", UI.INK, button_w, ROW_H) \
+					.pressed.connect(_manage.bind(them, str(m.get("name", "")), role))
+			"REMOVE":
+				_action(row, "REMOVE", "shop/danger_plate", Color("#FBEDED"), button_w, ROW_H) \
+					.pressed.connect(_remove.bind(them, str(m.get("name", ""))))
 
-	var invite := _plate_button("INVITE A PLAYER", "shop/buy_plate", Color("#F3FBF3"))
-	invite.custom_minimum_size = Vector2(WIDTH, BUTTON_H)
-	invite.pressed.connect(_invite)
-	_list.add_child(invite)
+	if king:
+		_policy_row()
+
+	# Only a king or captain can invite, so only they are offered the button.
+	# Everyone saw it, and a lord who pressed it was told his rank forbade it.
+	if leads:
+		var invite := _plate_button("INVITE A PLAYER", "shop/buy_plate", Color("#F3FBF3"))
+		invite.custom_minimum_size = Vector2(WIDTH, BUTTON_H)
+		invite.pressed.connect(_invite)
+		_list.add_child(invite)
 
 	var leave := _plate_button("LEAVE THE KINGDOM", "shop/danger_plate", Color("#FBEDED"))
 	leave.custom_minimum_size = Vector2(WIDTH, BUTTON_H)
 	leave.pressed.connect(_leave)
 	_list.add_child(leave)
+
+
+## One lord asking to join: who, how long they have waited, and the answer.
+func _request_row(r: Dictionary) -> void:
+	var row := _row(ROW_H)
+	var who := str(r.get("player_id", ""))
+	_picture(row, face_for(who, "member"), Vector2(ASK_FACE, ASK_FACE), ROW_H)
+	var buttons_w := ACCEPT_W + BUTTON_GAP + REFUSE_W
+	var text_x := PAD + ASK_FACE + GUTTER
+	var text_w := WIDTH - PAD - buttons_w - GUTTER - text_x
+	var name_label := _text(row, str(r.get("name", "")), Rect2(text_x, 34, text_w, 44), 32,
+		UI.INK, "title", 700)
+	UI.fit_label(name_label, 32, 20)
+	_text(row, "Level %d  ·  asked %s" % [int(r.get("level", 1)), UI.ago(int(r.get("waiting", 0)))],
+		Rect2(text_x, 84, text_w, 32), 23, UI.DIM)
+	var y := (ROW_H - BUTTON_H) / 2.0
+	var yes := _plate_button("ACCEPT", "shop/buy_plate", Color("#F3FBF3"))
+	yes.add_theme_font_size_override("font_size", 24)
+	UI.place(yes, Rect2(WIDTH - PAD - buttons_w, y, ACCEPT_W, BUTTON_H))
+	yes.pressed.connect(func() -> void:
+		_act("/v1/kingdom/requests/answer", {"player_id": who, "accept": true}))
+	row.add_child(yes)
+	var no := _plate_button("REFUSE", "inventory/btn_sell_plate", UI.DIM)
+	no.add_theme_font_size_override("font_size", 24)
+	UI.place(no, Rect2(WIDTH - PAD - REFUSE_W, y, REFUSE_W, BUTTON_H))
+	no.pressed.connect(func() -> void:
+		_act("/v1/kingdom/requests/answer", {"player_id": who, "accept": false}))
+	row.add_child(no)
+
+
+## The king's choice of who may join, as two plates: the lit one is the rule in
+## force, and pressing the other changes it.
+func _policy_row() -> void:
+	var k: Dictionary = data.get("kingdom", {}) if data.get("kingdom", null) is Dictionary else {}
+	var open := str(k.get("join_policy", "open")) != "request"
+	var row := _row(POLICY_H)
+	var chips_w := CHIP_W * 2.0 + BUTTON_GAP
+	var text_w := WIDTH - PAD - chips_w - GUTTER - PAD
+	_text(row, "WHO MAY JOIN", Rect2(PAD, 26, text_w, 36), 26, UI.GOLD, "title", 700)
+	_text(row, "Anyone, while there is room." if open
+			else "Only lords you or a captain accept.",
+		Rect2(PAD, 66, text_w, 60), 23, UI.DIM, "body", 500, HORIZONTAL_ALIGNMENT_LEFT, true)
+	var y := (POLICY_H - BUTTON_H) / 2.0
+	for i in 2:
+		var is_open := i == 0
+		var lit := is_open == open
+		var chip := _plate_button("OPEN" if is_open else "BY REQUEST",
+			"inventory/chip_frame_active" if lit else "inventory/chip_frame_idle",
+			UI.INK if lit else UI.DIM)
+		chip.add_theme_font_size_override("font_size", 22)
+		UI.place(chip, Rect2(WIDTH - PAD - chips_w + (CHIP_W + BUTTON_GAP) * i, y, CHIP_W, BUTTON_H))
+		if not lit:
+			var want := "open" if is_open else "request"
+			chip.pressed.connect(func() -> void:
+				_act("/v1/kingdom/policy", {"policy": want}))
+		row.add_child(chip)
 
 
 ## Static so the Realm tab's painted ROYAL LORDS panel picks the same face for
@@ -274,12 +371,39 @@ static func face_for(player_id: String, role: String) -> String:
 	return LORD_PORTRAITS[absi(player_id.hash()) % LORD_PORTRAITS.size()]
 
 
-func _set_role(player_id: String, name: String) -> void:
-	var role := await Dialog.choose(self, {"title": name, "body": "What rank do they hold?",
-		"options": [{"id": "captain", "label": "Captain", "sub": "May invite and may not be raided by us"},
-			{"id": "lord", "label": "Lord", "sub": "A member of the kingdom"}]})
-	if role != "":
-		_act("/v1/kingdom/role", {"player_id": player_id, "role": role})
+## The king's choices for one lord, in one list. Their current rank is left
+## out: offering to make a captain a captain is a button that does nothing.
+func _manage(player_id: String, name: String, role: String) -> void:
+	var options: Array = []
+	if role != "marshal":
+		options.append({"id": "marshal", "label": "Make them a captain",
+			"sub": "May invite, answer requests and remove lords"})
+	if role != "member":
+		options.append({"id": "member", "label": "Make them a lord", "sub": "A member of the kingdom"})
+	options.append({"id": "king", "label": "Hand them the crown", "sub": "You become their captain"})
+	options.append({"id": "kick", "label": "Remove from the kingdom",
+		"sub": "They must wait before joining any kingdom"})
+	var pick := await Dialog.choose(self, {"title": name, "body": "What becomes of them?",
+		"options": options})
+	match pick:
+		"":
+			return
+		"kick":
+			_remove(player_id, name)
+		"king":
+			if await Dialog.ask(self, {"title": "Hand the crown to %s?" % name,
+					"body": "They become king, and you their captain. Only they can hand it back.",
+					"confirm_text": "Hand it over", "danger": true}):
+				_act("/v1/kingdom/role", {"player_id": player_id, "role": "king"})
+		_:
+			_act("/v1/kingdom/role", {"player_id": player_id, "role": pick})
+
+
+func _remove(player_id: String, name: String) -> void:
+	if await Dialog.ask(self, {"title": "Remove %s?" % name,
+			"body": "They leave the kingdom at once, and must wait before joining any kingdom again.",
+			"confirm_text": "Remove", "danger": true}):
+		_act("/v1/kingdom/kick", {"player_id": player_id})
 
 
 func _invite() -> void:
@@ -425,15 +549,20 @@ func _favour_cards(goods: Array) -> void:
 		if b.disabled:
 			b.modulate = Color(0.6, 0.6, 0.6)
 		b.pressed.connect(func() -> void:
-			_act("/v1/kingdom/shop/buy", {"good": str(g.get("id", ""))}))
+			_act("/v1/kingdom/shop/buy", {"good_id": str(g.get("id", ""))}))
 		card.add_child(b)
 
 
+## What a work gives now and what a level adds. Percentages are basis points;
+## the Royal Court's bucket is flat -- seats, not a percentage -- and read as one
+## it printed "+0.0% a level" under a work that adds two lords a level.
 func _bonus_text(u: Dictionary) -> String:
 	var now := int(u.get("effect_now", 0))
-	var per := int(u.get("effect_per_level", 0))
+	var per := int(u.get("per_level", 0))
 	if now == 0 and per == 0:
 		return str(u.get("blurb", ""))
+	if str(u.get("bucket", "")).ends_with("_flat"):
+		return "+%d now  ·  +%d a level" % [now, per]
 	return "+%.1f%% now  ·  +%.1f%% a level" % [now / 100.0, per / 100.0]
 
 
@@ -475,11 +604,14 @@ func _fill_ranks() -> void:
 		if not res.ok:
 			continue
 		boards += 1
-		_heading("%s  ·  you are #%d" % [str(board[1]), int(res.data.get("my_rank", 0))])
+		var my_rank := int(res.data.get("my_rank", 0))
+		_heading("%s  ·  you are #%d" % [str(board[1]), my_rank])
+		# A board's rows carry a rank and a name, not a player id, so the
+		# player's own line is the one at their rank.
 		for r in (res.data.get("rows", []) as Array).slice(0, 5):
 			_rank_row(int(r.get("rank", 0)), str(r.get("name", "")),
 				UI.short_number(int(str(r.get("value", "0")))),
-				str(r.get("player_id", r.get("id", ""))) == Session.player_id)
+				my_rank > 0 and int(r.get("rank", 0)) == my_rank)
 	if boards == 0:
 		_notice("The heralds have not counted the players yet.\nCome back shortly.")
 

@@ -106,9 +106,9 @@ own and fold into the Family ledger as cards in the GRANARY card's style.
 | Collect | `collect.gd` | `jobs` | today's three quests (tap to claim), fifteen job rows (six paintings cycle), optimistic COLLECT; each row's mastery track fills toward the next threshold and its three markers read reached / next / after from `job.mastery` |
 | Inventory | `inventory.gd` | `items` | equipped gear (tap to unequip), rarity chips, item grid: EQUIP / SELL; the sliders button opens the Collection (donate) |
 | Shop | `shop.gd` | `shop` | six offers on the 5-minute window, reroll for diamonds, Diamond Goods (energy refill, shield) |
-| Army | `army.gd` | `army` | might, hero support, a sideways-scrolling row of every soldier slot with the next one to unlock after it, selected soldier (gear, DISMISS), recruit cards with the published odds |
+| Army | `army.gd` | `army` | might, hero support, a sideways-scrolling row of every soldier slot with the next one to unlock after it (a tap selects; a drag never does), selected soldier (gear, REROLL, DISMISS), recruit cards with the tier range; the painted (i) shows every type's published odds. REROLL opens `scenes/army/reroll_panel.gd`: one roll per request (`POST /v1/army/reroll`), or AUTO ROLL until a chosen tier, only while the game is on screen |
 | Attack | `attack.gd` | `fight` | REVENGE / TARGETS tabs, revenge card, three targets with the power bar, battle history |
-| Kingdom | `kingdom.gd` | `house` | identity, renown/treasury/members, realm bonuses, DONATE, reputation ladder, lords, works (+ the Favour shop under View All), ranking; founding and invitations when there is no kingdom |
+| Kingdom | `kingdom.gd` | `house` | in a kingdom: identity, renown/treasury/members and the REALM / LORDS / WORKS / RANKS tabs (`scenes/kingdom/kingdom_section.gd`; LORDS carries join requests, the king's OPEN / BY REQUEST choice and MANAGE). With none: the hall (`scenes/kingdom/kingdom_hall.gd`) -- invitations, search, suggested kingdoms and founding, every button the one its card's `action` names. The page is three layers (`_top`, `_realm`, `_hall`); show and hide the layer, never a node in it |
 
 Unlock levels come from the server's `sections` on `/v1/state`.
 
@@ -181,8 +181,13 @@ survives and the ground goes clear -- and drawn inset into each screen's empty
 tile crop; the stone on a gear tile is `family/gem_<tier>` from
 `scripts/gen-gem-tints.py`), only six job paintings (cycle), one upgrade painting (the granary, reused), portraits for
 rivals and lords (assigned by hashing the id), tier numerals I–III (higher tiers
-use a blank plate with live text), one large soldier portrait (others are scaled
-into the tile), no lit hexagon but tier II (overlays tint the current tier).
+use a blank plate with live text; every numeral crop is centred on its painted
+diamond, so a badge sits in the same place on every card), one large soldier
+portrait (the others are drawn in the large frame's window under
+`army/sel_frame`, never stretched over it), no lit hexagon but tier II (overlays
+tint the current tier). The soldier portraits are cut inside their own card's
+window with their painted diamond softened away: the painting's selection frame
+must never be in a crop, or it becomes a highlight that never moves.
 
 ---
 

@@ -185,6 +185,10 @@ type Querier interface {
 	// not a courtesy: players_kingdom_role_consistent would abort a delete that
 	// nulled a member's kingdom_id under a role that is still 'member'.
 	DeleteKingdomIfEmpty(ctx context.Context, id uuid.UUID) (int64, error)
+	// Removes a player and, through every foreign key's ON DELETE CASCADE, all that
+	// was theirs: identities and sessions, items, soldiers, estates, battles, the
+	// ledger, revenge, quests, the collection, device tokens.
+	DeletePlayer(ctx context.Context, id uuid.UUID) (int64, error)
 	DeletePlayerItem(ctx context.Context, arg DeletePlayerItemParams) error
 	DeleteSoldier(ctx context.Context, arg DeleteSoldierParams) error
 	// Donating: take the gold, credit the treasury, and record the daily total in
@@ -230,6 +234,8 @@ type Querier interface {
 	GetJobProgress(ctx context.Context, arg GetJobProgressParams) (AppPlayerJobProgress, error)
 	GetJoinRequest(ctx context.Context, arg GetJoinRequestParams) (AppKingdomInvite, error)
 	GetKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error)
+	// The password a player signed up with, to confirm a deletion with.
+	GetPasswordIdentity(ctx context.Context, playerID uuid.UUID) (AppIdentity, error)
 	GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error)
 	GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error)
 	GetPlayerItem(ctx context.Context, arg GetPlayerItemParams) (AppPlayerItem, error)
@@ -317,6 +323,9 @@ type Querier interface {
 	// guard: no row comes back if the player cannot afford it, and the window check
 	// stops a reroll bought in one window from applying to the next.
 	PayForReroll(ctx context.Context, arg PayForRerollParams) (AppPlayer, error)
+	// Who takes the crown when a king's account is deleted: the longest-serving
+	// captain, else the longest-serving lord.
+	PickSuccessor(ctx context.Context, arg PickSuccessorParams) (uuid.UUID, error)
 	PlayerCounts(ctx context.Context) (PlayerCountsRow, error)
 	// The identity behind a set of presence entries.
 	//

@@ -266,3 +266,12 @@ WHERE id = sqlc.arg(id);
 UPDATE app.players
 SET energy_milli = sqlc.arg(energy_milli), energy_updated_at = sqlc.arg(now)
 WHERE id = sqlc.arg(id);
+
+-- Who takes the crown when a king's account is deleted: the longest-serving
+-- captain, else the longest-serving lord.
+-- name: PickSuccessor :one
+SELECT id FROM app.players
+WHERE kingdom_id = sqlc.arg(kingdom_id) AND id <> sqlc.arg(king_id)
+ORDER BY CASE kingdom_role WHEN 'marshal' THEN 0 ELSE 1 END,
+         kingdom_joined_at ASC NULLS LAST, kingdom_donated_total DESC
+LIMIT 1;

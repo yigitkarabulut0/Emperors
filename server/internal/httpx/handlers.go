@@ -6,6 +6,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -1279,6 +1281,57 @@ func (a *api) rename(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, v)
+}
+
+// away is what happened to the city since `since` (unix seconds).
+func (a *api) away(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	secs, err := strconv.ParseInt(r.URL.Query().Get("since"), 10, 64)
+	if err != nil || secs <= 0 {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "since must be a unix time in seconds")
+		return
+	}
+	v, err := a.s().GetAway(r.Context(), pid, time.Unix(secs, 0).UTC())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// --- account ---
+
+type deleteAccountReq struct {
+	Password string `json:"password"`
+}
+
+// deleteAccount removes the player for good, confirmed with their password.
+// 204 on success: there is no one left to send a body to.
+func (a *api) deleteAccount(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req deleteAccountReq
+	if !decode(w, r, &req) {
+		return
+	}
+	if err := a.s().DeleteAccount(r.Context(), pid, req.Password); err != nil {
+		if errors.Is(err, service.ErrBadCredentials) {
+			// Not 401: the session is fine, the password typed to confirm is not,
+			// and a 401 would make the client refresh and then sign out.
+			WriteProblem(w, r, http.StatusForbidden, "wrong_password", "that is not your password")
+			return
+		}
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // --- treasury ---

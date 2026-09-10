@@ -35,6 +35,16 @@ var (
 // shield lapses — the fastest way to drive a new player off.
 const attackCooldown = 30 * time.Minute
 
+// raidShield is what being robbed buys the loser of a defence: half an hour
+// in which nobody can raid them.
+const raidShield = 30 * time.Minute
+
+// ransomPct is the share of the ordinary take a held defence is paid.
+const ransomPct = 40
+
+// bandLevels is how far either side of their own level a lord's targets run.
+const bandLevels = 4
+
 // TargetView is one row on the Attack tab.
 type TargetView struct {
 	PlayerID string `json:"player_id"`
@@ -63,6 +73,20 @@ type AttackView struct {
 	// did not choose is the one the player actually wants to answer.
 	Revenge []RevengeEntry `json:"revenge"`
 	Targets []TargetView   `json:"targets"`
+	// The rules of raiding, as numbers, for the sheet behind the notice's (i).
+	Rules RaidRules `json:"rules"`
+}
+
+// RaidRules are raiding's terms, from the constants the raid itself uses.
+type RaidRules struct {
+	FightLevel      int   `json:"fight_level"`
+	BandLevels      int   `json:"band_levels"`
+	StealRateBP     int64 `json:"steal_rate_bp"`
+	RevengeRateBP   int64 `json:"revenge_rate_bp"`
+	RevengeHours    int64 `json:"revenge_hours"`
+	ShieldMinutes   int64 `json:"shield_minutes"`
+	CooldownMinutes int64 `json:"cooldown_minutes"`
+	RansomPct       int64 `json:"ransom_pct"`
 }
 
 // Revenge: what a raid you lost buys you back.
@@ -121,7 +145,7 @@ func (d Deps) raidTake(attackerLevel, defenderGold int64, attacker estates.Effec
 // upgrade and says nothing about what the defence was worth. The Coffers were
 // on sale for months and applied to nothing.
 func (d Deps) raidRansom(attackerLevel, defenderGold int64, defender estates.Effects) int64 {
-	ransom := d.estimateSteal(attackerLevel, defenderGold) * 40 / 100
+	ransom := d.estimateSteal(attackerLevel, defenderGold) * ransomPct / 100
 	if defender.RansomBP > 0 {
 		ransom = ransom * (10000 + defender.RansomBP) / 10000
 	}
@@ -162,6 +186,14 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 		Energy:     economy.Whole(settled),
 		Targets:    []TargetView{},
 		Revenge:    []RevengeEntry{},
+		Rules: RaidRules{
+			FightLevel: d.Config.SectionLevel(fightSection), BandLevels: bandLevels,
+			StealRateBP: raidRateBP, RevengeRateBP: revengeRateBP,
+			RevengeHours:    int64(revengeWindow / time.Hour),
+			ShieldMinutes:   int64(raidShield / time.Minute),
+			CooldownMinutes: int64(attackCooldown / time.Minute),
+			RansomPct:       ransomPct,
+		},
 	}
 	if rev, err := d.listRevenge(ctx, q, me, eff, now); err == nil {
 		view.Revenge = rev
@@ -255,7 +287,7 @@ func raidBand(level, fightAt int32) (lo, hi int32) {
 	if level < fightAt {
 		return fightAt, fightAt - 1
 	}
-	lo, hi = level-4, level+4
+	lo, hi = level-bandLevels, level+bandLevels
 	if lo < fightAt {
 		lo = fightAt
 	}
@@ -494,7 +526,7 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		if won {
 			// The shield goes to the LOSER of the defence, so being robbed buys
 			// half an hour of safety to recover.
-			t := now.Add(30 * time.Minute)
+			t := now.Add(raidShield)
 			shieldUntil = &t
 		} else if target.ShieldUntil != nil && target.ShieldUntil.After(now) {
 			shieldUntil = target.ShieldUntil

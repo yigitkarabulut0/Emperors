@@ -934,6 +934,28 @@ func (q *Queries) PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomPa
 	return i, err
 }
 
+const pickSuccessor = `-- name: PickSuccessor :one
+SELECT id FROM app.players
+WHERE kingdom_id = $1 AND id <> $2
+ORDER BY CASE kingdom_role WHEN 'marshal' THEN 0 ELSE 1 END,
+         kingdom_joined_at ASC NULLS LAST, kingdom_donated_total DESC
+LIMIT 1
+`
+
+type PickSuccessorParams struct {
+	KingdomID *uuid.UUID
+	KingID    uuid.UUID
+}
+
+// Who takes the crown when a king's account is deleted: the longest-serving
+// captain, else the longest-serving lord.
+func (q *Queries) PickSuccessor(ctx context.Context, arg PickSuccessorParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, pickSuccessor, arg.KingdomID, arg.KingID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const recommendKingdoms = `-- name: RecommendKingdoms :many
 SELECT k.id, k.name, k.tag, k.level, k.reputation, k.join_policy,
        count(p.id)::int AS members,

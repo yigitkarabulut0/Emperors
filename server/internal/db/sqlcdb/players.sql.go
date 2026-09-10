@@ -403,6 +403,21 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (App
 	return i, err
 }
 
+const deletePlayer = `-- name: DeletePlayer :execrows
+DELETE FROM app.players WHERE id = $1
+`
+
+// Removes a player and, through every foreign key's ON DELETE CASCADE, all that
+// was theirs: identities and sessions, items, soldiers, estates, battles, the
+// ledger, revenge, quests, the collection, device tokens.
+func (q *Queries) DeletePlayer(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, deletePlayer, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const ensureQuestDay = `-- name: EnsureQuestDay :one
 INSERT INTO app.player_quests (player_id, day, quest_ids)
 VALUES ($1, $2, $3)
@@ -494,6 +509,26 @@ func (q *Queries) FindInvitablePlayers(ctx context.Context, arg FindInvitablePla
 		return nil, err
 	}
 	return items, nil
+}
+
+const getPasswordIdentity = `-- name: GetPasswordIdentity :one
+SELECT id, player_id, kind, subject, secret_hash, created_at, last_used_at FROM app.identities WHERE player_id = $1 AND kind = 'password'
+`
+
+// The password a player signed up with, to confirm a deletion with.
+func (q *Queries) GetPasswordIdentity(ctx context.Context, playerID uuid.UUID) (AppIdentity, error) {
+	row := q.db.QueryRow(ctx, getPasswordIdentity, playerID)
+	var i AppIdentity
+	err := row.Scan(
+		&i.ID,
+		&i.PlayerID,
+		&i.Kind,
+		&i.Subject,
+		&i.SecretHash,
+		&i.CreatedAt,
+		&i.LastUsedAt,
+	)
+	return i, err
 }
 
 const getPlayerByID = `-- name: GetPlayerByID :one

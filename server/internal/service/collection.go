@@ -23,7 +23,10 @@ type CollectionEntry struct {
 	Name  string `json:"name"`
 	Slot  string `json:"slot"`
 	Tier  string `json:"tier"`
-	Held  bool   `json:"held"`
+	// The design's painting, so the wall can show what is held and what is
+	// still to find rather than a list of names.
+	Art  string `json:"art"`
+	Held bool   `json:"held"`
 }
 
 // CollectionSet is one slot at one tier: three designs, and whether all three
@@ -41,6 +44,9 @@ type CollectionView struct {
 	Held   int             `json:"held"`
 	Total  int             `json:"total"`
 	LuckBP int64           `json:"luck_bp"`
+	// What one more design, and a finished set of three, would add.
+	LuckPerPieceBP int64 `json:"luck_per_piece_bp"`
+	LuckPerSetBP   int64 `json:"luck_per_set_bp"`
 }
 
 // collectionLuck is what a collection is worth, in luck basis points.
@@ -101,7 +107,7 @@ func (d Deps) GetCollection(ctx context.Context, playerID uuid.UUID) (*Collectio
 			order = append(order, key)
 		}
 		set.Entries = append(set.Entries, CollectionEntry{
-			DefID: def.ID, Name: def.Name, Slot: def.Slot, Tier: def.Tier,
+			DefID: def.ID, Name: def.Name, Slot: def.Slot, Tier: def.Tier, Art: def.Art,
 			Held: held[def.ID],
 		})
 		if !held[def.ID] {
@@ -121,8 +127,10 @@ func (d Deps) GetCollection(ctx context.Context, playerID uuid.UUID) (*Collectio
 
 	out := &CollectionView{
 		Total: len(d.Config.Items.Definitions), Held: len(held),
-		LuckBP: collectionLuck(d.Config, held),
-		Sets:   make([]CollectionSet, 0, len(order)),
+		LuckBP:         collectionLuck(d.Config, held),
+		LuckPerPieceBP: d.Config.Items.Collection.LuckBPPerPiece,
+		LuckPerSetBP:   d.Config.Items.Collection.LuckBPPerSet,
+		Sets:           make([]CollectionSet, 0, len(order)),
 	}
 	for _, k := range order {
 		out.Sets = append(out.Sets, *byKey[k])

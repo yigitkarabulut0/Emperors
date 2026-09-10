@@ -35,6 +35,16 @@ type Snapshot struct {
 // the number the server charges.
 type PricesView struct {
 	RenameDiamonds int64 `json:"rename_diamonds"`
+	// What one stat point buys, so the allocation panel can say it before the
+	// point is spent -- and spent points cannot be moved.
+	StatGains StatGains `json:"stat_gains"`
+}
+
+// StatGains is one stat point's worth, per stat.
+type StatGains struct {
+	Attack  int64 `json:"attack"`
+	Defense int64 `json:"defense"`
+	Energy  int64 `json:"energy"`
 }
 
 // SectionView is one navigation entry: whether the player has reached it, and
@@ -66,6 +76,9 @@ type PlayerView struct {
 	// now, so a gold counter that only moved when the server was asked would sit
 	// still while the number it displays is quietly wrong.
 	TaxMilliPerHour int64 `json:"tax_milli_per_hour"`
+	// Seconds of protection left, 0 for none. The pills count it down; a
+	// shield was bought and then never seen again.
+	ShieldSeconds int64 `json:"shield_seconds"`
 }
 
 // EnergyView carries the rate as well as the value, so the client can animate a
@@ -197,11 +210,18 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 	}
 
 	return &Snapshot{
-		Player:   playerView(d.Config, p),
+		Player:   playerView(d.Config, p, now),
 		Energy:   energyView(settled, maxEnergy, period),
 		Sections: sectionViews(d.Config, int(p.Level), p.KingdomID != nil),
 		Jobs:     jobViews(d.Config, p, collects, eff.Bonuses),
-		Prices:   PricesView{RenameDiamonds: d.Config.Progression.Store.RenameDiamonds},
+		Prices: PricesView{
+			RenameDiamonds: d.Config.Progression.Store.RenameDiamonds,
+			StatGains: StatGains{
+				Attack:  d.Config.Soldiers.Player.PerStatPoint,
+				Defense: d.Config.Soldiers.Player.PerStatPoint,
+				Energy:  d.Config.Progression.Energy.PerStatPoint,
+			},
+		},
 		ServerAt: now.UTC(),
 		Config:   ConfigVersion{Version: d.Config.Version},
 	}, nil
@@ -241,8 +261,13 @@ func sectionViews(cfg *gameconfig.Bundle, level int, inKingdom bool) []SectionVi
 // kingdomSection is the navigation section that opens the Kingdom tab.
 const kingdomSection = "house"
 
-func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer) PlayerView {
+func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, now time.Time) PlayerView {
+	var shield int64
+	if p.ShieldUntil != nil && p.ShieldUntil.After(now) {
+		shield = int64(p.ShieldUntil.Sub(now) / time.Second)
+	}
 	return PlayerView{
+		ShieldSeconds:     shield,
 		ID:                p.ID.String(),
 		Username:          p.DisplayName,
 		Avatar:            p.Avatar,

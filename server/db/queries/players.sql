@@ -169,3 +169,13 @@ SET player_id = EXCLUDED.player_id, platform = EXCLUDED.platform,
 -- name: ListDevices :many
 SELECT token, platform FROM app.device_tokens
 WHERE player_id = $1 AND revoked_at IS NULL;
+
+-- The password a player signed up with, to confirm a deletion with.
+-- name: GetPasswordIdentity :one
+SELECT * FROM app.identities WHERE player_id = $1 AND kind = 'password';
+
+-- Removes a player and, through every foreign key's ON DELETE CASCADE, all that
+-- was theirs: identities and sessions, items, soldiers, estates, battles, the
+-- ledger, revenge, quests, the collection, device tokens.
+-- name: DeletePlayer :execrows
+DELETE FROM app.players WHERE id = $1;

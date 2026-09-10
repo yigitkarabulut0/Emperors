@@ -1,0 +1,8 @@
+{
+  "army/soldiers_panel:170,538,504,15": "the painted SOLDIERS title stands on the rect's top edge; it is meant to stay",
+  "army/card:487,740,137,30": "the attack sword's tip under the name band",
+  "army/selected_panel:430,1100,80,34": "the painted GEAR label under the attack figure",
+  "army/selected_panel:530,1100,80,34": "the defence shield beside the figure",
+  "chrome/avatar:56,150,50,32": "the level plaque's gold chevron under its number",
+  "kingdom/header:539,425,349,2": "the level bar's own frame: its top highlight runs along the erase"
+}

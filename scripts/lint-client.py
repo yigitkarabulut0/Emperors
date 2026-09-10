@@ -126,5 +126,21 @@ for f in sorted(glob.glob(os.path.join(CLIENT, "scenes", "**", "*.gd"), recursiv
 for b in bare: fail(f"a control drawn outside the painted kit: {b}")
 if not bare: ok("every button and field is one of the painted kit's")
 
+# 8. no erase leaves the stub of what it lifted
+#
+# The Kingdom's level bar shipped with a sliver of the painting's own gold four
+# pixels past its erase. art/tools/remnants.py looks for ink cut by an erase's
+# edge; a hit is either a rect to widen or the painting's own ink, recorded
+# with its reason in art/qa/remnants_ok.json. It needs the art venv's PIL.
+venv = os.path.join(ROOT, "art", ".venv", "bin", "python")
+if os.path.exists(venv):
+    r = subprocess.run([venv, os.path.join(ROOT, "art", "tools", "remnants.py")], capture_output=True, text=True, cwd=ROOT)
+    left = [l for l in r.stdout.splitlines() if "rect [" in l]
+    for l in left[:12]: fail(f"erase remnant: {l.strip()}")
+    if r.returncode == 0: ok("no erase leaves the stub of what it lifted")
+    elif not left: fail("remnants check did not run: " + (r.stderr or r.stdout)[-300:])
+else:
+    print("  SKIP  erase remnants (no art/.venv to read the PNGs with)")
+
 print(f"\n{fails} FAILED" if fails else "\nclient lint clean")
 sys.exit(1 if fails else 0)

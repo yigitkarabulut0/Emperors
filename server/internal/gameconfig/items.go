@@ -15,6 +15,10 @@ type ItemsConfig struct {
 	Shop               ShopConfig           `json:"shop"`
 	Definitions        []ItemDef            `json:"definitions"`
 	Collection         CollectionConfig     `json:"collection"`
+	// How many items one armory holds. A design knob as much as a limit:
+	// forcing a choice about what to keep is what makes selling and the
+	// Collection meaningful rather than optional.
+	InventoryCap int64 `json:"inventory_cap"`
 }
 
 type SlotStats struct {
@@ -55,6 +59,8 @@ type ShopConfig struct {
 	LuckCoef           float64            `json:"luck_coef"`
 	RerollBaseDiamonds int64              `json:"reroll_base_diamonds"`
 	RerollStepDiamonds int64              `json:"reroll_step_diamonds"`
+	// Rerolls a lord may make on their own day, whatever they pay.
+	RerollsPerDay int `json:"rerolls_per_day"`
 }
 
 type ItemDef struct {
@@ -97,3 +103,6 @@ func (b *Bundle) TierRank(id string) int {
 // TierIDsAscending lists tier ids weakest first. Roll weights are indexed by
 // this order, so it must stay stable.
 func (b *Bundle) TierIDsAscending() []string { return b.tierIDs }
+
+// Tier returns the tier with this id, or nil.
+func (b *Bundle) Tier(id string) *Tier { return b.tierByID[id] }

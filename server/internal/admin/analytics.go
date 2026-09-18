@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 )
 
@@ -14,7 +16,8 @@ type Point struct {
 	Count int64  `json:"count"`
 }
 
-// Analytics is the population view: who signed up, who is playing, who is here.
+// Analytics is the population view: who signed up, who is playing, who is here,
+// who came back, and what the phone saw them do.
 type Analytics struct {
 	Registrations []Point       `json:"registrations"`
 	Active        []Point       `json:"active"`
@@ -22,7 +25,53 @@ type Analytics struct {
 	Online        []PlayerBrief `json:"online"`
 	OnlineWindow  int           `json:"online_window_minutes"`
 	Days          int           `json:"days"`
+	Retention     []Cohort      `json:"retention"`
+	Events        []EventCount  `json:"events"`
+	Screens       []EventCount  `json:"screens"`
+	Sessions      []Point       `json:"sessions"`
+	// The rolled-up days of the window (the kpi_rollup job), through yesterday.
+	KPIs []KPIDay `json:"kpis"`
 }
+
+// KPIDay is one UTC day's figures from app.daily_kpi. Revenue is Production
+// only, in US cents; ARPDAU is net takings over the lords who played, in
+// hundredths of a cent, and conversion is payers over them in basis points.
+type KPIDay struct {
+	Day             string `json:"day"`
+	DAU             int32  `json:"dau"`
+	NewLords        int32  `json:"new_lords"`
+	Payers          int32  `json:"payers"`
+	Purchases       int32  `json:"purchases"`
+	GrossCents      int64  `json:"gross_cents"`
+	RefundCents     int64  `json:"refund_cents"`
+	NetCents        int64  `json:"net_cents"`
+	ARPDAUCentiCent int64  `json:"arpdau_centicents"`
+	ConversionBP    int64  `json:"conversion_bp"`
+	DiamondsEarned  int64  `json:"diamonds_earned"`
+	DiamondsBought  int64  `json:"diamonds_bought"`
+	DiamondsSpent   int64  `json:"diamonds_spent"`
+}
+
+// Cohort is the players who joined on one UTC day and how many came back. A
+// day that has not come yet for the cohort is null, not zero: "nobody came
+// back" and "it is too soon to say" are different answers.
+type Cohort struct {
+	Day  string `json:"day"`
+	Size int64  `json:"size"`
+	D1   *int64 `json:"d1"`
+	D7   *int64 `json:"d7"`
+	D30  *int64 `json:"d30"`
+}
+
+// EventCount is one event name, or one screen, over the window.
+type EventCount struct {
+	Name    string `json:"name"`
+	Count   int64  `json:"count"`
+	Players int64  `json:"players"`
+}
+
+// sessionBands names SessionLengths' bands, in its order.
+var sessionBands = []string{"under 1 min", "1-3 min", "3-10 min", "10-30 min", "30 min +"}
 
 // PlayerBrief is a row in the online list.
 type PlayerBrief struct {
@@ -54,6 +103,7 @@ func (s *Service) GetAnalytics(ctx context.Context, days, onlineMinutes int) (*A
 		Days: days, OnlineWindow: onlineMinutes,
 		Registrations: []Point{}, Active: []Point{},
 		LevelBands: []Point{}, Online: []PlayerBrief{},
+		Retention: []Cohort{}, Events: []EventCount{}, Screens: []EventCount{}, Sessions: []Point{}, KPIs: []KPIDay{},
 	}
 
 	regs, err := q.RegistrationsDaily(ctx, sqlcdb.RegistrationsDailyParams{Now: now, Days: int32(days)})
@@ -91,7 +141,88 @@ func (s *Service) GetAnalytics(ctx context.Context, days, onlineMinutes int) (*A
 			State: r.State, Seen: r.LastSeenAt.UTC().Format("15:04:05"),
 		})
 	}
+
+	since := now.AddDate(0, 0, -days)
+	today := time.Date(now.UTC().Year(), now.UTC().Month(), now.UTC().Day(), 0, 0, 0, 0, time.UTC)
+	cohorts, err := q.RetentionCohorts(ctx, pgtype.Date{Time: since.UTC(), Valid: true})
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range cohorts {
+		out.Retention = append(out.Retention, cohortRow(r, today))
+	}
+
+	events, err := q.EventCounts(ctx, since)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range events {
+		out.Events = append(out.Events, EventCount{Name: r.Name, Count: r.Events, Players: r.Players})
+	}
+	screens, err := q.ScreenCounts(ctx, since)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range screens {
+		out.Screens = append(out.Screens, EventCount{Name: r.Screen, Count: r.Views, Players: r.Players})
+	}
+	sessions, err := q.SessionLengths(ctx, since)
+	if err != nil {
+		return nil, err
+	}
+	out.Sessions = sessionPoints(sessions)
+	kpis, err := q.ListKPIDays(ctx, pgtype.Date{Time: since.UTC(), Valid: true})
+	if err != nil {
+		return nil, err
+	}
+	for _, k := range kpis {
+		out.KPIs = append(out.KPIs, kpiDay(k))
+	}
 	return out, nil
+}
+
+func kpiDay(k sqlcdb.AppDailyKpi) KPIDay {
+	v := KPIDay{Day: k.Day.Time.Format("2006-01-02"), DAU: k.Dau, NewLords: k.NewLords, Payers: k.Payers,
+		Purchases: k.Purchases, GrossCents: k.GrossCents, RefundCents: k.RefundCents,
+		NetCents: k.GrossCents - k.RefundCents, DiamondsEarned: k.DiamondsEarned,
+		DiamondsBought: k.DiamondsBought, DiamondsSpent: k.DiamondsSpent}
+	if k.Dau > 0 {
+		v.ARPDAUCentiCent = v.NetCents * 100 / int64(k.Dau)
+		v.ConversionBP = int64(k.Payers) * 10000 / int64(k.Dau)
+	}
+	return v
+}
+
+// cohortRow reads one cohort, leaving each return day null until it has come:
+// a cohort that joined yesterday has no day-7 answer yet, and a zero there
+// would read as a cohort that never came back.
+func cohortRow(r sqlcdb.RetentionCohortsRow, today time.Time) Cohort {
+	c := Cohort{Day: r.Day.Time.Format("2006-01-02"), Size: r.Size}
+	for _, k := range []struct {
+		after int
+		n     int64
+		into  **int64
+	}{{1, r.D1, &c.D1}, {7, r.D7, &c.D7}, {30, r.D30, &c.D30}} {
+		if !r.Day.Time.AddDate(0, 0, k.after).After(today) {
+			n := k.n
+			*k.into = &n
+		}
+	}
+	return c
+}
+
+// sessionPoints lays the bands out in order, every band present.
+func sessionPoints(rows []sqlcdb.SessionLengthsRow) []Point {
+	out := make([]Point, len(sessionBands))
+	for i, name := range sessionBands {
+		out[i] = Point{Day: name}
+	}
+	for _, r := range rows {
+		if int(r.Band) >= 0 && int(r.Band) < len(out) {
+			out[r.Band].Count = r.Sessions
+		}
+	}
+	return out
 }
 
 // BrowseResult is one page of the player list.

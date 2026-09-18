@@ -1,0 +1,173 @@
+{
+ "source": "chests.png",
+ "notes": [
+  "THE TAX CART (client/scenes/court/chests_view.gd), a Court view cut from chests.png in four bands laid edge to edge -- the header scene (THE TAX CART baked, its line lifted: the interval is the server's), the cart's big painting, the controls row (the stock panel emptied of its carts, the hourglass panel with its empty plate; OPEN and the (i) lifted and cut as their own buttons), the three cards of a cart's round (in the yard, on the road, opened) with their empty caption plates -- and the foot's foliage, pinned to the screen's foot.",
+  "The painting sits 16 units lower than the chrome: its pills are at y 37..96, the chrome's at 21..79. So every band but the foot is drawn 16 higher than it was painted (the header is cut from y 16), which puts the painted pills exactly under the chrome's and leaves only their ends and lower rims to repair. The foot is drawn where it was painted, from y 1499, its top 16 rows (the plates' lower rims) replaced by the foliage under them mirrored up.",
+  "Under the pills and the painted COURT plate: each is lifted whole (the chrome's pill corners are cut, and would show a painted pill through them), the parts left in view -- the rims under the chrome's pills, the gold pill's ends, the plate's right end and its lower rows below CourtBack's plate -- are the painting beside them mirrored over (patch), and only what the chrome covers is left to Telea."
+ ],
+ "crops": [
+  {
+   "name": "chests/header",
+   "rect": [155, 16, 786, 388],
+   "patch": [
+    {
+     "from": [168, 100, 243, 5],
+     "to": [168, 95],
+     "flip": "v"
+    },
+    {
+     "from": [156, 34, 12, 61],
+     "to": [168, 34],
+     "flip": "h"
+    },
+    {
+     "from": [411, 34, 10, 61],
+     "to": [401, 34],
+     "flip": "h"
+    },
+    {
+     "from": [424, 100, 223, 5],
+     "to": [424, 95],
+     "flip": "v"
+    },
+    {
+     "from": [662, 100, 250, 5],
+     "to": [662, 95],
+     "flip": "v"
+    },
+    {
+     "from": [168, 189, 198, 17],
+     "to": [168, 172],
+     "flip": "v"
+    },
+    {
+     "from": [366, 125, 38, 47],
+     "to": [328, 125],
+     "flip": "h"
+    }
+   ],
+   "inpaint": [
+    [168, 125, 160, 47],
+    {
+     "text": [176, 288, 522, 40],
+     "d": 30,
+     "dilate": 7,
+     "radius": 7
+    },
+    {
+     "polygon": [[178, 290], [696, 290], [696, 327], [178, 327]],
+     "radius": 9,
+     "blur": 21,
+     "keep": []
+    },
+    {
+     "polygon": [[168, 34], [411, 34], [411, 100], [168, 100]],
+     "exclude": [[168, 95, 243, 5], [168, 34, 12, 61], [401, 34, 10, 61]]
+    },
+    {
+     "polygon": [[424, 34], [647, 34], [647, 100], [424, 100]],
+     "exclude": [[424, 95, 223, 5]]
+    },
+    {
+     "polygon": [[662, 34], [912, 34], [912, 100], [662, 100]],
+     "exclude": [[662, 95, 250, 5]]
+    }
+   ],
+   "note": "The scene under the pills, from y 16 (drawn at 0). THE TAX CART is baked (fixed copy). Its line -- 'The crown's cart returns every four hours.', ivory ink x 181..691, caps 295..315, the y's tail to 325 -- is lifted by its ink and set live from the cart's interval. Pills: gold x 171..407, diamonds 427..643, energy 665..908, y 37..96; the COURT plate x 171..362, y 128..185 (CourtBack's covers x 165..327, y 122..171 in the painting's units)."
+  },
+  {
+   "name": "chests/scene",
+   "rect": [155, 404, 786, 642],
+   "note": "The cart before the gate in its gilt frame (outer rim x 162..927, y 407..1045), with the navy either side. Drawn at y 388."
+  },
+  {
+   "name": "chests/controls",
+   "rect": [155, 1046, 786, 131],
+   "erase": [
+    {
+     "rect": [173, 1086, 222, 62],
+     "sample_x": [170, 176],
+     "sample_x2": [389, 396]
+    },
+    {
+     "rect": [642, 1062, 290, 102],
+     "sample_x": [638, 641],
+     "sample_x2": [933, 939]
+    }
+   ],
+   "note": "The controls row on its navy, drawn at y 1030: the silver stock panel (rim x 164..402, y 1066..1161) with its three painted carts lifted row by row from its own clean columns either side -- the view draws one per place, lit or grey -- and the hourglass panel (rim x 412..636; its empty plate x 493..622, y 1085..1140, where the time to the next cart is set). OPEN and the (i) are lifted to the ground (x 648..923) and drawn as their own buttons, so a dimmed OPEN shows no painted corner round it."
+  },
+  {
+   "name": "chests/cart_lit",
+   "rect": [181, 1088, 68, 56],
+   "mode": "darkkey",
+   "k": 40,
+   "floor": 10,
+   "bg": [10, 28, 37],
+   "note": "The first painted cart, gold and lit (ink x 187..242, y 1094..1138), its glow kept: a cart waiting in the yard."
+  },
+  {
+   "name": "chests/cart_dim",
+   "rect": [324, 1089, 65, 52],
+   "mode": "darkkey",
+   "k": 40,
+   "floor": 7,
+   "bg": [9, 25, 35],
+   "note": "The third painted cart, grey iron (ink x 330..382, y 1095..1134): a place in the yard with no cart in it."
+  },
+  {
+   "name": "chests/open",
+   "rect": [647, 1065, 200, 96],
+   "mask": {
+    "type": "chamfer",
+    "size": 11
+   },
+   "note": "OPEN, word and all (outer rim x 648..846, y 1066..1159, corners cut 11)."
+  },
+  {
+   "name": "chests/info",
+   "rect": [851, 1071, 77, 76],
+   "mode": "darkkey",
+   "k": 45,
+   "floor": 8,
+   "bg": [4, 23, 33],
+   "solid": {
+    "type": "ellipse",
+    "box": [7, 7, 70, 68]
+   },
+   "note": "The gold (i) coin (ink x 855..923, y 1075..1142): the published odds. Its face is held solid, the rim's dark shading within the key of the navy."
+  },
+  {
+   "name": "chests/cards",
+   "rect": [155, 1177, 786, 339],
+   "note": "The three cards of a cart's round on their navy, drawn at y 1161: in the yard (frame x 165..408), on the road (419..654), opened (664..923), frames y 1179..1466, each with its empty caption plate (x 170..402, 425..650, 672..917; y 1465..1513) where the view sets its line. The painting's lit COURT entry points its gold arrow into the gutter (x 142..166, y 1387..1425): the gutter and the first card's rim are carried down over it from the rows above, since the shell draws its own arrow where its rail puts COURT.",
+   "patch": [
+    {
+     "from": [155, 1330, 16, 52],
+     "to": [155, 1382]
+    }
+   ]
+  },
+  {
+   "name": "chests/card_opened",
+   "rect": [663, 1178, 262, 337],
+   "mask": {
+    "type": "polygon",
+    "points": [[0, 0], [262, 0], [262, 290], [255, 290], [255, 322], [241, 336], [23, 336], [9, 322], [9, 290], [0, 290]]
+   },
+   "note": "The third card alone, the chest opened on the cart, with its plate (the plate's chamfered foot kept, the ground beside it cut away): the opening's ceremony shows it with the prize's name in the plate."
+  },
+  {
+   "name": "chests/footer",
+   "rect": [155, 1499, 786, 173],
+   "patch": [
+    {
+     "from": [155, 1515, 786, 16],
+     "to": [155, 1499],
+     "flip": "v"
+    }
+   ],
+   "note": "The foliage and the wall under the cards, pinned to the screen's foot. Its top 16 rows held the plates' lower rims; they are the foliage below mirrored up, so the foot reaches the cards (drawn 16 higher) with nothing of the plates in it."
+  }
+ ]
+}

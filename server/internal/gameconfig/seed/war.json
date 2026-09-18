@@ -1,0 +1,38 @@
+{
+  "_comment": "Krallik Savaslari. Kingdoms are matched on Friday evening by the Might of their best fifteen, never against more than 1.5x their own and never the same pair twice in a row; the war runs Saturday to Monday. NOTHING of a lord's is at stake: no gold is stolen, a shield neither stops a war attack nor breaks on one, and the only thing that moves is points. Three attacks a day; a defender has three banners, and a lord who loses all three is routed -- beating them again is worth a quarter. A win pays ten times the Might ratio (clamped to half and double, so punching up is worth it and farming down is not), a loss two, a defence held three. The winning kingdom's lords are paid by letter and the kingdom takes reputation and experience; the best lord of the week is the Warlord.",
+  "section": "war",
+  "match_weekday": 4,
+  "match_hour": 20,
+  "days": 3,
+  "top_members": 15,
+  "max_ratio_bp": 15000,
+  "min_members": 3,
+  "attacks_per_day": 3,
+  "banners": 3,
+  "rout_bp": 2500,
+  "points": {
+    "win_base": 10,
+    "ratio_min_bp": 5000,
+    "ratio_max_bp": 20000,
+    "loss": 2,
+    "held": 3
+  },
+  "won": {
+    "grant": {
+      "gold_wages": 120,
+      "xp_wages": 60,
+      "diamonds": 10
+    },
+    "reputation": 400,
+    "kingdom_xp": 250000
+  },
+  "lost": {
+    "grant": {
+      "gold_wages": 40,
+      "xp_wages": 20
+    },
+    "reputation": 100,
+    "kingdom_xp": 80000
+  },
+  "warlord_title": "title_warlord"
+}

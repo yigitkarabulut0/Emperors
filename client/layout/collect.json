@@ -12,11 +12,11 @@
  },
  "notes": [
   "Instances may be [x,y] or {pos:[x,y], assets:{part_id: asset}, texts:{part_id: sample}}.",
-  "Job rows in the reference sit at y 517, 683, 850, 1017, 1187, 1356 (generated art drifts 166-170 px); the game uses pitch 168.",
-  "Only six job paintings exist; the server has 15 jobs. Paintings cycle: job i uses painting i mod 6.",
-  "All quest progress bars are empty in the reference; the fill swatch collect/quest_bar_fill is cut from family.png's XP bar (same yellow bar style).",
-  "The job_row frame keeps row one's grapes tile and the COLLECT button baked; both are always covered by the tile and button parts drawn at the same rects.",
-  "The quests_panel keeps the three cards baked; the quest_card template instances cover them exactly.",
+  "Job rows in the reference sit at y 517, 683, 850, 1017, 1187, 1356 (generated art drifts 166-170 px); the game uses pitch 168. Wave 3 (collect_events.png) puts the quests panel and the week's chest bar above them, so the list starts at 712 and the first row at 720, where that painting's first row stands once drawn down to the column.",
+  "Every job has its own painting, collect/job_<id>: the painting part fills the row's frame window (x 13..173, y 10..146 of the row) with two units to spare on every side, and the tile part lays collect/job_frame -- the grapes row's frame with its window cut out -- over it, so all fifteen rows wear one frame and no painting's edge ever shows.",
+  "The quests panel, its tiles, the chest bar and the Golden Hour's wheel are collect_events.png's (art/slices/collect_events.json): everything from that painting's column is drawn down 0.98577 to stand on collect.png's edges (x 166..928); positions here are the painting's, mapped x' = 166 + (x - 156) * 0.98577, y' = 286 + (y - 505) * 0.98577.",
+  "The job_row frame keeps row one's grapes tile and the COLLECT button baked; both are always covered by the painting, tile (frame) and button parts drawn over them.",
+  "The quests panel keeps its three tiles and their plates baked; the quest_card instances lay each task's mark and words over them.",
   "An instance may carry rects:{part_id:[x,y,w,h]} when its asset has a different native size (icons are drawn at native size, never scaled)."
  ],
  "elements": [
@@ -32,6 +32,837 @@
    ]
   },
   {
+   "id": "golden",
+   "kind": "group",
+   "rect": [
+    765,
+    104,
+    162,
+    181
+   ],
+   "note": "The Golden Hour: collect_events.png's hourglass wheel (x 765..927, y 109..257, its twelve cells) and its empty plate (x 778..915, y 257..301), laid on collect.png's header at their painted size and x. The header here ends at 292 where the painting's runs to 345, so the wheel stands 5 higher than painted (its fleur at 105, clear of the energy line under the pill, which ends at 106) and the plate 11 higher on it, its foot at 285, a unit above the quests panel. Hidden below the Golden Hour's level.",
+   "parts": [
+    {
+     "id": "glow",
+     "kind": "image",
+     "asset": "ceremony/sunburst",
+     "rect": [
+      -52,
+      -43,
+      266,
+      258
+     ],
+     "note": "The ceremonies' sunburst behind the wheel while the Golden Hour burns, drawn down."
+    },
+    {
+     "id": "under",
+     "kind": "image",
+     "asset": "collect/golden_wheel",
+     "rect": [
+      0,
+      0,
+      162,
+      148
+     ]
+    },
+    {
+     "id": "lit",
+     "kind": "image",
+     "asset": "collect/golden_wheel_lit",
+     "rect": [
+      0,
+      0,
+      162,
+      148
+     ],
+     "note": "Drawn over the dark wheel cell by cell, counter-clockwise from the top as the meter fills (the painting's half-lit wheel is its left half), and burnt back clockwise from the top as the hour runs out. The ring's centre is x 81, y 86 of the crop.",
+     "centre": [
+      81,
+      86
+     ]
+    },
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "collect/golden_plate",
+     "rect": [
+      13,
+      137,
+      137,
+      44
+     ]
+    },
+    {
+     "id": "state",
+     "kind": "text",
+     "rect": [
+      21,
+      144,
+      121,
+      30
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 700,
+     "color": "#F3EDE0",
+     "align": "center",
+     "valign": "center",
+     "sample": "Golden Hour"
+    },
+    {
+     "id": "bolt",
+     "kind": "image",
+     "asset": "icons/bolt_small",
+     "rect": [
+      0,
+      151,
+      14,
+      16
+     ]
+    },
+    {
+     "id": "energy",
+     "kind": "text",
+     "rect": [
+      0,
+      144,
+      50,
+      30
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 700,
+     "color": "#F3EDE0",
+     "align": "left",
+     "valign": "center",
+     "sample": "34"
+    },
+    {
+     "id": "coins",
+     "kind": "image",
+     "asset": "ceremony/coin_burst",
+     "rect": [
+      -19,
+      -20,
+      200,
+      173
+     ],
+     "note": "The ceremonies' coin burst, drawn down, flashed behind the gold a Golden Hour adds."
+    },
+    {
+     "id": "gain",
+     "kind": "text",
+     "rect": [
+      -80,
+      122,
+      322,
+      42
+     ],
+     "font": "body",
+     "size": 30,
+     "weight": 800,
+     "color": "#F0D27A",
+     "align": "center",
+     "valign": "center",
+     "sample": "+1,234",
+     "note": "What the Golden Hour added to the last collects, rising from the plate."
+    },
+    {
+     "id": "flare",
+     "kind": "text",
+     "rect": [
+      -432,
+      90,
+      410,
+      56
+     ],
+     "font": "title",
+     "size": 40,
+     "weight": 800,
+     "color": "#F0D27A",
+     "align": "right",
+     "valign": "center",
+     "sample": "GOLDEN HOUR",
+     "note": "The words when the wheel lights, beside it on the header under the subtitle (whose ink ends at y 183), right-aligned to the wheel: clear of the painting's baked title and subtitle and of the pills."
+    },
+    {
+     "id": "tap",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      162,
+      181
+     ]
+    }
+   ]
+  },
+  {
+   "id": "event_band",
+   "kind": "group",
+   "rect": [
+    166,
+    286,
+    762,
+    147
+   ],
+   "shift": 161,
+   "note": "The live server event (snapshot.live), cut from collect_events.png and drawn down to the quests panel's edges (x 166..927). Shown only while an event runs: then it stands where the quests panel's rim was (y 286), and the quests panel, its reset line, its cards and the job list's top move down `shift` -- the band's 147 and the painting's 14 from the band's outer rim to the quests panel's (collect_events y 492 -> 506). The name plate's inside is x 364..551, y 57..114 (its frame line at x 362..363 and 552, y 56 and 115..116); the time plate's x 604..706, y 84..114 (measured on the cut band). The name and worth boxes stand 9 in from the frame on each side (x 373..542, centred on 457.5), so a line fitted to its box, \"+50% for you \u00b7 1 more\", never touches the frame. Text rects are the type's line centred on its plate (1.39x the size in Cinzel, 1.36x in Garamond); the name and the worth are one block of two lines centred on the name plate.",
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "collect/event_band",
+     "rect": [
+      0,
+      0,
+      762,
+      147
+     ]
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      373,
+      59,
+      169,
+      26
+     ],
+     "font": "title",
+     "size": 19,
+     "weight": 700,
+     "color": "#E9C46A",
+     "align": "center",
+     "valign": "center",
+     "sample": "JOB PAYOUT"
+    },
+    {
+     "id": "worth",
+     "kind": "text",
+     "rect": [
+      373,
+      86,
+      169,
+      26
+     ],
+     "font": "body",
+     "size": 19,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "+50% for you"
+    },
+    {
+     "id": "time",
+     "kind": "text",
+     "rect": [
+      606,
+      85,
+      98,
+      27
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "2h 14m"
+    },
+    {
+     "id": "tap",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      762,
+      147
+     ],
+     "note": "The whole band, with the painted chevron at x 719..745: a tap lists what is running and what is coming."
+    }
+   ]
+  },
+  {
+   "id": "quests_panel",
+   "kind": "image",
+   "asset": "collect/week_panel",
+   "rect": [
+    166,
+    286,
+    762,
+    292
+   ],
+   "note": "collect_events.png's quests panel (x 156..928, y 505..800), drawn down to the tab's column: its heading and dots lifted and set live, its three tiles' icons lifted and drawn per task."
+  },
+  {
+   "id": "quests_title",
+   "kind": "text",
+   "rect": [
+    190,
+    296,
+    360,
+    38
+   ],
+   "font": "title",
+   "size": 27,
+   "weight": 700,
+   "color": "#F0EEE8",
+   "align": "left",
+   "valign": "center",
+   "sample": "THIS WEEK'S QUESTS",
+   "note": "The painting's heading (ink x 180..475, caps y 523..542 on collect_events.png -> x 190, caps 304..323 here), lifted from the panel and set live: TODAY'S QUESTS or THIS WEEK'S QUESTS."
+  },
+  {
+   "id": "quests_more",
+   "kind": "image",
+   "asset": "icons/chevron_gold",
+   "rect": [
+    0,
+    299,
+    18,
+    22
+   ],
+   "note": "After THIS WEEK'S QUESTS, placed by the screen at the heading's end: the event band's own chevron, saying the heading opens more."
+  },
+  {
+   "id": "quests_reset",
+   "kind": "text",
+   "rect": [
+    600,
+    300,
+    237,
+    30
+   ],
+   "font": "body",
+   "size": 22,
+   "weight": 500,
+   "color": "#B9C5D0",
+   "align": "right",
+   "valign": "center",
+   "sample": "Resets in 14:26:38",
+   "note": "Right-aligned 16 short of the page dots, on the heading's line: the day's quests' reset, or the week's end."
+  },
+  {
+   "id": "page_dot_0",
+   "kind": "image",
+   "asset": "collect/page_dot_on",
+   "rect": [
+    851.1,
+    304.7,
+    23,
+    23
+   ]
+  },
+  {
+   "id": "page_dot_1",
+   "kind": "image",
+   "asset": "collect/page_dot_off",
+   "rect": [
+    877.7,
+    304.7,
+    23,
+    23
+   ],
+   "note": "The painting's two dots (x 853..898, y 526..544): the lit one is the page shown -- today's, then the week's."
+  },
+  {
+   "id": "quests_heading",
+   "kind": "group",
+   "rect": [
+    166,
+    286,
+    470,
+    58
+   ],
+   "note": "Where the heading is, inside quests_touch: on the week's page a tap there opens the whole week."
+  },
+  {
+   "id": "quests_flip",
+   "kind": "group",
+   "rect": [
+    640,
+    286,
+    288,
+    58
+   ],
+   "note": "The heading's right, over the reset line and the dots, inside quests_touch: a tap there turns the page."
+  },
+  {
+   "id": "quest_card",
+   "kind": "template",
+   "rect": [
+    180.8,
+    343.2,
+    237,
+    222
+   ],
+   "note": "The panel's three painted tiles (x 171..410, 419..657, 666..909; y 563..787 on collect_events.png, drawn down 0.98577 with the panel): the tiles and their empty plates are the panel's own, and each instance lays its task's mark and words over them. Today's quests and the week's are painted onto the same three.",
+   "instances": [
+    {
+     "pos": [
+      180.8,
+      343.2
+     ],
+     "assets": {
+      "icon": "icons/quest_scroll_lg"
+     }
+    },
+    {
+     "pos": [
+      425.3,
+      343.2
+     ],
+     "assets": {
+      "icon": "icons/quest_bolt_lg"
+     },
+     "rects": {
+      "title": [
+       23.8,
+       102.5,
+       186.1,
+       28.6
+      ],
+      "progress": [
+       16.8,
+       137.1,
+       200.1,
+       24.5
+      ],
+      "reward_row": [
+       42.4,
+       170.5,
+       150.7,
+       38.4
+      ]
+     }
+    },
+    {
+     "pos": [
+      668.7,
+      343.2
+     ],
+     "assets": {
+      "icon": "icons/quest_swords_lg"
+     },
+     "rects": {
+      "title": [
+       24.8,
+       102.5,
+       188.1,
+       28.6
+      ],
+      "progress": [
+       17.7,
+       137.1,
+       202.1,
+       24.5
+      ],
+      "reward_row": [
+       44.4,
+       170.5,
+       150.7,
+       38.4
+      ]
+     }
+    }
+   ],
+   "parts": [
+    {
+     "id": "icon",
+     "kind": "image",
+     "asset": "icons/quest_scroll_lg",
+     "rect": [
+      19,
+      9,
+      198,
+      89
+     ],
+     "note": "The task's mark, centred where the painting drew each tile's icon (centre y 617, 54 into the tile), at its own size: the three painted marks are cut from these tiles (icons/quest_*_lg)."
+    },
+    {
+     "id": "title",
+     "kind": "text",
+     "rect": [
+      24.8,
+      102.5,
+      186.1,
+      28.6
+     ],
+     "font": "body",
+     "size": 21,
+     "weight": 600,
+     "color": "#F3EDE0",
+     "align": "center",
+     "valign": "center",
+     "sample": "Collect 20 times",
+     "note": "The task, one line on the name plate (x 188..393, y 665..698 on the painting), shrunk to fit."
+    },
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "collect/quest_plate",
+     "rect": [
+      16.8,
+      139.0,
+      203,
+      22
+     ],
+     "note": "The progress plate under the fill, the panel's own."
+    },
+    {
+     "id": "bar_fill",
+     "kind": "image",
+     "asset": "collect/week_bar_fill",
+     "rect": [
+      19.7,
+      142.0,
+      40,
+      14.8
+     ],
+     "fill": "left",
+     "track": [
+      19.7,
+      142.0,
+      196.2,
+      14.8
+     ],
+     "caps": [
+      5,
+      1
+     ],
+     "ratio": 0.0,
+     "note": "The painted gold of the week's bar, run inside the progress plate's rims (x 191..390, y 707..722)."
+    },
+    {
+     "id": "progress",
+     "kind": "text",
+     "rect": [
+      17.7,
+      137.1,
+      200.1,
+      24.5
+     ],
+     "font": "body",
+     "size": 18,
+     "weight": 600,
+     "color": "#E9E3D5",
+     "align": "center",
+     "valign": "center",
+     "sample": "0 / 20"
+    },
+    {
+     "id": "reward_row",
+     "kind": "group",
+     "rect": [
+      42.4,
+      170.5,
+      150.7,
+      38.4
+     ],
+     "note": "What the task pays, on the gold-rimmed plate (x 210..371, y 736..775): a day's task its experience and gold; a week's its first reward and the points it adds to the chest bar, each an icon and a figure, centred as a pair and shrunk together to fit.",
+     "parts": [
+      {
+       "id": "icon_a",
+       "kind": "image",
+       "asset": "icons/reward_crown",
+       "rect": [
+        0,
+        8.5,
+        28,
+        21
+       ]
+      },
+      {
+       "id": "figure_a",
+       "kind": "text",
+       "rect": [
+        36,
+        4,
+        54,
+        30
+       ],
+       "font": "body",
+       "size": 22,
+       "weight": 600,
+       "color": "#F3EDE0",
+       "align": "left",
+       "valign": "center",
+       "sample": "+100"
+      },
+      {
+       "id": "icon_b",
+       "kind": "image",
+       "asset": "icons/coin_small",
+       "rect": [
+        80,
+        7,
+        24,
+        24
+       ]
+      },
+      {
+       "id": "figure_b",
+       "kind": "text",
+       "rect": [
+        120,
+        4,
+        40,
+        30
+       ],
+       "font": "body",
+       "size": 22,
+       "weight": 600,
+       "color": "#F3EDE0",
+       "align": "left",
+       "valign": "center",
+       "sample": "+300"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "quests_touch",
+   "kind": "button",
+   "rect": [
+    166,
+    286,
+    762,
+    286
+   ],
+   "note": "One touch area over the heading and the three tiles (y 286..572): a sideways drag turns the page; a tap acts on what is under it -- the heading's left opens the week, its right turns the page, a tile claims or opens its task. One control, so no two tap areas share a pixel and each reaches 44 pt."
+  },
+  {
+   "id": "week_bar",
+   "kind": "group",
+   "rect": [
+    166,
+    578,
+    762,
+    134
+   ],
+   "note": "The week's chest bar, under the panel (collect_events.png y 806..930, drawn down 0.98577): the channel, the fill toward 80/160/240 points, the three chests on it with the gold markers where the fill reaches each, and a plate under each. Part rects are the bar's, from x 166, y 578.",
+   "parts": [
+    {
+     "id": "channel",
+     "kind": "image",
+     "asset": "collect/week_bar",
+     "rect": [
+      7.9,
+      59.9,
+      740,
+      28
+     ]
+    },
+    {
+     "id": "fill",
+     "kind": "image",
+     "asset": "collect/week_bar_fill",
+     "rect": [
+      14.8,
+      66.8,
+      40,
+      15
+     ],
+     "fill": "left",
+     "track": [
+      14.8,
+      66.8,
+      723.6,
+      15
+     ],
+     "caps": [
+      5,
+      1
+     ],
+     "ratio": 0.0,
+     "note": "From the painted fill's head (x 171) to the channel's inner end (x 905)."
+    },
+    {
+     "id": "chest_0",
+     "kind": "image",
+     "asset": "collect/chest_bronze",
+     "rect": [
+      138.0,
+      4.7,
+      93,
+      77
+     ]
+    },
+    {
+     "id": "chest_1",
+     "kind": "image",
+     "asset": "collect/chest_silver",
+     "rect": [
+      359.8,
+      10.6,
+      90,
+      71
+     ]
+    },
+    {
+     "id": "chest_2",
+     "kind": "image",
+     "asset": "collect/chest_gold",
+     "rect": [
+      593.4,
+      10.6,
+      96,
+      73
+     ]
+    },
+    {
+     "id": "marker_0",
+     "kind": "image",
+     "asset": "collect/chest_marker",
+     "rect": [
+      169.5,
+      66.8,
+      23,
+      23
+     ]
+    },
+    {
+     "id": "marker_1",
+     "kind": "image",
+     "asset": "collect/chest_marker",
+     "rect": [
+      386.3,
+      66.8,
+      23,
+      23
+     ]
+    },
+    {
+     "id": "marker_2",
+     "kind": "image",
+     "asset": "collect/chest_marker",
+     "rect": [
+      620.4,
+      66.8,
+      23,
+      23
+     ]
+    },
+    {
+     "id": "plate_0",
+     "kind": "image",
+     "asset": "collect/chest_plate",
+     "rect": [
+      121.2,
+      89.5,
+      121,
+      37
+     ]
+    },
+    {
+     "id": "need_0",
+     "kind": "text",
+     "rect": [
+      129.2,
+      94.4,
+      105,
+      27.2
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 600,
+     "color": "#F3EDE0",
+     "align": "center",
+     "valign": "center",
+     "sample": "80 POINTS"
+    },
+    {
+     "id": "plate_1",
+     "kind": "image",
+     "asset": "collect/chest_plate",
+     "rect": [
+      338.1,
+      89.5,
+      121,
+      37
+     ]
+    },
+    {
+     "id": "need_1",
+     "kind": "text",
+     "rect": [
+      346.1,
+      94.4,
+      105,
+      27.2
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 600,
+     "color": "#F3EDE0",
+     "align": "center",
+     "valign": "center",
+     "sample": "160 POINTS"
+    },
+    {
+     "id": "plate_2",
+     "kind": "image",
+     "asset": "collect/chest_plate",
+     "rect": [
+      571.7,
+      89.5,
+      121,
+      37
+     ]
+    },
+    {
+     "id": "need_2",
+     "kind": "text",
+     "rect": [
+      579.7,
+      94.4,
+      105,
+      27.2
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 600,
+     "color": "#F3EDE0",
+     "align": "center",
+     "valign": "center",
+     "sample": "240 POINTS"
+    },
+    {
+     "id": "chest_tap_0",
+     "kind": "button",
+     "rect": [
+      115.2,
+      0,
+      133,
+      134
+     ]
+    },
+    {
+     "id": "chest_tap_1",
+     "kind": "button",
+     "rect": [
+      332.1,
+      0,
+      133,
+      134
+     ]
+    },
+    {
+     "id": "chest_tap_2",
+     "kind": "button",
+     "rect": [
+      565.7,
+      0,
+      133,
+      134
+     ]
+    }
+   ]
+  },
+  {
    "id": "footer",
    "kind": "image",
    "asset": "collect/footer",
@@ -44,262 +875,26 @@
    "anchor": "bottom"
   },
   {
-   "id": "quests_panel",
-   "kind": "image",
-   "asset": "collect/quests_panel",
-   "rect": [
-    166,
-    281,
-    762,
-    228
-   ]
-  },
-  {
-   "id": "quests_reset",
-   "kind": "text",
-   "rect": [
-    700,
-    294,
-    198,
-    34
-   ],
-   "font": "body",
-   "size": 22,
-   "weight": 500,
-   "color": "#B9C5D0",
-   "align": "right",
-   "valign": "center",
-   "sample": "Resets in 14:26:38",
-   "note": "right-aligned to x 898, where the painting's own countdown ends, at its size"
-  },
-  {
-   "id": "quest_card",
-   "kind": "template",
-   "rect": [
-    179,
-    333,
-    241,
-    165
-   ],
-   "instances": [
-    {
-     "pos": [
-      179,
-      333
-     ],
-     "assets": {
-      "icon": "icons/quest_scroll"
-     },
-     "texts": {
-      "title": "Collect\n20 times",
-      "progress": "0 / 20"
-     }
-    },
-    {
-     "pos": [
-      428,
-      333
-     ],
-     "assets": {
-      "icon": "icons/quest_bolt"
-     },
-     "texts": {
-      "title": "Spend\n30 energy",
-      "progress": "0 / 30"
-     },
-     "rects": {
-      "icon": [
-       22,
-       11,
-       70,
-       68
-      ]
-     }
-    },
-    {
-     "pos": [
-      676,
-      333
-     ],
-     "assets": {
-      "icon": "icons/quest_swords"
-     },
-     "texts": {
-      "title": "Defeat\n1 rival",
-      "progress": "0 / 1"
-     },
-     "rects": {
-      "icon": [
-       21,
-       9,
-       74,
-       70
-      ]
-     }
-    }
-   ],
-   "parts": [
-    {
-     "id": "frame",
-     "kind": "image",
-     "asset": "collect/quest_card",
-     "rect": [
-      0,
-      0,
-      241,
-      165
-     ]
-    },
-    {
-     "id": "icon",
-     "kind": "image",
-     "asset": "icons/quest_scroll",
-     "rect": [
-      22,
-      13,
-      70,
-      66
-     ]
-    },
-    {
-     "id": "title",
-     "kind": "text",
-     "rect": [
-      97,
-      15,
-      130,
-      58
-     ],
-     "font": "body",
-     "size": 28,
-     "weight": 500,
-     "color": "#F3EDE0",
-     "align": "left",
-     "valign": "center",
-     "line_height": 1.05,
-     "sample": "Collect\n20 times"
-    },
-    {
-     "id": "bar_fill",
-     "kind": "image",
-     "asset": "collect/quest_bar_fill",
-     "rect": [
-      17,
-      86,
-      204,
-      20
-     ],
-     "fill": "left",
-     "ratio": 0.0
-    },
-    {
-     "id": "progress",
-     "kind": "text",
-     "rect": [
-      15,
-      82,
-      208,
-      24
-     ],
-     "font": "body",
-     "size": 22,
-     "weight": 500,
-     "color": "#E9E3D5",
-     "align": "center",
-     "valign": "center",
-     "sample": "0 / 20"
-    },
-    {
-     "id": "reward_row",
-     "kind": "group",
-     "rect": [
-      12,
-      110,
-      217,
-      48
-     ],
-     "note": "What the task pays, experience and gold, centred as a pair and shrunk together to fit the card. The painting shows one reward per card and a diamond on one of them; the server pays experience and gold on every task, and the gold was never shown.",
-     "parts": [
-      {
-       "id": "xp_icon",
-       "kind": "image",
-       "asset": "icons/reward_crown",
-       "rect": [
-        0,
-        8,
-        42,
-        32
-       ]
-      },
-      {
-       "id": "xp",
-       "kind": "text",
-       "rect": [
-        46,
-        0,
-        70,
-        48
-       ],
-       "font": "body",
-       "size": 28,
-       "weight": 600,
-       "color": "#F3EDE0",
-       "align": "left",
-       "valign": "center",
-       "sample": "+100 XP"
-      },
-      {
-       "id": "gold_icon",
-       "kind": "image",
-       "asset": "icons/coin_small",
-       "rect": [
-        120,
-        9,
-        30,
-        30
-       ]
-      },
-      {
-       "id": "gold",
-       "kind": "text",
-       "rect": [
-        154,
-        0,
-        60,
-        48
-       ],
-       "font": "body",
-       "size": 28,
-       "weight": 600,
-       "color": "#F3EDE0",
-       "align": "left",
-       "valign": "center",
-       "sample": "+300"
-      }
-     ]
-    }
-   ]
-  },
-  {
    "id": "job_list",
    "kind": "scroll",
    "rect": [
     155,
-    509,
+    712,
     786,
-    1007
+    804
    ],
    "content": [
     "job_row"
    ],
-   "grow": "bottom"
+   "grow": "bottom",
+   "note": "From under the week's chest bar (collect_events.png's first row at y 945 -> 720 here, 8 into the list, as collect.png's rows sit 8 under their panel)."
   },
   {
    "id": "job_row",
    "kind": "template",
    "rect": [
     166,
-    517,
+    720,
     762,
     156
    ],
@@ -311,7 +906,7 @@
       517
      ],
      "assets": {
-      "tile": "collect/job_grapes"
+      "painting": "collect/job_grapes"
      },
      "texts": {
       "name": "GRAPES",
@@ -326,7 +921,7 @@
       683
      ],
      "assets": {
-      "tile": "collect/job_strawberries"
+      "painting": "collect/job_strawberries"
      },
      "texts": {
       "name": "STRAWBERRIES",
@@ -341,7 +936,7 @@
       850
      ],
      "assets": {
-      "tile": "collect/job_wheat"
+      "painting": "collect/job_wheat"
      },
      "texts": {
       "name": "WHEAT HARVEST",
@@ -356,7 +951,7 @@
       1017
      ],
      "assets": {
-      "tile": "collect/job_timber"
+      "painting": "collect/job_timber"
      },
      "texts": {
       "name": "TIMBER CUTTING",
@@ -371,7 +966,7 @@
       1187
      ],
      "assets": {
-      "tile": "collect/job_stone"
+      "painting": "collect/job_stone"
      },
      "texts": {
       "name": "STONE QUARRY",
@@ -386,7 +981,7 @@
       1356
      ],
      "assets": {
-      "tile": "collect/job_tax"
+      "painting": "collect/job_tithe"
      },
      "texts": {
       "name": "ROYAL TAX PICKUP",
@@ -459,15 +1054,28 @@
      "note": "drawn back over the fill exactly where the painting has this diamond (centre x 791)"
     },
     {
-     "id": "tile",
+     "id": "painting",
      "kind": "image",
      "asset": "collect/job_grapes",
+     "rect": [
+      11,
+      8,
+      165,
+      141
+     ],
+     "note": "the job's own painting, set by collect.gd from its id; two units larger than the frame's window on every side"
+    },
+    {
+     "id": "tile",
+     "kind": "image",
+     "asset": "collect/job_frame",
      "rect": [
       2,
       -2,
       190,
       158
-     ]
+     ],
+     "note": "the steel frame over the painting, the same for every row"
     },
     {
      "id": "name",

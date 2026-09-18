@@ -1,0 +1,141 @@
+{
+ "screen": "away",
+ "source": "away.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "notes": [
+  "The painting is the page (away/page): four cards, each figure set in the plate over its word; the parchment's note is the painting's own.",
+  "TAKE REVENGE and CONTINUE are erased from the painting and drawn as their own crops: with no raider left to answer TAKE REVENGE is hidden and CONTINUE stands alone in the middle. CONTINUE closes."
+ ],
+ "stretch": [
+  [
+   978,
+   8,
+   5
+  ],
+  [
+   1307,
+   13,
+   12
+  ],
+  [
+   1436,
+   12,
+   15
+  ]
+ ],
+ "ground": "#010c13",
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "away/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "raids",
+   "kind": "text",
+   "rect": [
+    109,
+    862,
+    303,
+    56
+   ],
+   "font": "body",
+   "size": 44,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "-9,999,999,999"
+  },
+  {
+   "id": "lost",
+   "kind": "text",
+   "rect": [
+    527,
+    862,
+    304,
+    56
+   ],
+   "font": "body",
+   "size": 44,
+   "weight": 700,
+   "color": "#F0524F",
+   "align": "center",
+   "valign": "center",
+   "sample": "-9,999,999,999"
+  },
+  {
+   "id": "ransom",
+   "kind": "text",
+   "rect": [
+    109,
+    1190,
+    303,
+    57
+   ],
+   "font": "body",
+   "size": 44,
+   "weight": 700,
+   "color": "#EFC53A",
+   "align": "center",
+   "valign": "center",
+   "sample": "-9,999,999,999"
+  },
+  {
+   "id": "avenge",
+   "kind": "text",
+   "rect": [
+    527,
+    1190,
+    304,
+    57
+   ],
+   "font": "body",
+   "size": 44,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "-9,999,999,999"
+  },
+  {
+   "id": "revenge",
+   "kind": "button",
+   "asset": "away/btn_revenge",
+   "rect": [
+    84,
+    1447,
+    389,
+    96
+   ],
+   "action": "revenge",
+   "keep_texture_size": true
+  },
+  {
+   "id": "continue",
+   "kind": "button",
+   "asset": "away/btn_continue",
+   "rect": [
+    504,
+    1447,
+    354,
+    96
+   ],
+   "action": "close",
+   "keep_texture_size": true
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+{
+  "source": "rewards_sheet.png",
+  "notes": [
+    "S1 (docs/art/PAINTING_BRIEFS.md 1.9): chests, gifts, the crate, the crown and the cups, painted large on plain navy and drawn down. The store's lines already take the crowned key, the royal chest thrown open and the crown (art/slices/store_2.json, at 120). These are the week's three chests opened, for the ceremony that shows what one held: the wooden chest for the bronze, the silver for the silver, the royal gold for the gold, as the Collect tab's chest bar paints them.",
+    "Rect crops with a margin of the sheet's navy, their corners chamfered and feathered: the chests' insides are dark, so they are never keyed, and the ceremony's ground is the same navy within two levels."
+  ],
+  "crops": [
+    {
+      "name": "icons/chest_wood_open",
+      "rect": [327, 27, 278, 291],
+      "mask": {"type": "chamfer", "size": 36, "feather": 8},
+      "scale": [220, 230],
+      "note": "The wooden chest open, its warm light rising (ink x 339..593, y 39..306)."
+    },
+    {
+      "name": "icons/chest_silver_open",
+      "rect": [21, 348, 285, 303],
+      "mask": {"type": "chamfer", "size": 36, "feather": 8},
+      "scale": [220, 234],
+      "note": "The silver chest with the lion lock open, glowing pale (ink x 33..294, y 360..639)."
+    },
+    {
+      "name": "icons/chest_gold_open",
+      "rect": [636, 325, 290, 330],
+      "mask": {"type": "chamfer", "size": 36, "feather": 8},
+      "scale": [220, 250],
+      "note": "The royal gold chest with its crown thrown open, golden rays bursting up (ink x 648..914, y 337..643)."
+    }
+  ]
+}

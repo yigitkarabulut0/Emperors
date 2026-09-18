@@ -1,0 +1,502 @@
+{
+ "screen": "mail",
+ "source": "mail.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#09151E",
+ "notes": [
+  "The Royal Mail as a Court view (client/scenes/court/mail_view.gd). Rects are the painting's; the header's pills are the shell's own.",
+  "back: the painted COURT button is drawn 14 units under its painted place (y 106, not 92), clear of the band where the shell writes the shield's time; back_hit is its thumb-sized target, starting under the pills' own targets (which end at y 100).",
+  "letter_row: rows at pitch 112 from the painting (365, 477, 589 ...). Its parts are row-relative: the envelope where the painting has it, the title in the top plate (x 347..607), sender and time in the bottom plate (x 347..639, or 347..553 on the short plate of a letter going soon), the hourglass beside the short plate, and one reward icon in each tile window (tiles centred at x 728, 801, 874, y 418).",
+  "claim_all: the painted CLAIM ALL. While the rows end above its pin it sits where the painting has it, just under the last row (claim_all_after_rows keeps the painting's gap); once they run past it, it is pinned above the footer and the list scrolls under it -- the button stays where the thumb is.",
+  "letter: the reader, built on demand over the view. Its rects are in the card's own 447x431 space; parts named *_b sit in the card's bottom margin and follow the card's foot as it grows (their y is measured from the card's top at its painted height). The words stack down the parchment from under the seal -- title, who sent it and when, the letter, what it carries and until when -- each as tall as its own wrapped lines; the red of a letter going soon is the deadline's alone.",
+  "Elements of kind \"rect\" are measurements the view reads, not things drawn: Layout builds nothing for a kind it does not know."
+ ],
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "mail/header",
+   "rect": [
+    155,
+    0,
+    786,
+    362
+   ]
+  },
+  {
+   "id": "list",
+   "kind": "scroll",
+   "rect": [
+    155,
+    362,
+    786,
+    1086
+   ],
+   "grow": "bottom",
+   "content": [
+    "letter_row"
+   ]
+  },
+  {
+   "id": "letter_row",
+   "kind": "template",
+   "rect": [
+    161,
+    365,
+    766,
+    104
+   ],
+   "pitch": 112,
+   "instances": [
+    [
+     161,
+     365
+    ]
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "mail/row",
+     "rect": [
+      0,
+      0,
+      766,
+      104
+     ]
+    },
+    {
+     "id": "envelope",
+     "kind": "image",
+     "asset": "mail/envelope_crown",
+     "rect": [
+      13,
+      7,
+      161,
+      94
+     ]
+    },
+    {
+     "id": "title",
+     "kind": "text",
+     "rect": [
+      194,
+      13,
+      246,
+      29
+     ],
+     "font": "body",
+     "size": 23,
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "left",
+     "sample": "For the night the roads were closed"
+    },
+    {
+     "id": "line",
+     "kind": "text",
+     "rect": [
+      194,
+      52,
+      278,
+      25
+     ],
+     "font": "body",
+     "size": 19,
+     "weight": 500,
+     "color": "#B8AE9C",
+     "align": "left",
+     "sample": "The Crown  ·  2h ago"
+    },
+    {
+     "id": "hourglass",
+     "kind": "image",
+     "asset": "mail/hourglass",
+     "rect": [
+      405,
+      41,
+      42,
+      52
+     ]
+    },
+    {
+     "id": "slot_1",
+     "kind": "image",
+     "asset": "mail/slot",
+     "rect": [
+      535,
+      22,
+      65,
+      65
+     ]
+    },
+    {
+     "id": "slot_2",
+     "kind": "image",
+     "asset": "mail/slot",
+     "rect": [
+      608,
+      22,
+      65,
+      65
+     ]
+    },
+    {
+     "id": "slot_3",
+     "kind": "image",
+     "asset": "mail/slot",
+     "rect": [
+      682,
+      22,
+      65,
+      65
+     ]
+    },
+    {
+     "id": "icon_1",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      544,
+      31,
+      46,
+      46
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_2",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      617,
+      31,
+      46,
+      46
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_3",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      690,
+      31,
+      46,
+      46
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "more",
+     "kind": "image",
+     "asset": "icons/count_bubble",
+     "rect": [
+      726,
+      10,
+      36,
+      36
+     ]
+    },
+    {
+     "id": "more_text",
+     "kind": "text",
+     "rect": [
+      726,
+      10,
+      36,
+      34
+     ],
+     "font": "title",
+     "size": 19,
+     "weight": 800,
+     "color": "#FFF4EC",
+     "align": "center",
+     "sample": "+2"
+    },
+    {
+     "id": "hit",
+     "kind": "button",
+     "asset": "",
+     "rect": [
+      0,
+      0,
+      766,
+      104
+     ],
+     "pass_drag": true,
+     "action": "read"
+    }
+   ]
+  },
+  {
+   "id": "row_soon_line",
+   "kind": "rect",
+   "rect": [
+    194,
+    52,
+    192,
+    25
+   ],
+   "note": "The line's rect on the short plate of a letter going soon."
+  },
+  {
+   "id": "envelope_open",
+   "kind": "rect",
+   "rect": [
+    13,
+    2,
+    154,
+    96
+   ],
+   "note": "The open envelope's rect in its row (cut from the painting's fourth row, whose plate is at y 701)."
+  },
+  {
+   "id": "empty_desk",
+   "kind": "image",
+   "asset": "mail/desk",
+   "rect": [
+    396,
+    420,
+    303,
+    431
+   ]
+  },
+  {
+   "id": "empty_text",
+   "kind": "text",
+   "rect": [
+    190,
+    870,
+    716,
+    34
+   ],
+   "font": "body",
+   "size": 25,
+   "weight": 500,
+   "color": "#B8AE9C",
+   "align": "center",
+   "wrap": true,
+   "static": true,
+   "sample": "No letters. When the Crown has something for you, it arrives here.",
+   "note": "One line under the painted desk (its foot is y 851): the rect is the line's own height, so the words sit on it rather than 18 units above its middle."
+  },
+  {
+   "id": "claim_all",
+   "kind": "button",
+   "asset": "mail/claim_all",
+   "rect": [
+    380,
+    1449,
+    298,
+    96
+   ],
+   "keep_texture_size": true,
+   "anchor": "bottom",
+   "action": "claim_all"
+  },
+  {
+   "id": "claim_all_after_rows",
+   "kind": "rect",
+   "rect": [
+    380,
+    1029,
+    298,
+    96
+   ],
+   "note": "CLAIM ALL's target where the painting has it: its top at the foot of the sixth row's plate (y 1029), the painted button 12 under it (y 1041, centred in the 96-tall target)."
+  },
+  {
+   "id": "footer",
+   "kind": "image",
+   "asset": "mail/footer",
+   "rect": [
+    155,
+    1554,
+    786,
+    118
+   ],
+   "anchor": "bottom"
+  },
+  {
+   "id": "letter",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    447,
+    431
+   ],
+   "parts": [
+    {
+     "id": "title",
+     "kind": "text",
+     "rect": [
+      44,
+      104,
+      359,
+      36
+     ],
+     "font": "title",
+     "size": 26,
+     "weight": 700,
+     "color": "#3A2412",
+     "align": "center",
+     "wrap": true,
+     "shadow": false,
+     "sample": "For the night the roads were closed"
+    },
+    {
+     "id": "meta",
+     "kind": "text",
+     "rect": [
+      44,
+      144,
+      359,
+      26
+     ],
+     "font": "body",
+     "size": 18,
+     "weight": 600,
+     "color": "#6B4A2A",
+     "align": "center",
+     "shadow": false,
+     "sample": "From Master of Coin, Keeper of the Royal Treasury  ·  2h ago",
+     "wrap": true
+    },
+    {
+     "id": "body",
+     "kind": "text",
+     "rect": [
+      44,
+      178,
+      359,
+      30
+     ],
+     "font": "body",
+     "size": 21,
+     "weight": 500,
+     "color": "#2E1D0E",
+     "align": "left",
+     "wrap": true,
+     "shadow": false,
+     "sample": "The King's roads were shut for an hour last night."
+    },
+    {
+     "id": "enclosed",
+     "kind": "text",
+     "rect": [
+      44,
+      188,
+      359,
+      26
+     ],
+     "font": "body",
+     "size": 18,
+     "weight": 600,
+     "color": "#5A3A1E",
+     "align": "center",
+     "wrap": true,
+     "shadow": false,
+     "sample": "50 diamonds  ·  125,000 gold  ·  2 Energy Potions"
+    },
+    {
+     "id": "deadline",
+     "kind": "text",
+     "rect": [
+      44,
+      218,
+      359,
+      26
+     ],
+     "font": "body",
+     "size": 18,
+     "weight": 600,
+     "color": "#5A3A1E",
+     "align": "center",
+     "wrap": true,
+     "shadow": false,
+     "sample": "Claim it within 4h 46m, or it is gone."
+    },
+    {
+     "id": "icon_1_b",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      66,
+      246,
+      64,
+      64
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_2_b",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      188,
+      246,
+      64,
+      64
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_3_b",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      307,
+      246,
+      64,
+      64
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "more_b",
+     "kind": "image",
+     "asset": "icons/count_bubble",
+     "rect": [
+      360,
+      226,
+      38,
+      38
+     ]
+    },
+    {
+     "id": "more_text_b",
+     "kind": "text",
+     "rect": [
+      360,
+      226,
+      38,
+      36
+     ],
+     "font": "title",
+     "size": 20,
+     "weight": 800,
+     "color": "#FFF4EC",
+     "align": "center",
+     "sample": "+2"
+    },
+    {
+     "id": "claim_b",
+     "kind": "hotspot",
+     "rect": [
+      96,
+      323,
+      254,
+      96
+     ],
+     "action": "claim"
+    }
+   ]
+  }
+ ]
+}

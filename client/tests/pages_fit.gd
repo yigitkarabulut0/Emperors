@@ -1,11 +1,18 @@
 extends SceneTree
 ## Every page over the game fits the phone and takes a thumb.
 ##
-## The pages -- profile, rankings, daily, stats, treasury, gear, history,
-## rules, the Collection, the tour -- are Sheets, and the ceremonies are their
-## own overlay. What must hold at both canvases: the plate is on the screen,
-## every button in it is at least 95 units (44 pt) tall and inside the plate,
-## and nothing in a row hangs past the row.
+## The pages that are Sheets -- profile, gear, rules, odds, the tour --
+## are measured here (the Royal Mail is a Court view, measured by
+## tests/mail_view_fit.gd), and the ceremonies are their own overlay. What must
+## hold at both canvases: the plate is on the screen, every button in it is at
+## least 95 units (44 pt) tall and inside the plate, and nothing in a row hangs
+## past the row.
+##
+## A page on the painted pages' host is its painting, sliced, with no plate: it
+## is measured by tests/painted_pages.gd and painted_history_collection.gd, and
+## skipped here. It is known by what it is -- the host marks the slices of its
+## painting "page_slice" -- not by a list of names, so a page moved onto the
+## host drops out of this test and a page moved off it comes back in.
 ##
 ## Run: godot --headless --path client --script tests/pages_fit.gd
 ##
@@ -16,6 +23,7 @@ extends SceneTree
 const MIN_H := 95.0
 var _fails := 0
 var _checked := 0
+var _painted := 0
 
 
 func _initialize() -> void:
@@ -34,7 +42,8 @@ func _initialize() -> void:
 		print("FAIL  %d check(s)" % _fails)
 		quit(1)
 		return
-	print("PASS  %d buttons on every page fit the phone and take a thumb" % _checked)
+	print("PASS  %d buttons on every Sheet fit the phone and take a thumb (%d painted pages left to their tests)"
+		% [_checked, _painted])
 	quit()
 
 
@@ -50,13 +59,14 @@ func _all(canvas: Vector2) -> void:
 		"defense": 987654, "power": 987654, "equipped_on": "s", "worn_by": "Gladiator in slot 10"}]
 	var pages := {
 		"profile": func(h: Control) -> Variant: return load(pg % "profile_page").open(h),
-		"daily": func(h: Control) -> Variant: return load(pg % "daily_page").open(h, {"day": 7, "streak": 13, "claimable": true, "reward": 40, "rewards": [5, 5, 10, 10, 15, 20, 40]}),
+		"daily": func(h: Control) -> Variant: return load(pg % "daily_page").open(h,
+			load("res://tests/fixtures/calendar_fixture.gd").daily(7, true, 13), Callable(), {"weekly": {}}),
 		"stats": func(h: Control) -> Variant: return load(pg % "stats_page").open(h),
 		"treasury": func(h: Control) -> Variant: return load(pg % "treasury_page").open(h, {"vault": "876543210", "deposit_fee_bp": 1000, "unlock_level": 8, "unlocked": true}),
+		"collection": func(h: Control) -> Variant: return load(pg % "collection_page").open(h, {"items": []}),
 		"history": func(h: Control) -> Variant: return load(pg % "history_page").open(h, [{"battle_id": "b", "won": false, "raided": true,
 			"opponent_name": "Wwwwwwwwwwwwwwww", "opponent_level": 60, "gold": -987654321, "at": "2026-09-10T09:00:00Z"}], func(_e): pass),
-		"rules": func(h: Control) -> Variant: return load(pg % "rules_page").open(h, {}),
-		"tour": func(h: Control) -> Variant: return load(pg % "onboarding").open(h),
+		"rules": func(h: Control) -> Variant: return load(pg % "rules_page").open(h, {"shield_breaks": true}),
 		"odds": func(h: Control) -> Variant: return load(pg % "odds_page").open(h, {"types": [
 			{"type_id": "peasant", "odds": [{"tier": "common", "bp": 7179}, {"tier": "uncommon", "bp": 2175}, {"tier": "rare", "bp": 512}, {"tier": "epic", "bp": 110}, {"tier": "legendary", "bp": 18}, {"tier": "mystic", "bp": 5}, {"tier": "special", "bp": 1}]},
 			{"type_id": "mercenary", "odds": [{"tier": "uncommon", "bp": 7000}, {"tier": "rare", "bp": 3000}]},
@@ -70,7 +80,10 @@ func _all(canvas: Vector2) -> void:
 		var sheet: Control = (pages[name] as Callable).call(host)
 		for i in 4:
 			await process_frame
-		_check_sheet(sheet, "%s %s" % [tag, name], canvas)
+		if _is_painted(sheet):
+			_painted += 1
+		else:
+			_check_sheet(sheet, "%s %s" % [tag, name], canvas)
 		sheet.call("close")
 		host.queue_free()
 		await process_frame
@@ -97,8 +110,22 @@ func _all(canvas: Vector2) -> void:
 	await process_frame
 
 
+## A page on the painted host: somewhere under it are the slices of its painting.
+func _is_painted(page: Node) -> bool:
+	var stack: Array = [page]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n.has_meta("page_slice"):
+			return true
+		stack.append_array(n.get_children())
+	return false
+
+
 func _check_sheet(sheet: Control, tag: String, canvas: Vector2) -> void:
 	var plate: Control = sheet.get("_plate")
+	if plate == null:
+		_fail("%s: neither a Sheet (no plate) nor a painted page (no painting)" % tag)
+		return
 	var pr := Rect2(plate.global_position, plate.size)
 	if pr.position.x < 0 or pr.position.y < 0 or pr.end.x > canvas.x + 0.5 or pr.end.y > canvas.y + 0.5:
 		_fail("%s: the plate spans %s, off a %s canvas" % [tag, pr, canvas])

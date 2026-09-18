@@ -48,16 +48,9 @@ type TaxConfig struct {
 	BasePerHourMilli int64 `json:"base_per_hour_milli"`
 	GrowthBP         int64 `json:"growth_bp"`
 
-	// DEAD. Estate income is credited by middleware on every authenticated
-	// request and is deliberately uncapped -- see service.CreditTax and the
-	// CreditTax query, neither of which reads these. The only code that still
-	// clamps by them is estates.SettleTax, reached from BuyHolding (where tax
-	// was just settled, so nothing has accrued to clamp) and from the retired
-	// claim route, which answers 410.
-	//
-	// Kept so an old published balance document still parses, and named here so
-	// the next person tuning idle income does not spend an afternoon moving a
-	// number that cannot do anything. Delete them together with SettleTax.
+	// The storehouse's size (service/storehouse.go): this many seconds of the
+	// hourly rate, and this many more for each Tithe Barn level. Income past it
+	// is lost until the lord carries the storehouse in.
 	OfflineCapSeconds       int64 `json:"offline_cap_seconds"`
 	OfflineCapPerTitheLevel int64 `json:"offline_cap_per_tithe_level"`
 }
@@ -77,6 +70,10 @@ const (
 	BucketStealCap      = "steal_cap_bp"
 	BucketRansom        = "ransom_bp"
 	BucketLuck          = "luck_bp"
+	// The storehouse's own window, in MINUTES rather than basis points: it is a
+	// length of time and not a share of an amount. The Tithe Barn lengthens it
+	// through its own field; a talent lengthens it through this name.
+	BucketStorehouseMinutes = "storehouse_minutes"
 )
 
 func (b *Bundle) Upgrade(id string) *Upgrade { return b.upgradeByID[id] }

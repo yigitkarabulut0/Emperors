@@ -1,0 +1,49 @@
+{
+ "source": "forge.png",
+ "notes": [
+  "THE FORGE -- three pieces of one slot and one rank, and gold, make one of the rank above (client/scenes/pages/forge_page.gd, layout client/layout/forge.json).",
+  "This painting sat unused in ~/Downloads/Emperors_Design_Pack while the forge was a Dialog.ask with its numbers written out in a sentence. The pack's own brief for it reads: 'three EMPTY square sockets in a row ... a glowing gold arrow pointing down to a larger, radiant EMPTY result socket ... a small gold coin beside an EMPTY cost plate, and an EMPTY odds plate beside a small round gold i button.' That is exactly what the page fills.",
+  "MEASURED off the painting's own gold. The three sockets stand at x 124, 372 and 620 (pitch 248), y 737, each 197x192. The result socket is 224x214 at (359,1040). The cost plate is (208,1281,239,68), the odds plate (515,1281,229,68), the coin (126,1277,84,72) and the i button (758,1280,69,67). FORGE is (71,1387,456,121) and CLOSE (540,1387,331,121).",
+  "Nothing is erased: every socket and every plate is painted EMPTY, so what the page draws goes straight over the painting's own ground. A piece in a socket is the Armory's own object -- the tier's velvet, its rarity ring and the piece's painting (ItemGround.in_ringed_tile) -- laid inside the painted gold, so one piece of gear looks the same in the bag and on the anvil."
+ ],
+ "crops": [
+  {
+   "name": "forge/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "note": "The page whole: its frame, THE FORGE, the smithy with its anvil and coals, the three empty sockets, the arrow, the radiant result socket with its light, the coin, the two empty plates and the i button. The two buttons are cut again below so one of them can be dimmed; they are drawn back exactly where the painting has them."
+  },
+  {
+   "name": "forge/btn_forge",
+   "rect": [
+    71,
+    1387,
+    456,
+    121
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 14
+   },
+   "note": "FORGE, the painting's own emerald plate with its gold rim."
+  },
+  {
+   "name": "forge/btn_close",
+   "rect": [
+    540,
+    1387,
+    331,
+    121
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 14
+   },
+   "note": "CLOSE, the painting's own navy plate with its steel rim."
+  }
+ ]
+}

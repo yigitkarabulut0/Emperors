@@ -166,6 +166,59 @@ static func empty_slot_face(tile: Control, paint: Rect2, ghost_asset: String, na
 	return [ghost, word]
 
 
+## A painted plate stretched to a rect: the same nine-patch every time, so a
+## bubble, a scroll and a card frame all grow the same way. `margin` is the
+## band of the crop that must never stretch -- a corner, a rim, a tail.
+static func nine(asset: String, rect: Rect2, margin: int = 24) -> NinePatchRect:
+	var np := NinePatchRect.new()
+	np.texture = Art.tex(asset)
+	for m in ["left", "top", "right", "bottom"]:
+		np.set("patch_margin_" + m, margin)
+	np.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	place(np, rect)
+	return np
+
+
+## The months, as the realm writes them on a divider.
+const MONTHS := ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+## The card a list shows when it has nothing to show: the kit's own card frame,
+## a shield, a line of caps and a sentence under it. A card-shaped hole reads as
+## a screen that failed to load, so every empty list in the game says why in
+## this one object -- the Attack tab's REVENGE and TARGETS, the Honour Arena's
+## rivals. The frame is 190 tall where a card is; given a taller rect (two empty
+## slots at once) the shield and the words stay in its middle.
+## Returns {node, icon, title, body}; the caller sets the two texts.
+const EMPTY_CARD_H := 190.0
+const EMPTY_CARD_PAD := 158.0    ## what the shield and the margins take of the width
+
+
+static func empty_card(parent: Node, rect: Rect2) -> Dictionary:
+	var np := NinePatchRect.new()
+	np.texture = Art.tex("inventory/card_frame")
+	for m in ["left", "top", "right", "bottom"]:
+		np.set("patch_margin_" + m, 26)
+	np.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	np.self_modulate = Color(0.85, 0.85, 0.9)
+	place(np, rect)
+	parent.add_child(np)
+	var mid := maxf(0.0, (rect.size.y - EMPTY_CARD_H) * 0.5)
+	var icon := image("icons/shield_small", Rect2(40, 58 + mid, 60, 72))
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	np.add_child(icon)
+	var title := label("", 26, GOLD, "title", 700)
+	place(title, Rect2(126, 26 + mid, rect.size.x - EMPTY_CARD_PAD, 40))
+	np.add_child(title)
+	var body := label("", 22, DIM, "body", 500)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	place(body, Rect2(126, 68 + mid, rect.size.x - EMPTY_CARD_PAD - 6.0, 104))
+	np.add_child(body)
+	return {"node": np, "icon": icon, "title": title, "body": body}
+
+
 ## Draws a plate button's plate, and centres its word, in `paint` while the
 ## button keeps `rect` as its tap area. A thumb needs 95 units and most plates
 ## are painted about 58 tall: grown to the tap area the Shop's BUY filled its
@@ -287,6 +340,11 @@ static func canvas_size(host: Node) -> Vector2:
 ## units; 0 off a phone. The shell moves the game down by this, and an overlay
 ## laid out from the top of the canvas has to as well.
 static func safe_top(canvas: Vector2) -> float:
+	# A dev capture's --inset stands in for the phone's safe area.
+	var tree := Engine.get_main_loop() as SceneTree
+	var env: Node = tree.root.get_node_or_null("Env") if tree != null else null
+	if env != null and (env.get("args") as Dictionary).has("inset"):
+		return float(env.get("args")["inset"])
 	if not OS.has_feature("mobile"):
 		return 0.0
 	var sa := DisplayServer.get_display_safe_area()
@@ -297,17 +355,38 @@ static func safe_top(canvas: Vector2) -> float:
 
 
 ## Shrinks a label's font until its text fits its width (never below min_size).
+## What a label actually DRAWS, which is not always its text: a label marked
+## uppercase draws the capitals, and capitals are wider. Both fitters measured
+## l.text and came out a size too large on every uppercase plate -- the chapter
+## names on the campaign's own strip ran onto a third line and off the board.
+static func shown_text(l: Label) -> String:
+	return l.text.to_upper() if l.uppercase else l.text
+
+
 static func fit_label(l: Label, max_size: int, min_size: int = 14) -> void:
 	var s := l.label_settings
 	var box: float = float(l.get_meta("box_w", l.size.x))
+	var words := shown_text(l)
 	var size := max_size
 	while size > min_size:
-		var w := s.font.get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		var w := s.font.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 		if w <= box:
 			break
 		size -= 1
 	s.font_size = size
 
+
+## A one-line label that stays in its box: shrunk toward min_size first, and
+## only past that cut with an ellipsis. A Label grows to its text, so a long
+## name that fit_label could not shrink far enough ran on under whatever sat
+## beside it (the kingdom's quill, a row's button).
+static func fit_line(l: Label, max_size: int, min_size: int = 14) -> void:
+	var w: float = float(l.get_meta("box_w", l.size.x))
+	fit_label(l, max_size, min_size)
+	l.clip_text = true
+	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	l.custom_minimum_size.x = 0
+	l.size.x = w
 
 
 ## Shrinks a WRAPPING label's font until its text fits the box in both
@@ -317,18 +396,73 @@ static func fit_label(l: Label, max_size: int, min_size: int = 14) -> void:
 ## until the whole of it fits on a single line -- which spends the second line
 ## the box was sized for. "The Unbroken Breastplate" came out at half the size
 ## of "Warhorse" beside it for that reason.
-static func fit_wrapped(l: Label, max_size: int, min_size: int = 14) -> void:
+## `box_h` is the height it must fit in; 0 takes the label's own, which is only
+## the box while nothing has grown it. A Label that wraps grows to its content
+## the moment it has any, so a second fit would measure the text against the
+## room the text itself asked for and never shrink.
+static func fit_wrapped(l: Label, max_size: int, min_size: int = 14, box_h: float = 0.0) -> void:
 	var s := l.label_settings
 	var box_w: float = float(l.get_meta("box_w", l.size.x))
-	var box_h: float = l.size.y
+	if box_h <= 0.0:
+		box_h = l.size.y
+	var words := shown_text(l)
 	var size := max_size
 	while size > min_size:
 		var m := s.font.get_multiline_string_size(
-			l.text, HORIZONTAL_ALIGNMENT_LEFT, box_w, size)
+			words, HORIZONTAL_ALIGNMENT_LEFT, box_w, size)
 		if m.y <= box_h and m.x <= box_w:
 			break
 		size -= 1
 	s.font_size = size
+
+## Evens a wrapped label's lines as a hand-set page would: the narrowest width
+## that keeps the lines it already has, so a sentence never ends on one word
+## alone under full ones ("...Taking gold out is" / "free."). The label keeps
+## its box, narrowed about the side its words align to, and remembers the box
+## ("box_w", "box_x"), so the next fit and the next balance start from all of it.
+static func balance_lines(l: Label) -> void:
+	if not l.has_meta("box_w"):
+		l.set_meta("box_w", l.size.x)
+	if not l.has_meta("box_x"):
+		l.set_meta("box_x", l.position.x)
+	var box_w: float = float(l.get_meta("box_w"))
+	var box_x: float = float(l.get_meta("box_x"))
+	var s := l.label_settings
+	var n := wrapped_lines(l.text, s.font, s.font_size, box_w).size()
+	var w := box_w
+	if n >= 2:
+		var lo := 1.0
+		var hi := box_w
+		while hi - lo > 0.5:
+			var mid := (lo + hi) / 2.0
+			if wrapped_lines(l.text, s.font, s.font_size, mid).size() <= n:
+				hi = mid
+			else:
+				lo = mid
+		# A unit to spare, so the Label's own wrap lands on the same breaks.
+		w = minf(box_w, ceilf(hi) + 1.0)
+	l.size.x = w
+	match l.horizontal_alignment:
+		HORIZONTAL_ALIGNMENT_CENTER:
+			l.position.x = box_x + (box_w - w) / 2.0
+		HORIZONTAL_ALIGNMENT_RIGHT:
+			l.position.x = box_x + box_w - w
+		_:
+			l.position.x = box_x
+
+
+## The widths of `text`'s lines wrapped at `width`, broken as a Label with
+## AUTOWRAP_WORD_SMART breaks them.
+static func wrapped_lines(text: String, font: Font, size: int, width: float) -> Array:
+	var para := TextParagraph.new()
+	para.break_flags = TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE
+	para.width = width
+	para.add_string(text, font, size)
+	var out: Array = []
+	for i in para.get_line_count():
+		out.append(para.get_line_width(i))
+	return out
+
 
 # --- number formatting -----------------------------------------------------------
 
@@ -342,6 +476,17 @@ static func grouped(v: int) -> String:
 		if n % 3 == 0 and i > 0:
 			out = "," + out
 	return ("-" if v < 0 else "") + out
+
+
+## A place, as a prize and a board name it: 1st, 2nd, 3rd, 4th ... 11th, 21st.
+static func ordinal(n: int) -> String:
+	var suffix := "th"
+	if n % 100 < 11 or n % 100 > 13:
+		match n % 10:
+			1: suffix = "st"
+			2: suffix = "nd"
+			3: suffix = "rd"
+	return "%d%s" % [n, suffix]
 
 
 ## 493.48M / 12.0M / 600K / 1,420 — the way the paintings write money.
@@ -376,6 +521,15 @@ static func short_duration(seconds: int) -> String:
 	if seconds >= 60:
 		return "%dm %02ds" % [seconds / 60, seconds % 60]
 	return "%ds" % seconds
+
+
+## How long is left, in its two largest units: 29d 23h, 1d 04h, 4h 38m, 12m 05s.
+## short_duration counts in hours, and a letter kept for thirty days said
+## "Claim it within 720h 00m".
+static func time_left(seconds: int) -> String:
+	if seconds >= 86400:
+		return "%dd %02dh" % [seconds / 86400, (seconds % 86400) / 3600]
+	return short_duration(seconds)
 
 
 static func ago(seconds: int) -> String:

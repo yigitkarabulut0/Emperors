@@ -1,0 +1,112 @@
+{
+  "_comment": "Sosyal. chat: the kingdom's hall -- what a line may be, how fast it may be said, what a blocked word costs, what three reports do, and the rules a lord agrees to (App Review 1.2). friends: the cap, the leashes, and the one gift a day, whose energy is the only energy in this document and is measured by scripts/pace.py. spy: gold for an hour's look at a rival's army, and the rival is told. aid: the kingdom's own help, a timed lane bonus through economy.AddTemp. goal: one shared goal a day, its target scaled by the kingdom's size, three chests at 40/70/100%. The friends gate is progression.sections' (3); the hall's gate is a kingdom.",
+  "chat": {
+    "max_chars": 240,
+    "history": 60,
+    "retention_days": 30,
+    "burst": 5,
+    "refill_seconds": 3,
+    "window_minutes": 5,
+    "window_max": 30,
+    "strikes_to_mute": 3,
+    "strike_window_hours": 24,
+    "mute_minutes": 60,
+    "reports_to_hide": 3,
+    "report_cooldown_minutes": 5,
+    "blocked_max": 100,
+    "rules_version": 1,
+    "rules_title": "Rules of the Hall",
+    "rules": [
+      "Speak as you would in your own hall.",
+      "No abuse, no hate, no threats, and nothing of a private life -- yours or another's.",
+      "No trade of accounts, gold or anything outside the realm.",
+      "A line reported by three lords is hidden until the crown has read it.",
+      "The crown may silence a tongue for an hour, a day, or for good.",
+      "Block a lord and you will not hear from them again."
+    ],
+    "support_email": "accounts@miavstudios.co.uk"
+  },
+  "friends": {
+    "section": "friends",
+    "max_friends": 50,
+    "requests_per_day": 20,
+    "pending_max": 30,
+    "min_account_hours": 24,
+    "min_friend_hours": 24,
+    "gifts_received_per_day": 3,
+    "gift_token": "flask_friend"
+  },
+  "spy": {
+    "gold_per_level": 60,
+    "minutes": 60,
+    "per_day": 10
+  },
+  "aid": {
+    "per_day": 5,
+    "max_stacks": 5,
+    "stack_bp": 100,
+    "hours": 6,
+    "favour_per_aid": 3,
+    "ask_cooldown_minutes": 60
+  },
+  "goal": {
+    "kinds": [
+      {
+        "id": "energy",
+        "name": "Hands to the Work",
+        "icon": "help/goal_energy",
+        "blurb": "Spend energy in honest work, together.",
+        "per_member": 400
+      },
+      {
+        "id": "victories",
+        "name": "Swords of the Realm",
+        "icon": "help/goal_victories",
+        "blurb": "Win raids and arena fights, together.",
+        "per_member": 6
+      },
+      {
+        "id": "campaign",
+        "name": "The Road South",
+        "icon": "help/goal_campaign",
+        "blurb": "Walk the campaign's miles, together.",
+        "per_member": 12
+      },
+      {
+        "id": "boss",
+        "name": "The Beast at the Gate",
+        "icon": "help/goal_boss",
+        "blurb": "Strike the kingdom's beast, together.",
+        "per_member": 3
+      }
+    ],
+    "hours": 24,
+    "claim_hours": 48,
+    "min_members": 3,
+    "min_share_of_equal_bp": 2500,
+    "tiers": [
+      {
+        "at_bp": 4000,
+        "grant": {
+          "gold_wages": 25
+        }
+      },
+      {
+        "at_bp": 7000,
+        "grant": {
+          "gold_wages": 45,
+          "tokens": {
+            "cart": 1
+          }
+        }
+      },
+      {
+        "at_bp": 10000,
+        "grant": {
+          "gold_wages": 70,
+          "diamonds": 10
+        }
+      }
+    ]
+  }
+}

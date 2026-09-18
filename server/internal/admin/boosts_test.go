@@ -11,10 +11,13 @@ import (
 // If that number is not the number the engine enforces, the panel is lying at
 // the exact moment someone is deciding what to do -- which is what happened:
 // xp_bp was advertised at 20000 while economy.Caps enforced 10000.
+//
+// An event rides its bucket's TIMED lane (loadEffects adds it with AddTemp), so
+// the ceiling that binds it is the timed lane's.
 func TestAdvertisedCapsMatchWhatIsEnforced(t *testing.T) {
 	enforced := map[string]int64{
-		gameconfig.BucketCollectIncome: economy.Caps[economy.BucketCollectIncome],
-		gameconfig.BucketXP:            economy.Caps[economy.BucketXPGain],
+		gameconfig.BucketCollectIncome: economy.Caps[economy.BucketCollectIncomeTemp],
+		gameconfig.BucketXP:            economy.Caps[economy.BucketXPGainTemp],
 		gameconfig.BucketLuck:          gameconfig.MaxLuckBP,
 	}
 	for _, b := range BoostableBuckets() {

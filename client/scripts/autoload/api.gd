@@ -40,10 +40,65 @@ class Lane:
 var _lanes: Array[Lane] = []
 var _reachable := true
 
+## What only the phone can see -- a screen opened, how long the game stayed at
+## the front -- queued here and sent a minute at a time to POST /v1/events. The
+## server keeps only the names and properties it lists (service/events.go), and
+## scripts/lint-client.py fails a build that tracks one it does not. Never a
+## game number, never anything the player typed.
+const EVENTS_EVERY := 60.0
+const EVENTS_PER_CALL := 25
+const EVENTS_KEPT := 100
+var _events: Array[Dictionary] = []
+var _events_sending := false
+
 
 func _ready() -> void:
 	for i in LANES:
 		_lanes.append(Lane.new())
+	var t := Timer.new()
+	t.wait_time = EVENTS_EVERY
+	t.timeout.connect(flush_events)
+	add_child(t)
+	t.start()
+
+
+## Notes that something happened. A dev capture measures nothing, and a queue
+## that cannot be sent keeps only its newest EVENTS_KEPT.
+func track(name: String, props: Dictionary = {}) -> void:
+	if Env.args.has("capture"):
+		return
+	_events.append({"name": name, "props": props, "at": int(Time.get_unix_time_from_system())})
+	if _events.size() > EVENTS_KEPT:
+		_events = _events.slice(_events.size() - EVENTS_KEPT)
+
+
+## The events waiting to be sent, oldest first. For tests.
+func queued_events() -> Array[Dictionary]:
+	return _events
+
+
+## Sends what is queued. A batch the server answered -- kept or refused -- is
+## done with; one that never arrived is tried again next time.
+func flush_events() -> void:
+	if _events_sending or _events.is_empty() or not Session.is_signed_in():
+		return
+	_events_sending = true
+	var batch := _events.slice(0, EVENTS_PER_CALL)
+	var res := await post_json("/v1/events", {"events": batch})
+	_events_sending = false
+	if res.status >= 200 and res.status < 500:
+		_events = _events.slice(batch.size())
+
+
+## The game is leaving the front and cannot wait for an answer: what is queued
+## goes as a beacon, and is not kept -- a close counted twice would be worse
+## than one not counted.
+func flush_events_now() -> void:
+	if _events.is_empty() or not Session.is_signed_in():
+		return
+	var batch := _events.slice(0, EVENTS_PER_CALL)
+	beacon("/v1/events", {"events": batch})
+	_events = _events.slice(batch.size())
 
 
 func get_json(path: String, authed: bool = true, timeout: float = TIMEOUT_SECONDS) -> Response:

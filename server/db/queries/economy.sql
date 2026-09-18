@@ -31,13 +31,20 @@ SET gold = gold + $2, treasury_gold = treasury_gold - $2,
 WHERE id = $1 AND treasury_gold >= $2
 RETURNING *;
 
--- Spends diamonds and refills the energy pool in one statement. The WHERE is the
--- guard: no row comes back if the player cannot afford it.
+-- Spends diamonds and refills the energy pool in one statement, and counts the
+-- refill against the day's limit. The WHERE is the guard: no row comes back if
+-- the player cannot afford it. The caller works out which refill of the day this
+-- is (and so its price) from the locked row, so the count and the price cannot
+-- disagree.
 -- name: BuyEnergyRefill :one
 UPDATE app.players
-SET diamonds = diamonds - $2, energy_milli = $3, energy_updated_at = $4,
-    action_seq = $5
-WHERE id = $1 AND diamonds >= $2
+SET diamonds          = diamonds - sqlc.arg(diamonds)::bigint,
+    energy_milli      = sqlc.arg(energy_milli),
+    energy_updated_at = sqlc.arg(energy_updated_at),
+    refills_day       = sqlc.arg(refills_day),
+    refills_used      = sqlc.arg(refills_used),
+    action_seq        = sqlc.arg(action_seq)
+WHERE id = sqlc.arg(id) AND diamonds >= sqlc.arg(diamonds)::bigint
 RETURNING *;
 
 -- name: BuyShield :one

@@ -97,13 +97,16 @@ type KingdomCard struct {
 	Action string `json:"action"`
 }
 
-// JoinRequestView is one lord asking to join.
+// JoinRequestView is one lord asking to join, with their face and their look,
+// as every other list of lords shows them.
 type JoinRequestView struct {
 	PlayerID string `json:"player_id"`
 	Name     string `json:"name"`
+	Avatar   string `json:"avatar"`
 	Level    int    `json:"level"`
 	// How long they have been waiting, in seconds.
 	Waiting int64 `json:"waiting"`
+	Look
 }
 
 type KingdomInfo struct {
@@ -123,9 +126,11 @@ type KingdomInfo struct {
 type MemberView struct {
 	PlayerID string `json:"player_id"`
 	Name     string `json:"name"`
+	Avatar   string `json:"avatar"`
 	Level    int    `json:"level"`
 	Role     string `json:"role"`
 	Donated  string `json:"donated"`
+	Look
 }
 
 type MembershipView struct {
@@ -195,8 +200,9 @@ func (d Deps) GetKingdom(ctx context.Context, playerID uuid.UUID) (*KingdomView,
 
 	for _, m := range members {
 		view.Members = append(view.Members, MemberView{
-			PlayerID: m.ID.String(), Name: m.DisplayName, Level: int(m.Level),
+			PlayerID: m.ID.String(), Name: m.DisplayName, Avatar: m.Avatar, Level: int(m.Level),
 			Role: m.KingdomRole, Donated: itoa(m.KingdomDonatedTotal),
+			Look: lookOf(d.Config, m.CosFrame, m.CosTitle, m.CosColor, m.CosCrest, m.VipPoints),
 		})
 	}
 	for _, u := range d.Config.Kingdoms.Upgrades {
@@ -226,8 +232,9 @@ func (d Deps) GetKingdom(ctx context.Context, playerID uuid.UUID) (*KingdomView,
 		now := d.Now()
 		for _, r := range reqs {
 			view.Requests = append(view.Requests, JoinRequestView{
-				PlayerID: r.ID.String(), Name: r.DisplayName, Level: int(r.Level),
+				PlayerID: r.ID.String(), Name: r.DisplayName, Avatar: r.Avatar, Level: int(r.Level),
 				Waiting: int64(now.Sub(r.CreatedAt) / time.Second),
+				Look:    lookOf(d.Config, r.CosFrame, r.CosTitle, r.CosColor, r.CosCrest, r.VipPoints),
 			})
 		}
 	}

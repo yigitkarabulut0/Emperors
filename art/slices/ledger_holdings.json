@@ -1,0 +1,118 @@
+{
+ "source": "ledger_holdings.png",
+ "crops": [
+  {
+   "name": "family/ledger_wheat_farm",
+   "rect": [
+    27,
+    176,
+    420,
+    249
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "wheat_farm: panel [27, 164, 420, 272] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_watermill",
+   "rect": [
+    495,
+    176,
+    420,
+    249
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "watermill: panel [495, 164, 420, 272] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_quarry",
+   "rect": [
+    26,
+    516,
+    421,
+    250
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "quarry: panel [26, 499, 421, 284] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_vineyard",
+   "rect": [
+    495,
+    516,
+    420,
+    249
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "vineyard: panel [495, 500, 420, 282] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_iron_mine",
+   "rect": [
+    27,
+    858,
+    420,
+    249
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "iron_mine: panel [27, 841, 420, 283] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_market",
+   "rect": [
+    495,
+    857,
+    420,
+    249
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "market: panel [495, 841, 420, 282] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_mint",
+   "rect": [
+    495,
+    1200,
+    420,
+    249
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "mint: panel [495, 1183, 420, 283] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_river_port",
+   "rect": [
+    27,
+    1200,
+    420,
+    249
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "river_port: panel [27, 1184, 420, 282] fitted to the card window's 1.6852"
+  }
+ ],
+ "_comment": "The eight holdings' scenes, the same way: panel less three units a side, fitted to 364:216, drawn down."
+}

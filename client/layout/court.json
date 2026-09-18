@@ -1,0 +1,446 @@
+{
+ "screen": "court",
+ "source": "court.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#09151e",
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "CrimsonPro[wght].ttf"
+ },
+ "notes": [
+  "ROYAL COURT (client/scenes/tabs/court.gd), cut from court.png: the header scene with its title and line baked, six cards where the painting has them (the left column's frames x 171..531, the right's 545..911; rows from 487, 843, 1199, 343, 345 and 351 tall -- the painting drifts, and each card keeps its own), and the foot's foliage pinned to the screen's foot.",
+  "status_*: the card's live line, in the painting's empty plate. Each plate's inside, measured on its silver rim: x 192..512 on the left and 566..891 on the right; y 770..815, 1129..1173 and 1491..1535. The line is Garamond 26 (the card titles' caps are 18 tall, Cinzel 26) centred on it, 12 units in from each side.",
+  "badge_* / count_*: the painting's count disc (court/badge, a gold-ringed red disc 58 across) where each card has it painted -- centres x 496 and 877, y 521, 876 and 1232.5 -- with the count in type (Cinzel 26, as the rail's bubble), drawn only while something waits. The disc is lifted from the card crops.",
+  "hit_*: the whole card is the tap; SEASON PASS and CHESTS are dimmed and do nothing until they open."
+ ],
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "court/header",
+   "rect": [
+    155,
+    0,
+    786,
+    484
+   ]
+  },
+  {
+   "id": "card_store",
+   "kind": "image",
+   "asset": "court/card_store",
+   "rect": [
+    170,
+    486,
+    363,
+    345
+   ]
+  },
+  {
+   "id": "status_store",
+   "kind": "text",
+   "rect": [
+    204,
+    775,
+    296,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "An offer ends in 23h 59m"
+  },
+  {
+   "id": "badge_store",
+   "kind": "image",
+   "asset": "court/badge",
+   "rect": [
+    465,
+    490,
+    62,
+    62
+   ]
+  },
+  {
+   "id": "count_store",
+   "kind": "text",
+   "rect": [
+    465,
+    503,
+    62,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "9+"
+  },
+  {
+   "id": "hit_store",
+   "kind": "hotspot",
+   "rect": [
+    170,
+    486,
+    363,
+    345
+   ],
+   "action": "store"
+  },
+  {
+   "id": "card_pass",
+   "kind": "image",
+   "asset": "court/card_pass",
+   "rect": [
+    544,
+    486,
+    369,
+    345
+   ]
+  },
+  {
+   "id": "status_pass",
+   "kind": "text",
+   "rect": [
+    578,
+    775,
+    301,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Opens soon"
+  },
+  {
+   "id": "badge_pass",
+   "kind": "image",
+   "asset": "court/badge",
+   "rect": [
+    846,
+    490,
+    62,
+    62
+   ]
+  },
+  {
+   "id": "count_pass",
+   "kind": "text",
+   "rect": [
+    846,
+    503,
+    62,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "9+"
+  },
+  {
+   "id": "hit_pass",
+   "kind": "hotspot",
+   "rect": [
+    544,
+    486,
+    369,
+    345
+   ],
+   "action": "pass"
+  },
+  {
+   "id": "card_events",
+   "kind": "image",
+   "asset": "court/card_events",
+   "rect": [
+    170,
+    842,
+    363,
+    347
+   ]
+  },
+  {
+   "id": "status_events",
+   "kind": "text",
+   "rect": [
+    204,
+    1134,
+    296,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Job payout +50% \u00b7 23h 59m"
+  },
+  {
+   "id": "badge_events",
+   "kind": "image",
+   "asset": "court/badge",
+   "rect": [
+    465,
+    845,
+    62,
+    62
+   ]
+  },
+  {
+   "id": "count_events",
+   "kind": "text",
+   "rect": [
+    465,
+    858,
+    62,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "9+"
+  },
+  {
+   "id": "hit_events",
+   "kind": "hotspot",
+   "rect": [
+    170,
+    842,
+    363,
+    347
+   ],
+   "action": "events"
+  },
+  {
+   "id": "card_mail",
+   "kind": "image",
+   "asset": "court/card_mail",
+   "rect": [
+    544,
+    842,
+    369,
+    347
+   ]
+  },
+  {
+   "id": "status_mail",
+   "kind": "text",
+   "rect": [
+    578,
+    1134,
+    301,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "12 letters waiting"
+  },
+  {
+   "id": "badge_mail",
+   "kind": "image",
+   "asset": "court/badge",
+   "rect": [
+    846,
+    845,
+    62,
+    62
+   ]
+  },
+  {
+   "id": "count_mail",
+   "kind": "text",
+   "rect": [
+    846,
+    858,
+    62,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "9+"
+  },
+  {
+   "id": "hit_mail",
+   "kind": "hotspot",
+   "rect": [
+    544,
+    842,
+    369,
+    347
+   ],
+   "action": "mail"
+  },
+  {
+   "id": "card_chests",
+   "kind": "image",
+   "asset": "court/card_chests",
+   "rect": [
+    170,
+    1198,
+    363,
+    353
+   ]
+  },
+  {
+   "id": "status_chests",
+   "kind": "text",
+   "rect": [
+    204,
+    1496,
+    296,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Opens soon"
+  },
+  {
+   "id": "badge_chests",
+   "kind": "image",
+   "asset": "court/badge",
+   "rect": [
+    465,
+    1202,
+    62,
+    62
+   ]
+  },
+  {
+   "id": "count_chests",
+   "kind": "text",
+   "rect": [
+    465,
+    1215,
+    62,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "9+"
+  },
+  {
+   "id": "hit_chests",
+   "kind": "hotspot",
+   "rect": [
+    170,
+    1198,
+    363,
+    353
+   ],
+   "action": "chests"
+  },
+  {
+   "id": "card_offers",
+   "kind": "image",
+   "asset": "court/card_offers",
+   "rect": [
+    544,
+    1198,
+    369,
+    353
+   ]
+  },
+  {
+   "id": "status_offers",
+   "kind": "text",
+   "rect": [
+    578,
+    1496,
+    301,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Ends in 23h 59m"
+  },
+  {
+   "id": "badge_offers",
+   "kind": "image",
+   "asset": "court/badge",
+   "rect": [
+    846,
+    1202,
+    62,
+    62
+   ]
+  },
+  {
+   "id": "count_offers",
+   "kind": "text",
+   "rect": [
+    846,
+    1215,
+    62,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "9+"
+  },
+  {
+   "id": "hit_offers",
+   "kind": "hotspot",
+   "rect": [
+    544,
+    1198,
+    369,
+    353
+   ],
+   "action": "offers"
+  },
+  {
+   "id": "footer",
+   "kind": "image",
+   "asset": "court/footer",
+   "rect": [
+    155,
+    1552,
+    786,
+    120
+   ],
+   "anchor": "bottom"
+  }
+ ]
+}

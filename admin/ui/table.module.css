@@ -25,6 +25,10 @@
 .table tbody tr:hover td { background: rgb(255 255 255 / 0.022); }
 .table tbody tr[data-selected="true"] td { background: color-mix(in oklab, var(--gold-4) 10%, transparent); }
 .num { text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums slashed-zero; }
+/* A number column's heading sits over its numbers. `.table thead th` above is
+   more specific than `.num`, so without this every numeric heading was drawn
+   flush left over right-aligned figures. */
+.table thead th.num { text-align: right; }
 
 /* A cell that just changed marks itself in the direction it moved, then fades.
    Cell-scoped rather than row-scoped: at forty events a second a whole-row wash

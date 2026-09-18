@@ -28,87 +28,59 @@
      230,
      76
     ]
-   ]
-  },
-  {
-   "name": "attack/tab_revenge",
-   "rect": [
-    183,
-    284,
-    368,
-    78
-   ],
-   "inpaint": [
-    [
-     458,
-     288,
-     20,
-     30
-    ]
-   ]
-  },
-  {
-   "name": "attack/tab_revenge_plain",
-   "rect": [
-    183,
-    284,
-    368,
-    78
    ],
    "erase": [
     {
      "rect": [
-      441,
-      284,
-      58,
-      50
+      183,
+      255,
+      758,
+      98
      ],
      "sample_x": [
-      500,
-      528
-     ]
-    }
-   ]
-  },
-  {
-   "name": "attack/tab_targets",
-   "rect": [
-    553,
-    288,
-    368,
-    68
-   ]
-  },
-  {
-   "name": "attack/tab_active_frame",
-   "rect": [
-    183,
-    284,
-    368,
-    78
-   ],
-   "inpaint": [
-    [
-     284,
-     298,
-     156,
-     44
-    ]
-   ],
-   "erase": [
+      164,
+      180
+     ],
+     "fade_top": 11
+    },
     {
      "rect": [
-      442,
-      284,
-      54,
-      46
+      184,
+      353,
+      12,
+      4
+     ],
+     "sample_x": [
+      200,
+      215
+     ]
+    },
+    {
+     "rect": [
+      358,
+      353,
+      22,
+      9
+     ],
+     "sample_x": [
+      400,
+      420
+     ]
+    },
+    {
+     "rect": [
+      536,
+      353,
+      10,
+      4
      ],
      "sample_x": [
       500,
-      530
+      520
      ]
     }
-   ]
+   ],
+   "note": "The painted REVENGE and TARGETS plates, and the glow over REVENGE, are erased row by row from the dark band of scene left of them (x 164-180), from the subtitle's last row to the gold rule they stand on (y 255-352), the first 11 rows fading from the painting into the fill so the army behind falls into shadow instead of being cut off (fade_top): RAID's four short plates cover the band only from y 297 down, and what they leave showing has to read as the header's own dark rather than a box. It runs from the painting's gold rail (x 183) to the screen's edge rather than stopping where the old plates did: ending at x 921 cut a knight in half down a straight line: the tabs are tabs_sheet.json's plates now, drawn by TabStrip, and where they part the old ones showed through. On the rule itself, the old REVENGE plate's two gold feet and the diamond under its centre -- the painting's mark for the lit tab, which would have stayed under REVENGE whichever was lit -- are refilled from the plain rule beside them."
   },
   {
    "name": "attack/tab_inactive_frame",
@@ -167,7 +139,21 @@
      23
     ]
    ],
-   "note": "The painted 'Steal up to 3% gold' is inpainted out: a revenge strike takes 4%, and the rate is drawn live from the server's steal_rate_bp."
+   "note": "The painted 'Steal up to 3% gold' is inpainted out: a revenge strike takes 4%, and the rate is drawn live from the server's steal_rate_bp. The baked crest is erased row by row from the clean band beside it: the crests are crests_sheet.json's now, fleur-tipped and narrower at the shoulders, and the old shield showed round them.",
+   "erase": [
+    {
+     "rect": [
+      346,
+      427,
+      90,
+      118
+     ],
+     "sample_x": [
+      336,
+      344
+     ]
+    }
+   ]
   },
   {
    "name": "attack/target_card",
@@ -220,7 +206,100 @@
      242,
      76
     ]
-   ]
+   ],
+   "erase": [
+    {
+     "rect": [
+      346,
+      663,
+      90,
+      118
+     ],
+     "sample_x": [
+      336,
+      344
+     ]
+    }
+   ],
+   "note": " The baked crest is erased row by row from the clean band beside it (crests are crests_sheet.json's now)."
+  },
+  {
+   "name": "attack/target_card_plain",
+   "rect": [
+    178,
+    647,
+    748,
+    228
+   ],
+   "inpaint": [
+    [
+     440,
+     662,
+     250,
+     44
+    ],
+    [
+     440,
+     700,
+     170,
+     30
+    ],
+    [
+     488,
+     740,
+     140,
+     44
+    ],
+    [
+     762,
+     686,
+     120,
+     42
+    ],
+    [
+     222,
+     826,
+     110,
+     28
+    ],
+    [
+     790,
+     826,
+     120,
+     28
+    ],
+    [
+     672,
+     727,
+     242,
+     76
+    ],
+    {
+     "text": [
+      705,
+      659,
+      181,
+      27
+     ],
+     "d": 16,
+     "dilate": 3
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      346,
+      663,
+      90,
+      118
+     ],
+     "sample_x": [
+      336,
+      344
+     ]
+    }
+   ],
+   "note": "The target card with its painted 'Steal up to 3% gold' lifted by its ink as well: the card for a fight whose purse is not a share of a rival's gold -- Karel the Bandit's on the guide's bandit step (attack.gd, _paint_bandit), whose purse is the server's own figure. Otherwise target_card's cut."
   },
   {
    "name": "attack/btn_attack_red",
@@ -457,210 +536,6 @@
    "k": 80
   },
   {
-   "name": "portraits/rival_darius",
-   "rect": [
-    200,
-    428,
-    136,
-    136
-   ]
-  },
-  {
-   "name": "portraits/rival_seraphine",
-   "rect": [
-    200,
-    661,
-    136,
-    136
-   ]
-  },
-  {
-   "name": "portraits/rival_keldric",
-   "rect": [
-    200,
-    882,
-    136,
-    136
-   ]
-  },
-  {
-   "name": "portraits/rival_malric",
-   "rect": [
-    200,
-    1100,
-    136,
-    136
-   ]
-  },
-  {
-   "name": "icons/crest_wolf",
-   "rect": [
-    346,
-    427,
-    91,
-    120
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      3
-     ],
-     [
-      91,
-      3
-     ],
-     [
-      91,
-      66
-     ],
-     [
-      76,
-      96
-     ],
-     [
-      46,
-      120
-     ],
-     [
-      15,
-      96
-     ],
-     [
-      0,
-      66
-     ]
-    ]
-   }
-  },
-  {
-   "name": "icons/crest_lion",
-   "rect": [
-    346,
-    663,
-    91,
-    120
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      3
-     ],
-     [
-      91,
-      3
-     ],
-     [
-      91,
-      66
-     ],
-     [
-      76,
-      96
-     ],
-     [
-      46,
-      120
-     ],
-     [
-      15,
-      96
-     ],
-     [
-      0,
-      66
-     ]
-    ]
-   }
-  },
-  {
-   "name": "icons/crest_stag",
-   "rect": [
-    346,
-    885,
-    91,
-    120
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      3
-     ],
-     [
-      91,
-      3
-     ],
-     [
-      91,
-      66
-     ],
-     [
-      76,
-      96
-     ],
-     [
-      46,
-      120
-     ],
-     [
-      15,
-      96
-     ],
-     [
-      0,
-      66
-     ]
-    ]
-   }
-  },
-  {
-   "name": "icons/crest_eagle",
-   "rect": [
-    346,
-    1102,
-    91,
-    120
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      3
-     ],
-     [
-      91,
-      3
-     ],
-     [
-      91,
-      66
-     ],
-     [
-      76,
-      96
-     ],
-     [
-      46,
-      120
-     ],
-     [
-      15,
-      96
-     ],
-     [
-      0,
-      66
-     ]
-    ]
-   }
-  },
-  {
    "name": "attack/ground_bottom",
    "rect": [
     155,
@@ -674,7 +549,7 @@
       155,
       1470,
       786,
-      70
+      140
      ],
      "sample_x": [
       926,
@@ -682,7 +557,7 @@
      ]
     }
    ],
-   "note": "The band above the notice is the history panel's foot, filled from the navy at the page's right edge -- not from the rail's grey border, which drew a dark bar across every tall phone."
+   "note": "The blurred foliage at the page's foot. Everything above it is filled from the navy at the page's right edge -- not from the rail's grey border, which drew a dark bar across every tall phone: the history panel's foot, AND the notice bar the painting baked in at 1541..1605. The notice is laid over this live, so a baked one showed through on every Attack sub-tab that is not RAID (the arena's chests sat above a raid's rule about shields). One object, one look: the foot is foliage, and the notice is the tab's own."
   },
   {
    "name": "battle/horizon",

@@ -68,8 +68,10 @@
     },
     "luck_coef": 0.014,
     "reroll_base_diamonds": 8,
-    "reroll_step_diamonds": 6
+    "reroll_step_diamonds": 6,
+    "rerolls_per_day": 20
   },
+  "inventory_cap": 150,
   "definitions": [
     {
       "id": "weapon_common_01",
@@ -125,98 +127,98 @@
       "slot": "weapon",
       "tier": "rare",
       "name": "Silvered Arming Sword",
-      "art": "weapon_01"
+      "art": "weapon_08"
     },
     {
       "id": "weapon_rare_03",
       "slot": "weapon",
       "tier": "rare",
       "name": "Warden's Falchion",
-      "art": "weapon_02"
+      "art": "weapon_09"
     },
     {
       "id": "weapon_epic_01",
       "slot": "weapon",
       "tier": "epic",
       "name": "Duskfang Spear",
-      "art": "weapon_03"
+      "art": "weapon_10"
     },
     {
       "id": "weapon_epic_02",
       "slot": "weapon",
       "tier": "epic",
       "name": "Bastion Greatsword",
-      "art": "weapon_04"
+      "art": "weapon_11"
     },
     {
       "id": "weapon_epic_03",
       "slot": "weapon",
       "tier": "epic",
       "name": "Kingsguard Flamberge",
-      "art": "weapon_05"
+      "art": "weapon_12"
     },
     {
       "id": "weapon_legendary_01",
       "slot": "weapon",
       "tier": "legendary",
       "name": "Dawnbreaker Rapier",
-      "art": "weapon_06"
+      "art": "weapon_13"
     },
     {
       "id": "weapon_legendary_02",
       "slot": "weapon",
       "tier": "legendary",
       "name": "Ashfang Leafblade",
-      "art": "weapon_07"
+      "art": "weapon_14"
     },
     {
       "id": "weapon_legendary_03",
       "slot": "weapon",
       "tier": "legendary",
       "name": "The Gilded Verdict",
-      "art": "weapon_01"
+      "art": "weapon_15"
     },
     {
       "id": "weapon_mystic_01",
       "slot": "weapon",
       "tier": "mystic",
       "name": "Starfall Falchion",
-      "art": "weapon_02"
+      "art": "weapon_16"
     },
     {
       "id": "weapon_mystic_02",
       "slot": "weapon",
       "tier": "mystic",
       "name": "Wyrmtongue Spear",
-      "art": "weapon_03"
+      "art": "weapon_17"
     },
     {
       "id": "weapon_mystic_03",
       "slot": "weapon",
       "tier": "mystic",
       "name": "The Sundering",
-      "art": "weapon_04"
+      "art": "weapon_18"
     },
     {
       "id": "weapon_special_01",
       "slot": "weapon",
       "tier": "special",
       "name": "Crown of Flame",
-      "art": "weapon_05"
+      "art": "weapon_19"
     },
     {
       "id": "weapon_special_02",
       "slot": "weapon",
       "tier": "special",
       "name": "Emperor's Mercy",
-      "art": "weapon_06"
+      "art": "weapon_20"
     },
     {
       "id": "weapon_special_03",
       "slot": "weapon",
       "tier": "special",
       "name": "The Last Word",
-      "art": "weapon_07"
+      "art": "weapon_21"
     },
     {
       "id": "armor_common_01",
@@ -272,98 +274,98 @@
       "slot": "armor",
       "tier": "rare",
       "name": "Warden's Gambeson",
-      "art": "armor_01"
+      "art": "armor_08"
     },
     {
       "id": "armor_rare_03",
       "slot": "armor",
       "tier": "rare",
       "name": "Silvered Jerkin",
-      "art": "armor_02"
+      "art": "armor_09"
     },
     {
       "id": "armor_epic_01",
       "slot": "armor",
       "tier": "epic",
       "name": "Duskmail Hauberk",
-      "art": "armor_03"
+      "art": "armor_10"
     },
     {
       "id": "armor_epic_02",
       "slot": "armor",
       "tier": "epic",
       "name": "Bastion Breastplate",
-      "art": "armor_04"
+      "art": "armor_11"
     },
     {
       "id": "armor_epic_03",
       "slot": "armor",
       "tier": "epic",
       "name": "Kingsguard Cuirass",
-      "art": "armor_05"
+      "art": "armor_12"
     },
     {
       "id": "armor_legendary_01",
       "slot": "armor",
       "tier": "legendary",
       "name": "Dawnward Harness",
-      "art": "armor_06"
+      "art": "armor_13"
     },
     {
       "id": "armor_legendary_02",
       "slot": "armor",
       "tier": "legendary",
       "name": "The Gilded Aegis",
-      "art": "armor_07"
+      "art": "armor_14"
     },
     {
       "id": "armor_legendary_03",
       "slot": "armor",
       "tier": "legendary",
       "name": "Ashen Gambeson",
-      "art": "armor_01"
+      "art": "armor_15"
     },
     {
       "id": "armor_mystic_01",
       "slot": "armor",
       "tier": "mystic",
       "name": "Starfall Jerkin",
-      "art": "armor_02"
+      "art": "armor_16"
     },
     {
       "id": "armor_mystic_02",
       "slot": "armor",
       "tier": "mystic",
       "name": "Wyrmscale Hauberk",
-      "art": "armor_03"
+      "art": "armor_17"
     },
     {
       "id": "armor_mystic_03",
       "slot": "armor",
       "tier": "mystic",
       "name": "The Unbroken Breastplate",
-      "art": "armor_04"
+      "art": "armor_18"
     },
     {
       "id": "armor_special_01",
       "slot": "armor",
       "tier": "special",
       "name": "Crown Cuirass",
-      "art": "armor_05"
+      "art": "armor_19"
     },
     {
       "id": "armor_special_02",
       "slot": "armor",
       "tier": "special",
       "name": "The Last Harness",
-      "art": "armor_06"
+      "art": "armor_20"
     },
     {
       "id": "armor_special_03",
       "slot": "armor",
       "tier": "special",
       "name": "Emperor's Aegis",
-      "art": "armor_07"
+      "art": "armor_21"
     },
     {
       "id": "horse_common_01",
@@ -419,98 +421,98 @@
       "slot": "horse",
       "tier": "rare",
       "name": "Swaybacked Plough Horse",
-      "art": "horse_01"
+      "art": "horse_08"
     },
     {
       "id": "horse_rare_03",
       "slot": "horse",
       "tier": "rare",
       "name": "Silvermane Pony",
-      "art": "horse_02"
+      "art": "horse_09"
     },
     {
       "id": "horse_epic_01",
       "slot": "horse",
       "tier": "epic",
       "name": "Duskmane Rouncey",
-      "art": "horse_03"
+      "art": "horse_10"
     },
     {
       "id": "horse_epic_02",
       "slot": "horse",
       "tier": "epic",
       "name": "Kingsguard Courser",
-      "art": "horse_04"
+      "art": "horse_11"
     },
     {
       "id": "horse_epic_03",
       "slot": "horse",
       "tier": "epic",
       "name": "Dawnward Destrier",
-      "art": "horse_05"
+      "art": "horse_12"
     },
     {
       "id": "horse_legendary_01",
       "slot": "horse",
       "tier": "legendary",
       "name": "The Ninth Siege Warhorse",
-      "art": "horse_06"
+      "art": "horse_13"
     },
     {
       "id": "horse_legendary_02",
       "slot": "horse",
       "tier": "legendary",
       "name": "The Gilded Charger",
-      "art": "horse_07"
+      "art": "horse_14"
     },
     {
       "id": "horse_legendary_03",
       "slot": "horse",
       "tier": "legendary",
       "name": "Starfall Plough Horse",
-      "art": "horse_01"
+      "art": "horse_15"
     },
     {
       "id": "horse_mystic_01",
       "slot": "horse",
       "tier": "mystic",
       "name": "Wyrmborn Pony",
-      "art": "horse_02"
+      "art": "horse_16"
     },
     {
       "id": "horse_mystic_02",
       "slot": "horse",
       "tier": "mystic",
       "name": "The Tempest Rouncey",
-      "art": "horse_03"
+      "art": "horse_17"
     },
     {
       "id": "horse_mystic_03",
       "slot": "horse",
       "tier": "mystic",
       "name": "Crown Courser",
-      "art": "horse_04"
+      "art": "horse_18"
     },
     {
       "id": "horse_special_01",
       "slot": "horse",
       "tier": "special",
       "name": "The Last Destrier",
-      "art": "horse_05"
+      "art": "horse_19"
     },
     {
       "id": "horse_special_02",
       "slot": "horse",
       "tier": "special",
       "name": "Emperor's Warhorse",
-      "art": "horse_06"
+      "art": "horse_20"
     },
     {
       "id": "horse_special_03",
       "slot": "horse",
       "tier": "special",
       "name": "Sunrise Charger",
-      "art": "horse_07"
+      "art": "horse_21"
     }
   ]
 }

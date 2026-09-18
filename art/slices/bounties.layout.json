@@ -1,0 +1,296 @@
+{
+ "screen": "bounties",
+ "source": "bounties.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0b1620",
+ "notes": [
+  "THE BOUNTY BOARD -- the Attack tab's BOUNTIES body (client/scenes/attack/bounty_board.gd), cut from bounties.png (art/slices/bounties.json).",
+  "Laid 74 units HIGHER than painted: bounties.png's tab rule stands at 427 and attack.png's at 353. arena.png's stands at 483, so the two bodies shift by different amounts -- the design pack's draft manifest had copied arena's tab rects into bounties' and was fifty units out.",
+  "poster: the four WANTED sheets the board was painted with. A slot with no price on it shows the painting's own empty poster -- nothing is laid over it.",
+  "amount: the three prices the SERVER prepares. The one chosen wears the gold; the others are dim ink. The client sends the plate's id and never a number, and the fee is printed as the server sent it.",
+  "on_head_row / your_row: each band was painted with one empty row; more are drawn under it at the row's own height."
+ ],
+ "elements": [
+  {
+   "id": "board",
+   "kind": "image",
+   "asset": "bounties/board",
+   "rect": [
+    155,
+    358,
+    786,
+    718
+   ]
+  },
+  {
+   "id": "poster",
+   "kind": "template",
+   "rect": [
+    292,
+    454,
+    238,
+    307
+   ],
+   "instances": [
+    [
+     292,
+     454
+    ],
+    [
+     551,
+     454
+    ],
+    [
+     292,
+     749
+    ],
+    [
+     551,
+     749
+    ]
+   ],
+   "parts": [
+    {
+     "id": "portrait",
+     "kind": "image",
+     "rect": [
+      40,
+      66,
+      138,
+      116
+     ]
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      16,
+      184,
+      190,
+      42
+     ],
+     "font": "body",
+     "size": 23,
+     "weight": 600,
+     "color": "#2B1B0E",
+     "align": "center",
+     "valign": "center",
+     "sample": "Lord Darius"
+    },
+    {
+     "id": "pot",
+     "kind": "text",
+     "rect": [
+      68,
+      226,
+      146,
+      58
+     ],
+     "font": "title",
+     "size": 26,
+     "weight": 700,
+     "color": "#EFC53A",
+     "align": "center",
+     "valign": "center",
+     "sample": "50,000"
+    },
+    {
+     "id": "shield",
+     "kind": "image",
+     "asset": "attack/shield_pill",
+     "rect": [
+      20,
+      226,
+      198,
+      58
+     ]
+    }
+   ]
+  },
+  {
+   "id": "on_your_head",
+   "kind": "image",
+   "asset": "bounties/on_your_head",
+   "rect": [
+    161,
+    1081,
+    772,
+    116
+   ]
+  },
+  {
+   "id": "on_head_row",
+   "kind": "template",
+   "rect": [
+    194,
+    1133,
+    721,
+    48
+   ],
+   "instances": [
+    [
+     194,
+     1133
+    ]
+   ],
+   "parts": [
+    {
+     "id": "words",
+     "kind": "text",
+     "rect": [
+      16,
+      0,
+      689,
+      48
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 500,
+     "color": "#E7E7E7",
+     "align": "left",
+     "valign": "center",
+     "sample": "50,000 from Lord Darius  \u00b7  41h left"
+    }
+   ]
+  },
+  {
+   "id": "your_bounties",
+   "kind": "image",
+   "asset": "bounties/your_bounties",
+   "rect": [
+    161,
+    1195,
+    772,
+    116
+   ]
+  },
+  {
+   "id": "your_row",
+   "kind": "template",
+   "rect": [
+    194,
+    1247,
+    721,
+    48
+   ],
+   "instances": [
+    [
+     194,
+     1247
+    ]
+   ],
+   "parts": [
+    {
+     "id": "words",
+     "kind": "text",
+     "rect": [
+      16,
+      0,
+      689,
+      48
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 500,
+     "color": "#E7E7E7",
+     "align": "left",
+     "valign": "center",
+     "sample": "50,000 on Lord Darius  \u00b7  41h left"
+    }
+   ]
+  },
+  {
+   "id": "place_panel",
+   "kind": "image",
+   "asset": "bounties/place_panel",
+   "rect": [
+    161,
+    1309,
+    772,
+    203
+   ]
+  },
+  {
+   "id": "amount",
+   "kind": "template",
+   "rect": [
+    195,
+    1356,
+    187,
+    66
+   ],
+   "instances": [
+    [
+     195,
+     1356
+    ],
+    [
+     383,
+     1356
+    ],
+    [
+     571,
+     1356
+    ]
+   ],
+   "parts": [
+    {
+     "id": "value",
+     "kind": "text",
+     "rect": [
+      8,
+      0,
+      171,
+      66
+     ],
+     "font": "title",
+     "size": 27,
+     "weight": 700,
+     "color": "#EFC53A",
+     "align": "center",
+     "valign": "center",
+     "sample": "20,000"
+    }
+   ]
+  },
+  {
+   "id": "fee",
+   "kind": "text",
+   "rect": [
+    198,
+    1421,
+    294,
+    80
+   ],
+   "font": "body",
+   "size": 23,
+   "weight": 500,
+   "color": "#E7E7E7",
+   "align": "center",
+   "valign": "center",
+   "sample": "4,000 burned  \u00b7  Aldric"
+  },
+  {
+   "id": "place",
+   "kind": "button",
+   "asset": "bounties/place_bounty",
+   "rect": [
+    497,
+    1406,
+    241,
+    95
+   ],
+   "action": "place",
+   "paint_rect": [
+    497,
+    1421,
+    241,
+    66
+   ],
+   "keep_texture_size": true
+  }
+ ]
+}

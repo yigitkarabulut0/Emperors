@@ -36,9 +36,18 @@ const CANVAS := Vector2(941, 1672)
 ## The painted parts a dialog is made of.
 const PLATE := "inventory/card_frame"
 const PLATE_MARGIN := 26
-const CONFIRM_PLATE := "shop/buy_plate"
-const DANGER_PLATE := "shop/danger_plate"
-const QUIET_PLATE := "inventory/btn_sell_plate"
+## The painted plates (art/reference/plates_sheet.png, art/slices/plates.json)
+## at a button's height: green to confirm, red for what cannot be undone, navy
+## to step back. Every dialog, Sheet foot and page's own button wears them; a
+## screen with its own painting keeps that painting's plate (the Shop's BUY).
+## The red was the green with its channels swapped, and the quiet one the
+## Inventory's SELL with its word baked out.
+const CONFIRM_PLATE := "plates/green_xs"
+const DANGER_PLATE := "plates/red_xs"
+const QUIET_PLATE := "plates/navy_xs"
+## Their nine-patch margin: the clear edge, the chamfer and the rim's inner
+## corner all stay in the corner slice, so only the flat runs stretch.
+const PLATE_EDGE := 24
 
 
 ## {title, body, confirm_text, cancel_text, danger} -> true when confirmed.
@@ -245,7 +254,7 @@ class _Modal:
 
 
 	func _button(text: String, plate: String, col: Color, result: String) -> Button:
-		var b := UI.plate_face(plate, 16)
+		var b := UI.plate_face(plate, Dialog.PLATE_EDGE)
 		b.text = text
 		b.custom_minimum_size = Vector2(0, Dialog.BUTTON_H)
 		b.add_theme_font_override("font", UI.font("title", 700))

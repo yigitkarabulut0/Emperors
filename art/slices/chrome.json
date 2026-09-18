@@ -11,15 +11,6 @@
    ]
   },
   {
-   "name": "chrome/rail_bottom",
-   "rect": [
-    0,
-    1470,
-    160,
-    202
-   ]
-  },
-  {
    "name": "chrome/rail_divider",
    "rect": [
     20,
@@ -55,472 +46,154 @@
   },
   {
    "name": "nav/family",
+   "src": "court.png",
    "rect": [
     10,
-    232,
-    136,
-    123
+    242,
+    130,
+    110
    ],
    "mode": "darkkey",
-   "erase": [
-    {
-     "rect": [
-      143,
-      232,
-      5,
-      123
-     ],
-     "sample_x": [
-      136,
-      141
-     ]
-    }
-   ]
+   "note": "The rail's eight entries as the eight-entry painting (court.png) draws them, each cut round its ink (x 10..139: inside the rail's left line at x 8 and its right highlight at 140) with 8 units of ground above and below, so the ink's centre is the crop's; the shell centres each on its cell. COURT is unlit only in arena.png (nav/court)."
   },
   {
    "name": "nav/collect",
-   "src": "inventory.png",
+   "src": "court.png",
    "rect": [
     10,
-    395,
-    136,
-    148
+    385,
+    130,
+    118
    ],
-   "mode": "darkkey",
-   "erase": [
-    {
-     "rect": [
-      143,
-      395,
-      5,
-      148
-     ],
-     "sample_x": [
-      136,
-      141
-     ]
-    }
-   ]
+   "mode": "darkkey"
   },
   {
    "name": "nav/inventory",
+   "src": "court.png",
    "rect": [
     10,
-    562,
-    136,
-    150
+    535,
+    130,
+    125
    ],
-   "mode": "darkkey",
-   "erase": [
-    {
-     "rect": [
-      143,
-      562,
-      5,
-      150
-     ],
-     "sample_x": [
-      136,
-      141
-     ]
-    }
-   ]
+   "mode": "darkkey"
   },
   {
    "name": "nav/shop",
+   "src": "court.png",
    "rect": [
     10,
-    742,
-    136,
-    163
+    683,
+    130,
+    146
    ],
-   "mode": "darkkey",
-   "erase": [
-    {
-     "rect": [
-      143,
-      742,
-      5,
-      163
-     ],
-     "sample_x": [
-      136,
-      141
-     ]
-    }
-   ]
+   "mode": "darkkey"
   },
   {
    "name": "nav/army",
+   "src": "court.png",
    "rect": [
     10,
-    928,
-    136,
-    164
+    849,
+    130,
+    142
    ],
-   "mode": "darkkey",
-   "erase": [
-    {
-     "rect": [
-      143,
-      928,
-      5,
-      164
-     ],
-     "sample_x": [
-      136,
-      141
-     ]
-    }
-   ]
+   "mode": "darkkey"
   },
   {
    "name": "nav/attack",
+   "src": "court.png",
    "rect": [
     10,
-    1118,
-    136,
-    160
+    1023,
+    130,
+    124
    ],
-   "mode": "darkkey",
-   "erase": [
-    {
-     "rect": [
-      143,
-      1118,
-      5,
-      160
-     ],
-     "sample_x": [
-      136,
-      141
-     ]
-    }
-   ]
+   "mode": "darkkey"
   },
   {
    "name": "nav/kingdom",
+   "src": "court.png",
    "rect": [
     10,
-    1305,
-    136,
-    160
+    1168,
+    130,
+    137
+   ],
+   "mode": "darkkey"
+  },
+  {
+   "name": "nav/court",
+   "src": "arena.png",
+   "rect": [
+    14,
+    1397,
+    130,
+    127
    ],
    "mode": "darkkey",
-   "erase": [
-    {
-     "rect": [
-      143,
-      1305,
-      5,
-      160
-     ],
-     "sample_x": [
-      136,
-      141
-     ]
-    }
-   ]
+   "note": "COURT unlit, from arena.png (ink x 40..114, y 1403..1517): the only painting where it is not lit. Cut from x 14 so it lands on the court.png entries' centre line when drawn at the same x, and with 6 units of ground above and below (the divider's glow over it ends at 1396)."
   },
   {
-   "name": "nav/active_collect",
+   "name": "chrome/rail_seal",
+   "src": "court.png",
    "rect": [
-    0,
-    368,
-    170,
-    190
+    14,
+    1484,
+    116,
+    105
    ],
-   "mask": {
+   "mode": "darkkey",
+   "note": "The rail's event seal, the hourglass medallion at its foot (court.png ink x 21..122, y 1489..1588); dimmed while no event runs or is coming."
+  },
+  {
+   "name": "chrome/rail_seal_plate",
+   "src": "court.png",
+   "rect": [
+    14,
+    1586,
+    116,
+    47
+   ],
+   "mode": "darkkey",
+   "solid": {
     "type": "polygon",
     "points": [
      [
-      0,
-      0
+      13,
+      5
      ],
      [
-      155,
-      0
+      103,
+      5
      ],
      [
-      155,
-      68
+      109,
+      11
      ],
      [
-      170,
-      92
+      109,
+      36
      ],
      [
-      155,
-      116
+      103,
+      42
      ],
      [
-      155,
-      190
+      13,
+      42
      ],
      [
-      0,
-      190
+      7,
+      36
+     ],
+     [
+      7,
+      11
      ]
     ]
-   }
-  },
-  {
-   "name": "nav/active_inventory",
-   "src": "inventory.png",
-   "rect": [
-    0,
-    562,
-    170,
-    190
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      0
-     ],
-     [
-      152,
-      0
-     ],
-     [
-      152,
-      74
-     ],
-     [
-      170,
-      98
-     ],
-     [
-      152,
-      122
-     ],
-     [
-      152,
-      190
-     ],
-     [
-      0,
-      190
-     ]
-    ]
-   }
-  },
-  {
-   "name": "nav/active_shop",
-   "src": "shop.png",
-   "rect": [
-    0,
-    748,
-    182,
-    200
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      0
-     ],
-     [
-      164,
-      0
-     ],
-     [
-      164,
-      84
-     ],
-     [
-      182,
-      108
-     ],
-     [
-      164,
-      132
-     ],
-     [
-      164,
-      200
-     ],
-     [
-      0,
-      200
-     ]
-    ]
-   }
-  },
-  {
-   "name": "nav/active_army",
-   "src": "army.png",
-   "rect": [
-    0,
-    945,
-    178,
-    195
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      0
-     ],
-     [
-      160,
-      0
-     ],
-     [
-      160,
-      86
-     ],
-     [
-      178,
-      110
-     ],
-     [
-      160,
-      134
-     ],
-     [
-      160,
-      195
-     ],
-     [
-      0,
-      195
-     ]
-    ]
-   }
-  },
-  {
-   "name": "nav/active_attack",
-   "src": "attack.png",
-   "rect": [
-    0,
-    995,
-    182,
-    198
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      0
-     ],
-     [
-      165,
-      0
-     ],
-     [
-      165,
-      86
-     ],
-     [
-      182,
-      110
-     ],
-     [
-      165,
-      134
-     ],
-     [
-      165,
-      198
-     ],
-     [
-      0,
-      198
-     ]
-    ]
-   }
-  },
-  {
-   "name": "nav/active_family",
-   "src": "family.png",
-   "rect": [
-    0,
-    198,
-    182,
-    200
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      0
-     ],
-     [
-      164,
-      0
-     ],
-     [
-      164,
-      84
-     ],
-     [
-      182,
-      108
-     ],
-     [
-      164,
-      132
-     ],
-     [
-      164,
-      200
-     ],
-     [
-      0,
-      200
-     ]
-    ]
-   }
-  },
-  {
-   "name": "nav/active_kingdom",
-   "src": "kingdom.png",
-   "rect": [
-    0,
-    1248,
-    165,
-    180
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      0,
-      0
-     ],
-     [
-      147,
-      0
-     ],
-     [
-      147,
-      64
-     ],
-     [
-      165,
-      88
-     ],
-     [
-      147,
-      112
-     ],
-     [
-      147,
-      180
-     ],
-     [
-      0,
-      180
-     ]
-    ]
-   }
+   },
+   "note": "The plate under the seal (court.png x 20..124, y 1589..1627), empty: the event's time is set in type on it."
   },
   {
    "name": "chrome/pill_gold",

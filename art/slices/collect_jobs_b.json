@@ -1,0 +1,48 @@
+{
+ "source": "collect_jobs_b.png",
+ "crops": [
+  {
+   "name": "collect/job_bandits",
+   "rect": [
+    194,
+    125,
+    229,
+    196
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "bandits: interior of sheet b row 1, fitted to the window's 1.1702"
+  },
+  {
+   "name": "collect/job_deep_mine",
+   "rect": [
+    194,
+    363,
+    229,
+    196
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "deep_mine: interior of sheet b row 2, fitted to the window's 1.1702"
+  },
+  {
+   "name": "collect/job_dragon_hoard",
+   "rect": [
+    194,
+    601,
+    229,
+    196
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "dragon_hoard: interior of sheet b row 3, fitted to the window's 1.1702"
+  }
+ ],
+ "_comment": "Jobs bandits, deep_mine, dragon_hoard (rows 1-3; rows 4-6 repeat orchard, fish and iron and sheet a's are used). Interiors x 179..436, 204 tall from y 121 at a 238 pitch, inside a gold frame with 8-unit stepped corners the crops keep clear of; fitted to 165:141 and drawn down."
+}

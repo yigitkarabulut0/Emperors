@@ -19,13 +19,9 @@ extends SceneTree
 ## Run: godot --headless --path client --script tools/make_button_plates.gd [-- <dst>...]
 ## Naming plates after "--" bakes only those; with none, every plate is baked.
 
-## Plates that are a recolour of another rather than a fresh bake: a green
-## plate's red and green channels swapped is the same painting in crimson, with
-## its bevel, its gold frame and its edge blending untouched -- the frame is
-## red-dominant and the ground blue-dominant, so neither moves.
-const RECOLOURS := [
-	{"src": "shop/buy_plate", "dst": "shop/danger_plate"},
-]
+## There are no recoloured plates: the red and navy plates are the painter's
+## own (art/reference/plates_sheet.png, art/slices/plates.json). The danger red
+## was shop/buy_plate with its red and green channels swapped, made here.
 ## "clear" is a rect, in the plate's own pixels, emptied whole and filled from
 ## around it -- for a painted icon, which the near-white word mask cannot see.
 ## The REROLL plate is HUNT's: the slicer cuts the painted button into
@@ -63,19 +59,6 @@ func _initialize() -> void:
 		img.convert(Image.FORMAT_RGBA8)
 		var err := img.save_png(ProjectSettings.globalize_path("res://assets/%s.png" % job["dst"]))
 		print("wrote %s err=%d masked=%d" % [job["dst"], err, _count(mask)])
-	for job in RECOLOURS:
-		if not only.is_empty() and not only.has(str(job["dst"])):
-			continue
-		var img := Image.load_from_file("res://assets/%s.png" % job["src"])
-		img.convert(Image.FORMAT_RGBAF)
-		for y in img.get_height():
-			for x in img.get_width():
-				var c := img.get_pixel(x, y)
-				if c.a > 0.004 and c.g > c.r and c.g > c.b:
-					img.set_pixel(x, y, Color(c.g, c.r, c.b, c.a))
-		img.convert(Image.FORMAT_RGBA8)
-		var e2 := img.save_png(ProjectSettings.globalize_path("res://assets/%s.png" % job["dst"]))
-		print("wrote %s err=%d (recoloured from %s)" % [job["dst"], e2, job["src"]])
 	quit()
 
 

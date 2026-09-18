@@ -97,7 +97,7 @@ st, audit = call(ADMIN, "GET", "/audit", token=token)
 check("every action was recorded", st == 200 and len(audit.get("entries", [])) >= 3,
       len(audit.get("entries", [])))
 actions = [e["action"] for e in audit.get("entries", [])]
-check("the currency grant is in the trail", "player.currency" in actions, actions[:5])
+check("the currency grant is in the trail", "player.adjust" in actions, actions[:5])
 check("the ban is in the trail", "player.state" in actions, actions[:5])
 check("entries name the admin who acted",
       all(e["admin"] == ADMIN_USER for e in audit["entries"][:3]), audit["entries"][:1])
@@ -182,53 +182,92 @@ print("\n== the panel renders what the API returns ==")
 
 
 def page(path, cookie=None):
+    """A page fetch, with the redirect left unfollowed.
+
+    The panel is a client-rendered app: the server sends the shell and the rows
+    arrive over /api/q with the session cookie. So a page check reads the shell
+    and where a dead session is sent, and the rows are checked through the proxy.
+    """
     req = urllib.request.Request(PANEL + path)
     if cookie:
         req.add_header("Cookie", "emperors_admin_session=" + cookie)
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
-            return r.status, r.read().decode(errors="replace")
+            return r.status, r.read().decode(errors="replace"), r.headers.get("location", "")
     except urllib.error.HTTPError as e:
-        return e.code, e.read().decode(errors="replace")
+        return e.code, e.read().decode(errors="replace"), e.headers.get("location", "")
     except urllib.error.URLError:
-        return 0, ""
+        return 0, "", ""
 
 
-st, _ = page("/login")
+def proxied(op, cookie=None):
+    """A read through the panel's own /api/q proxy, which is how every row in
+    the panel is fetched: the session cookie in, the Go API's Result out."""
+    req = urllib.request.Request(PANEL + "/api/q/" + op)
+    if cookie:
+        req.add_header("Cookie", "emperors_admin_session=" + cookie)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
+        raw = e.read()
+        try:
+            return e.code, json.loads(raw or b"{}")
+        except json.JSONDecodeError:
+            return e.code, {"raw": raw.decode(errors="replace")[:200]}
+    except urllib.error.URLError:
+        return 0, {}
+
+
+st, _, _ = page("/login")
 if st == 0:
     print("  SKIP  the panel is not running on :3000")
 else:
     check("the panel serves its login page", st == 200, st)
 
     # An anonymous visitor must never see player data.
-    st, anon = page("/players")
+    st, anon, loc = page("/players")
     check("an anonymous visitor is not shown players",
-          "bot_0" not in anon and "Grant" not in anon, st)
+          "bot_0" not in anon and "Find a player" not in anon, (st, loc))
 
     # The realistic failure mode is a session that expired between page loads.
     # It must land on the sign-in page, not on a stack trace.
-    st, stale = page("/players", cookie="expired-or-forged")
+    # Next answers a redirect with its own bare shell (which carries the
+    # __next_error__ id), so what says "sign in" here is the 307 to /login --
+    # and the body must still hold no player.
+    st, stale, loc = page("/players", cookie="expired-or-forged")
     check("a stale session is sent to sign in, not an error page",
-          "Sign in" in stale and "bot_0" not in stale and "__next_error__" not in stale, st)
+          st == 307 and loc == "/login" and "bot_0" not in stale, (st, loc))
 
-    st, body = page("/players", cookie=token)
-    check("a signed-in visitor gets players server-rendered", st == 200 and "bot_0" in body, st)
-    check("the default view is the recent-players list",
-          "most recently active" in body, body[:0])
-    check("rows carry the numbers the API returned",
-          "Grant" in body and "Ban" in body, st)
+    # Every page is the same shell with a section inside it. Pages whose body is
+    # drawn from the store (balance, audit) can only prove the shell here; their
+    # rows are proved through the proxy below.
+    NAV = ("Players", "Live ops", "Rekabet", "Economy", "Audit", "Balance")
+    for path, needle in [("/", "Who is in the game"), ("/players", "Find a player"),
+                         ("/pvp", "The Honour Arena"), ("/balance", None), ("/audit", None)]:
+        st, b, _ = page(path, cookie=token)
+        ok = st == 200 and "__next_error__" not in b and all(w in b for w in NAV)
+        if needle:
+            ok = ok and needle in b
+        check(f"{path} renders inside the panel's shell", ok, (st, needle))
 
-    st, filtered = page("/players?q=bot_03", cookie=token)
-    check("searching narrows the list",
-          filtered.count("· bot") < body.count("· bot") and "bot_039" in filtered,
-          (body.count("· bot"), filtered.count("· bot")))
-
-    st, none = page("/players?q=zzzznomatch", cookie=token)
-    check("a search with no hits says so", "Nobody matched" in none, st)
-
-    for path, needle in [("/", "Sinks absorb"), ("/balance", "Live document"), ("/audit", "Audit trail")]:
-        st, b = page(path, cookie=token)
-        check(f"{path} renders", st == 200 and needle in b and "__next_error__" not in b, st)
+    # Every row in the panel arrives this way, so the proxy is the thing to test:
+    # it carries the session to the Go API, allowlists the op by name, and passes
+    # the API's own answer through rather than a paraphrase of it.
+    st, rows = proxied("browse?q=bot_0&bots=1&limit=5", cookie=token)
+    check("the panel fetches player rows through its proxy",
+          st == 200 and rows.get("ok") and (rows.get("data") or {}).get("players"), (st, rows))
+    st, none = proxied("browse?q=zzzznomatch&bots=1&limit=5", cookie=token)
+    check("a search with no hits comes back empty, not broken",
+          st == 200 and none.get("ok") and none["data"]["players"] == [], (st, none))
+    st, shut = proxied("browse?q=bot_0&bots=1", cookie="expired-or-forged")
+    check("the proxy refuses a dead session", st == 401 and shut.get("code") == "unauthorized", (st, shut))
+    st, junk = proxied("noSuchRead", cookie=token)
+    check("an unknown read is refused by name", st == 404 and junk.get("code") == "unknown_op", (st, junk))
+    for op in ("dashboard?days=7", "balance", "audit?limit=5", "liveopsHourly",
+               "pvpArena?limit=5", "pvpBounties?limit=5", "pvpThrone"):
+        st, r = proxied(op, cookie=token)
+        check("the proxy serves %s" % op.split("?")[0], st == 200 and r.get("ok"), (st, r))
 
     # The panel talks to the Go API; it must not hold a database URL of its own.
     env = pathlib.Path("admin").rglob("*.ts")

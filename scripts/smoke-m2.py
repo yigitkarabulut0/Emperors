@@ -212,8 +212,12 @@ check("the shop quotes a reroll price up front", cost > 0, shop2.get("reroll_cos
 check("and says whether it is affordable",
       shop2.get("can_afford_reroll") == (have >= cost), (have, cost, shop2.get("can_afford_reroll")))
 before = [o["item"]["def_id"] for o in shop2["offers"]]
+# Fresh Wares restocks the market for nothing while the hour runs, so the roll
+# below may be paid for by the hour rather than the purse. Read which it is
+# before rolling: the price must be right either way.
+free = shop2.get("free_rerolls", 0)
 
-if have >= cost:
+if have >= cost or free > 0:
     st, rolled = call("POST", "/v1/shop/reroll", {"action_seq": next_seq(token)}, token=token)
     check("rerolling returns 200", st == 200, (st, rolled))
     after = [o["item"]["def_id"] for o in rolled["offers"]]
@@ -223,10 +227,11 @@ if have >= cost:
     check("the counter advanced", rolled["rerolls_used"] == shop2["rerolls_used"] + 1, rolled)
 
     st, s3 = call("GET", "/v1/state", token=token)
-    check("diamonds were spent, and only diamonds",
-          int(s3["player"]["diamonds"]) == have - cost
+    paid = 0 if free > 0 else cost
+    check("the hour's roll was free" if free else "diamonds were spent, and only diamonds",
+          int(s3["player"]["diamonds"]) == have - paid
           and int(s3["player"]["gold"]) == int(s2["player"]["gold"]),
-          (have, cost, s3["player"]["diamonds"], s2["player"]["gold"], s3["player"]["gold"]))
+          (have, paid, s3["player"]["diamonds"], s2["player"]["gold"], s3["player"]["gold"]))
 
     # Drain the purse and confirm the refusal is clean rather than a 500.
     for _ in range(20):

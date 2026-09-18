@@ -1,0 +1,376 @@
+{
+ "screen": "battle",
+ "source": "battle.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#07131C",
+ "notes": [
+  "The battle replay (client/scenes/battle/battle_replay.gd), on art/reference/battle.png. Rects are the painting's, measured by flood-filling each painted window from its middle.",
+  "Two blocks, split at y 1010 on the painting's even navy: everything above it is the battlefield block, drawn from the top of the screen and moved down past the phone's top inset; everything marked anchor bottom is the results block, kept at the screen's foot. On a phone taller than the painting the navy between them grows.",
+  "The faces are drawn in window_you / window_them, under scene_top, whose windows are keyed see-through; the HP fills are nine-patches the whole channel long, clipped at the fraction (a partial bar ends square, as painted; a full one closes on the channel's chamfer).",
+  "Fortune of War: each side's roll in its own window beside the plate, the painted die before it. The callout (CRITICAL, DODGED) is set over the crossed swords, between the frames.",
+  "The results board: the story in its title band, then the rows the painting gives icons to -- gold, the crown (experience), the diamond. SKIP and CONTINUE are the painting's own plates: each button's face is its cut, laid exactly over it, and whichever of the two has nothing to do is drawn darkened.",
+  "Elements of kind \"rect\" are measurements the screen reads, not things drawn.",
+  "Every text rect is its line's own height, centred on the painted window it was measured from (the window's rect is the rect-kind record or the note above): a label cannot be shorter than its line, so a window-tall rect set the words' top where the window's is and dropped them."
+ ],
+ "elements": [
+  {
+   "id": "scene_top",
+   "kind": "image",
+   "asset": "battle/scene_top",
+   "rect": [
+    0,
+    0,
+    941,
+    1010
+   ]
+  },
+  {
+   "id": "skip",
+   "kind": "button",
+   "asset": "battle/skip",
+   "rect": [
+    778,
+    6,
+    157,
+    96
+   ],
+   "keep_texture_size": true,
+   "action": "skip"
+  },
+  {
+   "id": "round_number",
+   "kind": "text",
+   "rect": [
+    418,
+    77,
+    106,
+    55
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "sample": "12"
+  },
+  {
+   "id": "name_you",
+   "kind": "text",
+   "rect": [
+    55,
+    746,
+    280,
+    39
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "sample": "LORD DARIUS"
+  },
+  {
+   "id": "name_them",
+   "kind": "text",
+   "rect": [
+    607,
+    746.5,
+    279,
+    39
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "sample": "ULRIC THE BOLD"
+  },
+  {
+   "id": "power_you",
+   "kind": "text",
+   "rect": [
+    140,
+    811.5,
+    172,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 700,
+   "color": "#6EE07A",
+   "align": "center",
+   "sample": "5,484"
+  },
+  {
+   "id": "power_them",
+   "kind": "text",
+   "rect": [
+    691,
+    811.5,
+    172,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 700,
+   "color": "#F0524F",
+   "align": "center",
+   "sample": "3,006"
+  },
+  {
+   "id": "hp_you",
+   "kind": "text",
+   "rect": [
+    42,
+    872.5,
+    308,
+    25
+   ],
+   "font": "body",
+   "size": 18,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "sample": "4,212 / 4,364"
+  },
+  {
+   "id": "hp_them",
+   "kind": "text",
+   "rect": [
+    592,
+    872.5,
+    307,
+    25
+   ],
+   "font": "body",
+   "size": 18,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "sample": "3,092 / 3,465"
+  },
+  {
+   "id": "die_you",
+   "kind": "image",
+   "asset": "battle/die_a",
+   "rect": [
+    125,
+    955,
+    38,
+    40
+   ],
+   "fit": "contain"
+  },
+  {
+   "id": "die_them",
+   "kind": "image",
+   "asset": "battle/die_b",
+   "rect": [
+    682,
+    954,
+    38,
+    41
+   ],
+   "fit": "contain"
+  },
+  {
+   "id": "fortune_you",
+   "kind": "text",
+   "rect": [
+    165,
+    957,
+    95,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "sample": "104%"
+  },
+  {
+   "id": "fortune_them",
+   "kind": "text",
+   "rect": [
+    722,
+    956.5,
+    97,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "sample": "97%"
+  },
+  {
+   "id": "callout",
+   "kind": "text",
+   "rect": [
+    300,
+    610,
+    341,
+    60
+   ],
+   "font": "title",
+   "size": 44,
+   "weight": 800,
+   "color": "#E9C46A",
+   "align": "center",
+   "sample": "CRITICAL"
+  },
+  {
+   "id": "window_you",
+   "kind": "rect",
+   "rect": [
+    89,
+    464,
+    212,
+    254
+   ],
+   "note": "The player's portrait window (flood-filled): the face is drawn here, under the frame, and clipped to it."
+  },
+  {
+   "id": "window_them",
+   "kind": "rect",
+   "rect": [
+    642,
+    464,
+    212,
+    253
+   ],
+   "note": "The rival's portrait window."
+  },
+  {
+   "id": "channel_you",
+   "kind": "rect",
+   "rect": [
+    42,
+    871,
+    308,
+    28
+   ],
+   "note": "The player's HP channel, x 42..349 (the frame is symmetric about x 195.5), the fill's rows 871..898."
+  },
+  {
+   "id": "channel_them",
+   "kind": "rect",
+   "rect": [
+    592,
+    871,
+    307,
+    28
+   ],
+   "note": "The rival's HP channel, x 592..898 (symmetric about x 745)."
+  },
+  {
+   "id": "banner_zone",
+   "kind": "rect",
+   "rect": [
+    100,
+    150,
+    741,
+    240
+   ],
+   "note": "Where VICTORY or DEFEAT lands when the fight is told: over the battlefield, between the round window (foot y 133) and the crests on the frames (top y ~398)."
+  },
+  {
+   "id": "scene_bottom",
+   "kind": "image",
+   "asset": "battle/scene_bottom",
+   "rect": [
+    0,
+    1010,
+    941,
+    662
+   ],
+   "anchor": "bottom"
+  },
+  {
+   "id": "continue",
+   "kind": "button",
+   "asset": "battle/continue",
+   "rect": [
+    206,
+    1446,
+    530,
+    138
+   ],
+   "action": "continue",
+   "anchor": "bottom"
+  },
+  {
+   "id": "band",
+   "kind": "text",
+   "rect": [
+    146,
+    1075.5,
+    649,
+    42
+   ],
+   "font": "title",
+   "size": 30,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "sample": "YOUR RAID ON ULRIC THE BOLD",
+   "anchor": "bottom"
+  },
+  {
+   "id": "row_gold",
+   "kind": "text",
+   "rect": [
+    300,
+    1166,
+    450,
+    40
+   ],
+   "font": "body",
+   "size": 30,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "sample": "+412,000 gold",
+   "anchor": "bottom"
+  },
+  {
+   "id": "row_crown",
+   "kind": "text",
+   "rect": [
+    300,
+    1249,
+    450,
+    40
+   ],
+   "font": "body",
+   "size": 30,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "sample": "+34 experience",
+   "anchor": "bottom"
+  },
+  {
+   "id": "row_diamond",
+   "kind": "text",
+   "rect": [
+    300,
+    1332,
+    450,
+    40
+   ],
+   "font": "body",
+   "size": 30,
+   "weight": 700,
+   "color": "#9FD8FF",
+   "align": "center",
+   "sample": "+3 diamonds for the level",
+   "anchor": "bottom"
+  }
+ ]
+}

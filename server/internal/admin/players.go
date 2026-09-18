@@ -70,54 +70,6 @@ func (s *Service) SetState(ctx context.Context, who *Identity, playerID uuid.UUI
 	}, nil
 }
 
-// AdjustCurrency grants or removes gold and diamonds.
-//
-// Every adjustment writes a ledger row as well as an audit entry, so the economy
-// dashboard stays honest: a grant that did not appear in the ledger would show up
-// as gold that materialised from nowhere.
-func (s *Service) AdjustCurrency(ctx context.Context, who *Identity, playerID uuid.UUID, gold, diamonds int64, note string) (*PlayerRow, error) {
-	if !AtLeast(who.Role, "moderator") {
-		return nil, ErrForbidden
-	}
-	if gold == 0 && diamonds == 0 {
-		return nil, fmt.Errorf("%w", ErrNothingToDo)
-	}
-
-	q := sqlcdb.New(s.Pool)
-	before, err := q.GetPlayerByID(ctx, playerID)
-	if err != nil {
-		return nil, ErrNotFound
-	}
-	if before.Gold+gold < 0 {
-		return nil, fmt.Errorf("%w: that would leave a negative balance", ErrOutOfRange)
-	}
-
-	after, err := q.AdminAdjustCurrency(ctx, sqlcdb.AdminAdjustCurrencyParams{
-		ID: playerID, Gold: gold, Diamonds: diamonds,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if gold != 0 {
-		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
-			PlayerID: playerID, Delta: gold, BalanceAfter: after.Gold,
-			Reason: "admin_grant", RefID: &who.Username,
-		}); err != nil {
-			return nil, err
-		}
-	}
-	s.Audit(ctx, who, "player.currency", playerID.String(),
-		map[string]any{"gold": before.Gold, "diamonds": before.Diamonds},
-		map[string]any{"gold": after.Gold, "diamonds": after.Diamonds}, note)
-
-	return &PlayerRow{
-		ID: after.ID.String(), Username: after.Username, Name: after.DisplayName,
-		Level: int(after.Level), Gold: fmt.Sprint(after.Gold), Diamonds: after.Diamonds,
-		State: after.State, IsBot: after.IsBot,
-		LastSeen: after.LastSeenAt.UTC().Format("2006-01-02 15:04"),
-	}, nil
-}
-
 // Dashboard is the economy and population overview.
 type Dashboard struct {
 	Players     int64      `json:"players"`
@@ -132,8 +84,11 @@ type Dashboard struct {
 	GoldMoved   string     `json:"gold_moved"`
 	AvgRounds   float64    `json:"avg_rounds"`
 	Flows       []GoldFlow `json:"flows"`
-	Days        int        `json:"days"`
-	BalanceVer  int        `json:"balance_version"`
+	// The premium half: diamonds created and destroyed, by reason. Earned
+	// diamonds are the free faucet; spent ones the sinks.
+	DiamondFlows []DiamondFlow `json:"diamond_flows"`
+	Days         int           `json:"days"`
+	BalanceVer   int           `json:"balance_version"`
 }
 
 // GoldFlow is one source or sink.
@@ -181,6 +136,9 @@ func (s *Service) Dashboard(ctx context.Context, days int) (*Dashboard, error) {
 			Reason: f.Reason, Created: fmt.Sprint(f.Created), Destroyed: fmt.Sprint(f.Destroyed),
 			Entries: f.Entries, Net: fmt.Sprint(f.Created - f.Destroyed),
 		})
+	}
+	if d.DiamondFlows, err = s.diamondFlows(ctx, days); err != nil {
+		return nil, err
 	}
 	return d, nil
 }

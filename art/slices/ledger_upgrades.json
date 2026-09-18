@@ -1,0 +1,146 @@
+{
+ "source": "ledger_upgrades.png",
+ "crops": [
+  {
+   "name": "family/ledger_tithe_barn",
+   "rect": [
+    26,
+    93,
+    430,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "tithe_barn: panel [26, 89, 430, 264] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_scriptorium",
+   "rect": [
+    485,
+    93,
+    430,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "scriptorium: panel [485, 89, 430, 263] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_beacons",
+   "rect": [
+    27,
+    386,
+    429,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "beacons: panel [27, 381, 429, 265] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_larder",
+   "rect": [
+    486,
+    386,
+    429,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "larder: panel [486, 381, 429, 265] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_armoury",
+   "rect": [
+    27,
+    687,
+    429,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "armoury: panel [27, 675, 429, 280] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_bulwark",
+   "rect": [
+    485,
+    687,
+    430,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "bulwark: panel [485, 674, 430, 281] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_stables",
+   "rect": [
+    27,
+    996,
+    429,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "stables: panel [27, 983, 429, 281] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_merchant",
+   "rect": [
+    486,
+    996,
+    429,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "merchant: panel [486, 983, 429, 281] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_war_chest",
+   "rect": [
+    27,
+    1315,
+    429,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "war_chest: panel [27, 1293, 429, 298] fitted to the card window's 1.6852"
+  },
+  {
+   "name": "family/ledger_coffers",
+   "rect": [
+    486,
+    1315,
+    429,
+    255
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "coffers: panel [486, 1293, 429, 299] fitted to the card window's 1.6852"
+  }
+ ],
+ "_comment": "The ten Family upgrades' scenes (the Granary keeps family/granary_art). Panels found on the flat navy, three units off every anti-aliased edge, fitted to the card window's 364:216 and drawn down to it."
+}

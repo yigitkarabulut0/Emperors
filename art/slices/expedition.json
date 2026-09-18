@@ -1,0 +1,226 @@
+{
+ "source": "expedition.png",
+ "notes": [
+  "THE HUNT -- the roads a soldier is sent down (client/scenes/pages/hunt_page.gd, layout client/layout/expedition.json).",
+  "This painting sat unused in ~/Downloads/Emperors_Design_Pack while the page was built as a list of text rows on flat plates. The page is rebuilt from it here.",
+  "A PAGE, not a view: the painting is a card on its own dark ground with no rail and no pills, so PaintedPage's backdrop is right for it.",
+  "The four field cards are one object: a frame with a scene at the top, a name plate, an hourglass and its time plate, and three reward tiles each with a figure plate under it. Card 1 is cut WHOLE, its own Meadow scene included, and each field's scene is laid over that scene. Card 2 carries the painting's gold selection glow and is cut as the lit frame.",
+  "MEASURED off the painting, not guessed. A card's outer gold line: the left column runs x 55..464, the right x 476..885 (pitch 421); the top row y 441..952, the bottom y 967..1478 (pitch 526). So a card is 410x512 and the four stand at (55,441) (476,441) (55,967) (476,967). Inside a card, from its own corner: the scene window (7,8,395,246), the name plate (23,254,362,49), the hourglass (86,303,45,55), the time plate (125,312,201,47) and three figure plates at (25,460,105,34), (151,460,103,34), (276,460,104,34).",
+  "The lit card's glow reaches 11px into the gutter on each side and 13px below -- the gutter is 11px wide, so the crop takes exactly that and no more, and a lit card can never bleed onto its neighbour. ABOVE it the glow lies on the header's landscape, which is painted only behind the top-right card; a halo cut from there would put a strip of that landscape over the navy above any other card, so the crop starts at the frame and the page's own copy of that halo is inpainted away."
+ ],
+ "crops": [
+  {
+   "name": "expedition/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "erase": [
+    {
+     "rect": [
+      43,
+      441,
+      861,
+      1054
+     ],
+     "sample_x": [
+      45,
+      52
+     ]
+    }
+   ],
+   "note": "The page: its frame, the gold corner ornaments, THE HUNT and the rule under it, the soldier card's frame and the castle landscape beside it. The four cards are ERASED back to the ground they stand on, because the page must be able to light any one of them and the painting lights the second: left as painted, that card's glow is burned into the ground under a card drawn plain. The erase runs from the cards' own top line to below where a lit card's glow reaches (1492) and takes its colour per row from the ground at x 45..52, left of the first card; what is left showing is the 11px gutters, which are that same ground. The band just above the cards is the header's landscape with that same glow washed over it: the landscape from 27 rows higher is laid over it instead, feathered at its edges, so the rock and foliage run down to the cards as they do everywhere else. Telea was tried there first and smeared the landscape into a brown bar.",
+   "patch": [
+    {
+     "from": [
+      455,
+      397,
+      448,
+      27
+     ],
+     "to": [
+      455,
+      424
+     ],
+     "feather": 12,
+     "feather_y": 8
+    }
+   ]
+  },
+  {
+   "name": "expedition/card",
+   "rect": [
+    55,
+    441,
+    410,
+    512
+   ],
+   "note": "One field card WHOLE, the Meadow's own scene included: the card's frame, its name plate, the hourglass and its time plate, and the three reward tiles with their figure plates, all painted empty. A card showing another field lays that field's scene over this one's -- no erase is needed and none is honest here, the scene filling the window edge to edge."
+  },
+  {
+   "name": "expedition/card_lit",
+   "rect": [
+    465,
+    441,
+    432,
+    525
+   ],
+   "note": "The painting's own gold selection glow, drawn 11px left of the card and 11px right of it -- exactly the gutter -- and 13px below. It is laid OVER the plain card at (-11,0), so the chosen road wears the painting's light and the plain frame under it is never seen. Its top is the card's own top line: see the manifest's note on the halo."
+  },
+  {
+   "name": "expedition/field_1",
+   "rect": [
+    62,
+    449,
+    395,
+    246
+   ],
+   "note": "The Meadow: deer at the water. The card's whole scene window, so a field's scene covers the Meadow under it to the frame."
+  },
+  {
+   "name": "expedition/field_2",
+   "rect": [
+    483,
+    449,
+    395,
+    246
+   ],
+   "note": "The King's Wood: light through the trees."
+  },
+  {
+   "name": "expedition/field_3",
+   "rect": [
+    62,
+    975,
+    395,
+    246
+   ],
+   "note": "The Iron Hills: a wolf on the ridge at sunset."
+  },
+  {
+   "name": "expedition/field_4",
+   "rect": [
+    483,
+    975,
+    395,
+    246
+   ],
+   "note": "The Far Wilds: the dragon over the burning keep. The painting hangs its PADLOCK on this card's corner, inside the scene window, so a plain cut carried a locked road onto whichever field was fourth. The corner is covered with this scene's own sky, taken from its top-left and mirrored, and the padlock is cut separately (expedition/lock) and drawn only when the server says a road is shut.",
+   "patch": [
+    {
+     "from": [
+      488,
+      976,
+      96,
+      132
+     ],
+     "to": [
+      788,
+      966
+     ],
+     "flip": "h",
+     "feather": 8
+    }
+   ]
+  },
+  {
+   "name": "expedition/lock",
+   "rect": [
+    799,
+    976,
+    84,
+    110
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      2,
+      2
+     ],
+     [
+      82,
+      2
+     ],
+     [
+      82,
+      81
+     ],
+     [
+      41,
+      106
+     ],
+     [
+      2,
+      81
+     ]
+    ]
+   },
+   "note": "The padlock shield the painting hangs on the corner of a card. Cut to the shield's own outline: it is navy and gold on a dark scene, so a darkkey cannot tell it from what is behind it and ate its body. It is drawn on every card while the hunt is still shut (under level 8), and on none after."
+  },
+  {
+   "name": "expedition/soldier_frame",
+   "rect": [
+    60,
+    159,
+    220,
+    261
+   ],
+   "hole": {
+    "type": "chamfer",
+    "size": 10,
+    "box": [
+     6,
+     6,
+     208,
+     202
+    ]
+   },
+   "note": "The soldier's gold frame with its name plate under it, the portrait window opened: the soldier the lord is sending is drawn under it and shows through."
+  },
+  {
+   "name": "expedition/send",
+   "rect": [
+    78,
+    1520,
+    375,
+    88
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "note": "SEND, the painting's own green."
+  },
+  {
+   "name": "expedition/close",
+   "rect": [
+    488,
+    1520,
+    375,
+    88
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "note": "CLOSE, the painting's own navy."
+  },
+  {
+   "name": "expedition/soldier_badge",
+   "rect": [
+    295,
+    350,
+    66,
+    70
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "note": "The little octagon beside the soldier's plate, for their rank numeral."
+  }
+ ]
+}

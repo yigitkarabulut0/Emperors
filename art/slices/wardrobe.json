@@ -1,0 +1,207 @@
+{
+ "source": "wardrobe.png",
+ "notes": [
+  "SPLENDOUR is a whole painted page -- its own chamfered gold frame, no rail and no pills -- hosted by PaintedPage like THE CROWN'S FAVOUR: `page` is the whole painting, its blurred surround included, with the tabs, the tiles and the strip's samples erased. A taller canvas gives its extra height to the grid, so it shows more tiles.",
+  "Lifted off the page: the four painted tabs (the lit FRAMES tab's red glow reaches the left margin, so the band is filled from the clean right margin, x 897..904); the nine tiles (each row runs from the left margin's ground to the right margin's with the blended erase: the page is darker at its edges than in its middle); and the strip's samples, a scroll, an enamel chip and three shields. The tabs are the game's one tab strip (tabs_sheet_b via TabStrip); the tiles are placed live from `tile`; the strip shows the lord as the realm sees them.",
+  "tile is the gold-laurel tile (the right column's: no seal on it), its frame erased from the ground either side of the laurel, its name plate kept. equip_plate is EQUIP with its word erased: the word is set in type because it changes (EQUIP, TAKE OFF, a price, LOCKED). CLOSE keeps its painted word.",
+  "tick_seal, padlock: the worn seal (round-masked off the oak wreath behind it) and the lock, for any screen that marks a cosmetic worn or locked. title_scroll is the strip's scroll, keyed off the strip's ground: a title is written on it. The strip's enamel chip is the Royal Store's icons/colour_chip and colour_chip_face (art/slices/store_2.json), its face tinted with a colour's code; it is not cut twice.",
+  "Measured with art/tools/probe.py and grid.py: frame outline x 25..911, y 28..1636 (chamfer ~12); tabs row y 377..448; tiles x 50|338|614, y 461|730|1000, about 276x261 with the name plate at y +199..+243; strip x 48..893, y 1282..1462; EQUIP 93..454 x 1486..1589 (word ink 209..351 x 1523..1563, #FEFCD4); CLOSE 481..844. The chip is 88x100 (rim x 368..455, y 1322..1421); its enamel is the ellipse inside the rim."
+ ],
+ "crops": [
+  {
+   "name": "wardrobe/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "erase": [
+    {
+     "rect": [
+      34,
+      372,
+      872,
+      84
+     ],
+     "sample_x": [
+      897,
+      904
+     ]
+    },
+    {
+     "rect": [
+      36,
+      455,
+      868,
+      820
+     ],
+     "sample_x": [
+      34,
+      42
+     ],
+     "sample_x2": [
+      897,
+      905
+     ]
+    },
+    {
+     "rect": [
+      56,
+      1291,
+      832,
+      164
+     ],
+     "sample_x": [
+      54,
+      56
+     ],
+     "sample_x2": [
+      888,
+      890
+     ]
+    }
+   ]
+  },
+  {
+   "name": "wardrobe/tile",
+   "rect": [
+    614,
+    461,
+    277,
+    261
+   ],
+   "erase": [
+    {
+     "rect": [
+      624,
+      469,
+      258,
+      191
+     ],
+     "sample_x": [
+      625,
+      634
+     ],
+     "sample_x2": [
+      868,
+      880
+     ]
+    }
+   ]
+  },
+  {
+   "name": "wardrobe/equip_plate",
+   "rect": [
+    93,
+    1486,
+    361,
+    103
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   },
+   "inpaint": [
+    {
+     "text": [
+      196,
+      1512,
+      170,
+      62
+     ],
+     "d": 18,
+     "dilate": 9,
+     "radius": 9
+    }
+   ]
+  },
+  {
+   "name": "wardrobe/close",
+   "rect": [
+    481,
+    1486,
+    363,
+    103
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   }
+  },
+  {
+   "name": "icons/tick_seal",
+   "rect": [
+    248,
+    470,
+    70,
+    72
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     3,
+     3,
+     68,
+     68
+    ],
+    "feather": 0.8
+   }
+  },
+  {
+   "name": "icons/padlock",
+   "rect": [
+    550,
+    1008,
+    44,
+    56
+   ],
+   "mode": "darkkey",
+   "k": 40,
+   "floor": 10,
+   "bg": [
+    10,
+    27,
+    40
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      3,
+      1
+     ],
+     [
+      43,
+      1
+     ],
+     [
+      43,
+      55
+     ],
+     [
+      3,
+      55
+     ]
+    ]
+   }
+  },
+  {
+   "name": "wardrobe/title_scroll",
+   "rect": [
+    66,
+    1318,
+    286,
+    114
+   ],
+   "mode": "darkkey",
+   "k": 40,
+   "floor": 10,
+   "bg": [
+    8,
+    22,
+    32
+   ]
+  }
+ ]
+}

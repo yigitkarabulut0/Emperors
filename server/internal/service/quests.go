@@ -13,6 +13,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
@@ -46,7 +47,8 @@ type QuestsView struct {
 // disagree about what today's quests are, and changing the pool cannot orphan
 // stored rows. The seed is per-day, so the set is stable for the whole day and
 // different tomorrow.
-func (d Deps) questsFor(playerID uuid.UUID, level int, day time.Time) []gameconfig.Quest {
+func (d Deps) questsFor(p sqlcdb.AppPlayer, day time.Time) []gameconfig.Quest {
+	playerID, level := p.ID, int(p.Level)
 	cfg := d.Config.Progression.Quests
 	if cfg.PerDay <= 0 || len(cfg.Pool) == 0 {
 		return nil
@@ -57,9 +59,15 @@ func (d Deps) questsFor(playerID uuid.UUID, level int, day time.Time) []gameconf
 	// fail, which is worse than one fewer daily.
 	eligible := make([]gameconfig.Quest, 0, len(cfg.Pool))
 	for _, q := range cfg.Pool {
-		if q.MinLevel <= level {
-			eligible = append(eligible, q)
+		if q.MinLevel > level {
+			continue
 		}
+		// And only tasks they have what they need for: a lord with no kingdom
+		// has no hall to answer calls in.
+		if q.Needs == gameconfig.QuestNeedsKingdom && p.KingdomID == nil {
+			continue
+		}
+		eligible = append(eligible, q)
 	}
 	if len(eligible) == 0 {
 		return nil
@@ -91,6 +99,17 @@ func questProgress(p sqlcdb.AppPlayerQuest, kind string) int64 {
 		return int64(p.Buys)
 	case "energy":
 		return int64(p.Energy)
+	// PvE ve derinlik (Wave 7): a mile of the campaign walked, a soldier sent
+	// out, and a kingdom's call answered.
+	case "stages":
+		return int64(p.Stages)
+	case "hunts":
+		return int64(p.Hunts)
+	case "aids":
+		return int64(p.Aids)
+	// Krallik Boss (Wave 8): a blow struck at the kingdom's beast.
+	case "blows":
+		return int64(p.Blows)
 	}
 	return 0
 }
@@ -111,7 +130,7 @@ func (d Deps) questReward(level int64, tier int64) (xp, gold int64) {
 // another's.
 func (d Deps) questDay(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPlayer,
 	day time.Time) (sqlcdb.AppPlayerQuest, []gameconfig.Quest, error) {
-	drawn := d.questsFor(p.ID, int(p.Level), day)
+	drawn := d.questsFor(p, day)
 	ids := make([]string, 0, len(drawn))
 	for _, t := range drawn {
 		ids = append(ids, t.ID)
@@ -218,21 +237,18 @@ func (d Deps) ClaimQuest(ctx context.Context, playerID uuid.UUID, slot int, want
 		if err != nil {
 			return err
 		}
-		up := economy.AwardXP(d.Config, int(p.Level), p.Xp, xp, eff.Bonuses)
-
-		after, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{
-			ID: playerID, EnergyMilli: p.EnergyMilli, EnergyUpdatedAt: p.EnergyUpdatedAt,
-			Gold: gold, Xp: up.XP, Level: int32(up.Level),
-			StatPointsUnspent: int32(up.StatPoints), Diamonds: up.Diamonds,
-			ActionSeq: wantSeq,
-		})
-		if err != nil {
-			return fmt.Errorf("pay quest: %w", err)
+		// Through the one path every level-up takes, so a level reached by
+		// claiming a task refills the pool like any other. The claim used to
+		// write the unrefilled energy back, and a quest that levelled you left
+		// you exactly as empty as before.
+		before := p
+		if _, err = d.creditGoldXP(ctx, q, &p, eff.Bonuses, eff, gold, xp, wantSeq, "quest", t.ID, d.Now()); err != nil {
+			return err
 		}
-		return q.RecordGold(ctx, sqlcdb.RecordGoldParams{
-			PlayerID: playerID, Delta: gold, BalanceAfter: after.Gold,
-			Reason: "quest", RefID: strPtr(t.ID),
+		d.recordDeeds(ctx, tx, before, deeds.Deeds{
+			deeds.DailyQuests: 1, deeds.XP: economy.ApplyBucket(xp, eff.Bonuses, economy.BucketXPGain),
 		})
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -250,11 +266,12 @@ func min64(a, b int64) int64 {
 // bumpQuests records progress toward today's tasks.
 //
 // Called from inside the action's own transaction, so a quest can never count
-// something that was rolled back. Failures are swallowed by the caller on
-// purpose: a quest counter is not worth failing a collect over, and the next
-// action will catch the row up.
+// something that was rolled back -- and always through softStep, so a failure
+// here is rolled back to a savepoint instead of aborting the action. A quest
+// counter is not worth failing a collect over, and the next action will catch
+// the row up.
 func (d Deps) bumpQuests(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPlayer,
-	collects, wins, buys, energy int64) error {
+	dd deeds.Deeds, x int64) error {
 	if len(d.Config.Progression.Quests.Pool) == 0 {
 		return nil
 	}
@@ -262,23 +279,20 @@ func (d Deps) bumpQuests(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPla
 	// The ids are only used when this is the row's first write of the day; an
 	// existing row keeps whatever it was frozen with.
 	ids := make([]string, 0, d.Config.Progression.Quests.PerDay)
-	for _, t := range d.questsFor(p.ID, int(p.Level), day) {
+	for _, t := range d.questsFor(p, day) {
 		ids = append(ids, t.ID)
 	}
+	// Busy Hands counts the day's quests x times over while it runs, and it
+	// counts every kind the same: a wave that added kinds must not quietly add
+	// an exception to an event lords already understand.
+	n := func(k deeds.Kind) int32 { return int32(dd[k] * x) }
 	_, err := q.BumpQuestProgress(ctx, sqlcdb.BumpQuestProgressParams{
 		PlayerID: p.ID, Day: pgtype.Date{Time: day, Valid: true},
-		Collects: int32(collects), Wins: int32(wins),
-		Buys: int32(buys), Energy: int32(energy), QuestIds: ids,
+		Collects: n(deeds.Collects), Wins: n(deeds.RaidWins),
+		Buys: n(deeds.Buys), Energy: n(deeds.Energy),
+		Stages: n(deeds.CampaignStages), Hunts: n(deeds.HuntsSent), Aids: n(deeds.AidGiven),
+		Blows:    n(deeds.BossHits),
+		QuestIds: ids,
 	})
 	return err
-}
-
-// logQuestBump records a dropped quest tick.
-//
-// Swallowed, but not silently: if these ever appear in volume the counters are
-// drifting and the dailies will quietly stop completing.
-func (d Deps) logQuestBump(err error) {
-	if d.Log != nil {
-		d.Log.Warn("quest progress not recorded", "err", err)
-	}
 }

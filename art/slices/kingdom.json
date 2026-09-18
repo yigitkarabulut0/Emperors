@@ -196,160 +196,40 @@
       ]
     },
     {
-      "name": "kingdom/tab_realm_active",
-      "rect": [
-        151,
-        556,
-        206,
-        68
-      ]
-    },
-    {
-      "name": "kingdom/tab_lords",
-      "rect": [
-        356,
-        558,
-        186,
-        63
-      ]
-    },
-    {
-      "name": "kingdom/tab_works",
-      "rect": [
-        543,
-        558,
-        197,
-        63
-      ]
-    },
-    {
-      "name": "kingdom/tab_ranks",
-      "rect": [
-        739,
-        558,
-        192,
-        63
-      ]
-    },
-    {
-      "name": "kingdom/tab_active_empty",
-      "rect": [
-        151,
-        556,
-        206,
-        68
-      ],
-      "erase": [
-        {
-          "rect": [
-            203,
-            572,
-            52,
-            36
-          ],
-          "sample_x": [
-            176,
-            196
-          ]
-        },
-        {
-          "rect": [
-            255,
-            572,
-            52,
-            36
-          ],
-          "sample_x": [
-            310,
-            330
-          ]
-        }
-      ]
-    },
-    {
-      "name": "kingdom/tab_inactive_empty",
-      "rect": [
-        356,
-        558,
-        186,
-        63
-      ],
-      "erase": [
-        {
-          "rect": [
-            403,
-            572,
-            47,
-            36
-          ],
-          "sample_x": [
-            372,
-            394
-          ]
-        },
-        {
-          "rect": [
-            450,
-            572,
-            47,
-            36
-          ],
-          "sample_x": [
-            505,
-            527
-          ]
-        }
-      ]
-    },
-    {
-      "name": "kingdom/tab_label_realm",
-      "rect": [
-        210,
-        578,
-        86,
-        24
-      ],
-      "mode": "darkkey",
-      "k": 140
-    },
-    {
-      "name": "kingdom/tab_label_lords",
-      "rect": [
-        410,
-        578,
-        78,
-        24
-      ],
-      "mode": "darkkey"
-    },
-    {
-      "name": "kingdom/tab_label_works",
-      "rect": [
-        597,
-        578,
-        84,
-        24
-      ],
-      "mode": "darkkey"
-    },
-    {
-      "name": "kingdom/tab_label_ranks",
-      "rect": [
-        792,
-        578,
-        82,
-        24
-      ],
-      "mode": "darkkey"
-    },
-    {
       "name": "kingdom/realm_card",
       "rect": [
         155,
         614,
         431,
         266
-      ]
+      ],
+      "erase": [
+        {
+          "rect": [
+            155,
+            614,
+            431,
+            1
+          ],
+          "sample_x": [
+            445,
+            540
+          ]
+        },
+        {
+          "rect": [
+            155,
+            615,
+            202,
+            7
+          ],
+          "sample_x": [
+            445,
+            540
+          ]
+        }
+      ],
+      "note": "Its top rows held the foot of the painted REALM plate -- crimson over a thicker gold rim -- and a line of the unlit plates' interiors; they are refilled row by row from under LORDS (x 445-540, where the rule runs its usual two units; nearer 420 it thickens), where the strip's gold rule runs plain, so the rule is one line whichever tab TabStrip lights."
     },
     {
       "name": "kingdom/realm_bonuses",
@@ -373,7 +253,21 @@
           23
         ]
       ],
-      "note": "as reputation_card: the bonus values sit on a graded ground"
+      "note": "as reputation_card: the bonus values sit on a graded ground Its top three rows are the feet of the painted WORKS and RANKS plates, with their steel side rims; they are refilled from the plates' own dark ground (x 600-640) so only the gold rule under the strip remains.",
+      "erase": [
+        {
+          "rect": [
+            586,
+            612,
+            345,
+            3
+          ],
+          "sample_x": [
+            600,
+            640
+          ]
+        }
+      ]
     },
     {
       "name": "kingdom/realm_notice",
@@ -428,7 +322,7 @@
           22
         ]
       ],
-      "note": "text bands lifted with inpaint: the card's ground is graded across, so a row-fill from one column band leaves a dark rectangle. The bar's whole inner track is erased row by row, each row starting where the frame's rounded corner ends, so the empty track is one piece and the corners keep their curve",
+      "note": "text bands lifted with inpaint: the card's ground is graded across, so a row-fill from one column band leaves a dark rectangle. The bar's whole inner track is erased row by row, each row starting where the frame's rounded corner ends, so the empty track is one piece and the corners keep their curve The four rank hexagons and their words are lifted out of both sub-panels, row by row from a clean band at each sub-panel's left edge (the ground is flat across; soften spread the old lit hexagon's gold glow over the panel): the ranks are drawn over the card from numerals_rep.json, lit or unlit by the live rank, and their words are set in type -- the painting had only RESPECTED lit, and tinting the others to fake it is what this replaces.",
       "erase": [
         {
           "rect": [
@@ -489,6 +383,30 @@
             840,
             880
           ]
+        },
+        {
+          "rect": [
+            551,
+            1022,
+            178,
+            92
+          ],
+          "sample_x": [
+            552,
+            558
+          ]
+        },
+        {
+          "rect": [
+            741,
+            1022,
+            178,
+            92
+          ],
+          "sample_x": [
+            741,
+            745
+          ]
         }
       ]
     },
@@ -500,82 +418,6 @@
         125,
         14
       ]
-    },
-    {
-      "name": "kingdom/rep_hex_1",
-      "rect": [
-        574,
-        1028,
-        47,
-        59
-      ]
-    },
-    {
-      "name": "kingdom/rep_hex_2_lit",
-      "rect": [
-        656,
-        1024,
-        56,
-        66
-      ]
-    },
-    {
-      "name": "kingdom/rep_hex_3",
-      "rect": [
-        752,
-        1028,
-        49,
-        60
-      ]
-    },
-    {
-      "name": "kingdom/rep_hex_4",
-      "rect": [
-        847,
-        1028,
-        49,
-        60
-      ]
-    },
-    {
-      "name": "kingdom/rep_label_neutral",
-      "rect": [
-        562,
-        1090,
-        68,
-        22
-      ],
-      "mode": "darkkey"
-    },
-    {
-      "name": "kingdom/rep_label_respected",
-      "rect": [
-        644,
-        1090,
-        78,
-        22
-      ],
-      "mode": "darkkey"
-    },
-    {
-      "name": "kingdom/rep_label_honored",
-      "rect": [
-        744,
-        1090,
-        68,
-        22
-      ],
-      "mode": "darkkey"
-    },
-    {
-      "name": "kingdom/rep_label_legendary",
-      "rect": [
-        830,
-        1090,
-        82,
-        22
-      ],
-      "mode": "darkkey"
     },
     {
       "name": "kingdom/lords_panel",
@@ -894,42 +736,6 @@
       ]
     },
     {
-      "name": "kingdom/work_banner_hall",
-      "rect": [
-        552,
-        1178,
-        86,
-        69
-      ]
-    },
-    {
-      "name": "kingdom/work_training_grounds",
-      "rect": [
-        552,
-        1253,
-        86,
-        69
-      ]
-    },
-    {
-      "name": "kingdom/work_granary_law",
-      "rect": [
-        552,
-        1327,
-        86,
-        69
-      ]
-    },
-    {
-      "name": "kingdom/work_royal_archives",
-      "rect": [
-        552,
-        1402,
-        86,
-        69
-      ]
-    },
-    {
       "name": "kingdom/btn_upgrade",
       "rect": [
         811,
@@ -993,36 +799,6 @@
           ]
         }
       ]
-    },
-    {
-      "name": "kingdom/hall_vista",
-      "rect": [
-        150,
-        0,
-        791,
-        174
-      ],
-      "inpaint": [
-        [
-          169,
-          14,
-          224,
-          60
-        ],
-        [
-          400,
-          14,
-          208,
-          60
-        ],
-        [
-          615,
-          14,
-          246,
-          61
-        ]
-      ],
-      "_note": "The Kingdom hall's header: the vista above the lion crest, whose top ornament starts at y 177. A player with no kingdom has no crest to show."
     }
   ]
 }

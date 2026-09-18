@@ -1,0 +1,380 @@
+{
+ "source": "mail.png",
+ "notes": [
+  "mail.png is a COURT view: the 8-entry rail and the pills are the painting's, the content (x >= 155) is the Royal Mail. The game draws its own rail and pills over the header, whose three pills are inpainted.",
+  "The COURT back button is inpainted out of the header; every Court view draws the shared plate over the place (chrome/court_back through CourtBack, art/slices/court.json), 14 units lower than the painting, clear of the band under the pills where the shield's time is written (y 80..106). Only the top 14 rows of its old place show; the rest is under the plate.",
+  "Rows: row 1 (seal: crown) and row 2 (seal: lion banner, short date plate, hourglass) are cut as the two plates -- a letter going soon wears row 2's short plate. The envelope and the hourglass are erased from each plate (each row filled from clean navy columns beside them) and cut on their own; the three painted rewards are erased from the tile windows the same way (sampling the few clean columns inside each window) and the letter's own rewards are drawn in them live.",
+  "The letter card is the reader, kept whole: its painted tiles hold up to three of the letter's rewards and its painted CLAIM is the claim button. It is nine-patched so that only the plain parchment between the seal and the tiles grows with the letter.",
+  "Measured with art/tools/probe.py: row plates 104 tall at pitch 112 (y 365, 477, 589 ...); pills x 167..392, 418..626, 652..885, y 23..77; back button x 167..326, y 94..140; title ink from y 168."
+ ],
+ "crops": [
+  {
+   "name": "mail/header",
+   "rect": [
+    155,
+    0,
+    786,
+    362
+   ],
+   "inpaint": [
+    [
+     164,
+     20,
+     231,
+     60
+    ],
+    [
+     415,
+     20,
+     214,
+     60
+    ],
+    [
+     649,
+     20,
+     239,
+     60
+    ],
+    [
+     163,
+     91,
+     167,
+     53
+    ]
+   ]
+  },
+  {
+   "name": "mail/row",
+   "rect": [
+    161,
+    365,
+    766,
+    104
+   ],
+   "erase": [
+    {
+     "rect": [
+      175,
+      372,
+      159,
+      92
+     ],
+     "sample_x": [
+      335,
+      341
+     ]
+    }
+   ],
+   "refill": [
+    {
+     "rect": [
+      694,
+      385,
+      216,
+      68
+     ],
+     "band": [
+      372,
+      384
+     ],
+     "samples": [
+      {
+       "rows": [
+        385,
+        452
+       ],
+       "x": [
+        [
+         684,
+         692
+        ],
+        [
+         911,
+         918
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "mail/row_soon",
+   "rect": [
+    161,
+    477,
+    766,
+    104
+   ],
+   "erase": [
+    {
+     "rect": [
+      175,
+      484,
+      159,
+      92
+     ],
+     "sample_x": [
+      335,
+      341
+     ]
+    },
+    {
+     "rect": [
+      566,
+      518,
+      42,
+      52
+     ],
+     "sample_x": [
+      606,
+      612
+     ]
+    }
+   ],
+   "refill": [
+    {
+     "rect": [
+      694,
+      497,
+      216,
+      68
+     ],
+     "band": [
+      484,
+      496
+     ],
+     "samples": [
+      {
+       "rows": [
+        497,
+        564
+       ],
+       "x": [
+        [
+         684,
+         692
+        ],
+        [
+         911,
+         918
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "mail/slot",
+   "rect": [
+    696,
+    387,
+    65,
+    65
+   ],
+   "erase": [
+    {
+     "rect": [
+      700,
+      390,
+      57,
+      59
+     ],
+     "sample_x": [
+      701,
+      703
+     ]
+    }
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   },
+   "note": "One reward's frame, the first of the row's three with its coin lifted: the rows are cut without their frames, and a row draws one under each reward it carries -- a letter with no gift used to show three empty boxes."
+  },
+  {
+   "name": "mail/envelope_crown",
+   "rect": [
+    174,
+    372,
+    161,
+    94
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "bg": [
+    5,
+    26,
+    41
+   ]
+  },
+  {
+   "name": "mail/envelope_banner",
+   "rect": [
+    174,
+    484,
+    161,
+    94
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "bg": [
+    5,
+    27,
+    42
+   ]
+  },
+  {
+   "name": "mail/envelope_hands",
+   "rect": [
+    174,
+    596,
+    161,
+    94
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "bg": [
+    5,
+    28,
+    43
+   ]
+  },
+  {
+   "name": "mail/envelope_open",
+   "rect": [
+    174,
+    703,
+    154,
+    96
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "bg": [
+    12,
+    28,
+    38
+   ]
+  },
+  {
+   "name": "mail/hourglass",
+   "rect": [
+    566,
+    518,
+    42,
+    52
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "bg": [
+    4,
+    22,
+    33
+   ]
+  },
+  {
+   "name": "mail/claim_all",
+   "rect": [
+    393,
+    1041,
+    272,
+    71
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 10
+   }
+  },
+  {
+   "name": "mail/letter_card",
+   "rect": [
+    162,
+    1123,
+    447,
+    431
+   ],
+   "note": "The reader. Nine-patched with the painting's own seal in its top margin (101) and its three tiles and CLAIM in its bottom margin (210), so only the plain band of parchment between them (rows 101..221, y 1224..1344) stretches -- vertically, the card keeps its painted width."
+  },
+  {
+   "name": "mail/desk",
+   "rect": [
+    622,
+    1123,
+    303,
+    431
+   ],
+   "patch": [
+    {
+     "from": [
+      613,
+      1525,
+      32,
+      29
+     ],
+     "to": [
+      899,
+      1525
+     ],
+     "flip": "h"
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      858,
+      1547,
+      41,
+      7
+     ],
+     "sample_x": [
+      820,
+      845
+     ]
+    }
+   ],
+   "inpaint": [
+    [
+     888,
+     1525,
+     26,
+     9
+    ],
+    [
+     858,
+     1534,
+     53,
+     3
+    ],
+    [
+     858,
+     1537,
+     50,
+     4
+    ],
+    [
+     858,
+     1541,
+     46,
+     3
+    ],
+    [
+     858,
+     1544,
+     43,
+     3
+    ]
+   ],
+   "note": "The empty inbox's picture. The painting's foreground foliage covers its lower-right corner (x >= 858, y >= 1525). The corner ornament is its mirrored twin from the lower left (the frame is symmetric about x 771.5: gold rules at 621..623 and 920..922); the two bottom rules are carried on from their clean run; the wood under the leaves is inpainted in steps that follow the ornament's diagonal a few units inside it, so the fill is drawn from the wood round it and never from the gold."
+  },
+  {
+   "name": "mail/footer",
+   "rect": [
+    155,
+    1554,
+    786,
+    118
+   ]
+  }
+ ]
+}

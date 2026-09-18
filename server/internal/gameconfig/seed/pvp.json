@@ -1,0 +1,193 @@
+{
+  "_comment": "Rekabet. arena: the Honour Arena's integer Elo ladder (K=32, the defender at half K), its leagues, its five daily fights that nothing may buy, and its season half reset. bounty: what a price on a head costs (the fee is BURNED), how long it stands, and every leash on claiming one. throne: Emperor of the Week -- the kingdom with the most renown GAINED in the UTC week, at least min_members strong, crowns its king for a reign, once in which he may declare one decree the whole realm feels. Unlock levels are progression.sections' (arena 12, bounty 15), never repeated here.",
+  "arena": {
+    "section": "arena",
+    "tickets_per_day": 5,
+    "refreshes_per_day": 3,
+    "opponents_shown": 3,
+    "start_rating": 1000,
+    "floor_rating": 800,
+    "max_rating": 5000,
+    "k_factor": 32,
+    "defender_k_bp": 5000,
+    "band_rating": 150,
+    "band_widen": 100,
+    "band_steps": 3,
+    "repeat_block": 3,
+    "reset_bp": 5000,
+    "leagues": [
+      {
+        "id": "bronze",
+        "name": "Bronze",
+        "at_rating": 0,
+        "emblem": "arena/league_bronze"
+      },
+      {
+        "id": "silver",
+        "name": "Silver",
+        "at_rating": 1150,
+        "emblem": "arena/league_silver"
+      },
+      {
+        "id": "gold",
+        "name": "Gold",
+        "at_rating": 1300,
+        "emblem": "arena/league_gold"
+      },
+      {
+        "id": "platinum",
+        "name": "Platinum",
+        "at_rating": 1450,
+        "emblem": "arena/league_platinum",
+        "cosmetic": "frame_arena_platinum"
+      },
+      {
+        "id": "sapphire",
+        "name": "Sapphire",
+        "at_rating": 1600,
+        "emblem": "arena/league_sapphire",
+        "cosmetic": "frame_arena_sapphire"
+      },
+      {
+        "id": "imperial",
+        "name": "Imperial",
+        "at_rating": 1800,
+        "emblem": "arena/league_imperial",
+        "top_n": 50,
+        "cosmetic": "frame_imperial"
+      }
+    ],
+    "first_win": {
+      "gold_wages": 45
+    },
+    "win_grant": {
+      "gold_wages": 8
+    },
+    "loss_grant": {
+      "gold_wages": 3
+    },
+    "milestones": [
+      {
+        "rating": 1150,
+        "grant": {
+          "diamonds": 10
+        }
+      },
+      {
+        "rating": 1300,
+        "grant": {
+          "diamonds": 20,
+          "tokens": {
+            "cart": 1
+          }
+        }
+      },
+      {
+        "rating": 1450,
+        "grant": {
+          "diamonds": 30,
+          "tokens": {
+            "pardon": 1
+          }
+        }
+      },
+      {
+        "rating": 1600,
+        "grant": {
+          "diamonds": 50,
+          "items": [
+            {
+              "tier": "rare",
+              "count": 1
+            }
+          ]
+        }
+      }
+    ],
+    "bot": {
+      "name": "A Hired Champion",
+      "avatar": "knight",
+      "might_bp": 9500,
+      "rating_bp": 5000
+    }
+  },
+  "bounty": {
+    "section": "bounty",
+    "min_amount": 1000,
+    "plates": [
+      {
+        "id": "plate_1000",
+        "amount": 1000
+      },
+      {
+        "id": "plate_5000",
+        "amount": 5000
+      },
+      {
+        "id": "plate_20000",
+        "amount": 20000
+      }
+    ],
+    "fee_bp": 2000,
+    "hours": 48,
+    "claim_cap_multiple": 3,
+    "places_per_day": 3,
+    "open_per_target": 3,
+    "max_levels_above": 5,
+    "min_target_might_bp": 7000,
+    "claims_per_target": 4,
+    "cooldown_minutes": 120,
+    "pair_claims_per_week": 2,
+    "min_account_hours": 72,
+    "ignores_shield": false
+  },
+  "throne": {
+    "epoch": "2026-09-21",
+    "min_members": 3,
+    "reign_days": 7,
+    "measure": "week_gain",
+    "decree_scope": "realm",
+    "decrees_per_reign": 1,
+    "decrees": [
+      {
+        "id": "hour_of_plenty",
+        "name": "Hour of Plenty",
+        "blurb": "By imperial decree, every job pays half again as much gold.",
+        "icon": "throne/decree_hour_of_plenty",
+        "bucket": "collect_income_bp",
+        "bp": 5000,
+        "minutes": 60
+      },
+      {
+        "id": "hour_of_learning",
+        "name": "Hour of Learning",
+        "blurb": "By imperial decree, every job teaches half again as much.",
+        "icon": "throne/decree_hour_of_learning",
+        "bucket": "xp_bp",
+        "bp": 5000,
+        "minutes": 60
+      },
+      {
+        "id": "hour_of_fortune",
+        "name": "Hour of Fortune",
+        "blurb": "By imperial decree, fortune smiles on the realm.",
+        "icon": "throne/decree_hour_of_fortune",
+        "bucket": "luck_bp",
+        "bp": 3000,
+        "minutes": 60
+      }
+    ],
+    "emperor_frame": "frame_imperial",
+    "emperor_title": "title_crowned_emperor",
+    "court_title": "title_imperial_court",
+    "emperor_grant": {
+      "diamonds": 150,
+      "gold_wages": 120
+    },
+    "court_grant": {
+      "diamonds": 30,
+      "gold_wages": 40
+    },
+    "past_reigns_shown": 4
+  }
+}

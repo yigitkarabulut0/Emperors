@@ -1,0 +1,870 @@
+{
+  "_comment": "The daily loop, all free. cart: the Tax Cart's clock and published odds (bp, 10000 in all). calendar: 28 squares, days 7/14/21/28 crowns. weekly: two fixed tasks and four drawn, 40 points each, chests at 80/160/240. frenzy: the Golden Hour. road: the Victory Road's 15 milestones. guide: the first ten minutes. winback: the welcome-back letters.",
+  "cart": {
+    "unlock_level": 2,
+    "interval_seconds": 14400,
+    "cap": 3,
+    "odds": [
+      {
+        "id": "purse",
+        "name": "Purse of Gold",
+        "bp": 4800,
+        "grant": {
+          "gold_wages": 20
+        }
+      },
+      {
+        "id": "heavy_purse",
+        "name": "Heavy Purse",
+        "bp": 1500,
+        "grant": {
+          "gold_wages": 60
+        }
+      },
+      {
+        "id": "flask",
+        "name": "Small Flask",
+        "bp": 800,
+        "grant": {
+          "tokens": {
+            "flask_small": 1
+          }
+        }
+      },
+      {
+        "id": "scroll",
+        "name": "Scholar's Scroll",
+        "bp": 1000,
+        "grant": {
+          "xp_wages": 12
+        }
+      },
+      {
+        "id": "charm",
+        "name": "Lucky Charm",
+        "bp": 800,
+        "grant": {
+          "boosts": [
+            {
+              "bucket": "luck_bp",
+              "bp": 2500,
+              "hours": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "diamonds_3",
+        "name": "Three Diamonds",
+        "bp": 500,
+        "grant": {
+          "diamonds": 3
+        }
+      },
+      {
+        "id": "gear",
+        "name": "A Piece of Gear",
+        "bp": 500,
+        "grant": {
+          "items": [
+            {
+              "tier": "uncommon",
+              "count": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "diamonds_10",
+        "name": "Ten Diamonds",
+        "bp": 100,
+        "grant": {
+          "diamonds": 10
+        }
+      }
+    ]
+  },
+  "calendar": {
+    "squares": [
+      {
+        "kind": "diamonds",
+        "grant": {
+          "diamonds": 10
+        }
+      },
+      {
+        "kind": "purse",
+        "grant": {
+          "gold_wages": 30
+        }
+      },
+      {
+        "kind": "flask",
+        "grant": {
+          "tokens": {
+            "flask_small": 1
+          }
+        }
+      },
+      {
+        "kind": "scroll",
+        "grant": {
+          "xp_wages": 8
+        }
+      },
+      {
+        "kind": "cart",
+        "grant": {
+          "tokens": {
+            "cart": 1
+          }
+        }
+      },
+      {
+        "kind": "diamonds",
+        "grant": {
+          "diamonds": 20
+        }
+      },
+      {
+        "kind": "crown",
+        "grant": {
+          "diamonds": 25,
+          "cosmetics": [
+            "title_steadfast"
+          ]
+        },
+        "crown": true
+      },
+      {
+        "kind": "diamonds",
+        "grant": {
+          "diamonds": 15
+        }
+      },
+      {
+        "kind": "purse",
+        "grant": {
+          "gold_wages": 45
+        }
+      },
+      {
+        "kind": "flask",
+        "grant": {
+          "tokens": {
+            "flask_small": 1
+          }
+        }
+      },
+      {
+        "kind": "scroll",
+        "grant": {
+          "xp_wages": 10
+        }
+      },
+      {
+        "kind": "cart",
+        "grant": {
+          "tokens": {
+            "cart": 1
+          }
+        }
+      },
+      {
+        "kind": "diamonds",
+        "grant": {
+          "diamonds": 25
+        }
+      },
+      {
+        "kind": "crown",
+        "grant": {
+          "diamonds": 30,
+          "cosmetics": [
+            "frame_loyal_vassal"
+          ]
+        },
+        "crown": true
+      },
+      {
+        "kind": "purse",
+        "grant": {
+          "gold_wages": 60
+        }
+      },
+      {
+        "kind": "flask",
+        "grant": {
+          "tokens": {
+            "flask_large": 1
+          }
+        }
+      },
+      {
+        "kind": "scroll",
+        "grant": {
+          "xp_wages": 12
+        }
+      },
+      {
+        "kind": "cart",
+        "grant": {
+          "tokens": {
+            "cart": 2
+          }
+        }
+      },
+      {
+        "kind": "diamonds",
+        "grant": {
+          "diamonds": 30
+        }
+      },
+      {
+        "kind": "purse",
+        "grant": {
+          "gold_wages": 60
+        }
+      },
+      {
+        "kind": "crown",
+        "grant": {
+          "diamonds": 35,
+          "items": [
+            {
+              "tier": "rare",
+              "count": 1
+            }
+          ]
+        },
+        "crown": true
+      },
+      {
+        "kind": "flask",
+        "grant": {
+          "tokens": {
+            "flask_large": 1
+          }
+        }
+      },
+      {
+        "kind": "scroll",
+        "grant": {
+          "xp_wages": 15
+        }
+      },
+      {
+        "kind": "cart",
+        "grant": {
+          "tokens": {
+            "cart": 2
+          }
+        }
+      },
+      {
+        "kind": "diamonds",
+        "grant": {
+          "diamonds": 50
+        }
+      },
+      {
+        "kind": "purse",
+        "grant": {
+          "gold_wages": 80
+        }
+      },
+      {
+        "kind": "flask",
+        "grant": {
+          "tokens": {
+            "flask_large": 1
+          }
+        }
+      },
+      {
+        "kind": "crown",
+        "grant": {
+          "diamonds": 100,
+          "cosmetics": [
+            "crest_constancy"
+          ]
+        },
+        "crown": true
+      }
+    ],
+    "grace_days": 2,
+    "restore_diamonds": [
+      20,
+      50
+    ],
+    "pardons_per_cycle": 1,
+    "pardons_max": 2
+  },
+  "weekly": {
+    "fixed": [
+      {
+        "id": "w_days",
+        "name": "Faithful Attendance",
+        "short": "Claim 5 daily rewards",
+        "blurb": "Claim the day's reward on five days.",
+        "icon": "quest_scroll",
+        "deed": "daily_claims",
+        "target": 5,
+        "points": 40,
+        "grant": {
+          "diamonds": 15
+        }
+      },
+      {
+        "id": "w_dailies",
+        "name": "Duty Done",
+        "short": "Finish 12 daily quests",
+        "blurb": "Finish twelve of the day's quests.",
+        "icon": "quest_scroll",
+        "deed": "daily_quests",
+        "target": 12,
+        "points": 40,
+        "grant": {
+          "diamonds": 15
+        }
+      }
+    ],
+    "draw": 4,
+    "eligible_level_floor": 5,
+    "pool": [
+      {
+        "id": "w_collects",
+        "name": "The Busy Week",
+        "short": "Collect 600 times",
+        "blurb": "Work six hundred jobs.",
+        "icon": "quest_bolt",
+        "deed": "collects",
+        "target": 600,
+        "points": 40,
+        "grant": {
+          "gold_wages": 60
+        }
+      },
+      {
+        "id": "w_hard_work",
+        "name": "Hands Never Idle",
+        "short": "Collect 1,500 times",
+        "blurb": "Work fifteen hundred jobs.",
+        "icon": "quest_bolt",
+        "deed": "collects",
+        "target": 1500,
+        "points": 40,
+        "grant": {
+          "gold_wages": 120
+        }
+      },
+      {
+        "id": "w_carts",
+        "name": "The Cart Returns",
+        "short": "Open 8 Tax Carts",
+        "blurb": "Open eight Tax Carts.",
+        "icon": "quest_scroll",
+        "deed": "carts_opened",
+        "target": 8,
+        "points": 40,
+        "grant": {
+          "tokens": {
+            "cart": 2
+          }
+        },
+        "min_level": 2
+      },
+      {
+        "id": "w_buys",
+        "name": "A Good Customer",
+        "short": "Buy 5 market items",
+        "blurb": "Buy five things at the market.",
+        "icon": "quest_scroll",
+        "deed": "buys",
+        "target": 5,
+        "points": 40,
+        "grant": {
+          "gold_wages": 40
+        },
+        "min_level": 2
+      },
+      {
+        "id": "w_stats",
+        "name": "Train the Hero",
+        "short": "Spend 10 stat points",
+        "blurb": "Spend ten stat points.",
+        "icon": "quest_swords",
+        "deed": "stat_spends",
+        "target": 10,
+        "points": 40,
+        "grant": {
+          "gold_wages": 40
+        }
+      },
+      {
+        "id": "w_upgrades",
+        "name": "The Builder",
+        "short": "Build 3 upgrades",
+        "blurb": "Build three family upgrades.",
+        "icon": "quest_scroll",
+        "deed": "upgrades",
+        "target": 3,
+        "points": 40,
+        "grant": {
+          "gold_wages": 50
+        },
+        "min_level": 4
+      },
+      {
+        "id": "w_rerolls",
+        "name": "Drill Sergeant",
+        "short": "Reroll soldiers 5 times",
+        "blurb": "Reroll soldiers five times.",
+        "icon": "quest_swords",
+        "deed": "rerolls",
+        "target": 5,
+        "points": 40,
+        "grant": {
+          "items": [
+            {
+              "tier": "uncommon",
+              "count": 1
+            }
+          ]
+        },
+        "min_level": 5
+      },
+      {
+        "id": "w_golden",
+        "name": "Golden Hours",
+        "short": "Light 3 Golden Hours",
+        "blurb": "Light the Golden Hour three times.",
+        "icon": "quest_bolt",
+        "deed": "golden_hours",
+        "target": 3,
+        "points": 40,
+        "grant": {
+          "gold_wages": 60
+        },
+        "min_level": 5
+      },
+      {
+        "id": "w_raids",
+        "name": "The Raider",
+        "short": "Win 10 raids",
+        "blurb": "Win ten raids.",
+        "icon": "quest_swords",
+        "deed": "raid_wins",
+        "target": 10,
+        "points": 40,
+        "grant": {
+          "gold_wages": 80
+        },
+        "min_level": 10
+      },
+      {
+        "id": "w_revenge",
+        "name": "Paid in Kind",
+        "short": "Win 2 revenge strikes",
+        "blurb": "Win two revenge strikes.",
+        "icon": "quest_swords",
+        "deed": "revenge_wins",
+        "target": 2,
+        "points": 40,
+        "grant": {
+          "tokens": {
+            "shield_8h": 1
+          }
+        },
+        "min_level": 10
+      }
+    ],
+    "chests": [
+      {
+        "at": 80,
+        "grant": {
+          "gold_wages": 60,
+          "tokens": {
+            "flask_small": 1
+          }
+        }
+      },
+      {
+        "at": 160,
+        "grant": {
+          "gold_wages": 80,
+          "tokens": {
+            "cart": 2
+          }
+        }
+      },
+      {
+        "at": 240,
+        "grant": {
+          "diamonds": 20,
+          "items": [
+            {
+              "tier": "rare",
+              "count": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "frenzy": {
+    "unlock_level": 5,
+    "window_seconds": 20,
+    "fill_pct": 40,
+    "duration_seconds": 60,
+    "bonus_bp": 10000,
+    "cover_pct": 30,
+    "per_day": 3,
+    "cooldown_seconds": 1800
+  },
+  "road": {
+    "milestones": [
+      {
+        "level": 3,
+        "grant": {
+          "diamonds": 10,
+          "tokens": {
+            "flask_small": 1
+          }
+        }
+      },
+      {
+        "level": 5,
+        "grant": {
+          "diamonds": 15,
+          "tokens": {
+            "cart": 1
+          }
+        }
+      },
+      {
+        "level": 8,
+        "grant": {
+          "diamonds": 20,
+          "items": [
+            {
+              "tier": "uncommon",
+              "count": 1
+            }
+          ]
+        }
+      },
+      {
+        "level": 10,
+        "grant": {
+          "diamonds": 25,
+          "tokens": {
+            "flask_large": 1
+          }
+        }
+      },
+      {
+        "level": 12,
+        "grant": {
+          "diamonds": 20,
+          "tokens": {
+            "flask_large": 1
+          }
+        }
+      },
+      {
+        "level": 15,
+        "grant": {
+          "diamonds": 30,
+          "items": [
+            {
+              "tier": "rare",
+              "count": 1
+            }
+          ]
+        }
+      },
+      {
+        "level": 18,
+        "grant": {
+          "diamonds": 25,
+          "tokens": {
+            "cart": 2
+          }
+        }
+      },
+      {
+        "level": 20,
+        "grant": {
+          "diamonds": 30,
+          "cosmetics": [
+            "frame_rising_lord"
+          ]
+        },
+        "crown": true
+      },
+      {
+        "level": 25,
+        "grant": {
+          "diamonds": 30,
+          "items": [
+            {
+              "tier": "rare",
+              "count": 1
+            }
+          ]
+        }
+      },
+      {
+        "level": 30,
+        "grant": {
+          "diamonds": 35,
+          "tokens": {
+            "flask_large": 1
+          }
+        }
+      },
+      {
+        "level": 35,
+        "grant": {
+          "diamonds": 30,
+          "items": [
+            {
+              "tier": "epic",
+              "count": 1
+            }
+          ]
+        }
+      },
+      {
+        "level": 40,
+        "grant": {
+          "diamonds": 35,
+          "cosmetics": [
+            "title_wayfarer"
+          ]
+        },
+        "crown": true
+      },
+      {
+        "level": 45,
+        "grant": {
+          "diamonds": 35,
+          "tokens": {
+            "cart": 3
+          }
+        }
+      },
+      {
+        "level": 50,
+        "grant": {
+          "diamonds": 40,
+          "items": [
+            {
+              "tier": "epic",
+              "count": 1
+            }
+          ]
+        }
+      },
+      {
+        "level": 60,
+        "grant": {
+          "diamonds": 55,
+          "cosmetics": [
+            "crest_sun"
+          ],
+          "items": [
+            {
+              "tier": "legendary",
+              "count": 1
+            }
+          ]
+        },
+        "crown": true
+      }
+    ]
+  },
+  "guide": {
+    "steps": [
+      {
+        "id": "welcome",
+        "kind": "tap",
+        "title": "WELCOME, MY LORD",
+        "text": "I am your steward. Your family's name is small and its purse is thin, but that is a thing we can mend together. Let me show you the realm.",
+        "done": "Then let us begin.",
+        "tab": "collect"
+      },
+      {
+        "id": "first_collect",
+        "kind": "deed",
+        "title": "HONEST WORK",
+        "text": "Every lord begins in the fields. Tap COLLECT to work the vineyard: it costs energy, and pays gold and experience.",
+        "done": "Well struck, my lord. The first grapes are in.",
+        "tab": "collect",
+        "target": "collect.job0",
+        "deed": "collects",
+        "count": 1
+      },
+      {
+        "id": "reach_2",
+        "kind": "level",
+        "title": "A NAME TO GROW",
+        "text": "Keep working. Experience brings new levels, and each new level fills your energy at once.",
+        "done": "Level two! The market will trade with you now.",
+        "tab": "collect",
+        "target": "collect.job0",
+        "level": 2
+      },
+      {
+        "id": "daily",
+        "kind": "deed",
+        "title": "THE CROWN REMEMBERS",
+        "text": "Each day you come back, the crown sends a gift, and the gifts grow the longer you keep coming. Claim today's.",
+        "done": "Come back tomorrow, and the next day: the crown's gifts grow.",
+        "tab": "collect",
+        "target": "daily.claim",
+        "deed": "daily_claims",
+        "count": 1
+      },
+      {
+        "id": "cart",
+        "kind": "deed",
+        "title": "THE TAX CART",
+        "text": "Every four hours a tax cart comes to your gate with the crown's share of the road. Open it in the Court.",
+        "done": "Three carts can wait for you. Never let a fourth be turned away.",
+        "tab": "court",
+        "target": "court.chests",
+        "deed": "carts_opened",
+        "count": 1,
+        "min_level": 2
+      },
+      {
+        "id": "buy_gear",
+        "kind": "deed",
+        "title": "THE MARKET",
+        "text": "A lord needs a blade. Buy something from the market: here is a little silver from the family chest if yours is short.",
+        "done": "A fine choice, my lord.",
+        "tab": "shop",
+        "target": "shop.offer",
+        "deed": "buys",
+        "count": 1,
+        "min_level": 2,
+        "purse": true
+      },
+      {
+        "id": "wear_gear",
+        "kind": "worn",
+        "title": "DRESSED FOR IT",
+        "text": "Gear does nothing in a chest. Open your family and put it on.",
+        "done": "Now you look the part.",
+        "tab": "family",
+        "target": "family.gear"
+      },
+      {
+        "id": "stats",
+        "kind": "deed",
+        "title": "YOUR OWN STRENGTH",
+        "text": "Each level gives you stat points. Spend them: energy for more work, attack and defence for the fights to come.",
+        "done": "Stronger already.",
+        "tab": "family",
+        "target": "family.stats",
+        "deed": "stat_spends",
+        "count": 1
+      },
+      {
+        "id": "upgrade",
+        "kind": "deed",
+        "title": "THE ESTATES",
+        "text": "At level four your estates open. Build the family's first upgrade: estates earn while you are away.",
+        "done": "It will pay for itself, my lord, and then some.",
+        "tab": "family",
+        "target": "family.estates",
+        "deed": "upgrades",
+        "count": 1,
+        "min_level": 4,
+        "purse": true
+      },
+      {
+        "id": "recruit",
+        "kind": "deed",
+        "title": "A SWORD AT YOUR SIDE",
+        "text": "At level five you may raise soldiers. The first one serves you for nothing: recruit them.",
+        "done": "Every army starts with one.",
+        "tab": "army",
+        "target": "army.recruit",
+        "deed": "recruits",
+        "count": 1,
+        "min_level": 5
+      },
+      {
+        "id": "bandit",
+        "kind": "bandit",
+        "title": "KAREL THE BANDIT",
+        "text": "A bandit has been robbing your road. Take your soldier and teach Karel a lesson.",
+        "done": "The road is safe again, and Karel's purse is yours.",
+        "tab": "attack",
+        "target": "attack.bandit"
+      },
+      {
+        "id": "farewell",
+        "kind": "tap",
+        "title": "THE REALM AWAITS",
+        "text": "You know the realm now. From level ten you may raid your rivals; at twenty, join a kingdom. I will be here whenever you need me.",
+        "done": "Go well, my lord.",
+        "tab": "collect"
+      }
+    ],
+    "finish": {
+      "diamonds": 20,
+      "cosmetics": [
+        "frame_heir"
+      ]
+    },
+    "purse_max": 300,
+    "bandit": {
+      "name": "Karel the Bandit",
+      "avatar": "bandit",
+      "level": 1,
+      "seeds": 16,
+      "attack": 6,
+      "defense": 4,
+      "speed": 4,
+      "hp": 60,
+      "grant": {
+        "gold_wages": 40
+      }
+    }
+  },
+  "winback": {
+    "away_days": 3,
+    "long_away_days": 14,
+    "cooldown_days": 14,
+    "grant": {
+      "gold_wages": 120,
+      "tokens": {
+        "flask_large": 1,
+        "cart": 1
+      },
+      "boosts": [
+        {
+          "bucket": "collect_income_bp",
+          "bp": 5000,
+          "hours": 24
+        },
+        {
+          "bucket": "xp_bp",
+          "bp": 5000,
+          "hours": 24
+        }
+      ]
+    },
+    "long_grant": {
+      "diamonds": 20
+    },
+    "title": "Welcome back, my lord",
+    "body": "The realm kept your seat warm. Take these from the crown's own stores, and for a day your work pays half again as much.",
+    "long_title": "The crown has missed you",
+    "long_body": "Fourteen days and more! The treasurer insisted on this as well."
+  }
+}

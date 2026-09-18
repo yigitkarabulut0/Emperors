@@ -102,12 +102,19 @@ func _the_next_slot_comes_after_the_last_one() -> void:
 ## into the portraits along with the soldiers: a gold line along the villager's
 ## top, another down the mercenary's left. On the phone that read as a
 ## highlight that never moved, whatever was selected. A portrait is its own
-## card's window and nothing of the frame round it.
+## card's window and nothing of the frame round it -- the soldier sheet's cards
+## have gold frames too, so every type in every look, small and large, is held
+## to it.
 func _no_portrait_carries_the_paintings_selection() -> void:
-	for type in ["villager", "mercenary", "gladiator"]:
-		var img := Image.load_from_file("res://assets/portraits/soldier_%s.png" % type)
+	var names: Array[String] = []
+	for type in ["peasant", "mercenary", "gladiator"]:
+		for look in ["rough", "fine", "gilded"]:
+			names.append("soldier_%s_%s" % [type, look])
+			names.append("soldier_%s_%s_large" % [type, look])
+	for type in names:
+		var img := Image.load_from_file("res://assets/portraits/%s.png" % type)
 		if img == null:
-			_fail("no portrait for the %s" % type)
+			_fail("no portrait %s" % type)
 			continue
 		# The painting's gold is pale where it catches the light -- 254,254,174 --
 		# so the test is warm and bright, not merely yellow. Three pixels deep,

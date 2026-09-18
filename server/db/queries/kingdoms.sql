@@ -18,8 +18,9 @@ SELECT * FROM app.kingdoms WHERE id = $1 FOR UPDATE;
 -- Ordered by rank then contribution, which is the order the roster should read:
 -- who leads, then who has actually carried the kingdom.
 -- name: ListKingdomMembers :many
-SELECT id, display_name, level, kingdom_role, kingdom_joined_at,
-       kingdom_donated_total, kingdom_favour
+SELECT id, display_name, avatar, level, kingdom_role, kingdom_joined_at,
+       kingdom_donated_total, kingdom_favour,
+       cos_frame, cos_title, cos_color, cos_crest, vip_points
 FROM app.players
 WHERE kingdom_id = $1
 ORDER BY CASE kingdom_role WHEN 'king' THEN 0 WHEN 'marshal' THEN 1 ELSE 2 END,
@@ -114,7 +115,8 @@ SELECT kingdom_id FROM app.kingdom_invites WHERE player_id = $1 AND direction = 
 
 -- Who has asked to join, oldest first: the Lords tab answers them in order.
 -- name: ListRequestsForKingdom :many
-SELECT p.id, p.display_name, p.level, i.created_at
+SELECT p.id, p.display_name, p.level, i.created_at, p.avatar,
+       p.cos_frame, p.cos_title, p.cos_color, p.cos_crest, p.vip_points
 FROM app.kingdom_invites i JOIN app.players p ON p.id = i.player_id
 WHERE i.kingdom_id = $1 AND i.direction = 'request' AND p.kingdom_id IS NULL
 ORDER BY i.created_at

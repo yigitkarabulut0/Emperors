@@ -9,10 +9,13 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/auth"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
+	"github.com/yigitkarabulut0/emperors/server/internal/iap"
+	"github.com/yigitkarabulut0/emperors/server/internal/realtime"
 )
 
 // Errors the HTTP layer maps to status codes. Services return these rather than
@@ -51,4 +54,32 @@ type Deps struct {
 	// Nil is legal and means no events -- Get() answers nil safely -- so tests
 	// and tools that build a Deps by hand keep working untouched.
 	Boosts *Boosts
+
+	// IAP verifies what the App Store signs. Nil is legal: purchases answer
+	// that they are not set up, and nothing else changes.
+	IAP *iap.Verifier
+
+	// Herald holds the advert unit the client plays and the keys a watched
+	// advert's callback is checked against (ads.go). Nil is legal and is what
+	// a realm with no adverts looks like: the store hides the section and the
+	// routes answer that it is shut.
+	Herald *Herald
+
+	// Hall pushes a kingdom's own news to the lords standing in it: a line
+	// said, a call for aid, the shared goal's bar moving. Nil is legal -- tools
+	// and tests push nothing -- and every call goes through d.tell(), which
+	// checks.
+	//
+	// The hall is never the truth. A frame that could not be sent costs a lord
+	// one poll, and a push that failed must never fail the action that caused
+	// it, so nothing here returns an error.
+	Hall *realtime.Hub
+}
+
+// tell pushes one frame into a kingdom's room, if there is a hub and a room.
+func (d Deps) tell(room uuid.UUID, kind string, payload any) {
+	if d.Hall == nil || room == uuid.Nil {
+		return
+	}
+	d.Hall.Publish(room, kind, payload)
 }

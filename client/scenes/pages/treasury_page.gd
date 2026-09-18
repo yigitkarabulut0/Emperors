@@ -1,76 +1,78 @@
 extends RefCounted
 ## THE ROYAL TREASURY — gold a raid cannot touch.
 ##
-## It was a number prompt with two buttons. The vault's whole point is a
-## decision -- how much to carry, how much to bank at a fee -- and a page can
-## put the figures that decide it in front of the player: what is on hand, what
-## is banked, the fee the server charges, with ALL and HALF a tap away. What a
-## deposit burned is the server's answer (moved, fee, banked), said after it.
+## It was a number prompt with two buttons, then a Sheet of kit rows. The
+## vault's whole point is a decision -- how much to carry, how much to bank at
+## a fee -- and the page puts the figures that decide it in front of the
+## player: what is on hand, what is banked, the fee the server charges, with
+## ALL and HALF a tap away. What a deposit burned is the server's answer
+## (moved, fee, banked), said after it.
+##
+## Now it is its own painting (art/reference/treasury.png, layout
+## client/layout/treasury.json) on the painted pages' host: the figures in the
+## painting's boxes, the fee on its long plate, the amount typed into its box.
 
-const INFO_H := 110.0
+const SCREEN := "page:royal_treasury"
+const PAGE := "treasury"
 
 
-## `treasury` is the estates view's treasury: {vault, deposit_fee_bp, unlock_level, unlocked}.
-static func open(host: Node, treasury: Dictionary) -> Sheet:
-	var s := Sheet.open(host, "ROYAL TREASURY", "Gold in the vault cannot be stolen.")
-	s.set_meta("t", treasury)
-	_paint(s)
-	return s
+## `treasury` is the estates view's treasury: {vault, deposit_fee_bp,
+## unlock_level, unlocked}. `opts` goes to PaintedPage.open (a test's inset),
+## but for `mode`: "deposit" or "withdraw" opens the page ready for that move,
+## its amount already the whole of what it would move (ALL ON HAND, ALL IN
+## VAULT) -- the Family tab's TREASURY card opens it from its two buttons. The
+## move itself is still the page's own button.
+static func open(host: Node, treasury: Dictionary, opts: Dictionary = {}) -> PaintedPage:
+	# The name the analytics has always had for it, from its Sheet days.
+	var o := {"screen": SCREEN}
+	o.merge(opts, true)
+	var mode := str(o.get("mode", ""))
+	o.erase("mode")
+	var p := PaintedPage.open(host, PAGE, o)
+	p.set_meta("t", treasury)
+	var field := p.field("amount", "Amount of gold", true)
+	p.set_meta("field", field)
+	p.on("all_hand", func() -> void: field.text = str(GameState.display_gold()))
+	p.on("half", func() -> void: field.text = str(GameState.display_gold() / 2))
+	p.on("all_vault", func() -> void: field.text = str(_vault()))
+	p.on("deposit", func() -> void: await _move(p, true, _amount(field)))
+	p.on("withdraw", func() -> void: await _move(p, false, _amount(field)))
+	match mode:
+		"deposit":
+			field.text = str(GameState.display_gold())
+		"withdraw":
+			field.text = str(_vault())
+	_paint(p)
+	return p
 
 
 static func _vault() -> int:
 	return int(str(GameState.player().get("treasury", "0")))
 
 
-static func _paint(s: Sheet) -> void:
-	s.clear_body()
-	for c in s.foot.get_children():
-		c.queue_free()
-	var t: Dictionary = s.get_meta("t")
+static func _amount(field: LineEdit) -> int:
+	return int(field.text.strip_edges().replace(",", "").replace(".", ""))
+
+
+static func _paint(p: PaintedPage) -> void:
+	var t: Dictionary = p.get_meta("t")
 	var open := bool(t.get("unlocked", true))
 	var fee_bp := int(t.get("deposit_fee_bp", 0))
 	var fee := (str(fee_bp / 100) if fee_bp % 100 == 0 else "%.1f" % (fee_bp / 100.0)) + "%"
-
-	for pair in [["ON HAND", GameState.display_gold(), "icons/coin"], ["IN THE VAULT", _vault(), "icons/city_shield"]]:
-		var row := s.slot(INFO_H)
-		var icon := UI.image(str(pair[2]), Rect2(20, 14, 82, 82))
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		row.add_child(icon)
-		Sheet.put(row, str(pair[0]), Rect2(118, 0, 300, INFO_H), 26, UI.DIM, "title", 700)
-		Sheet.put(row, UI.grouped(int(pair[1])), Rect2(s.inner_w - 340, 0, 320, INFO_H), 36, UI.INK, "body", 700,
-			HORIZONTAL_ALIGNMENT_RIGHT)
-
+	p.set_text("on_hand", UI.grouped(GameState.display_gold()), 28)
+	p.set_text("vault", UI.grouped(_vault()), 28)
 	if open:
-		s.paragraph("A deposit costs %s, and the fee is gone for good. Taking gold out is free." % fee, 22, UI.DIM)
+		p.set_text("note", "A deposit costs %s, and the fee is gone for good. Taking gold out is free." % fee,
+			18).label_settings.font_color = UI.INK
 	else:
-		s.paragraph("Deposits open at level %d. What is already in the vault is yours to take." % int(t.get("unlock_level", 1)),
-			22, UI.GOLD)
-
-	var field := UI.field("Amount of gold", 34, false, HORIZONTAL_ALIGNMENT_CENTER)
-	field.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
-	field.custom_minimum_size = Vector2(s.inner_w, 92)
-	s.body.add_child(field)
-	var chips := HBoxContainer.new()
-	chips.add_theme_constant_override("separation", 12)
-	chips.custom_minimum_size = Vector2(s.inner_w, 96)
-	s.body.add_child(chips)
-	var quick := [["ALL ON HAND", GameState.display_gold()], ["HALF", GameState.display_gold() / 2],
-		["ALL IN VAULT", _vault()]]
-	for q in quick:
-		var c := Sheet.button(str(q[0]), Dialog.QUIET_PLATE, UI.INK, 96, 21)
-		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		c.pressed.connect(func() -> void: field.text = str(int(q[1])))
-		chips.add_child(c)
-
-	var amount := func() -> int:
-		return int(field.text.strip_edges().replace(",", "").replace(".", ""))
-	if open:
-		s.add_button("DEPOSIT", "confirm", func() -> void: await _move(s, true, amount.call()))
-	s.add_button("WITHDRAW", "quiet" if open else "confirm", func() -> void: await _move(s, false, amount.call()))
-	s.add_close()
+		p.set_text("note", "Deposits open at level %d. What is already in the vault is yours to take." % int(
+			t.get("unlock_level", 1)), 18).label_settings.font_color = UI.GOLD
+	# Closed below its level, DEPOSIT stays where the painting has it, dimmed:
+	# what is already banked can still come out.
+	p.set_enabled("deposit", open)
 
 
-static func _move(s: Sheet, deposit: bool, amount: int) -> void:
+static func _move(p: PaintedPage, deposit: bool, amount: int) -> void:
 	if amount <= 0:
 		GameState.action_failed.emit("Say how much gold")
 		return
@@ -83,5 +85,6 @@ static func _move(s: Sheet, deposit: bool, amount: int) -> void:
 			(" -- %s went in fees" % UI.grouped(fee)) if fee > 0 else ""])
 	else:
 		GameState.toast("Took %s from the vault" % UI.grouped(int(res.data.get("moved", amount))))
-	if is_instance_valid(s):
-		_paint(s)
+	if is_instance_valid(p):
+		(p.get_meta("field") as LineEdit).text = ""
+		_paint(p)

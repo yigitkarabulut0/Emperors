@@ -1,8 +1,6 @@
 package service
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -66,18 +64,7 @@ func TestTheShelfIsDeterministic(t *testing.T) {
 // The mask lives in SQL, which no test here has a database for, so the query
 // itself is what gets held: bumping the reroll must clear what was bought.
 func TestBumpRerollClearsThePurchaseMask(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("..", "..", "db", "queries", "shop.sql"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	i := strings.Index(string(b), "-- name: BumpReroll")
-	if i < 0 {
-		t.Fatal("BumpReroll is gone from db/queries/shop.sql")
-	}
-	stmt := string(b)[i:]
-	if j := strings.Index(stmt, ";"); j >= 0 {
-		stmt = stmt[:j]
-	}
+	stmt := queryStatement(t, "shop.sql", "BumpReroll")
 	if !strings.Contains(stmt, "purchased_mask = 0") {
 		t.Fatalf("BumpReroll no longer clears purchased_mask:\n%s", stmt)
 	}

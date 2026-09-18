@@ -1,0 +1,159 @@
+{
+ "source": "offers.png",
+ "notes": [
+  "ROYAL OFFERS -- the Court's OFFERS card (client/scenes/court/offers_view.gd, layout client/layout/offers.json).",
+  "This painting sat unused in ~/Downloads/Emperors_Design_Pack. The offers themselves were only ever a section of the Royal Store; this is the screen the painting asks for.",
+  "MEASURED off the painting's own gold. The content column starts at x 155, as every Court view's does. The three cards stand at y 502, 870 and 1231, each 762 wide from x 160 and 345 tall. Inside a card, from its own corner: the crimson title band (12,11,738,41), the bundle painting (12,45,301,298), three reward tiles 120x112 at x 313, 456 and 600, y 73, the hourglass (500,198,65,75), the timer plate (569,205,163,49) and the green price plate (498,262,237,69).",
+  "THE VALUE PLATE IS NOT CUT. The painting puts an empty plate at (314,205,188,49) with a thin gold line struck through it -- the pack's brief calls it 'an EMPTY value plate' -- which is a was-price. This game has no was-price to strike: what a buyer pays is StoreKit's localized price, and the catalogue's usd_cents is Royal Favour's arithmetic and never a price to show (store_view.gd's own note). So the plate and its strike are ERASED from the card rather than left standing empty, and the rect is written down here for the day the catalogue publishes a full price to strike.",
+  "The card is cut from the SECOND one, which the painting leaves without a ribbon. Its bundle painting and its value plate are erased; the three bundles are cut separately and laid back in their place, and the BEST VALUE ribbon is cut from the first card as the corner it is."
+ ],
+ "crops": [
+  {
+   "name": "offers/header",
+   "rect": [
+    155,
+    0,
+    786,
+    502
+   ],
+   "inpaint": [
+    [
+     150,
+     106,
+     212,
+     72
+    ]
+   ],
+   "note": "The merchant stand, ROYAL OFFERS and 'For a limited time only.' The painting's own back chip is lifted out of it: every Court view wears the shared one (CourtBack, chrome/court_back), so two would stand on each other."
+  },
+  {
+   "name": "offers/card",
+   "rect": [
+    160,
+    870,
+    762,
+    345
+   ],
+   "erase": [
+    {
+     "rect": [
+      172,
+      924,
+      301,
+      285
+     ],
+     "sample_x": [
+      462,
+      470
+     ]
+    },
+    {
+     "rect": [
+      472,
+      1072,
+      192,
+      56
+     ],
+     "sample_x": [
+      462,
+      470
+     ]
+    }
+   ],
+   "note": "One offer card, empty: its frame, its crimson title band, its three reward tiles, the hourglass and the timer plate. The bundle painting and the value plate are erased back to the card's own navy, sampled from the clear column between the picture and the tiles."
+  },
+  {
+   "name": "offers/bundle_1",
+   "rect": [
+    172,
+    556,
+    301,
+    285
+   ],
+   "note": "A glowing crate of blue flasks and diamonds -- the painting's first bundle. Cut with the card's own navy around it, so it goes back over the erased card without an edge. The ribbon the painting lays across this one is filled back from the scene around it, so the crate can stand on any card and the ribbon is hung by the badge alone.",
+   "inpaint": [
+    {
+     "polygon": [
+      [
+       168,
+       548
+      ],
+      [
+       300,
+       548
+      ],
+      [
+       168,
+       660
+      ]
+     ],
+     "dilate": 7,
+     "radius": 16,
+     "blur": 15
+    }
+   ]
+  },
+  {
+   "name": "offers/bundle_2",
+   "rect": [
+    172,
+    924,
+    301,
+    285
+   ],
+   "note": "Three flasks on a velvet cushion beside a pouch of diamonds."
+  },
+  {
+   "name": "offers/bundle_3",
+   "rect": [
+    172,
+    1285,
+    301,
+    285
+   ],
+   "note": "A sealed charter with its blue shield beside a pouch of diamonds."
+  },
+  {
+   "name": "offers/ribbon_best",
+   "rect": [
+    160,
+    502,
+    220,
+    134
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      218,
+      0
+     ],
+     [
+      0,
+      132
+     ]
+    ],
+    "feather": 1
+   },
+   "note": "The corner ribbon the painting hangs on its best offer, cut as the corner it is: everything above its own lower edge, which is the card's frame, the left of its title band and the ribbon. Shown on the offer whose badge says so."
+  },
+  {
+   "name": "offers/buy",
+   "rect": [
+    658,
+    1132,
+    237,
+    69
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 10
+   },
+   "note": "The emerald price plate. The word on it is the App Store's own price, set in type (StorePrice)."
+  }
+ ]
+}

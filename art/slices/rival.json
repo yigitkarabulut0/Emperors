@@ -1,0 +1,354 @@
+{
+  "source": "rival.png",
+  "note": "A RIVAL'S PAGE -- scenes/pages/rival_page.gd, a painted page like THE CROWN'S FAVOUR. The page is cut as one background with the things that come and go lifted off it: the SCOUTED seal (only while a spyglass report is live), the VIP seal (only for a patron, and the kit already has one), and the five plates at the foot, which are buttons and have to dim. Everything else -- the vista, the crowned frame, the crest's field, the name plate, the ribbon and the three stat plates -- is empty as painted and is filled with type.",
+  "crops": [
+    {
+      "name": "rival/back",
+      "rect": [
+        30,
+        0,
+        880,
+        1672
+      ],
+      "patch": [
+        {
+          "from": [
+            243,
+            610,
+            164,
+            168
+          ],
+          "to": [
+            58,
+            610
+          ],
+          "flip": "h",
+          "feather": 6,
+          "note": "The SCOUTED seal covers the portrait frame's bottom-left corner, and the painting has no clean copy of what is under it. Its own mirror does: the frame's bottom-RIGHT corner, flipped. The frame is symmetrical, so what comes back is the frame's own ink and not a guess."
+        },
+        {
+          "from": [
+            566,
+            382,
+            104,
+            104
+          ],
+          "to": [
+            771,
+            382
+          ],
+          "flip": "h",
+          "feather": 4,
+          "note": "The VIP seal sits ACROSS the name plate's right end, so there is nothing clean under it to fill with -- but the plate's own LEFT end is its mirror. Telea was tried here first and dragged the plate's gold rim into a fan across the ground, which is exactly the smear the slicing guide warns about."
+        }
+      ],
+      "erase": [
+        {
+          "rect": [
+            56,
+            1306,
+            842,
+            152
+          ],
+          "sample_x": [
+            50,
+            57
+          ],
+          "note": "ADD FRIEND, SPY and ATTACK, lifted off the page's flat ground: each is a button that dims (a lord already befriended, a spyglass with no gold behind it, a rival under a shield), and a painted patch cannot dim. The whole strip goes, gaps and all: what is between them is the same flat ground."
+        },
+        {
+          "rect": [
+            180,
+            1473,
+            259,
+            86
+          ],
+          "sample_x": [
+            120,
+            140
+          ],
+          "note": "REPORT, the same. Erased to its own plate and no further, so the fleur between the two plates stays painted where it was -- a crop wide enough to carry it would make the whole band a button. Sampled from x 120..140, not the strip above's 50..57: the page's corner flourish reaches x 57 at these rows and a sample through it drew gold bands across the ground."
+        },
+        {
+          "rect": [
+            502,
+            1473,
+            259,
+            86
+          ],
+          "sample_x": [
+            120,
+            140
+          ],
+          "note": "CLOSE, the same. Sampled from x 120..140, not the strip above's 50..57: the page's corner flourish reaches x 57 at these rows and a sample through it drew gold bands across the ground."
+        }
+      ]
+    },
+    {
+      "name": "rival/portrait_hole",
+      "rect": [
+        58,
+        372,
+        350,
+        404
+      ],
+      "hole": {
+        "type": "ellipse",
+        "box": [
+          72,
+          36,
+          282,
+          298
+        ],
+        "feather": 3
+      },
+      "patch": [
+        {
+          "from": [
+            243,
+            610,
+            164,
+            168
+          ],
+          "to": [
+            58,
+            610
+          ],
+          "flip": "h",
+          "feather": 6
+        }
+      ],
+      "note": "The crowned frame, its window opened, laid back OVER the rival's face so the frame's inner edge overlaps it -- the same way the Throne lays its ring over the emperor. The opening is the painting's own window, measured: ink 130..340 by 408..670 (the arch's straight sides run 130..340 from y 500 to 605), so the face fills the window and the frame's rim, its bottom rail and the plate under it are untouched. The seal is mirrored away here too, because this piece carries the frame's own corner."
+    },
+    {
+      "name": "rival/scouted",
+      "rect": [
+        58,
+        610,
+        166,
+        168
+      ],
+      "mask": {
+        "type": "ellipse",
+        "box": [
+          6,
+          6,
+          160,
+          162
+        ],
+        "feather": 2
+      },
+      "note": "The wax seal, shown only while a spyglass report is live. Cut as its own round object so it can be laid back on the corner it was mirrored off."
+    },
+    {
+      "name": "rival/ring_1",
+      "rect": [
+        51,
+        1118,
+        160,
+        128
+      ],
+      "hole": [
+        {
+          "type": "ellipse",
+          "box": [
+            12,
+            8,
+            148,
+            120
+          ],
+          "feather": 2
+        },
+        {
+          "type": "ellipse",
+          "box": [
+            14,
+            14,
+            146,
+            126
+          ],
+          "feather": 2
+        }
+      ],
+      "note": "The soldier's ring with its window opened, laid back OVER the soldier drawn in it -- the portrait frame's trick at a fifth of the size. A soldier's painting is a square and the window is round: without this the corners of five squares stand on the page. The opening is two ellipses and not one, because the window is an egg -- wider low than an ellipse through the same points -- and one left a crescent of the painted soldier standing inside the rim. Each ring is cut SEPARATELY, at its own place, although the five are one object painted five times: the page's ground is not flat across it, so one ring's crop laid on another's place drew its own square of ground."
+    },
+    {
+      "name": "rival/ring_2",
+      "rect": [
+        219,
+        1118,
+        160,
+        128
+      ],
+      "hole": [
+        {
+          "type": "ellipse",
+          "box": [
+            12,
+            8,
+            148,
+            120
+          ],
+          "feather": 2
+        },
+        {
+          "type": "ellipse",
+          "box": [
+            14,
+            14,
+            146,
+            126
+          ],
+          "feather": 2
+        }
+      ],
+      "note": "The second ring, cut at its own place; see rival/ring_1."
+    },
+    {
+      "name": "rival/ring_3",
+      "rect": [
+        389,
+        1118,
+        160,
+        128
+      ],
+      "hole": [
+        {
+          "type": "ellipse",
+          "box": [
+            12,
+            8,
+            148,
+            120
+          ],
+          "feather": 2
+        },
+        {
+          "type": "ellipse",
+          "box": [
+            14,
+            14,
+            146,
+            126
+          ],
+          "feather": 2
+        }
+      ],
+      "note": "The third ring, cut at its own place; see rival/ring_1."
+    },
+    {
+      "name": "rival/ring_4",
+      "rect": [
+        559,
+        1118,
+        160,
+        128
+      ],
+      "hole": [
+        {
+          "type": "ellipse",
+          "box": [
+            12,
+            8,
+            148,
+            120
+          ],
+          "feather": 2
+        },
+        {
+          "type": "ellipse",
+          "box": [
+            14,
+            14,
+            146,
+            126
+          ],
+          "feather": 2
+        }
+      ],
+      "note": "The fourth ring, cut at its own place; see rival/ring_1."
+    },
+    {
+      "name": "rival/ring_5",
+      "rect": [
+        726,
+        1118,
+        160,
+        128
+      ],
+      "hole": [
+        {
+          "type": "ellipse",
+          "box": [
+            12,
+            8,
+            148,
+            120
+          ],
+          "feather": 2
+        },
+        {
+          "type": "ellipse",
+          "box": [
+            14,
+            14,
+            146,
+            126
+          ],
+          "feather": 2
+        }
+      ],
+      "note": "The fifth ring, cut at its own place; see rival/ring_1."
+    },
+    {
+      "name": "rival/add_friend",
+      "rect": [
+        56,
+        1310,
+        284,
+        128
+      ],
+      "note": "ADD FRIEND, the word baked. Dimmed once they are a friend, or while a request is waiting."
+    },
+    {
+      "name": "rival/spy",
+      "rect": [
+        340,
+        1310,
+        262,
+        134
+      ],
+      "note": "The spyglass and its price plate, the word baked. The price itself is live (it is the rival's level times the balance's rate), and is set in type on the plate under the word."
+    },
+    {
+      "name": "rival/attack",
+      "rect": [
+        604,
+        1310,
+        284,
+        128
+      ],
+      "note": "ATTACK, the word baked. Dimmed for a rival under a shield, an ally, or a lord too new to raid."
+    },
+    {
+      "name": "rival/report",
+      "rect": [
+        184,
+        1477,
+        251,
+        78
+      ],
+      "note": "REPORT, baked: what App Review 1.2 asks for beside anything a lord can write. Cut to the plate itself (ink 184..434 by 1477..1552), so the dim falls on the plate and the tap lands on it."
+    },
+    {
+      "name": "rival/close",
+      "rect": [
+        506,
+        1477,
+        251,
+        78
+      ],
+      "note": "CLOSE, the same plate, ink 506..756."
+    }
+  ]
+}

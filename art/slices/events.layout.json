@@ -1,0 +1,490 @@
+{
+ "screen": "events",
+ "source": "events.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#09151E",
+ "notes": [
+  "COURT \u25b8 EVENTS (client/scenes/court/events_view.gd), from events.png (art/slices/events.json). Every rect is the painting's; the foot is pinned to the screen's foot, so on a tall phone the panels stand where they were painted and the leaves stay at the bottom.",
+  "hero: the festival running, else the next announced, else the last to close (dimmed), else none. hero_scene is the festival's own scene (events/scene_<theme>_hero, event_themes.png drawn down) under the frame, whose window is cleared. hero_title: the name in the title plate (gold rim x 185..903, y 661..714; inside y 666..710), Cinzel 28 in the store's section gold, left; hero_bonus: what it gives this lord, Garamond 24, right, on the same plate. hero_timer: the time in the timer plate (steel x 255..494, y 735..780), Garamond 26 as the Court's lines. view: VIEW where it was painted (x 645..897, y 723..787); view_badge/count: the Court's count disc on VIEW's corner while something waits to be claimed.",
+  "card_*: the two cards (left steel x 161..529, right 537..928, y 815..1169): the festival's scene (events/scene_<theme>_left|right) under the frame; name in the title plate (x 180..511 and 556..909, y 1046..1097), Cinzel 24 gold; its time in the timer plate (x 255..459 and 646..843, y 1110..1149); card_badge_*: the Court's disc (court/badge) where the painting's red disc was (centres x 493 and 894.5, y 842.5), only while the card has something to claim.",
+  "hours_*: ROYAL HOURS: the hour's event (its icon, hourly/<id>, drawn down into the name plate's left; its name) in the name plate (x 296..536, y 1236..1285), its time in the timer plate (x 591..727, y 1242..1282), the next hour's in NEXT's plate (x 759..899, y 1239..1282). A tap opens the hours' odds.",
+  "up_row: UPCOMING's rows (court/event_row, the painting's own row with its calendar lifted) at the painting's pitch 69 (y 1357, 1426, 1495): the calendar for what is announced, the hourglass for an operator's event running now. Their words where the Wave 2 events panel set them.",
+  "The painting's small red badge on each card is not cut: a card is a festival announced or past, and neither ever has anything to claim -- what a festival still owes a lord comes by letter when it closes."
+ ],
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "events/header",
+   "rect": [
+    155,
+    0,
+    786,
+    402
+   ]
+  },
+  {
+   "id": "hero_scene",
+   "kind": "image",
+   "asset": "events/scene_harvest_hero",
+   "rect": [
+    173,
+    411,
+    745,
+    276
+   ]
+  },
+  {
+   "id": "hero",
+   "kind": "image",
+   "asset": "events/hero",
+   "rect": [
+    155,
+    402,
+    786,
+    407
+   ]
+  },
+  {
+   "id": "hero_title",
+   "kind": "text",
+   "rect": [
+    203,
+    666,
+    480,
+    44
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#F1D48D",
+   "align": "left",
+   "valign": "center",
+   "sample": "HARVEST FESTIVAL"
+  },
+  {
+   "id": "hero_bonus",
+   "kind": "text",
+   "rect": [
+    683,
+    666,
+    206,
+    44
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "right",
+   "valign": "center",
+   "sample": "+25% gold for you"
+  },
+  {
+   "id": "hero_timer",
+   "kind": "text",
+   "rect": [
+    263,
+    739,
+    224,
+    38
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Ends in 2d 14h"
+  },
+  {
+   "id": "view",
+   "kind": "button",
+   "asset": "events/view",
+   "rect": [
+    644,
+    708,
+    256,
+    95
+   ],
+   "action": "view",
+   "paint_rect": [
+    644,
+    721,
+    256,
+    68
+   ],
+   "keep_texture_size": true
+  },
+  {
+   "id": "hero_hit",
+   "kind": "hotspot",
+   "rect": [
+    173,
+    411,
+    745,
+    250
+   ],
+   "action": "view"
+  },
+  {
+   "id": "view_badge",
+   "kind": "image",
+   "asset": "court/badge",
+   "rect": [
+    857,
+    695,
+    62,
+    62
+   ]
+  },
+  {
+   "id": "view_count",
+   "kind": "text",
+   "rect": [
+    857,
+    708,
+    62,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "2"
+  },
+  {
+   "id": "card_scene_l",
+   "kind": "image",
+   "asset": "events/scene_blood_moon_left",
+   "rect": [
+    174,
+    826,
+    344,
+    220
+   ]
+  },
+  {
+   "id": "card_scene_r",
+   "kind": "image",
+   "asset": "events/scene_caravan_right",
+   "rect": [
+    548,
+    826,
+    369,
+    220
+   ]
+  },
+  {
+   "id": "cards",
+   "kind": "image",
+   "asset": "events/cards",
+   "rect": [
+    155,
+    809,
+    786,
+    365
+   ]
+  },
+  {
+   "id": "card_title_l",
+   "kind": "text",
+   "rect": [
+    192,
+    1050,
+    307,
+    43
+   ],
+   "font": "title",
+   "size": 24,
+   "weight": 700,
+   "color": "#F1D48D",
+   "align": "center",
+   "valign": "center",
+   "sample": "BLOOD MOON"
+  },
+  {
+   "id": "card_title_r",
+   "kind": "text",
+   "rect": [
+    568,
+    1050,
+    329,
+    43
+   ],
+   "font": "title",
+   "size": 24,
+   "weight": 700,
+   "color": "#F1D48D",
+   "align": "center",
+   "valign": "center",
+   "sample": "MERCHANT CARAVAN"
+  },
+  {
+   "id": "card_timer_l",
+   "kind": "text",
+   "rect": [
+    262,
+    1111,
+    190,
+    37
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Starts in 4d 02h"
+  },
+  {
+   "id": "card_timer_r",
+   "kind": "text",
+   "rect": [
+    653,
+    1111,
+    184,
+    37
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Ended 3d ago"
+  },
+  {
+   "id": "card_hit_l",
+   "kind": "hotspot",
+   "rect": [
+    161,
+    815,
+    369,
+    355
+   ],
+   "action": "card_l"
+  },
+  {
+   "id": "card_hit_r",
+   "kind": "hotspot",
+   "rect": [
+    537,
+    815,
+    392,
+    355
+   ],
+   "action": "card_r"
+  },
+  {
+   "id": "hours",
+   "kind": "image",
+   "asset": "events/hours",
+   "rect": [
+    155,
+    1174,
+    786,
+    138
+   ]
+  },
+  {
+   "id": "hours_icon",
+   "kind": "image",
+   "asset": "hourly/gold_rush",
+   "rect": [
+    305,
+    1242,
+    38,
+    38
+   ]
+  },
+  {
+   "id": "hours_name",
+   "kind": "text",
+   "rect": [
+    350,
+    1240,
+    180,
+    41
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "left",
+   "valign": "center",
+   "sample": "Quartermaster's Sale"
+  },
+  {
+   "id": "hours_timer",
+   "kind": "text",
+   "rect": [
+    596,
+    1243,
+    126,
+    38
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "12m 40s"
+  },
+  {
+   "id": "hours_next",
+   "kind": "text",
+   "rect": [
+    765,
+    1242,
+    128,
+    38
+   ],
+   "font": "body",
+   "size": 21,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Scholar's Hour"
+  },
+  {
+   "id": "hours_hit",
+   "kind": "hotspot",
+   "rect": [
+    160,
+    1180,
+    767,
+    127
+   ],
+   "action": "hours"
+  },
+  {
+   "id": "upcoming",
+   "kind": "image",
+   "asset": "events/upcoming",
+   "rect": [
+    155,
+    1312,
+    786,
+    254
+   ]
+  },
+  {
+   "id": "up_row",
+   "kind": "template",
+   "rect": [
+    178,
+    1355,
+    731,
+    67
+   ],
+   "instances": [
+    [
+     178,
+     1355
+    ],
+    [
+     178,
+     1424
+    ],
+    [
+     178,
+     1493
+    ]
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "court/event_row",
+     "rect": [
+      0,
+      0,
+      731,
+      67
+     ]
+    },
+    {
+     "id": "icon",
+     "kind": "image",
+     "asset": "court/event_calendar",
+     "rect": [
+      15,
+      5,
+      52,
+      56
+     ]
+    },
+    {
+     "id": "what",
+     "kind": "text",
+     "rect": [
+      102,
+      14,
+      268,
+      37
+     ],
+     "font": "title",
+     "size": 22,
+     "weight": 700,
+     "color": "#F1D48D",
+     "align": "left",
+     "valign": "center",
+     "sample": "Job payout +50%"
+    },
+    {
+     "id": "worth",
+     "kind": "text",
+     "rect": [
+      378,
+      14,
+      180,
+      37
+     ],
+     "font": "body",
+     "size": 23,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "+70% for you"
+    },
+    {
+     "id": "when",
+     "kind": "text",
+     "rect": [
+      562,
+      14,
+      135,
+      37
+     ],
+     "font": "body",
+     "size": 23,
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "right",
+     "valign": "center",
+     "sample": "in 5h 00m"
+    }
+   ]
+  },
+  {
+   "id": "foot",
+   "kind": "image",
+   "asset": "events/foot",
+   "rect": [
+    155,
+    1500,
+    786,
+    172
+   ],
+   "anchor": "bottom"
+  }
+ ]
+}

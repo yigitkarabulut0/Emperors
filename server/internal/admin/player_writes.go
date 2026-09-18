@@ -9,8 +9,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
+	"github.com/yigitkarabulut0/emperors/server/internal/ledger"
 )
 
 // The panel's write surface over one player.
@@ -33,11 +35,62 @@ var ErrNothingToDo = errors.New("nothing to change")
 // ErrOutOfRange is returned for a value the game could not represent.
 var ErrOutOfRange = errors.New("that value is out of range")
 
+// validateAdjust refuses a grant the game could not represent, before any write.
+//
+// Pure, so the rule is tested without a database. The same guards also sit in
+// AdminAdjustPlayer's WHERE, which is what holds under a race; this is what
+// turns the common case into a readable "that would leave negative diamonds"
+// rather than a refused row.
+func validateAdjust(before sqlcdb.AppPlayer, gold, diamonds, xp int64, statPoints int32) error {
+	if gold == 0 && diamonds == 0 && xp == 0 && statPoints == 0 {
+		return ErrNothingToDo
+	}
+	if before.Gold+gold < 0 {
+		return fmt.Errorf("%w: that would leave a negative balance", ErrOutOfRange)
+	}
+	if diamonds < 0 && before.Diamonds+diamonds < 0 {
+		return fmt.Errorf("%w: that would leave negative diamonds", ErrOutOfRange)
+	}
+	return nil
+}
+
+// lockedWrite runs one admin write inside a transaction holding the player's row
+// lock, and returns the row as it was before and after.
+//
+// Every write here used to read the player, then write, with nothing between
+// them: a grant racing a player's own purchase could validate against a balance
+// that was already gone, and the audit's "before" could describe a moment that
+// never existed next to its "after".
+func (s *Service) lockedWrite(ctx context.Context, playerID uuid.UUID,
+	write func(q *sqlcdb.Queries, before sqlcdb.AppPlayer) (sqlcdb.AppPlayer, error)) (before, after sqlcdb.AppPlayer, err error) {
+	err = db.InTx(ctx, s.Pool, func(tx pgx.Tx) error {
+		q := sqlcdb.New(tx)
+		p, err := q.LockPlayer(ctx, playerID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
+			return err
+		}
+		a, err := write(q, p)
+		if err != nil {
+			return err
+		}
+		before, after = p, a
+		return nil
+	})
+	return before, after, err
+}
+
 // AdjustPlayer moves the four stock quantities by the given deltas.
 //
 // XP is added to the current level's bar and deliberately does NOT level anyone
 // up: crossing a boundary grants stat points, diamonds and an energy refill, and
 // a panel that silently did all of that would be a very surprising "+500 xp".
+//
+// Currency that appears or disappears from the panel is written to its ledger in
+// the same transaction, so the economy dashboard and a player's diamond history
+// never miss a grant.
 func (s *Service) AdjustPlayer(ctx context.Context, who *Identity, playerID uuid.UUID,
 	gold, diamonds, xp int64, statPoints int32, note string) (*PlayerRow, error) {
 	if !AtLeast(who.Role, "moderator") {
@@ -47,40 +100,48 @@ func (s *Service) AdjustPlayer(ctx context.Context, who *Identity, playerID uuid
 		return nil, ErrNothingToDo
 	}
 
-	q := sqlcdb.New(s.Pool)
-	before, err := q.GetPlayerByID(ctx, playerID)
-	if err != nil {
-		return nil, ErrNotFound
-	}
-	if before.Gold+gold < 0 {
-		return nil, fmt.Errorf("%w: that would leave a negative balance", ErrOutOfRange)
-	}
-	if before.Diamonds+diamonds < 0 {
-		return nil, fmt.Errorf("%w: that would leave negative diamonds", ErrOutOfRange)
-	}
-
-	after, err := q.AdminAdjustPlayer(ctx, sqlcdb.AdminAdjustPlayerParams{
-		ID: playerID, Gold: gold, Diamonds: diamonds, Xp: xp, StatPoints: statPoints,
+	before, after, err := s.lockedWrite(ctx, playerID, func(q *sqlcdb.Queries, p sqlcdb.AppPlayer) (sqlcdb.AppPlayer, error) {
+		if err := validateAdjust(p, gold, diamonds, xp, statPoints); err != nil {
+			return p, err
+		}
+		after, err := q.AdminAdjustPlayer(ctx, sqlcdb.AdminAdjustPlayerParams{
+			ID: playerID, Gold: gold, Diamonds: diamonds, Xp: xp, StatPoints: statPoints,
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				// The WHERE refused it: the balance moved under the lock-free
+				// part of a race. Out of range, never a 500.
+				return p, fmt.Errorf("%w: that would leave a negative balance", ErrOutOfRange)
+			}
+			return p, err
+		}
+		if gold != 0 {
+			if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+				PlayerID: playerID, Delta: gold, BalanceAfter: after.Gold,
+				Reason: "admin_grant", RefID: &who.Username,
+			}); err != nil {
+				return p, err
+			}
+		}
+		if diamonds != 0 {
+			reason := ledger.AdminGrant
+			if diamonds < 0 {
+				reason = ledger.AdminRemove
+			}
+			if err := ledger.Diamonds(ctx, q, p, after, diamonds, reason, who.Username); err != nil {
+				return p, err
+			}
+		}
+		return after, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Gold that appears from nowhere has to appear in the ledger too, or the
-	// economy dashboard is quietly wrong about how much currency exists.
-	if gold != 0 {
-		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
-			PlayerID: playerID, Delta: gold, BalanceAfter: after.Gold,
-			Reason: "admin_grant", RefID: &who.Username,
-		}); err != nil {
-			return nil, err
-		}
-	}
-
 	s.Audit(ctx, who, "player.adjust", playerID.String(),
-		map[string]any{"gold": before.Gold, "diamonds": before.Diamonds,
+		map[string]any{"gold": before.Gold, "diamonds": before.Diamonds, "diamond_debt": before.DiamondDebt,
 			"xp": before.Xp, "stat_points": before.StatPointsUnspent},
-		map[string]any{"gold": after.Gold, "diamonds": after.Diamonds,
+		map[string]any{"gold": after.Gold, "diamonds": after.Diamonds, "diamond_debt": after.DiamondDebt,
 			"xp": after.Xp, "stat_points": after.StatPointsUnspent}, note)
 	return playerRow(after), nil
 }
@@ -100,12 +161,9 @@ func (s *Service) SetLevel(ctx context.Context, who *Identity, playerID uuid.UUI
 		return nil, fmt.Errorf("%w: level must be between 1 and %d", ErrOutOfRange, cap)
 	}
 
-	q := sqlcdb.New(s.Pool)
-	before, err := q.GetPlayerByID(ctx, playerID)
-	if err != nil {
-		return nil, ErrNotFound
-	}
-	after, err := q.AdminSetLevel(ctx, sqlcdb.AdminSetLevelParams{ID: playerID, Level: level})
+	before, after, err := s.lockedWrite(ctx, playerID, func(q *sqlcdb.Queries, p sqlcdb.AppPlayer) (sqlcdb.AppPlayer, error) {
+		return q.AdminSetLevel(ctx, sqlcdb.AdminSetLevelParams{ID: playerID, Level: level})
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -128,13 +186,10 @@ func (s *Service) SetEnergy(ctx context.Context, who *Identity, playerID uuid.UU
 		return nil, fmt.Errorf("%w: energy cannot be negative", ErrOutOfRange)
 	}
 
-	q := sqlcdb.New(s.Pool)
-	before, err := q.GetPlayerByID(ctx, playerID)
-	if err != nil {
-		return nil, ErrNotFound
-	}
-	after, err := q.AdminSetEnergy(ctx, sqlcdb.AdminSetEnergyParams{
-		ID: playerID, EnergyMilli: energy * 1000, Now: s.now(),
+	before, after, err := s.lockedWrite(ctx, playerID, func(q *sqlcdb.Queries, p sqlcdb.AppPlayer) (sqlcdb.AppPlayer, error) {
+		return q.AdminSetEnergy(ctx, sqlcdb.AdminSetEnergyParams{
+			ID: playerID, EnergyMilli: energy * 1000, Now: s.now(),
+		})
 	})
 	if err != nil {
 		return nil, err
@@ -159,16 +214,10 @@ func (s *Service) SetLuck(ctx context.Context, who *Identity, playerID uuid.UUID
 		return nil, fmt.Errorf("%w: luck must be between -10000 and 10000", ErrOutOfRange)
 	}
 
-	q := sqlcdb.New(s.Pool)
-	before, err := q.GetPlayerByID(ctx, playerID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-	after, err := q.AdminSetLuck(ctx, sqlcdb.AdminSetLuckParams{
-		ID: playerID, LuckBp: luckBP, ExpiresAt: expiresAt,
+	before, after, err := s.lockedWrite(ctx, playerID, func(q *sqlcdb.Queries, p sqlcdb.AppPlayer) (sqlcdb.AppPlayer, error) {
+		return q.AdminSetLuck(ctx, sqlcdb.AdminSetLuckParams{
+			ID: playerID, LuckBp: luckBP, ExpiresAt: expiresAt,
+		})
 	})
 	if err != nil {
 		return nil, err

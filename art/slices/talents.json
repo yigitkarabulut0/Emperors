@@ -1,0 +1,938 @@
+{
+ "source": "talents.png",
+ "notes": [
+  "THE TALENT TREE (client/scenes/pages/talents_page.gd, layout client/layout/talents.json).",
+  "This painting sat unused in ~/Downloads/Emperors_Design_Pack while the tree was a Sheet of text rows on flat plates.",
+  "MEASURED off the painting's own gold. The three columns stand at x 185, 467 and 749 (pitch 282); the five medallions at y 608, 797, 981, 1166 and 1352. A ring is 146 across; its five pip sockets are 28x26, 62 below the medallion's centre, their lefts at -72, -42, -11, +19 and +48 from the column's centre.",
+  "The painting shows the object in BOTH its states, which is the whole reason it can be worn by a live tree: the top two medallions of every column are LIT (a glowing ring, a halo, and two amber gems in the row) and the rest are not. Both are cut, and one of the two is always drawn, so the page never leaves the painting's own choice showing.",
+  "The medallion's middle is punched out of both ring crops, so each talent keeps its own painted icon -- the sword, the knight, the banner, the laurel, the horn, and so on down the other two columns. Which talent stands on which medallion is the layout's business, not this file's."
+ ],
+ "crops": [
+  {
+   "name": "talents/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "note": "The page whole: its frame, TALENTS and the plate beside it, the great tree, the three coloured banner columns with their painted names, all fifteen medallions with their own icons, the pip rows, and RESPEC and CLOSE. Nothing is erased. A medallion's state is drawn OVER it: the ring below is cut in both of the states the painting shows, and one of the two is always laid on, so the painting's own lit first two rows never survive into a lord's own tree. The six interiors the painting LIGHTS are levelled to an unlit one's tone first (measured: a lit interior reads about 90,50,24 against an unlit 26,28,27), because the glow behind an icon is inside the page and cannot be drawn over. Without it those six read as chosen whatever the lord has actually bought. The eight rows between the columns' feet and the button bar are levelled to one colour per row: they are the only band on this page that may stretch, and a tall phone draws each of them forty pixels high, where the panel's own grain reads as streaks.",
+   "shade": [
+    {
+     "rect": [
+      121,
+      544,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.516,
+     "feather": 7
+    },
+    {
+     "rect": [
+      121,
+      733,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.608,
+     "feather": 7
+    },
+    {
+     "rect": [
+      403,
+      544,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.559,
+     "feather": 7
+    },
+    {
+     "rect": [
+      403,
+      733,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.624,
+     "feather": 7
+    },
+    {
+     "rect": [
+      685,
+      544,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.553,
+     "feather": 7
+    },
+    {
+     "rect": [
+      685,
+      733,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.755,
+     "feather": 7
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      26,
+      1483,
+      889,
+      8
+     ],
+     "sample_x": [
+      500,
+      516
+     ]
+    }
+   ]
+  },
+  {
+   "name": "talents/face_war_1",
+   "rect": [
+    123,
+    546,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "shade": [
+    {
+     "rect": [
+      121,
+      544,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.516,
+     "feather": 7
+    }
+   ],
+   "note": "The war column's first medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_war_2",
+   "rect": [
+    123,
+    735,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "shade": [
+    {
+     "rect": [
+      121,
+      733,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.608,
+     "feather": 7
+    }
+   ],
+   "note": "The war column's second medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_war_3",
+   "rect": [
+    123,
+    919,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The war column's third medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_war_4",
+   "rect": [
+    123,
+    1104,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The war column's fourth medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_war_5",
+   "rect": [
+    123,
+    1290,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The war column's fifth medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_defence_1",
+   "rect": [
+    405,
+    546,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "shade": [
+    {
+     "rect": [
+      403,
+      544,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.559,
+     "feather": 7
+    }
+   ],
+   "note": "The defence column's first medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_defence_2",
+   "rect": [
+    405,
+    735,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "shade": [
+    {
+     "rect": [
+      403,
+      733,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.624,
+     "feather": 7
+    }
+   ],
+   "note": "The defence column's second medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_defence_3",
+   "rect": [
+    405,
+    919,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The defence column's third medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_defence_4",
+   "rect": [
+    405,
+    1104,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The defence column's fourth medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_defence_5",
+   "rect": [
+    405,
+    1290,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The defence column's fifth medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_economy_1",
+   "rect": [
+    687,
+    546,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "shade": [
+    {
+     "rect": [
+      685,
+      544,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.553,
+     "feather": 7
+    }
+   ],
+   "note": "The economy column's first medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_economy_2",
+   "rect": [
+    687,
+    735,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "shade": [
+    {
+     "rect": [
+      685,
+      733,
+      128,
+      128
+     ],
+     "saturation": 0.3,
+     "gain": 0.755,
+     "feather": 7
+    }
+   ],
+   "note": "The economy column's second medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_economy_3",
+   "rect": [
+    687,
+    919,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The economy column's third medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_economy_4",
+   "rect": [
+    687,
+    1104,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The economy column's fourth medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/face_economy_5",
+   "rect": [
+    687,
+    1290,
+    124,
+    124
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     124,
+     124
+    ],
+    "feather": 1.5
+   },
+   "note": "The economy column's fifth medallion, its face alone: the painting's own icon on its own ground, cut where it already stands so that drawing it changes nothing -- until a tier the lord has not opened yet is drawn back, and the whole medallion dims together instead of a grey ring round a bright icon."
+  },
+  {
+   "name": "talents/ring_lit_war",
+   "rect": [
+    90,
+    513,
+    190,
+    200
+   ],
+   "mask": [
+    {
+     "type": "ellipse",
+     "box": [
+      3,
+      3,
+      187,
+      187
+     ],
+     "feather": 8
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       19,
+       153
+      ],
+      [
+       175,
+       153
+      ],
+      [
+       175,
+       187
+      ],
+      [
+       19,
+       187
+      ]
+     ],
+     "feather": 8
+    }
+   ],
+   "hole": {
+    "type": "ellipse",
+    "box": [
+     34,
+     34,
+     156,
+     156
+    ],
+    "feather": 2
+   },
+   "patch": [
+    {
+     "from": [
+      201,
+      667,
+      34,
+      32
+     ],
+     "to": [
+      140,
+      667
+     ],
+     "feather": 3
+    },
+    {
+     "from": [
+      201,
+      667,
+      34,
+      32
+     ],
+     "to": [
+      110,
+      667
+     ],
+     "feather": 3
+    }
+   ],
+   "note": "The lit ring of the war column: the painting's own glowing ring and the halo round it, with the medallion's middle punched out so the icon under it shows. Cut from the top medallion, which is the one the painting lights."
+  },
+  {
+   "name": "talents/ring_dark_war",
+   "rect": [
+    90,
+    886,
+    190,
+    200
+   ],
+   "mask": [
+    {
+     "type": "ellipse",
+     "box": [
+      3,
+      3,
+      187,
+      187
+     ],
+     "feather": 8
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       19,
+       153
+      ],
+      [
+       175,
+       153
+      ],
+      [
+       175,
+       187
+      ],
+      [
+       19,
+       187
+      ]
+     ],
+     "feather": 8
+    }
+   ],
+   "hole": {
+    "type": "ellipse",
+    "box": [
+     34,
+     34,
+     156,
+     156
+    ],
+    "feather": 2
+   },
+   "note": "The plain ring of the war column, cut from the third medallion, which the painting leaves unlit. It is laid over a rank nobody has bought -- including over the painting's own lit rows -- so every ring is the state the server says."
+  },
+  {
+   "name": "talents/ring_lit_defence",
+   "rect": [
+    372,
+    513,
+    190,
+    200
+   ],
+   "mask": [
+    {
+     "type": "ellipse",
+     "box": [
+      3,
+      3,
+      187,
+      187
+     ],
+     "feather": 8
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       19,
+       153
+      ],
+      [
+       175,
+       153
+      ],
+      [
+       175,
+       187
+      ],
+      [
+       19,
+       187
+      ]
+     ],
+     "feather": 8
+    }
+   ],
+   "hole": {
+    "type": "ellipse",
+    "box": [
+     34,
+     34,
+     156,
+     156
+    ],
+    "feather": 2
+   },
+   "patch": [
+    {
+     "from": [
+      483,
+      667,
+      34,
+      32
+     ],
+     "to": [
+      422,
+      667
+     ],
+     "feather": 3
+    },
+    {
+     "from": [
+      483,
+      667,
+      34,
+      32
+     ],
+     "to": [
+      392,
+      667
+     ],
+     "feather": 3
+    }
+   ],
+   "note": "The lit ring of the defence column: the painting's own glowing ring and the halo round it, with the medallion's middle punched out so the icon under it shows. Cut from the top medallion, which is the one the painting lights."
+  },
+  {
+   "name": "talents/ring_dark_defence",
+   "rect": [
+    372,
+    886,
+    190,
+    200
+   ],
+   "mask": [
+    {
+     "type": "ellipse",
+     "box": [
+      3,
+      3,
+      187,
+      187
+     ],
+     "feather": 8
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       19,
+       153
+      ],
+      [
+       175,
+       153
+      ],
+      [
+       175,
+       187
+      ],
+      [
+       19,
+       187
+      ]
+     ],
+     "feather": 8
+    }
+   ],
+   "hole": {
+    "type": "ellipse",
+    "box": [
+     34,
+     34,
+     156,
+     156
+    ],
+    "feather": 2
+   },
+   "note": "The plain ring of the defence column, cut from the third medallion, which the painting leaves unlit. It is laid over a rank nobody has bought -- including over the painting's own lit rows -- so every ring is the state the server says."
+  },
+  {
+   "name": "talents/ring_lit_economy",
+   "rect": [
+    654,
+    513,
+    190,
+    200
+   ],
+   "mask": [
+    {
+     "type": "ellipse",
+     "box": [
+      3,
+      3,
+      187,
+      187
+     ],
+     "feather": 8
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       19,
+       153
+      ],
+      [
+       175,
+       153
+      ],
+      [
+       175,
+       187
+      ],
+      [
+       19,
+       187
+      ]
+     ],
+     "feather": 8
+    }
+   ],
+   "hole": {
+    "type": "ellipse",
+    "box": [
+     34,
+     34,
+     156,
+     156
+    ],
+    "feather": 2
+   },
+   "patch": [
+    {
+     "from": [
+      765,
+      667,
+      34,
+      32
+     ],
+     "to": [
+      704,
+      667
+     ],
+     "feather": 3
+    },
+    {
+     "from": [
+      765,
+      667,
+      34,
+      32
+     ],
+     "to": [
+      674,
+      667
+     ],
+     "feather": 3
+    }
+   ],
+   "note": "The lit ring of the economy column: the painting's own glowing ring and the halo round it, with the medallion's middle punched out so the icon under it shows. Cut from the top medallion, which is the one the painting lights."
+  },
+  {
+   "name": "talents/ring_dark_economy",
+   "rect": [
+    654,
+    886,
+    190,
+    200
+   ],
+   "mask": [
+    {
+     "type": "ellipse",
+     "box": [
+      3,
+      3,
+      187,
+      187
+     ],
+     "feather": 8
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       19,
+       153
+      ],
+      [
+       175,
+       153
+      ],
+      [
+       175,
+       187
+      ],
+      [
+       19,
+       187
+      ]
+     ],
+     "feather": 8
+    }
+   ],
+   "hole": {
+    "type": "ellipse",
+    "box": [
+     34,
+     34,
+     156,
+     156
+    ],
+    "feather": 2
+   },
+   "note": "The plain ring of the economy column, cut from the third medallion, which the painting leaves unlit. It is laid over a rank nobody has bought -- including over the painting's own lit rows -- so every ring is the state the server says."
+  },
+  {
+   "name": "talents/pip_lit",
+   "rect": [
+    140,
+    664,
+    34,
+    38
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     0,
+     0,
+     34,
+     38
+    ],
+    "feather": 5
+   },
+   "note": "A rank bought: the painting's own amber gem with its glow. Cut from the SECOND gem of the first war medallion -- the last one the painting lights -- because a gem cut with a lit neighbour carries that neighbour's glow into every row. Laid over the empty socket the ring crop draws, so a row reads as many gems as the server says ranks."
+  },
+  {
+   "name": "talents/respec",
+   "rect": [
+    107,
+    1511,
+    343,
+    83
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   },
+   "note": "RESPEC, the painting's own crimson plate."
+  },
+  {
+   "name": "talents/close",
+   "rect": [
+    489,
+    1511,
+    344,
+    83
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   },
+   "note": "CLOSE, the painting's own navy plate."
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+{
+  "_comment": "Demirci. Three pieces of the same slot and rank, and gold worth 60% of what the rank above COSTS in the shop, make one piece of that rank: the highest mark of the three, a fresh quality roll and a fresh chance at a masterwork, with the odds published. Special cannot be forged -- there is nothing above it. validate_forge.go proves the round trip always loses money rather than trusting it.",
+  "section": "forge",
+  "pieces": 3,
+  "fee_bp_of_next_price": 6000,
+  "tiers": [
+    "common",
+    "uncommon",
+    "rare",
+    "epic",
+    "legendary",
+    "mystic"
+  ],
+  "keeps_highest_ilvl": true,
+  "quality": {
+    "min_pct": 95,
+    "max_pct": 105
+  },
+  "masterwork_chance_bp": 300
+}

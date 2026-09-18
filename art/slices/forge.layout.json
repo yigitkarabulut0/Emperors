@@ -1,0 +1,231 @@
+{
+ "screen": "forge",
+ "source": "forge.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0B151F",
+ "stretch": [
+  [
+   1359,
+   8
+  ]
+ ],
+ "notes": [
+  "THE FORGE (client/scenes/pages/forge_page.gd). Every rect is measured off the painting's own gold.",
+  "The three sockets are 197x192 at (124,737), (372,737) and (620,737) -- pitch 248. A piece in one is the ARMORY'S object, not a second kind: the tier's rarity ring inside the painted gold, the tier's velvet under it and the piece's own painting in the middle, placed by ItemGround.in_ringed_tile at the Armory's own proportions (a 240 tile carrying a 204x196 painting inset 30,22).",
+  "The result socket (359,1040,224,214) takes the ring of the rank that comes out and NOTHING else: which piece the anvil makes is rolled when it strikes, so the painting's own anvil engraving is left showing. A design drawn there would be a guess.",
+  "The cost plate and the odds plate are what the pack's brief calls them. The coin beside the first is its label, so the fee stands alone; the second carries the painting's own tiny label over the figure, because nothing else says what the number counts.",
+  "The one band that may stretch is eight rows of the bare panel between the plates and the buttons (1359-1366): on a taller phone the anvil, the sockets and the plates stay where the painting stands them and FORGE and CLOSE keep the foot. Those eight rows are the quietest in the gap -- the panel's grain and the last of the result socket's sparks are single pixels, and a band stretched ten times over draws each of them as a streak the height of the gap."
+ ],
+ "fonts": {
+  "title": "Cinzel",
+  "body": "transitional serif (Crimson Pro / EB Garamond class)"
+ },
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "forge/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "ring_1",
+   "kind": "image",
+   "rect": [
+    134,
+    747,
+    177,
+    172
+   ],
+   "note": "The first socket's rarity ring, inside the painting's gold."
+  },
+  {
+   "id": "art_1",
+   "kind": "image",
+   "rect": [
+    156,
+    763,
+    150,
+    140
+   ]
+  },
+  {
+   "id": "ring_2",
+   "kind": "image",
+   "rect": [
+    382,
+    747,
+    177,
+    172
+   ]
+  },
+  {
+   "id": "art_2",
+   "kind": "image",
+   "rect": [
+    404,
+    763,
+    150,
+    140
+   ]
+  },
+  {
+   "id": "ring_3",
+   "kind": "image",
+   "rect": [
+    630,
+    747,
+    176,
+    172
+   ]
+  },
+  {
+   "id": "art_3",
+   "kind": "image",
+   "rect": [
+    652,
+    763,
+    150,
+    140
+   ]
+  },
+  {
+   "id": "out_ring",
+   "kind": "image",
+   "rect": [
+    371,
+    1052,
+    200,
+    190
+   ],
+   "note": "The rank that comes out, as its ring, on that rank's own cloth."
+  },
+  {
+   "id": "out_art",
+   "kind": "image",
+   "rect": [
+    396,
+    1069,
+    170,
+    155
+   ],
+   "note": "No painting: WHICH piece the anvil makes is rolled when it strikes. The node is here so the cloth under the ring is hung exactly as it is in a socket that holds a piece, and so a ground is never drawn a second way."
+  },
+  {
+   "id": "out_badge",
+   "kind": "image",
+   "rect": [
+    425,
+    1128,
+    93,
+    38
+   ],
+   "note": "The rank that comes out, in the Armory's own painted badge (inventory/badge_<tier>), centred on the cloth. The badge is drawn at its own size -- they run 83 to 93 wide -- so the page centres it itself."
+  },
+  {
+   "id": "fee",
+   "kind": "text",
+   "rect": [
+    220,
+    1281,
+    215,
+    68
+   ],
+   "font": "body",
+   "size": 34,
+   "cap": 24,
+   "weight": 600,
+   "color": "#EDD9A3",
+   "align": "center",
+   "valign": "center",
+   "sample": "12,400",
+   "note": "On the painted cost plate (208,1281,239,68). The coin beside it is its label."
+  },
+  {
+   "id": "odds_label",
+   "kind": "text",
+   "rect": [
+    527,
+    1287,
+    205,
+    24
+   ],
+   "font": "body",
+   "size": 19,
+   "cap": 13,
+   "weight": 600,
+   "color": "#7E93A6",
+   "align": "center",
+   "valign": "center",
+   "sample": "MASTERWORK",
+   "uppercase": true
+  },
+  {
+   "id": "odds",
+   "kind": "text",
+   "rect": [
+    527,
+    1310,
+    205,
+    36
+   ],
+   "font": "body",
+   "size": 30,
+   "cap": 21,
+   "weight": 600,
+   "color": "#EDE6D6",
+   "align": "center",
+   "valign": "center",
+   "sample": "3 in 100"
+  },
+  {
+   "id": "info",
+   "kind": "hotspot",
+   "rect": [
+    745,
+    1266,
+    95,
+    95
+   ],
+   "action": "info",
+   "note": "The painting's round gold i, beside the odds plate: it tells the whole rule in words.",
+   "paint_rect": [
+    758,
+    1280,
+    69,
+    67
+   ]
+  },
+  {
+   "id": "forge",
+   "kind": "button",
+   "asset": "forge/btn_forge",
+   "rect": [
+    71,
+    1387,
+    456,
+    121
+   ],
+   "action": "forge"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "forge/btn_close",
+   "rect": [
+    540,
+    1387,
+    331,
+    121
+   ],
+   "action": "close"
+  }
+ ]
+}

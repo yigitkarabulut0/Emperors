@@ -118,12 +118,14 @@ if st == 200:
           rec["soldier"]["tier"] != "common", rec["soldier"]["tier"])
 if st == 200:
     sold = rec["soldier"]
-    print(f"        {sold['name']} [{sold['tier']}] lv{sold['level']} "
+    print(f"        {sold['name']} [{sold['tier']}] "
           f"ATK {sold['attack']} DEF {sold['defense']} HP {sold['hp']}")
     check("the soldier has stats", sold["attack"] > 0 and sold["hp"] > 0, sold)
     check("recruiting raised army Might", rec["army"]["totals"]["might"] > might_solo,
           (might_solo, rec["army"]["totals"]["might"]))
-    check("the soldier starts at the player's level", sold["level"] == s["player"]["level"] or sold["level"] >= 1, sold["level"])
+    # A soldier's tier IS its rank (service.soldierUnit): it carries no level of
+    # its own, and the only way it moves is a reroll.
+    check("a soldier has a tier rather than a level", "level" not in sold and sold["tier"], sold)
 
     # A retry with the same sequence must not reroll for a better tier.
     st, replay = call("POST", "/v1/army/recruit",
@@ -170,15 +172,17 @@ if inv["items"]:
 else:
     print("        (no spare items to equip — skipped)")
 
-print("\n== train ==")
+# Training was removed: a soldier's tier is its rank, and four levels of training
+# was enough for an epic to overtake a legendary. The route stays, answering 410,
+# so an older .ipa reports something true rather than "no such route".
+print("\n== training is gone ==")
 st, a4 = call("GET", "/v1/army", token=token)
 sold = a4["slots"][0]["soldier"]
-if sold and sold["level"] >= a4["hero"]["level"]:
-    st, maxed = call("POST", "/v1/army/train", {"soldier_id": sold["id"], "action_seq": seq(token)}, token=token)
-    check("training a soldier already at your level is refused",
-          st == 409 and maxed.get("code") == "already_maxed", (st, maxed))
-else:
-    check("train is offered when the soldier is behind", sold.get("can_train") is True, sold)
+check("a soldier carries a tier, not a level or a train button",
+      bool(sold) and "level" not in sold and not sold.get("can_train"), sold)
+st, gone = call("POST", "/v1/army/train", {"soldier_id": sold["id"], "action_seq": seq(token)}, token=token)
+check("a build that still asks to train is told why it cannot",
+      st == 410 and gone.get("code") == "gone", (st, gone))
 
 # A level-1 player is quoted a price for the slot the onboarding grant is about
 # to give them for nothing. The view has to say so, or they grind for it.

@@ -4,15 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
+	"github.com/yigitkarabulut0/emperors/server/internal/ledger"
 )
 
 var (
@@ -37,6 +41,15 @@ type ShopView struct {
 	RerollCost    int64 `json:"reroll_cost"`
 	RerollsUsed   int64 `json:"rerolls_used"`
 	CanAffordRoll bool  `json:"can_afford_reroll"`
+	// Rerolls left on the lord's day, of the day's allowance. At zero the
+	// market cannot be rerolled until midnight, whatever the purse holds.
+	RerollsLeft   int `json:"rerolls_left"`
+	RerollsPerDay int `json:"rerolls_per_day"`
+	// Rerolls Fresh Wares gives for nothing while it runs, not yet taken: the
+	// next reroll costs no diamonds and leaves the day's allowance alone.
+	FreeRerolls int `json:"free_rerolls"`
+	// Seconds until Fresh Wares ends, while it runs.
+	FreeEndsIn int64 `json:"free_ends_in,omitempty"`
 }
 
 type ShopOffer struct {
@@ -48,11 +61,6 @@ type ShopOffer struct {
 	// showed a name and a price and nothing to weigh the price against.
 	Power int64 `json:"power"`
 }
-
-// inventoryCap bounds the largest player-owned table. It is also a design knob:
-// forcing a choice about what to keep is what makes selling and the Collection
-// meaningful rather than optional.
-const inventoryCap = 150
 
 // GetShop returns the current offers, rolling the window forward if needed.
 func (d Deps) GetShop(ctx context.Context, playerID uuid.UUID) (*ShopView, error) {
@@ -87,15 +95,29 @@ func (d Deps) GetShop(ctx context.Context, playerID uuid.UUID) (*ShopView, error
 	}
 
 	cost := rerollCost(d.Config, int64(st.RerollIndex))
+	perDay := d.Config.Items.Shop.RerollsPerDay
+	now := d.Now()
+	var free int
+	var freeEnds int64
+	if h := d.runningHourly(now, gameconfig.HourlyFreeReroll); h != nil {
+		free = d.hourlyUsesLeft(ctx, q, playerID, *h)
+		if free > 0 {
+			freeEnds = secondsUntil(h.EndsAt, now)
+		}
+	}
 	return &ShopView{
+		FreeRerolls:   free,
+		FreeEndsIn:    freeEnds,
 		RerollCost:    cost,
 		RerollsUsed:   int64(st.RerollIndex),
-		CanAffordRoll: p.Diamonds >= cost,
+		CanAffordRoll: p.Diamonds >= cost || free > 0,
+		RerollsLeft:   max(0, perDay-shopRerollsToday(p, localDay(d.Now(), p.ResetOffsetMinutes))),
+		RerollsPerDay: perDay,
 		WindowID:      windowID,
 		SecondsLeft:   secondsLeft,
 		Offers:        d.rollOffers(playerID, st, int(p.Level), eff.ShopDiscount),
 		InventoryUsed: used,
-		InventoryCap:  inventoryCap,
+		InventoryCap:  d.bagCap(p),
 	}, nil
 }
 
@@ -215,7 +237,7 @@ func (d Deps) Buy(ctx context.Context, playerID uuid.UUID, slot int, wantSeq int
 		if err != nil {
 			return fmt.Errorf("count items: %w", err)
 		}
-		if used >= inventoryCap {
+		if used >= d.bagCap(p) {
 			return ErrInventoryFull
 		}
 
@@ -255,9 +277,7 @@ func (d Deps) Buy(ctx context.Context, playerID uuid.UUID, slot int, wantSeq int
 			return fmt.Errorf("ledger: %w", err)
 		}
 
-		if err := d.bumpQuests(ctx, q, p, 0, 0, 1, 0); err != nil {
-			d.logQuestBump(err)
-		}
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{deeds.Buys: 1, deeds.ShopGold: offer.Price})
 
 		res = BuyResult{Item: it, Paid: offer.Price, GoldLeft: itoa(after.Gold)}
 		return nil
@@ -276,6 +296,17 @@ func strPtr(s string) *string { return &s }
 // escalating one keeps the fifth reroll of a window a real decision. Diamonds
 // only -- a gold reroll would be a way to convert income straight into rarity,
 // which is the one thing the premium currency is not allowed to do either.
+// ErrRerollsExhausted is a market reroll asked for after the day's last one.
+var ErrRerollsExhausted = errors.New("you have used today's market rerolls")
+
+// shopRerollsToday is how many market rerolls a lord has made on their day.
+func shopRerollsToday(p sqlcdb.AppPlayer, today time.Time) int {
+	if !p.ShopRerollsDay.Valid || !p.ShopRerollsDay.Time.Equal(today) {
+		return 0
+	}
+	return int(p.ShopRerollsUsed)
+}
+
 func rerollCost(cfg *gameconfig.Bundle, used int64) int64 {
 	return cfg.Items.Shop.RerollBaseDiamonds + cfg.Items.Shop.RerollStepDiamonds*used
 }
@@ -302,7 +333,6 @@ func (d Deps) RerollShop(ctx context.Context, playerID uuid.UUID, wantSeq int64)
 		if err := checkSeq(p, wantSeq); err != nil {
 			return err
 		}
-
 		reff, err := d.loadEffects(ctx, q, p)
 		if err != nil {
 			return err
@@ -316,14 +346,47 @@ func (d Deps) RerollShop(ctx context.Context, playerID uuid.UUID, wantSeq int64)
 			return fmt.Errorf("shop window: %w", err)
 		}
 
+		// Fresh Wares: a reroll for nothing, taken off the hour's allowance
+		// rather than the day's, and still the player's sequenced action.
+		if h := d.runningHourly(d.Now(), gameconfig.HourlyFreeReroll); h != nil {
+			_, err := q.UseHourly(ctx, sqlcdb.UseHourlyParams{
+				PlayerID: playerID, Hour: h.Hour, Max: int16(h.Event.Effect.Count),
+			})
+			switch {
+			case err == nil:
+				if _, err := q.BumpActionSeq(ctx, sqlcdb.BumpActionSeqParams{ID: playerID, ActionSeq: wantSeq}); err != nil {
+					return fmt.Errorf("advance seq: %w", err)
+				}
+				if _, err := q.BumpReroll(ctx, sqlcdb.BumpRerollParams{PlayerID: playerID, WindowID: windowID}); err != nil {
+					return fmt.Errorf("bump reroll: %w", err)
+				}
+				return nil
+			case !errors.Is(err, pgx.ErrNoRows):
+				return fmt.Errorf("use the hour: %w", err)
+			}
+		}
+
+		// Counted from the locked row: two taps cannot both be the twentieth.
+		today := localDay(d.Now(), p.ResetOffsetMinutes)
+		used := shopRerollsToday(p, today)
+		if used >= d.Config.Items.Shop.RerollsPerDay {
+			return ErrRerollsExhausted
+		}
+
 		cost := rerollCost(d.Config, int64(st.RerollIndex))
-		if _, err := q.PayForReroll(ctx, sqlcdb.PayForRerollParams{
+		after, err := q.PayForReroll(ctx, sqlcdb.PayForRerollParams{
 			ID: playerID, Diamonds: cost, ActionSeq: wantSeq,
-		}); err != nil {
+			RerollsDay: pgtype.Date{Time: today, Valid: true}, RerollsUsed: int16(used + 1),
+		})
+		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return ErrNotEnoughDiamonds
 			}
 			return fmt.Errorf("pay for reroll: %w", err)
+		}
+		if err := ledger.Diamonds(ctx, q, p, after, -cost, ledger.MarketReroll,
+			fmt.Sprintf("window %d", windowID)); err != nil {
+			return err
 		}
 		if _, err := q.BumpReroll(ctx, sqlcdb.BumpRerollParams{
 			PlayerID: playerID, WindowID: windowID,

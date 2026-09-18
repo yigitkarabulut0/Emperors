@@ -1,0 +1,202 @@
+{
+ "screen": "treasury",
+ "source": "treasury.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "notes": [
+  "The painting is the page (treasury/page). ON HAND and IN THE VAULT are its figures, set in its box under each label; the long plate carries the fee; the amount box is a field.",
+  "DEPOSIT is erased from the painting: it is its own crop, dimmed while deposits are closed.",
+  "Stretch bands are the gaps between the panels, clear of every rect: on 941x2040 the sections spread down the frame."
+ ],
+ "stretch": [
+  [
+   822,
+   9,
+   8
+  ],
+  [
+   1018,
+   12,
+   10
+  ],
+  [
+   1119,
+   11,
+   10
+  ],
+  [
+   1337,
+   10,
+   14
+  ],
+  [
+   1453,
+   12,
+   12
+  ]
+ ],
+ "ground": "#140e09",
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "treasury/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "on_hand",
+   "kind": "text",
+   "rect": [
+    400,
+    724,
+    452,
+    60
+   ],
+   "font": "body",
+   "size": 44,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "9,999,999,999"
+  },
+  {
+   "id": "vault",
+   "kind": "text",
+   "rect": [
+    400,
+    918,
+    452,
+    60
+   ],
+   "font": "body",
+   "size": 44,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "9,999,999,999"
+  },
+  {
+   "id": "note",
+   "kind": "text",
+   "rect": [
+    110,
+    1038,
+    721,
+    68
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "wrap": true,
+   "sample": "A deposit costs 10%, and the fee is gone for good. Taking gold out is free."
+  },
+  {
+   "id": "amount",
+   "kind": "text",
+   "rect": [
+    172,
+    1160,
+    682,
+    49
+   ],
+   "font": "body",
+   "size": 36,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "1,000,000"
+  },
+  {
+   "id": "all_hand",
+   "kind": "button",
+   "asset": "treasury/btn_all_hand",
+   "rect": [
+    62,
+    1240,
+    290,
+    96
+   ],
+   "action": "all_hand",
+   "keep_texture_size": true
+  },
+  {
+   "id": "half",
+   "kind": "button",
+   "asset": "treasury/btn_half",
+   "rect": [
+    360,
+    1240,
+    223,
+    96
+   ],
+   "action": "half",
+   "keep_texture_size": true
+  },
+  {
+   "id": "all_vault",
+   "kind": "button",
+   "asset": "treasury/btn_all_vault",
+   "rect": [
+    591,
+    1240,
+    288,
+    96
+   ],
+   "action": "all_vault",
+   "keep_texture_size": true
+  },
+  {
+   "id": "deposit",
+   "kind": "button",
+   "asset": "treasury/btn_deposit",
+   "rect": [
+    67,
+    1349,
+    393,
+    103
+   ],
+   "action": "deposit"
+  },
+  {
+   "id": "withdraw",
+   "kind": "button",
+   "asset": "treasury/btn_withdraw",
+   "rect": [
+    481,
+    1349,
+    393,
+    103
+   ],
+   "action": "withdraw"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "treasury/btn_close",
+   "rect": [
+    275,
+    1468,
+    391,
+    98
+   ],
+   "action": "close"
+  }
+ ]
+}

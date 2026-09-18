@@ -1,0 +1,336 @@
+{
+ "screen": "offers",
+ "source": "offers.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#09151E",
+ "notes": [
+  "ROYAL OFFERS, the Court's OFFERS card (client/scenes/court/offers_view.gd). Every rect is measured off the painting's own gold.",
+  "The content column starts at x 155, as every Court view's does. The header is the painting's merchant stand with its title and its line; under it the cards stack in a scroll, 345 tall with a 20 gap, as the painting stands them.",
+  "The painting's value plate is not here: see art/slices/offers.json for why, and for the rect it would take.",
+  "The way back is the shared CourtBack plate, built over the header; the painting's own chip is inpainted out of the crop."
+ ],
+ "fonts": {
+  "title": "Cinzel",
+  "body": "transitional serif (Crimson Pro / EB Garamond class)"
+ },
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "offers/header",
+   "rect": [
+    155,
+    0,
+    786,
+    502
+   ]
+  },
+  {
+   "id": "list",
+   "kind": "scroll",
+   "rect": [
+    155,
+    502,
+    786,
+    1170
+   ],
+   "content": [
+    "card"
+   ],
+   "grow": "bottom",
+   "note": "Its top is the painting's; its bottom follows the screen's, so a taller phone shows more of the stack instead of leaving ground."
+  },
+  {
+   "id": "stack_gap",
+   "kind": "rect",
+   "rect": [
+    0,
+    0,
+    0,
+    20
+   ]
+  },
+  {
+   "id": "stack_top",
+   "kind": "rect",
+   "rect": [
+    0,
+    0,
+    0,
+    6
+   ]
+  },
+  {
+   "id": "empty_text",
+   "kind": "text",
+   "rect": [
+    190,
+    640,
+    716,
+    80
+   ],
+   "font": "body",
+   "size": 25,
+   "cap": 18,
+   "weight": 500,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "wrap": true,
+   "static": true,
+   "sample": "No offers just now. The merchant comes and goes, and the Court says when he is back.",
+   "note": "Shown only when nothing is on sale: the painting has three cards and the realm may have none."
+  },
+  {
+   "id": "dollars_text",
+   "kind": "text",
+   "rect": [
+    190,
+    1590,
+    716,
+    34
+   ],
+   "font": "body",
+   "size": 21,
+   "cap": 15,
+   "weight": 500,
+   "color": "#8C93A0",
+   "align": "center",
+   "valign": "center",
+   "static": true,
+   "sample": "The prices shown are in US dollars.",
+   "note": "Shown only where the App Store cannot be reached and the plates fall back to the catalogue's own figures, as the Royal Store says it there."
+  },
+  {
+   "id": "card",
+   "kind": "template",
+   "rect": [
+    5,
+    0,
+    762,
+    345
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "offers/card",
+     "rect": [
+      0,
+      0,
+      762,
+      345
+     ]
+    },
+    {
+     "id": "bundle",
+     "kind": "image",
+     "rect": [
+      12,
+      54,
+      301,
+      285
+     ],
+     "note": "The offer's own painted bundle (offers/bundle_1..3), back in the place the card's own was erased from."
+    },
+    {
+     "id": "ribbon",
+     "kind": "image",
+     "asset": "offers/ribbon_best",
+     "rect": [
+      0,
+      0,
+      220,
+      134
+     ],
+     "note": "Shown only on the offer whose badge says best_value, as the painting hangs it on its first card."
+    },
+    {
+     "id": "title",
+     "kind": "text",
+     "rect": [
+      240,
+      11,
+      480,
+      41
+     ],
+     "font": "title",
+     "size": 30,
+     "cap": 21,
+     "weight": 700,
+     "color": "#F1D48D",
+     "align": "center",
+     "valign": "center",
+     "sample": "THE FOUNDER'S CRATE",
+     "uppercase": true,
+     "note": "On the painting's empty crimson band, clear of the ribbon's corner (which reaches x 218 along the top)."
+    },
+    {
+     "id": "icon_1",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      331,
+      81,
+      84,
+      70
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_2",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      474,
+      81,
+      84,
+      70
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_3",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      618,
+      81,
+      84,
+      70
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "count_1",
+     "kind": "text",
+     "rect": [
+      323,
+      153,
+      100,
+      28
+     ],
+     "font": "body",
+     "size": 22,
+     "cap": 16,
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "center",
+     "valign": "center",
+     "sample": "300"
+    },
+    {
+     "id": "count_2",
+     "kind": "text",
+     "rect": [
+      466,
+      153,
+      100,
+      28
+     ],
+     "font": "body",
+     "size": 22,
+     "cap": 16,
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "center",
+     "valign": "center",
+     "sample": "300"
+    },
+    {
+     "id": "count_3",
+     "kind": "text",
+     "rect": [
+      610,
+      153,
+      100,
+      28
+     ],
+     "font": "body",
+     "size": 22,
+     "cap": 16,
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "center",
+     "valign": "center",
+     "sample": "300"
+    },
+    {
+     "id": "tiles_hit",
+     "kind": "button",
+     "asset": "",
+     "rect": [
+      313,
+      73,
+      407,
+      112
+     ],
+     "action": "lines",
+     "pass_drag": true,
+     "note": "A tap on the three tiles says the whole bundle in words, as the Store's card does."
+    },
+    {
+     "id": "timer",
+     "kind": "text",
+     "rect": [
+      569,
+      205,
+      163,
+      49
+     ],
+     "font": "body",
+     "size": 24,
+     "cap": 17,
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "47h 59m",
+     "note": "On the painting's empty plate beside its hourglass."
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "offers/buy",
+     "rect": [
+      498,
+      249,
+      237,
+      95
+     ],
+     "action": "buy",
+     "pass_drag": true,
+     "paint_rect": [
+      498,
+      262,
+      237,
+      69
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      498,
+      275,
+      237,
+      44
+     ],
+     "font": "title",
+     "size": 30,
+     "cap": 21,
+     "weight": 700,
+     "color": "#F3FBF3",
+     "align": "center",
+     "valign": "center",
+     "sample": "\u00a34.99",
+     "note": "The App Store's own price, in the buyer's own currency (StorePrice). The catalogue's usd_cents is never shown here."
+    }
+   ]
+  }
+ ]
+}

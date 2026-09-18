@@ -28,6 +28,13 @@ type api struct {
 	// presence is the live board. Optional: a nil registry makes the heartbeat
 	// endpoint a no-op rather than a crash, which is what the router tests use.
 	presence Presenter
+	// verifier is kept for the one route that needs more than "who is this":
+	// the hall's socket, which closes itself when the token it was opened with
+	// runs out (httpx/social.go).
+	verifier TokenVerifier
+	// wsOrigins is what the hall's websocket accepts as an Origin. The phone
+	// sends none at all, which the websocket library treats as same-origin.
+	wsOrigins []string
 }
 
 // s returns the service bound to the balance version live RIGHT NOW.
@@ -43,10 +50,16 @@ func (a *api) s() service.Deps {
 	return d
 }
 
+// jsonStrict is a decoder that refuses fields it does not know.
+func jsonStrict(body io.Reader) *json.Decoder {
+	dec := json.NewDecoder(body)
+	dec.DisallowUnknownFields() // a typo'd field is a bug, not something to ignore
+	return dec
+}
+
 func decode(w http.ResponseWriter, r *http.Request, into any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields() // a typo'd field is a bug, not something to ignore
+	dec := jsonStrict(r.Body)
 	if err := dec.Decode(into); err != nil {
 		msg := "malformed request body"
 		if errors.Is(err, io.EOF) {
@@ -71,6 +84,16 @@ func decodeQuiet(r *http.Request, into any) error {
 // fail maps a service error to a status code. Services never know about HTTP;
 // this is the single place the translation happens.
 func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
+	if promoProblem(w, r, err) {
+		return
+	}
+	if purchaseProblem(w, r, err) {
+		if errors.Is(err, service.ErrIAPInvalid) || errors.Is(err, service.ErrIAPWrongApp) {
+			// The reason is for the log, not the client: it says which check failed.
+			a.log.Warn("purchase refused", "err", err, "route", r.URL.Path)
+		}
+		return
+	}
 	switch {
 	case errors.Is(err, service.ErrUsernameTaken):
 		WriteProblem(w, r, http.StatusConflict, "username_taken", "that name is already taken")
@@ -94,8 +117,234 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "nothing_to_buy", "that would do nothing right now")
 	case errors.Is(err, service.ErrNotEnoughDiamonds):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_diamonds", "not enough diamonds")
+	case errors.Is(err, service.ErrMailClaimed):
+		WriteProblem(w, r, http.StatusConflict, "already_claimed", err.Error())
+	case errors.Is(err, service.ErrMailExpired):
+		WriteProblem(w, r, http.StatusConflict, "mail_expired", "that letter has expired")
+	case errors.Is(err, service.ErrMailKeep):
+		WriteProblem(w, r, http.StatusConflict, "mail_unclaimed", err.Error())
+	case errors.Is(err, service.ErrMailBad):
+		WriteProblem(w, r, http.StatusBadRequest, "mail_invalid", err.Error())
+	case errors.Is(err, service.ErrNoToken):
+		WriteProblem(w, r, http.StatusConflict, "no_token", "you have none of those left")
+	case errors.Is(err, service.ErrRewardInvalid):
+		WriteProblem(w, r, http.StatusBadRequest, "reward_invalid", err.Error())
+	case errors.Is(err, service.ErrRerollsExhausted):
+		WriteProblem(w, r, http.StatusConflict, "rerolls_exhausted", "you have used today's market rerolls — the count resets at midnight")
+	case errors.Is(err, service.ErrRefillsExhausted):
+		WriteProblem(w, r, http.StatusConflict, "refills_exhausted", "you have used today's refills — the count resets at midnight")
 	case errors.Is(err, service.ErrNotEnoughGold):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_gold", "not enough gold")
+
+	// Rekabet (Wave 5). Every message says the RULE, never "no": a refusal a
+	// player cannot read is one they will meet again tomorrow.
+	case errors.Is(err, service.ErrArenaLocked):
+		WriteProblem(w, r, http.StatusForbidden, "arena_locked", err.Error())
+	case errors.Is(err, service.ErrNoTickets):
+		WriteProblem(w, r, http.StatusConflict, "no_tickets", "you have used today's arena fights — they come round at midnight")
+	case errors.Is(err, service.ErrNoRefreshes):
+		WriteProblem(w, r, http.StatusConflict, "no_refreshes", "you have used today's refreshes — these are the lords on offer")
+	case errors.Is(err, service.ErrArenaSelf):
+		WriteProblem(w, r, http.StatusConflict, "arena_self", err.Error())
+	case errors.Is(err, service.ErrArenaOutOfBand):
+		WriteProblem(w, r, http.StatusConflict, "arena_out_of_band", err.Error())
+	case errors.Is(err, service.ErrBountyLocked):
+		WriteProblem(w, r, http.StatusForbidden, "bounty_locked", err.Error())
+	case errors.Is(err, service.ErrBountyPlate):
+		WriteProblem(w, r, http.StatusBadRequest, "bounty_plate", err.Error())
+	case errors.Is(err, service.ErrBountySelf):
+		WriteProblem(w, r, http.StatusConflict, "bounty_self", err.Error())
+	case errors.Is(err, service.ErrBountyAlly):
+		WriteProblem(w, r, http.StatusConflict, "bounty_ally", err.Error())
+	case errors.Is(err, service.ErrBountyBot):
+		WriteProblem(w, r, http.StatusConflict, "bounty_bot", err.Error())
+	case errors.Is(err, service.ErrBountyPunchDown):
+		WriteProblem(w, r, http.StatusConflict, "bounty_punch_down", err.Error())
+	case errors.Is(err, service.ErrBountyCooling):
+		WriteProblem(w, r, http.StatusTooManyRequests, "bounty_cooling", err.Error())
+	case errors.Is(err, service.ErrBountyPairSpent):
+		WriteProblem(w, r, http.StatusConflict, "bounty_pair_spent", err.Error())
+	case errors.Is(err, service.ErrBountyTooNew):
+		WriteProblem(w, r, http.StatusForbidden, "bounty_too_new", err.Error())
+	case errors.Is(err, service.ErrBountyGone):
+		WriteProblem(w, r, http.StatusConflict, "bounty_gone", err.Error())
+	case errors.Is(err, service.ErrBountyLimit):
+		WriteProblem(w, r, http.StatusConflict, "bounty_limit", err.Error())
+	case errors.Is(err, service.ErrBountyCrowded):
+		WriteProblem(w, r, http.StatusConflict, "bounty_crowded", err.Error())
+	case errors.Is(err, service.ErrNotEmperor):
+		WriteProblem(w, r, http.StatusForbidden, "not_emperor", err.Error())
+	case errors.Is(err, service.ErrDecreeSpent):
+		WriteProblem(w, r, http.StatusConflict, "decree_spent", err.Error())
+	case errors.Is(err, service.ErrDecreeUnknown):
+		WriteProblem(w, r, http.StatusBadRequest, "decree_unknown", err.Error())
+	case errors.Is(err, service.ErrNoThrone):
+		WriteProblem(w, r, http.StatusConflict, "no_throne", err.Error())
+	// Sosyal (Wave 6). Same rule as Rekabet's: every message says the RULE.
+	case errors.Is(err, service.ErrNoHall):
+		WriteProblem(w, r, http.StatusConflict, "no_hall", err.Error())
+	case errors.Is(err, service.ErrRulesUnread):
+		WriteProblem(w, r, http.StatusForbidden, "rules_unread", err.Error())
+	case errors.Is(err, service.ErrMuted):
+		WriteProblem(w, r, http.StatusForbidden, "muted", err.Error())
+	case errors.Is(err, service.ErrSaidTooFast):
+		WriteProblem(w, r, http.StatusTooManyRequests, "too_fast", err.Error())
+	case errors.Is(err, service.ErrSaidTooMuch):
+		WriteProblem(w, r, http.StatusTooManyRequests, "too_much", err.Error())
+	case errors.Is(err, service.ErrLineTooLong):
+		WriteProblem(w, r, http.StatusBadRequest, "line_too_long", err.Error())
+	case errors.Is(err, service.ErrLineEmpty):
+		WriteProblem(w, r, http.StatusBadRequest, "line_empty", err.Error())
+	case errors.Is(err, service.ErrLineRefused):
+		WriteProblem(w, r, http.StatusUnprocessableEntity, "line_refused", err.Error())
+	case errors.Is(err, service.ErrReportedFast):
+		WriteProblem(w, r, http.StatusTooManyRequests, "reported_fast", err.Error())
+	case errors.Is(err, service.ErrBlockedLimit):
+		WriteProblem(w, r, http.StatusConflict, "blocked_limit", err.Error())
+	case errors.Is(err, service.ErrBlockSelf):
+		WriteProblem(w, r, http.StatusBadRequest, "block_self", err.Error())
+	case errors.Is(err, service.ErrBadPrivacy):
+		WriteProblem(w, r, http.StatusBadRequest, "bad_privacy", err.Error())
+	case errors.Is(err, service.ErrFriendsLocked):
+		WriteProblem(w, r, http.StatusForbidden, "friends_locked", err.Error())
+	case errors.Is(err, service.ErrFriendSelf):
+		WriteProblem(w, r, http.StatusBadRequest, "friend_self", err.Error())
+	case errors.Is(err, service.ErrFriendFull):
+		WriteProblem(w, r, http.StatusConflict, "friends_full", err.Error())
+	case errors.Is(err, service.ErrFriendTheirs):
+		WriteProblem(w, r, http.StatusConflict, "their_roll_full", err.Error())
+	case errors.Is(err, service.ErrFriendAlready):
+		WriteProblem(w, r, http.StatusConflict, "already_friends", err.Error())
+	case errors.Is(err, service.ErrFriendAsked):
+		WriteProblem(w, r, http.StatusConflict, "already_asked", err.Error())
+	case errors.Is(err, service.ErrFriendRefused):
+		WriteProblem(w, r, http.StatusForbidden, "requests_shut", err.Error())
+	case errors.Is(err, service.ErrFriendDayFull):
+		WriteProblem(w, r, http.StatusConflict, "requests_day_full", err.Error())
+	case errors.Is(err, service.ErrFriendNone):
+		WriteProblem(w, r, http.StatusNotFound, "no_request", err.Error())
+	case errors.Is(err, service.ErrGiftSentToday):
+		WriteProblem(w, r, http.StatusConflict, "gift_sent", err.Error())
+	case errors.Is(err, service.ErrGiftDayFull):
+		WriteProblem(w, r, http.StatusConflict, "gifts_day_full", err.Error())
+	case errors.Is(err, service.ErrGiftNone):
+		WriteProblem(w, r, http.StatusNotFound, "no_gift", err.Error())
+	case errors.Is(err, service.ErrGiftTooNew):
+		WriteProblem(w, r, http.StatusForbidden, "friendship_too_new", err.Error())
+	case errors.Is(err, service.ErrAccountTooNew):
+		WriteProblem(w, r, http.StatusForbidden, "account_too_new", err.Error())
+	case errors.Is(err, service.ErrRivalHidden):
+		WriteProblem(w, r, http.StatusForbidden, "page_hidden", err.Error())
+	case errors.Is(err, service.ErrSpySelf):
+		WriteProblem(w, r, http.StatusBadRequest, "spy_self", err.Error())
+	case errors.Is(err, service.ErrSpyDayFull):
+		WriteProblem(w, r, http.StatusConflict, "spy_day_full", err.Error())
+	case errors.Is(err, service.ErrSpyGold):
+		WriteProblem(w, r, http.StatusConflict, "not_enough_gold", err.Error())
+	case errors.Is(err, service.ErrNoKingdomHelp):
+		WriteProblem(w, r, http.StatusConflict, "no_kingdom", err.Error())
+	case errors.Is(err, service.ErrAidSoon):
+		WriteProblem(w, r, http.StatusTooManyRequests, "aid_soon", err.Error())
+	case errors.Is(err, service.ErrAidDayFull):
+		WriteProblem(w, r, http.StatusConflict, "aid_day_full", err.Error())
+	case errors.Is(err, service.ErrAidOwn):
+		WriteProblem(w, r, http.StatusBadRequest, "aid_own", err.Error())
+	case errors.Is(err, service.ErrAidGone):
+		WriteProblem(w, r, http.StatusConflict, "aid_gone", err.Error())
+	case errors.Is(err, service.ErrAidFull):
+		WriteProblem(w, r, http.StatusConflict, "aid_full", err.Error())
+	case errors.Is(err, service.ErrGoalNone):
+		WriteProblem(w, r, http.StatusConflict, "no_goal", err.Error())
+	case errors.Is(err, service.ErrGoalShort):
+		WriteProblem(w, r, http.StatusConflict, "goal_short", err.Error())
+	case errors.Is(err, service.ErrGoalShare):
+		WriteProblem(w, r, http.StatusForbidden, "goal_share", err.Error())
+	case errors.Is(err, service.ErrGoalTaken):
+		WriteProblem(w, r, http.StatusConflict, "goal_taken", err.Error())
+
+	// PvE ve derinlik (Wave 7).
+	case errors.Is(err, service.ErrCampaignLocked):
+		WriteProblem(w, r, http.StatusForbidden, "campaign_locked", err.Error())
+	case errors.Is(err, service.ErrStageUnknown):
+		WriteProblem(w, r, http.StatusNotFound, CodeNotFound, err.Error())
+	case errors.Is(err, service.ErrStageShut):
+		WriteProblem(w, r, http.StatusConflict, "stage_shut", err.Error())
+	case errors.Is(err, service.ErrChestShut):
+		WriteProblem(w, r, http.StatusConflict, "chest_shut", err.Error())
+	case errors.Is(err, service.ErrChestTaken):
+		WriteProblem(w, r, http.StatusConflict, "chest_taken", err.Error())
+	case errors.Is(err, service.ErrHuntLocked):
+		WriteProblem(w, r, http.StatusForbidden, "hunt_locked", err.Error())
+	case errors.Is(err, service.ErrHuntSlots):
+		WriteProblem(w, r, http.StatusConflict, "hunt_slots", err.Error())
+	case errors.Is(err, service.ErrHuntField):
+		WriteProblem(w, r, http.StatusNotFound, CodeNotFound, err.Error())
+	case errors.Is(err, service.ErrHuntAway):
+		WriteProblem(w, r, http.StatusConflict, "soldier_away", err.Error())
+	case errors.Is(err, service.ErrHuntSoon):
+		WriteProblem(w, r, http.StatusConflict, "hunt_soon", err.Error())
+	case errors.Is(err, service.ErrHuntGone):
+		WriteProblem(w, r, http.StatusConflict, "hunt_gone", err.Error())
+	case errors.Is(err, service.ErrForgeLocked):
+		WriteProblem(w, r, http.StatusForbidden, "forge_locked", err.Error())
+	case errors.Is(err, service.ErrForgePieces):
+		WriteProblem(w, r, http.StatusBadRequest, "forge_pieces", err.Error())
+	case errors.Is(err, service.ErrForgeTop):
+		WriteProblem(w, r, http.StatusConflict, "forge_top", err.Error())
+	case errors.Is(err, service.ErrForgeWorn):
+		WriteProblem(w, r, http.StatusConflict, "item_equipped", err.Error())
+	case errors.Is(err, service.ErrTalentsLocked):
+		WriteProblem(w, r, http.StatusForbidden, "talents_locked", err.Error())
+	case errors.Is(err, service.ErrTalentUnknown):
+		WriteProblem(w, r, http.StatusNotFound, CodeNotFound, err.Error())
+	case errors.Is(err, service.ErrTalentMaxed):
+		WriteProblem(w, r, http.StatusConflict, "talent_maxed", err.Error())
+	case errors.Is(err, service.ErrTalentPoints):
+		WriteProblem(w, r, http.StatusConflict, "no_talent_points", err.Error())
+	case errors.Is(err, service.ErrTalentShut):
+		WriteProblem(w, r, http.StatusConflict, "talent_shut", err.Error())
+	case errors.Is(err, service.ErrNoTalents):
+		WriteProblem(w, r, http.StatusConflict, "no_talents", err.Error())
+
+	// Krallik Boss ve Savaslari (Wave 8). Same rule as every wave before it:
+	// the message says the RULE, never "no".
+	case errors.Is(err, service.ErrBossLocked):
+		WriteProblem(w, r, http.StatusForbidden, "boss_locked", err.Error())
+	case errors.Is(err, service.ErrNoBoss):
+		WriteProblem(w, r, http.StatusConflict, "no_boss", err.Error())
+	case errors.Is(err, service.ErrBossDown):
+		WriteProblem(w, r, http.StatusConflict, "boss_down", err.Error())
+	case errors.Is(err, service.ErrBossOver):
+		WriteProblem(w, r, http.StatusConflict, "boss_over", err.Error())
+	case errors.Is(err, service.ErrNoBlows):
+		WriteProblem(w, r, http.StatusConflict, "no_blows", err.Error())
+	case errors.Is(err, service.ErrWarLocked):
+		WriteProblem(w, r, http.StatusForbidden, "war_locked", err.Error())
+	case errors.Is(err, service.ErrNoWar):
+		WriteProblem(w, r, http.StatusConflict, "no_war", err.Error())
+	case errors.Is(err, service.ErrWarBye):
+		WriteProblem(w, r, http.StatusConflict, "war_bye", err.Error())
+	case errors.Is(err, service.ErrWarNotLive):
+		WriteProblem(w, r, http.StatusConflict, "war_not_live", err.Error())
+	case errors.Is(err, service.ErrWarOver):
+		WriteProblem(w, r, http.StatusConflict, "war_over", err.Error())
+	case errors.Is(err, service.ErrWarNotFoe):
+		WriteProblem(w, r, http.StatusConflict, "war_not_foe", err.Error())
+	case errors.Is(err, service.ErrWarSelf):
+		WriteProblem(w, r, http.StatusBadRequest, "war_self", err.Error())
+	case errors.Is(err, service.ErrNoWarAttack):
+		WriteProblem(w, r, http.StatusConflict, "no_war_attacks", err.Error())
+
+	// Herald's Tidings: the rewarded advert.
+	case errors.Is(err, service.ErrHeraldShut):
+		WriteProblem(w, r, http.StatusConflict, "herald_shut", err.Error())
+	case errors.Is(err, service.ErrHeraldEarly):
+		WriteProblem(w, r, http.StatusConflict, "herald_early", err.Error())
+	case errors.Is(err, service.ErrHeraldSpent):
+		WriteProblem(w, r, http.StatusConflict, "herald_spent", err.Error())
+	case errors.Is(err, service.ErrHeraldSoon):
+		WriteProblem(w, r, http.StatusTooManyRequests, "herald_soon", err.Error())
+
 	case errors.Is(err, service.ErrInventoryFull):
 		WriteProblem(w, r, http.StatusConflict, "inventory_full", "your armory is full — sell something first")
 	case errors.Is(err, service.ErrShopStale):
@@ -126,8 +375,10 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusBadRequest, "nothing_to_spend", "allocate at least one point")
 	case errors.Is(err, service.ErrUpgradeMaxed):
 		WriteProblem(w, r, http.StatusConflict, "maxed", "already at maximum level")
-	case errors.Is(err, service.ErrNoTax):
-		WriteProblem(w, r, http.StatusConflict, "no_tax", "nothing to collect yet")
+	case errors.Is(err, service.ErrStorehouseEmpty):
+		WriteProblem(w, r, http.StatusConflict, "storehouse_empty", "the storehouse holds nothing yet")
+	case errors.Is(err, service.ErrBadDestination):
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, err.Error())
 	case errors.Is(err, service.ErrAlreadyInKingdom):
 		WriteProblem(w, r, http.StatusConflict, "already_in_kingdom", "you already belong to a kingdom")
 	case errors.Is(err, service.ErrNotInKingdom):
@@ -164,8 +415,39 @@ func (a *api) fail(w http.ResponseWriter, r *http.Request, err error) {
 		WriteProblem(w, r, http.StatusConflict, "already_collected", err.Error())
 	case errors.Is(err, service.ErrQuestUnfinished):
 		WriteProblem(w, r, http.StatusConflict, "quest_unfinished", err.Error())
-	case errors.Is(err, service.ErrAlreadyClaimed):
+	case errors.Is(err, service.ErrCartEmpty):
+		WriteProblem(w, r, http.StatusConflict, "cart_empty", "no cart is waiting at your gate")
+	case errors.Is(err, service.ErrCartLocked):
+		WriteProblem(w, r, http.StatusForbidden, "locked", err.Error())
+	case errors.Is(err, service.ErrCalendarBroken):
+		WriteProblem(w, r, http.StatusConflict, "calendar_broken", err.Error())
+	case errors.Is(err, service.ErrNothingToMend):
+		WriteProblem(w, r, http.StatusConflict, "nothing_to_mend", err.Error())
+	case errors.Is(err, service.ErrBadMend), errors.Is(err, service.ErrNotUsable):
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, err.Error())
+	case errors.Is(err, service.ErrRoadEmpty):
+		WriteProblem(w, r, http.StatusConflict, "nothing_to_claim", err.Error())
+	case errors.Is(err, service.ErrGuideMoved):
+		WriteProblem(w, r, http.StatusConflict, "guide_moved", err.Error())
+	case errors.Is(err, service.ErrGuideNotReady):
+		WriteProblem(w, r, http.StatusConflict, "guide_not_ready", err.Error())
+	case errors.Is(err, service.ErrEnergyFull):
+		WriteProblem(w, r, http.StatusConflict, "energy_full", err.Error())
+	case errors.Is(err, service.ErrAlreadyClaimed), errors.Is(err, service.ErrHourlyClaimed):
 		WriteProblem(w, r, http.StatusConflict, "already_claimed", err.Error())
+	case errors.Is(err, service.ErrHourlyNone):
+		WriteProblem(w, r, http.StatusConflict, "hourly_over", err.Error())
+	case errors.Is(err, service.ErrNoFestival):
+		WriteProblem(w, r, http.StatusConflict, "no_festival", err.Error())
+	case errors.Is(err, service.ErrNoSeason):
+		WriteProblem(w, r, http.StatusConflict, "no_season", err.Error())
+	case errors.Is(err, service.ErrCharterLocked):
+		WriteProblem(w, r, http.StatusForbidden, "charter_locked", err.Error())
+	case errors.Is(err, service.ErrRoyalOpen):
+		WriteProblem(w, r, http.StatusConflict, "royal_open", err.Error())
+	case errors.Is(err, service.ErrCharterEmpty), errors.Is(err, service.ErrFestivalEmpty),
+		errors.Is(err, service.ErrDeedsEmpty):
+		WriteProblem(w, r, http.StatusConflict, "nothing_to_claim", err.Error())
 	case errors.Is(err, service.ErrNotEnoughFavour):
 		WriteProblem(w, r, http.StatusConflict, "not_enough_favour", "not enough favour")
 	case errors.Is(err, service.ErrLastKing):
@@ -194,6 +476,8 @@ type registerReq struct {
 	Username        string `json:"username"`
 	Password        string `json:"password"`
 	TZOffsetMinutes int    `json:"tz_offset_minutes"`
+	// The phone's own identifier, optional; only a keyed hash of it is kept.
+	Device string `json:"device"`
 }
 
 func (a *api) register(w http.ResponseWriter, r *http.Request) {
@@ -212,12 +496,16 @@ func (a *api) register(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
+	if id, err := uuid.Parse(tok.PlayerID); err == nil {
+		a.s().SeeDevice(r.Context(), id, req.Device)
+	}
 	WriteJSON(w, http.StatusCreated, tok)
 }
 
 type loginReq struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Device   string `json:"device"`
 }
 
 func (a *api) login(w http.ResponseWriter, r *http.Request) {
@@ -229,6 +517,9 @@ func (a *api) login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.fail(w, r, err)
 		return
+	}
+	if id, err := uuid.Parse(tok.PlayerID); err == nil {
+		a.s().SeeDevice(r.Context(), id, req.Device)
 	}
 	WriteJSON(w, http.StatusOK, tok)
 }
@@ -726,24 +1017,6 @@ func (a *api) daily(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
-// dailyClaim takes today's square.
-//
-// No action_seq: claiming is idempotent per local day in the UPDATE itself, so
-// a retry is already safe and a sequence would only add a way to fail.
-func (a *api) dailyClaim(w http.ResponseWriter, r *http.Request) {
-	pid, ok := PlayerID(r.Context())
-	if !ok {
-		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
-		return
-	}
-	v, err := a.s().ClaimDaily(r.Context(), pid)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, v)
-}
-
 // favourShop is what donating to your kingdom buys you personally.
 func (a *api) favourShop(w http.ResponseWriter, r *http.Request) {
 	pid, ok := PlayerID(r.Context())
@@ -1005,14 +1278,13 @@ func (a *api) estateBuy(w http.ResponseWriter, r *http.Request, upgrade bool) {
 	WriteJSON(w, http.StatusOK, v)
 }
 
-// claimTaxGone answers builds that still think estate income needs collecting.
-//
-// It is continuous now: the purse is credited on every authenticated request, so
-// there is nothing to claim. 410 rather than 404 so an older .ipa reports
-// something true rather than "that route does not exist".
+// claimTaxGone answers builds from before continuous income that still ask to
+// claim it. Estate income fills the storehouse now, carried in through
+// /estates/storehouse/carry; 410 rather than 404 so an old .ipa says something
+// true.
 func (a *api) claimTaxGone(w http.ResponseWriter, r *http.Request) {
 	WriteProblem(w, r, http.StatusGone, "gone",
-		"Estate income arrives on its own now — there is nothing to collect.")
+		"Estate income fills the storehouse now: update the game to carry it in.")
 }
 
 // --- kingdom ---
@@ -1176,7 +1448,7 @@ func isKnownServiceError(err error) bool {
 		service.ErrShielded, service.ErrOnCooldown, service.ErrSelfAttack,
 		service.ErrTooNewToRaid, service.ErrNoRevenge,
 		service.ErrNoStatPoints, service.ErrNothingToSpend,
-		service.ErrUpgradeMaxed, service.ErrNoTax,
+		service.ErrUpgradeMaxed, service.ErrStorehouseEmpty,
 		service.ErrAlreadyInKingdom, service.ErrNotInKingdom, service.ErrKingdomFull,
 		service.ErrNotInvited, service.ErrNotPermitted, service.ErrKingdomNameTaken,
 		service.ErrLastKing, service.ErrSameKingdom,
@@ -1343,6 +1615,30 @@ type treasuryReq struct {
 	ActionSeq int64 `json:"action_seq"`
 }
 
+type carryReq struct {
+	To        string `json:"to"`
+	ActionSeq int64  `json:"action_seq"`
+}
+
+// carryStorehouse carries the storehouse to the purse or the vault.
+func (a *api) carryStorehouse(w http.ResponseWriter, r *http.Request) {
+	pid, ok := PlayerID(r.Context())
+	if !ok {
+		WriteProblem(w, r, http.StatusUnauthorized, CodeUnauthorized, "unauthenticated")
+		return
+	}
+	var req carryReq
+	if !decode(w, r, &req) {
+		return
+	}
+	v, err := a.s().CarryStorehouse(r.Context(), pid, req.To, req.ActionSeq)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
 func (a *api) deposit(w http.ResponseWriter, r *http.Request)  { a.treasuryMove(w, r, true) }
 func (a *api) withdraw(w http.ResponseWriter, r *http.Request) { a.treasuryMove(w, r, false) }
 
@@ -1447,13 +1743,16 @@ func (a *api) buyStoreGood(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Good      string `json:"good"`
+		Good string `json:"good"`
+		// "diamonds" (the default) or "token": an energy potion or a protection
+		// charter the player holds, in place of the price.
+		Pay       string `json:"pay,omitempty"`
 		ActionSeq int64  `json:"action_seq"`
 	}
 	if !decode(w, r, &req) {
 		return
 	}
-	v, err := a.s().BuyStoreGood(r.Context(), pid, req.Good, req.ActionSeq)
+	v, err := a.s().BuyStoreGood(r.Context(), pid, req.Good, req.Pay, req.ActionSeq)
 	if err != nil {
 		a.fail(w, r, err)
 		return

@@ -1,0 +1,431 @@
+{
+ "source": "velvet_common.png",
+ "notes": [
+  "The rarity velvets the owner painted (Design Pack 2: common_grey ... special_red), one per tier, behind every item as the inventory painting paints its tiles: an item sits on its rarity's cloth.",
+  "All seven cloths share one drape, so one region serves every tier: [230,40,800,800], the calm upper middle with the left fold and the swag's rim at the lower right -- it reads as velvet at 46 units and does not crowd the item at 240. Cut at 256, the largest window (the inventory list tile, 240), and only ever drawn down.",
+  "tone brings each cloth to the tone of the painting's own tile for its tier (art/reference/inventory.png's seven tiles, measured away from the item): a gain per tier, then one vignette (strength 0.66 from 25% out) so the corners fall to about a third, as the painted tiles' do, and the item stands lit. Painted tile, max channel at its edge / by the item, against the cloth's centre: common 32/~45 vs 33 -> x1.45; uncommon 29/60 vs 47 -> x1.2; rare 40/56 vs 92 -> x0.9; epic 51/73 vs 71 -> x1.1; legendary 36/66 vs 200 -> x0.45 (a deep amber, so gold armour stays proud of it); mystic 84/128 vs 112 -> x0.8; special 41/59 vs 71 -> x1.0. The cloth keeps its own hue and weave: only its level moves.",
+  "glow_<tier> is the same ground under a feathered ellipse, for a window with no ring of its own (the shop card's picture, the collection's painted frames): it fades into the window rather than ending in a square."
+ ],
+ "crops": [
+  {
+   "name": "items/ground_common",
+   "src": "velvet_common.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.45,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/ground_uncommon",
+   "src": "velvet_uncommon.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.2,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/ground_rare",
+   "src": "velvet_rare.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 0.9,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/ground_epic",
+   "src": "velvet_epic.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.1,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/ground_legendary",
+   "src": "velvet_legendary.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 0.45,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/ground_mystic",
+   "src": "velvet_mystic.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 0.8,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/ground_special",
+   "src": "velvet_special.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.0,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/glow_common",
+   "src": "velvet_common.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.45,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     40,
+     40,
+     760,
+     760
+    ],
+    "feather": 70
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/glow_uncommon",
+   "src": "velvet_uncommon.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.2,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     40,
+     40,
+     760,
+     760
+    ],
+    "feather": 70
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/glow_rare",
+   "src": "velvet_rare.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 0.9,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     40,
+     40,
+     760,
+     760
+    ],
+    "feather": 70
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/glow_epic",
+   "src": "velvet_epic.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.1,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     40,
+     40,
+     760,
+     760
+    ],
+    "feather": 70
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/glow_legendary",
+   "src": "velvet_legendary.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 0.45,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     40,
+     40,
+     760,
+     760
+    ],
+    "feather": 70
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/glow_mystic",
+   "src": "velvet_mystic.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 0.8,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     40,
+     40,
+     760,
+     760
+    ],
+    "feather": 70
+   },
+   "scale": [
+    256,
+    256
+   ]
+  },
+  {
+   "name": "items/glow_special",
+   "src": "velvet_special.png",
+   "rect": [
+    230,
+    40,
+    800,
+    800
+   ],
+   "tone": {
+    "gain": 1.0,
+    "vignette": {
+     "strength": 0.66,
+     "inner": 0.25,
+     "centre": [
+      0.5,
+      0.46
+     ]
+    }
+   },
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     40,
+     40,
+     760,
+     760
+    ],
+    "feather": 70
+   },
+   "scale": [
+    256,
+    256
+   ]
+  }
+ ]
+}

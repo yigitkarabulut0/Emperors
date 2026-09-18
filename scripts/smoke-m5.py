@@ -146,10 +146,14 @@ check("a player with no holdings still earns some idle income",
       e["tax"]["per_hour_milli"] > 0, e["tax"])
 # A magnitude check, not just "> 0". The first version of this passed while the
 # rate was 3600x too large, because the display was multiplied by 3600 twice.
-# Design: 24 gold/hour at level 1, growing 4.5% per level.
+# The window is read off the curve rather than written down, so a retune of
+# estates.json moves it and a factor-of-3600 bug still fails it.
 per_hour = e["tax"]["per_hour_milli"] / 1000
+tax = json.load(open(os.path.join(ROOT, "balance", "estates.json")))["tax"]
+want = tax["base_per_hour_milli"] / 1000 * (tax["growth_bp"] / 10000) ** int(s["player"]["level"])
 check("the idle rate is in a sane range for the level",
-      20 <= per_hour <= 60, f"{per_hour:.1f} gold/hour at level {s['player']['level']}")
+      want / 2 <= per_hour <= want * 2,
+      f"{per_hour:.1f} gold/hour at level {s['player']['level']}, the curve says about {want:.1f}")
 # 8 hours of idle income must stay a supplement, not a replacement for playing.
 eight_hours = per_hour * 8
 active_ballpark = int(s["player"]["gold"])
@@ -238,16 +242,13 @@ if locked:
     check("a locked holding cannot be bought", st in (403, 409), (st, lk))
 
 print("\n== tax accrual ==")
-# Income used to sit in a "pending" pot behind a Collect button, and this block
-# used to claim it. It is credited on every authenticated request now, so there
-# is no pot to inspect and nothing to claim -- what is asserted instead is that
-# the rate is published (the client needs it to tick the purse between requests)
-# and that the old endpoint says so plainly. The timing of the credit itself is
-# covered by scripts/smoke-tax.py, which has to wait long enough to see a whole
-# gold arrive.
+# Income fills the storehouse now (Wave 2), carried in through
+# /estates/storehouse/carry; the old claim route answers 410. What is asserted
+# here is that the rate is published; the storehouse itself -- its filling, its
+# capacity, the carry -- is covered by scripts/smoke-storehouse.py, which waits
+# long enough to see a whole gold arrive.
 st, e2 = call("GET", "/v1/estates", token=token)
 check("the hourly rate is published", e2["tax"]["per_hour_milli"] > 0, e2.get("tax"))
-check("there is no pot waiting to be collected", "pending" not in e2["tax"], e2.get("tax"))
 
 st, claim = call("POST", "/v1/estates/tax/claim", {"action_seq": seq(token)}, token=token)
 check("the claim endpoint is gone", st == 410, (st, claim))

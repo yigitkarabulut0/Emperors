@@ -1,0 +1,1740 @@
+{
+  "_comment": "Live ops. hourly: the table rolled each hour (bp, 10000 in all), never twice running. events: the calendar's festival templates, frozen when scheduled. season: the 28-day season and its Royal Charter (50 tiers, free and royal lanes; the royal lane is paid: looks, diamonds, potions, pardons). ranks: the weekly and season boards and the season's nobility. achievements: 24 deeds in four tiers.",
+  "hourly": {
+    "table": [
+      {
+        "id": "none",
+        "bp": 3400
+      },
+      {
+        "id": "gold_rush",
+        "name": "Gold Rush",
+        "blurb": "Every job pays double gold.",
+        "icon": "hourly/gold_rush",
+        "minutes": 15,
+        "bp": 1300,
+        "effect": {
+          "kind": "boost",
+          "bucket": "collect_income_bp",
+          "bp": 10000
+        }
+      },
+      {
+        "id": "scholars_hour",
+        "name": "Scholar's Hour",
+        "blurb": "Every job pays double experience.",
+        "icon": "hourly/scholars_hour",
+        "minutes": 15,
+        "bp": 1000,
+        "effect": {
+          "kind": "boost",
+          "bucket": "xp_bp",
+          "bp": 10000
+        }
+      },
+      {
+        "id": "fortunes_favour",
+        "name": "Fortune's Favour",
+        "blurb": "Luck smiles on the market and the chests.",
+        "icon": "hourly/fortunes_favour",
+        "minutes": 30,
+        "bp": 900,
+        "effect": {
+          "kind": "boost",
+          "bucket": "luck_bp",
+          "bp": 3000
+        }
+      },
+      {
+        "id": "quartermasters_sale",
+        "name": "Quartermaster's Sale",
+        "blurb": "Energy refills cost half.",
+        "icon": "hourly/quartermasters_sale",
+        "minutes": 30,
+        "bp": 800,
+        "effect": {
+          "kind": "refill_discount",
+          "bp": 5000
+        }
+      },
+      {
+        "id": "fresh_wares",
+        "name": "Fresh Wares",
+        "blurb": "The market restocks once for nothing.",
+        "icon": "hourly/fresh_wares",
+        "minutes": 60,
+        "bp": 900,
+        "effect": {
+          "kind": "free_reroll",
+          "count": 1
+        }
+      },
+      {
+        "id": "busy_hands",
+        "name": "Busy Hands",
+        "blurb": "The day's quests count double.",
+        "icon": "hourly/busy_hands",
+        "minutes": 30,
+        "bp": 800,
+        "effect": {
+          "kind": "quest_multiplier",
+          "x": 2
+        }
+      },
+      {
+        "id": "royal_courier",
+        "name": "Royal Courier",
+        "blurb": "A courier brings a cart writ from the crown.",
+        "icon": "hourly/royal_courier",
+        "minutes": 60,
+        "bp": 500,
+        "effect": {
+          "kind": "gift",
+          "grant": {
+            "tokens": {
+              "cart": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "honor_hour",
+        "name": "Honor Hour",
+        "blurb": "One more fight in the Honour Arena.",
+        "icon": "hourly/honor_hour",
+        "minutes": 60,
+        "bp": 400,
+        "effect": {
+          "kind": "gift",
+          "grant": {
+            "tokens": {
+              "arena_ticket": 1
+            }
+          }
+        }
+      }
+    ],
+    "no_repeat": true
+  },
+  "events": {
+    "templates": [
+      {
+        "id": "harvest_festival",
+        "name": "Harvest Festival",
+        "theme": "harvest",
+        "blurb": "The granaries overflow: every job pays a quarter more gold.",
+        "days": 3,
+        "effect": {
+          "bucket": "collect_income_bp",
+          "bp": 2500
+        },
+        "points": [
+          {
+            "deed": "collects",
+            "points": 1,
+            "per": 1
+          },
+          {
+            "deed": "golden_hours",
+            "points": 40,
+            "per": 1
+          },
+          {
+            "deed": "carts_opened",
+            "points": 15,
+            "per": 1
+          },
+          {
+            "deed": "daily_quests",
+            "points": 20,
+            "per": 1
+          }
+        ],
+        "daily_cap": 600,
+        "tasks": [
+          {
+            "id": "sheaves",
+            "name": "Bring in the Sheaves",
+            "short": "Collect 300 times",
+            "icon": "quest_bolt",
+            "deed": "collects",
+            "target": 300,
+            "grant": {
+              "gold_wages": 60
+            }
+          },
+          {
+            "id": "long_day",
+            "name": "The Long Day",
+            "short": "Spend 1,500 energy",
+            "icon": "quest_bolt",
+            "deed": "energy",
+            "target": 1500,
+            "grant": {
+              "tokens": {
+                "flask_small": 1
+              }
+            }
+          },
+          {
+            "id": "golden_harvest",
+            "name": "A Golden Harvest",
+            "short": "Light 2 Golden Hours",
+            "icon": "quest_bolt",
+            "deed": "golden_hours",
+            "target": 2,
+            "grant": {
+              "tokens": {
+                "cart": 1
+              }
+            }
+          },
+          {
+            "id": "market_day",
+            "name": "Market Day",
+            "short": "Buy 3 market items",
+            "icon": "quest_scroll",
+            "deed": "buys",
+            "target": 3,
+            "grant": {
+              "gold_wages": 40
+            }
+          },
+          {
+            "id": "feast_table",
+            "name": "The Feast Table",
+            "short": "Finish 6 daily quests",
+            "icon": "quest_scroll",
+            "deed": "daily_quests",
+            "target": 6,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ],
+        "milestones": [
+          {
+            "at": 300,
+            "grant": {
+              "gold_wages": 60
+            }
+          },
+          {
+            "at": 800,
+            "grant": {
+              "tokens": {
+                "cart": 2
+              }
+            }
+          },
+          {
+            "at": 1400,
+            "grant": {
+              "tokens": {
+                "flask_small": 1
+              },
+              "diamonds": 10
+            }
+          },
+          {
+            "at": 1800,
+            "grant": {
+              "cosmetics": [
+                "frame_event_harvest"
+              ]
+            }
+          }
+        ],
+        "ranks": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 100,
+              "cosmetics": [
+                "title_bountiful"
+              ]
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 60
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ]
+      },
+      {
+        "id": "blood_moon",
+        "name": "Blood Moon",
+        "theme": "blood_moon",
+        "blurb": "Blood on the moon: every raid carries half again as much renown.",
+        "days": 3,
+        "effect": {
+          "bucket": "reputation_bp",
+          "bp": 5000
+        },
+        "points": [
+          {
+            "deed": "collects",
+            "points": 1,
+            "per": 2
+          },
+          {
+            "deed": "raids",
+            "points": 5,
+            "per": 1
+          },
+          {
+            "deed": "raid_wins",
+            "points": 20,
+            "per": 1
+          },
+          {
+            "deed": "revenge_wins",
+            "points": 40,
+            "per": 1
+          },
+          {
+            "deed": "defenses_held",
+            "points": 10,
+            "per": 1
+          },
+          {
+            "deed": "daily_quests",
+            "points": 20,
+            "per": 1
+          }
+        ],
+        "daily_cap": 600,
+        "tasks": [
+          {
+            "id": "night_raids",
+            "name": "Night Raids",
+            "short": "Win 5 raids",
+            "icon": "quest_swords",
+            "deed": "raid_wins",
+            "target": 5,
+            "grant": {
+              "gold_wages": 60
+            }
+          },
+          {
+            "id": "blood_for_blood",
+            "name": "Blood for Blood",
+            "short": "Win a revenge strike",
+            "icon": "quest_swords",
+            "deed": "revenge_wins",
+            "target": 1,
+            "grant": {
+              "tokens": {
+                "shield_8h": 1
+              }
+            }
+          },
+          {
+            "id": "hold_the_walls",
+            "name": "Hold the Walls",
+            "short": "Hold 3 raids off",
+            "icon": "quest_swords",
+            "deed": "defenses_held",
+            "target": 3,
+            "grant": {
+              "tokens": {
+                "flask_small": 1
+              }
+            }
+          },
+          {
+            "id": "steel_and_oaths",
+            "name": "Steel and Oaths",
+            "short": "Collect 300 times",
+            "icon": "quest_bolt",
+            "deed": "collects",
+            "target": 300,
+            "grant": {
+              "tokens": {
+                "cart": 1
+              }
+            }
+          },
+          {
+            "id": "oathsworn",
+            "name": "Oathsworn",
+            "short": "Finish 6 daily quests",
+            "icon": "quest_scroll",
+            "deed": "daily_quests",
+            "target": 6,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ],
+        "milestones": [
+          {
+            "at": 300,
+            "grant": {
+              "gold_wages": 60
+            }
+          },
+          {
+            "at": 800,
+            "grant": {
+              "tokens": {
+                "shield_8h": 1
+              }
+            }
+          },
+          {
+            "at": 1400,
+            "grant": {
+              "tokens": {
+                "flask_small": 1
+              },
+              "diamonds": 10
+            }
+          },
+          {
+            "at": 1800,
+            "grant": {
+              "cosmetics": [
+                "frame_event_blood_moon"
+              ]
+            }
+          }
+        ],
+        "ranks": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 100,
+              "cosmetics": [
+                "title_crimson"
+              ]
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 60
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ]
+      },
+      {
+        "id": "merchant_caravan",
+        "name": "Merchant Caravan",
+        "theme": "caravan",
+        "blurb": "A caravan fills the market: everything there costs a tenth less.",
+        "days": 3,
+        "effect": {
+          "bucket": "shop_discount_bp",
+          "bp": 1000
+        },
+        "points": [
+          {
+            "deed": "collects",
+            "points": 1,
+            "per": 2
+          },
+          {
+            "deed": "buys",
+            "points": 20,
+            "per": 1
+          },
+          {
+            "deed": "sells",
+            "points": 5,
+            "per": 1
+          },
+          {
+            "deed": "carts_opened",
+            "points": 15,
+            "per": 1
+          },
+          {
+            "deed": "daily_quests",
+            "points": 20,
+            "per": 1
+          }
+        ],
+        "daily_cap": 600,
+        "tasks": [
+          {
+            "id": "browse",
+            "name": "Browse the Stalls",
+            "short": "Buy 5 market items",
+            "icon": "quest_scroll",
+            "deed": "buys",
+            "target": 5,
+            "grant": {
+              "gold_wages": 40
+            }
+          },
+          {
+            "id": "clear_armoury",
+            "name": "Clear the Armoury",
+            "short": "Sell 10 pieces",
+            "icon": "quest_scroll",
+            "deed": "sells",
+            "target": 10,
+            "grant": {
+              "gold_wages": 40
+            }
+          },
+          {
+            "id": "tolls",
+            "name": "Tolls on the Road",
+            "short": "Open 4 Tax Carts",
+            "icon": "quest_scroll",
+            "deed": "carts_opened",
+            "target": 4,
+            "grant": {
+              "tokens": {
+                "flask_small": 1
+              }
+            }
+          },
+          {
+            "id": "haggler",
+            "name": "The Haggler",
+            "short": "Buy 10 market items",
+            "icon": "quest_scroll",
+            "deed": "buys",
+            "target": 10,
+            "grant": {
+              "tokens": {
+                "cart": 1
+              }
+            }
+          },
+          {
+            "id": "trade_winds",
+            "name": "Trade Winds",
+            "short": "Finish 6 daily quests",
+            "icon": "quest_scroll",
+            "deed": "daily_quests",
+            "target": 6,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ],
+        "milestones": [
+          {
+            "at": 300,
+            "grant": {
+              "gold_wages": 60
+            }
+          },
+          {
+            "at": 800,
+            "grant": {
+              "tokens": {
+                "cart": 2
+              }
+            }
+          },
+          {
+            "at": 1400,
+            "grant": {
+              "tokens": {
+                "flask_small": 1
+              },
+              "diamonds": 10
+            }
+          },
+          {
+            "at": 1800,
+            "grant": {
+              "cosmetics": [
+                "frame_event_caravan"
+              ]
+            }
+          }
+        ],
+        "ranks": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 100,
+              "cosmetics": [
+                "title_caravaneer"
+              ]
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 60
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ]
+      }
+    ],
+    "announce_hours": 72,
+    "top_shown": 50
+  },
+  "season": {
+    "epoch": "2026-09-14",
+    "days": 28,
+    "tiers": 50,
+    "points_per_tier": 120,
+    "daily_cap": 800,
+    "sources": [
+      {
+        "deed": "daily_claims",
+        "points": 60,
+        "per": 1
+      },
+      {
+        "deed": "daily_quests",
+        "points": 25,
+        "per": 1
+      },
+      {
+        "deed": "weekly_quests",
+        "points": 40,
+        "per": 1
+      },
+      {
+        "deed": "energy",
+        "points": 1,
+        "per": 5
+      },
+      {
+        "deed": "raid_wins",
+        "points": 15,
+        "per": 1
+      },
+      {
+        "deed": "carts_opened",
+        "points": 15,
+        "per": 1
+      },
+      {
+        "deed": "golden_hours",
+        "points": 30,
+        "per": 1
+      },
+      {
+        "deed": "buys",
+        "points": 5,
+        "per": 1
+      }
+    ],
+    "royal_diamonds": 900,
+    "royal_product": "season_pass",
+    "knight_tier": 25,
+    "free": [
+      {
+        "gold_wages": 20
+      },
+      {
+        "gold_wages": 20
+      },
+      {
+        "tokens": {
+          "cart": 1
+        }
+      },
+      {
+        "gold_wages": 20
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "gold_wages": 20
+      },
+      {
+        "gold_wages": 20
+      },
+      {
+        "tokens": {
+          "flask_small": 1
+        }
+      },
+      {
+        "gold_wages": 20
+      },
+      {
+        "diamonds": 20
+      },
+      {
+        "gold_wages": 30
+      },
+      {
+        "gold_wages": 30
+      },
+      {
+        "tokens": {
+          "cart": 1
+        }
+      },
+      {
+        "gold_wages": 30
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "gold_wages": 30
+      },
+      {
+        "gold_wages": 30
+      },
+      {
+        "tokens": {
+          "flask_small": 1
+        }
+      },
+      {
+        "gold_wages": 30
+      },
+      {
+        "diamonds": 20
+      },
+      {
+        "gold_wages": 40
+      },
+      {
+        "gold_wages": 40
+      },
+      {
+        "tokens": {
+          "cart": 1
+        }
+      },
+      {
+        "gold_wages": 40
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "gold_wages": 40
+      },
+      {
+        "gold_wages": 40
+      },
+      {
+        "tokens": {
+          "flask_small": 1
+        }
+      },
+      {
+        "gold_wages": 40
+      },
+      {
+        "diamonds": 20
+      },
+      {
+        "gold_wages": 50
+      },
+      {
+        "gold_wages": 50
+      },
+      {
+        "tokens": {
+          "cart": 1
+        }
+      },
+      {
+        "gold_wages": 50
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "gold_wages": 50
+      },
+      {
+        "gold_wages": 50
+      },
+      {
+        "tokens": {
+          "flask_small": 1
+        }
+      },
+      {
+        "gold_wages": 50
+      },
+      {
+        "diamonds": 20
+      },
+      {
+        "gold_wages": 60
+      },
+      {
+        "gold_wages": 60
+      },
+      {
+        "tokens": {
+          "cart": 1
+        }
+      },
+      {
+        "gold_wages": 60
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "gold_wages": 60
+      },
+      {
+        "gold_wages": 60
+      },
+      {
+        "tokens": {
+          "flask_small": 1
+        }
+      },
+      {
+        "gold_wages": 60
+      },
+      {
+        "diamonds": 40,
+        "items": [
+          {
+            "tier": "epic",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "royal": [
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "tokens": {
+          "energy_potion": 1
+        }
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "cosmetics": [
+          "color_charter"
+        ],
+        "diamonds": 20
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "tokens": {
+          "pardon": 1
+        }
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "tokens": {
+          "energy_potion": 1
+        }
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "tokens": {
+          "shield_8h": 1
+        },
+        "diamonds": 20
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "cosmetics": [
+          "title_chartered"
+        ],
+        "diamonds": 30
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "tokens": {
+          "energy_potion": 1
+        }
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "tokens": {
+          "pardon": 1
+        }
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "tokens": {
+          "energy_potion": 1
+        }
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "tokens": {
+          "shield_8h": 1
+        },
+        "diamonds": 20
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "tokens": {
+          "energy_potion": 1
+        }
+      },
+      {
+        "diamonds": 15
+      },
+      {
+        "diamonds": 10
+      },
+      {
+        "cosmetics": [
+          "frame_charter"
+        ],
+        "diamonds": 60
+      }
+    ]
+  },
+  "ranks": {
+    "weekly": [
+      {
+        "id": "week_raids",
+        "name": "Raids this week",
+        "deed": "raid_wins",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 50
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 15
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 5
+            }
+          }
+        ]
+      },
+      {
+        "id": "week_xp",
+        "name": "Experience this week",
+        "deed": "xp",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 50
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 15
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 5
+            }
+          }
+        ]
+      },
+      {
+        "id": "week_arena",
+        "name": "Arena wins this week",
+        "deed": "arena_wins",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 50
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 15
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 5
+            }
+          }
+        ]
+      }
+    ],
+    "season": [
+      {
+        "id": "season_renown",
+        "name": "Renown this season",
+        "deed": "renown",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 150
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 90
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 45
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 15
+            }
+          }
+        ]
+      },
+      {
+        "id": "season_raids",
+        "name": "Raids this season",
+        "deed": "raid_wins",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 100
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 60
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ]
+      },
+      {
+        "id": "season_xp",
+        "name": "Experience this season",
+        "deed": "xp",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 100
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 60
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ]
+      },
+      {
+        "id": "season_might",
+        "name": "Might gained this season",
+        "deed": "might_gain",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 100
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 60
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 30
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 10
+            }
+          }
+        ]
+      },
+      {
+        "id": "season_arena",
+        "name": "The Honour Arena",
+        "deed": "arena_rating",
+        "rewards": [
+          {
+            "top": 1,
+            "grant": {
+              "diamonds": 150
+            }
+          },
+          {
+            "top": 3,
+            "grant": {
+              "diamonds": 90
+            }
+          },
+          {
+            "top": 10,
+            "grant": {
+              "diamonds": 45
+            }
+          },
+          {
+            "top": 50,
+            "grant": {
+              "diamonds": 15
+            }
+          }
+        ]
+      }
+    ],
+    "nobility": [
+      {
+        "id": "emperor",
+        "top": 1
+      },
+      {
+        "id": "prince",
+        "top": 5
+      },
+      {
+        "id": "duke",
+        "top": 25
+      },
+      {
+        "id": "count",
+        "top_pct": 5
+      },
+      {
+        "id": "baron",
+        "top_pct": 20
+      },
+      {
+        "id": "knight",
+        "charter_tier": 25
+      }
+    ]
+  },
+  "achievements": [
+    {
+      "id": "honest_labour",
+      "name": "Honest Labour",
+      "category": "work",
+      "icon": "work",
+      "tiers": [
+        100,
+        1000,
+        10000,
+        100000
+      ],
+      "title": "title_ach_honest_labour",
+      "blurb": "Work the jobs of the realm.",
+      "deed": "collects"
+    },
+    {
+      "id": "spent_in_service",
+      "name": "Spent in Service",
+      "category": "work",
+      "icon": "work",
+      "tiers": [
+        1000,
+        10000,
+        100000,
+        1000000
+      ],
+      "title": "title_ach_spent_in_service",
+      "blurb": "Spend energy in honest work.",
+      "deed": "energy"
+    },
+    {
+      "id": "master_of_trades",
+      "name": "Master of Trades",
+      "category": "work",
+      "icon": "work",
+      "tiers": [
+        1,
+        3,
+        7,
+        15
+      ],
+      "title": "title_ach_master_of_trades",
+      "blurb": "Master a job to its last milestone.",
+      "stat": "masteries"
+    },
+    {
+      "id": "raider",
+      "name": "Raider",
+      "category": "war",
+      "icon": "war",
+      "tiers": [
+        10,
+        100,
+        500,
+        2000
+      ],
+      "title": "title_ach_raider",
+      "blurb": "Win raids on your rivals.",
+      "deed": "raid_wins"
+    },
+    {
+      "id": "iron_wall",
+      "name": "Iron Wall",
+      "category": "war",
+      "icon": "war",
+      "tiers": [
+        10,
+        100,
+        500,
+        2000
+      ],
+      "title": "title_ach_iron_wall",
+      "blurb": "Hold your walls against a raid.",
+      "deed": "defenses_held"
+    },
+    {
+      "id": "paid_in_kind",
+      "name": "Paid in Kind",
+      "category": "war",
+      "icon": "war",
+      "tiers": [
+        5,
+        50,
+        200,
+        1000
+      ],
+      "title": "title_ach_paid_in_kind",
+      "blurb": "Win a revenge strike.",
+      "deed": "revenge_wins"
+    },
+    {
+      "id": "plunderer",
+      "name": "Plunderer",
+      "category": "war",
+      "icon": "war",
+      "tiers": [
+        100000,
+        10000000,
+        1000000000,
+        100000000000
+      ],
+      "title": "title_ach_plunderer",
+      "blurb": "Carry off gold in your raids.",
+      "deed": "gold_stolen"
+    },
+    {
+      "id": "faithful_vassal",
+      "name": "Faithful Vassal",
+      "category": "kingdom",
+      "icon": "kingdom",
+      "tiers": [
+        10000,
+        1000000,
+        100000000,
+        10000000000
+      ],
+      "title": "title_ach_faithful_vassal",
+      "blurb": "Give gold to your kingdom.",
+      "deed": "donated_gold"
+    },
+    {
+      "id": "recruiter",
+      "name": "Recruiter",
+      "category": "kingdom",
+      "icon": "kingdom",
+      "tiers": [
+        1,
+        10,
+        50,
+        200
+      ],
+      "title": "title_ach_recruiter",
+      "blurb": "Raise soldiers for your army.",
+      "deed": "recruits"
+    },
+    {
+      "id": "drill_master",
+      "name": "Drill Master",
+      "category": "kingdom",
+      "icon": "kingdom",
+      "tiers": [
+        5,
+        50,
+        250,
+        1000
+      ],
+      "title": "title_ach_drill_master",
+      "blurb": "Reroll your soldiers' ranks.",
+      "deed": "rerolls"
+    },
+    {
+      "id": "rising_star",
+      "name": "Rising Star",
+      "category": "crown",
+      "icon": "crown",
+      "tiers": [
+        10,
+        25,
+        40,
+        60
+      ],
+      "title": "title_ach_rising_star",
+      "blurb": "Reach a level.",
+      "stat": "level"
+    },
+    {
+      "id": "might_of_arms",
+      "name": "Might of Arms",
+      "category": "crown",
+      "icon": "crown",
+      "tiers": [
+        1000,
+        10000,
+        100000,
+        1000000
+      ],
+      "title": "title_ach_might_of_arms",
+      "blurb": "Grow the might of your army.",
+      "stat": "might"
+    },
+    {
+      "id": "builder",
+      "name": "Builder of Estates",
+      "category": "crown",
+      "icon": "crown",
+      "tiers": [
+        5,
+        25,
+        100,
+        300
+      ],
+      "title": "title_ach_builder",
+      "blurb": "Build your family's upgrades.",
+      "deed": "upgrades"
+    },
+    {
+      "id": "lord_of_the_land",
+      "name": "Lord of the Land",
+      "category": "crown",
+      "icon": "crown",
+      "tiers": [
+        3,
+        15,
+        60,
+        150
+      ],
+      "title": "title_ach_lord_of_the_land",
+      "blurb": "Buy and raise estate holdings.",
+      "deed": "holdings"
+    },
+    {
+      "id": "duty_bound",
+      "name": "Duty Bound",
+      "category": "scroll",
+      "icon": "scroll",
+      "tiers": [
+        10,
+        100,
+        500,
+        2000
+      ],
+      "title": "title_ach_duty_bound",
+      "blurb": "Finish the day's quests.",
+      "deed": "daily_quests"
+    },
+    {
+      "id": "week_by_week",
+      "name": "Week by Week",
+      "category": "scroll",
+      "icon": "scroll",
+      "tiers": [
+        6,
+        60,
+        300,
+        1000
+      ],
+      "title": "title_ach_week_by_week",
+      "blurb": "Finish the week's quests.",
+      "deed": "weekly_quests"
+    },
+    {
+      "id": "faithful_attendance",
+      "name": "Faithful Attendance",
+      "category": "scroll",
+      "icon": "scroll",
+      "tiers": [
+        7,
+        28,
+        100,
+        365
+      ],
+      "title": "title_ach_faithful_attendance",
+      "blurb": "Claim the day's reward.",
+      "deed": "daily_claims"
+    },
+    {
+      "id": "well_read",
+      "name": "Letters from the Crown",
+      "category": "scroll",
+      "icon": "scroll",
+      "tiers": [
+        5,
+        50,
+        250,
+        1000
+      ],
+      "title": "title_ach_well_read",
+      "blurb": "Open the crown's letters.",
+      "deed": "mail_claims"
+    },
+    {
+      "id": "golden_touch",
+      "name": "Golden Touch",
+      "category": "laurel",
+      "icon": "laurel",
+      "tiers": [
+        1,
+        25,
+        150,
+        600
+      ],
+      "title": "title_ach_golden_touch",
+      "blurb": "Light the Golden Hour.",
+      "deed": "golden_hours"
+    },
+    {
+      "id": "tollkeeper",
+      "name": "Tollkeeper",
+      "category": "laurel",
+      "icon": "laurel",
+      "tiers": [
+        10,
+        100,
+        500,
+        2000
+      ],
+      "title": "title_ach_tollkeeper",
+      "blurb": "Open the Tax Cart.",
+      "deed": "carts_opened"
+    },
+    {
+      "id": "outfitted",
+      "name": "The Armourer's Friend",
+      "category": "chest",
+      "icon": "chest",
+      "tiers": [
+        5,
+        50,
+        250,
+        1000
+      ],
+      "title": "title_ach_outfitted",
+      "blurb": "Buy gear at the market.",
+      "deed": "buys"
+    },
+    {
+      "id": "prosperous",
+      "name": "Merchant",
+      "category": "chest",
+      "icon": "chest",
+      "tiers": [
+        10000,
+        1000000,
+        100000000,
+        10000000000
+      ],
+      "title": "title_ach_prosperous",
+      "blurb": "Spend gold at the market.",
+      "deed": "shop_gold"
+    },
+    {
+      "id": "trader",
+      "name": "Trader",
+      "category": "chest",
+      "icon": "chest",
+      "tiers": [
+        10,
+        100,
+        500,
+        2000
+      ],
+      "title": "title_ach_trader",
+      "blurb": "Sell gear you have outgrown.",
+      "deed": "sells"
+    },
+    {
+      "id": "curator",
+      "name": "Curator",
+      "category": "chest",
+      "icon": "chest",
+      "tiers": [
+        5,
+        20,
+        40,
+        63
+      ],
+      "title": "title_ach_curator",
+      "blurb": "Give pieces to the Collection wall.",
+      "stat": "collection"
+    },
+    {
+      "id": "champion",
+      "name": "Champion",
+      "category": "war",
+      "icon": "war",
+      "tiers": [
+        5,
+        50,
+        250,
+        1000
+      ],
+      "title": "title_ach_champion",
+      "blurb": "Win fights in the Honour Arena.",
+      "deed": "arena_wins"
+    },
+    {
+      "id": "headhunter",
+      "name": "Headhunter",
+      "category": "war",
+      "icon": "war",
+      "tiers": [
+        1,
+        10,
+        50,
+        200
+      ],
+      "title": "title_ach_headhunter",
+      "blurb": "Collect prices set on other lords' heads.",
+      "deed": "bounties_claimed"
+    },
+    {
+      "id": "open_handed",
+      "name": "Open-Handed",
+      "category": "kingdom",
+      "icon": "kingdom",
+      "tiers": [
+        10,
+        50,
+        250,
+        1000
+      ],
+      "title": "title_ach_open_handed",
+      "blurb": "Send friends the day's energy.",
+      "deed": "gifts_given"
+    },
+    {
+      "id": "shoulder_to_shoulder",
+      "name": "Shoulder to Shoulder",
+      "category": "kingdom",
+      "icon": "kingdom",
+      "tiers": [
+        10,
+        100,
+        500,
+        2000
+      ],
+      "title": "title_ach_shoulder_to_shoulder",
+      "blurb": "Answer your kingdom's calls for aid.",
+      "deed": "aid_given"
+    }
+  ],
+  "achievement_tiers": [
+    {
+      "diamonds": 5
+    },
+    {
+      "diamonds": 10
+    },
+    {
+      "diamonds": 20
+    },
+    {
+      "diamonds": 40
+    }
+  ]
+}

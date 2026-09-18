@@ -1,0 +1,1502 @@
+{
+ "source": "family_storehouse.png",
+ "_note": "The Family's STOREHOUSE card (Wave 2), cut from the card under the stats strip and the three state vignettes under the medallions. The vignettes were asked for at the card's scene size (347x282) and came at 242x227, so the card is laid round a vignette at its own size, never drawn up: the card's frame is a nine-patch of the painting's card with its window and column cleared to the panel, and the column's plates stretch (nine-patch) into the width the smaller window leaves. COLLECT and TO VAULT are the card's own plates with their words lifted and set in type, so the vault's plate can say its fee and both can stretch.",
+ "crops": [
+  {
+   "name": "family/storehouse_card",
+   "rect": [
+    158,
+    703,
+    763,
+    307
+   ],
+   "_note": "The card's frame. Everything inside its hairlines -- the window and the whole column -- cleared back to the panel (refill); the refill's outer columns, which keep its band's own brush marks, and the strips between them and the frame are each row's own panel (erase). The corner ornaments and the frame stay as painted. Drawn as a nine-patch 24 in from each side.",
+   "refill": [
+    {
+     "rect": [
+      180,
+      707,
+      720,
+      301
+     ],
+     "band": [
+      1001,
+      1006
+     ],
+     "samples": [
+      {
+       "rows": [
+        707,
+        715
+       ],
+       "x": [
+        [
+         180,
+         899
+        ]
+       ]
+      },
+      {
+       "rows": [
+        716,
+        999
+       ],
+       "x": [
+        [
+         520,
+         531
+        ]
+       ]
+      },
+      {
+       "rows": [
+        1000,
+        1007
+       ],
+       "x": [
+        [
+         180,
+         899
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      180,
+      707,
+      20,
+      16
+     ],
+     "sample_x": [
+      201,
+      214
+     ]
+    },
+    {
+     "rect": [
+      160,
+      723,
+      40,
+      267
+     ],
+     "sample_x": [
+      201,
+      214
+     ]
+    },
+    {
+     "rect": [
+      176,
+      990,
+      24,
+      2
+     ],
+     "sample_x": [
+      201,
+      214
+     ]
+    },
+    {
+     "rect": [
+      177,
+      992,
+      23,
+      16
+     ],
+     "sample_x": [
+      201,
+      214
+     ]
+    },
+    {
+     "rect": [
+      880,
+      707,
+      20,
+      16
+     ],
+     "sample_x": [
+      866,
+      878
+     ]
+    },
+    {
+     "rect": [
+      880,
+      723,
+      38,
+      267
+     ],
+     "sample_x": [
+      866,
+      878
+     ]
+    },
+    {
+     "rect": [
+      880,
+      990,
+      20,
+      18
+     ],
+     "sample_x": [
+      866,
+      878
+     ]
+    }
+   ]
+  },
+  {
+   "name": "family/storehouse_title",
+   "rect": [
+    546,
+    721,
+    258,
+    38
+   ],
+   "mode": "darkkey",
+   "k": 90,
+   "floor": 12,
+   "_note": "STOREHOUSE, baked: the card's own title, keyed off the panel so it sits on the cleared card wherever the column puts it."
+  },
+  {
+   "name": "family/storehouse_amount",
+   "rect": [
+    537,
+    765,
+    349,
+    50
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 9
+   },
+   "_note": "The EMPTY amount plate: the gold waiting and what the storehouse holds. Nine-patch, 16 in from each end."
+  },
+  {
+   "name": "family/storehouse_bar",
+   "rect": [
+    533,
+    820,
+    361,
+    28
+   ],
+   "erase": [
+    {
+     "rect": [
+      547,
+      823,
+      229,
+      22
+     ],
+     "sample_x": [
+      785,
+      875
+     ]
+    }
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      14
+     ],
+     [
+      14,
+      0
+     ],
+     [
+      347,
+      0
+     ],
+     [
+      361,
+      14
+     ],
+     [
+      347,
+      28
+     ],
+     [
+      14,
+      28
+     ]
+    ]
+   },
+   "_note": "The fill bar's track with the painting's gold (x 547..770) lifted: each row the track's own empty interior. Nine-patch between its two diamond ends (14 and 14)."
+  },
+  {
+   "name": "family/storehouse_fill",
+   "rect": [
+    547,
+    823,
+    224,
+    21
+   ],
+   "_note": "The painted gold, its highlit left end and bright right edge: a nine-patch fill, caps [3, 4], across the whole track."
+  },
+  {
+   "name": "family/storehouse_hourglass",
+   "rect": [
+    548,
+    851,
+    42,
+    60
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 12
+  },
+  {
+   "name": "family/storehouse_plate",
+   "rect": [
+    607,
+    857,
+    262,
+    47
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 9
+   },
+   "_note": "The EMPTY timer plate beside the hourglass; also the plate under the window that says what the storehouse holds. Nine-patch, 16 in from each end."
+  },
+  {
+   "name": "family/storehouse_collect",
+   "rect": [
+    533,
+    919,
+    193,
+    75
+   ],
+   "inpaint": [
+    {
+     "text": [
+      562,
+      941,
+      138,
+      32
+     ],
+     "d": 14,
+     "dilate": 5,
+     "radius": 6
+    }
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 11
+   },
+   "_note": "The card's green COLLECT plate with its word lifted by its ink (reference x 568..693, y 947..966): the word is set in type at the painted size, the plate nine-patched to the column's width."
+  },
+  {
+   "name": "family/storehouse_vault",
+   "rect": [
+    739,
+    921,
+    166,
+    71
+   ],
+   "inpaint": [
+    {
+     "text": [
+      757,
+      941,
+      129,
+      30
+     ],
+     "d": 14,
+     "dilate": 5,
+     "radius": 6
+    }
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 11
+   },
+   "_note": "The card's quiet navy TO VAULT plate, its word lifted (reference x 763..879, y 947..964): the word and the vault's fee under it are set in type."
+  },
+  {
+   "name": "family/storehouse_window",
+   "rect": [
+    159,
+    1321,
+    242,
+    227
+   ],
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      16,
+      7
+     ],
+     [
+      226,
+      7
+     ],
+     [
+      234,
+      15
+     ],
+     [
+      234,
+      212
+     ],
+     [
+      226,
+      220
+     ],
+     [
+      16,
+      220
+     ],
+     [
+      8,
+      212
+     ],
+     [
+      8,
+      15
+     ]
+    ]
+   },
+   "_note": "The empty vignette's frame with its opening cleared: one frame for the three states, whose own frames differ (the overflowing one was painted 16 wider)."
+  },
+  {
+   "name": "family/storehouse_empty",
+   "rect": [
+    167,
+    1328,
+    226,
+    213
+   ],
+   "_note": "Its floor swept clean: under a third full."
+  },
+  {
+   "name": "family/storehouse_half",
+   "rect": [
+    415,
+    1328,
+    226,
+    213
+   ],
+   "_note": "Sacks and crates: a third full and more, not yet full."
+  },
+  {
+   "name": "family/storehouse_full",
+   "rect": [
+    672,
+    1328,
+    226,
+    213
+   ],
+   "_note": "Overflowing, coins out of its doors: full. Its opening is 241 wide; the 226 the frame takes are the middle, 7 off the left and 8 off the right."
+  },
+  {
+   "name": "family/honours_talents",
+   "rect": [
+    159,
+    1021,
+    243,
+    286
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "patch": [
+    {
+     "from": [
+      187,
+      1216,
+      16,
+      2
+     ],
+     "to": [
+      356,
+      1036
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      182,
+      1214,
+      26,
+      2
+     ],
+     "to": [
+      351,
+      1038
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      179,
+      1212,
+      32,
+      2
+     ],
+     "to": [
+      348,
+      1040
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      177,
+      1210,
+      37,
+      2
+     ],
+     "to": [
+      345,
+      1042
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      175,
+      1208,
+      40,
+      2
+     ],
+     "to": [
+      344,
+      1044
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      173,
+      1206,
+      44,
+      2
+     ],
+     "to": [
+      342,
+      1046
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      172,
+      1204,
+      46,
+      2
+     ],
+     "to": [
+      341,
+      1048
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      171,
+      1202,
+      48,
+      2
+     ],
+     "to": [
+      340,
+      1050
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      170,
+      1200,
+      50,
+      2
+     ],
+     "to": [
+      339,
+      1052
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      169,
+      1198,
+      52,
+      2
+     ],
+     "to": [
+      338,
+      1054
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      169,
+      1196,
+      53,
+      2
+     ],
+     "to": [
+      337,
+      1056
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      168,
+      1194,
+      54,
+      2
+     ],
+     "to": [
+      337,
+      1058
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      168,
+      1192,
+      54,
+      2
+     ],
+     "to": [
+      337,
+      1060
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      168,
+      1190,
+      54,
+      2
+     ],
+     "to": [
+      337,
+      1062
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      168,
+      1188,
+      54,
+      2
+     ],
+     "to": [
+      337,
+      1064
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      168,
+      1186,
+      54,
+      2
+     ],
+     "to": [
+      337,
+      1066
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      169,
+      1184,
+      53,
+      2
+     ],
+     "to": [
+      337,
+      1068
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      169,
+      1182,
+      52,
+      2
+     ],
+     "to": [
+      338,
+      1070
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      170,
+      1180,
+      50,
+      2
+     ],
+     "to": [
+      339,
+      1072
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      171,
+      1178,
+      48,
+      2
+     ],
+     "to": [
+      340,
+      1074
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      172,
+      1176,
+      46,
+      2
+     ],
+     "to": [
+      341,
+      1076
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      173,
+      1174,
+      44,
+      2
+     ],
+     "to": [
+      342,
+      1078
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      175,
+      1172,
+      40,
+      2
+     ],
+     "to": [
+      344,
+      1080
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      177,
+      1170,
+      37,
+      2
+     ],
+     "to": [
+      345,
+      1082
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      179,
+      1168,
+      32,
+      2
+     ],
+     "to": [
+      348,
+      1084
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      182,
+      1166,
+      26,
+      2
+     ],
+     "to": [
+      351,
+      1086
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      187,
+      1164,
+      16,
+      2
+     ],
+     "to": [
+      356,
+      1088
+     ],
+     "flip": "hv"
+    }
+   ],
+   "note": "The TALENTS card whole: frame, medallion, the word, the EMPTY plate (its words are set in type). The red count disc on the medallion's shoulder (centre 363.9,1063, 26.5 with its rim and shadow) is lifted two rows at a time by the medallion itself turned half a circle about its centre (279.5,1127, found by matching the ring either side of the disc): the ring maps onto the ring and the panel onto the panel, lit from the same side, where a mirror image put the upper left's highlight on the upper right. The strips keep off the medallion's own picture (radius 78), which the disc does not cover. The count is drawn back live (court/badge) only when something waits."
+  },
+  {
+   "name": "family/honours_deeds",
+   "rect": [
+    412,
+    1021,
+    242,
+    286
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "patch": [
+    {
+     "from": [
+      442,
+      1218,
+      15,
+      2
+     ],
+     "to": [
+      606,
+      1036
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      437,
+      1216,
+      25,
+      2
+     ],
+     "to": [
+      601,
+      1038
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      434,
+      1214,
+      32,
+      2
+     ],
+     "to": [
+      597,
+      1040
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      431,
+      1212,
+      37,
+      2
+     ],
+     "to": [
+      595,
+      1042
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      429,
+      1210,
+      41,
+      2
+     ],
+     "to": [
+      593,
+      1044
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      428,
+      1208,
+      44,
+      2
+     ],
+     "to": [
+      591,
+      1046
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      426,
+      1206,
+      47,
+      2
+     ],
+     "to": [
+      590,
+      1048
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      425,
+      1204,
+      49,
+      2
+     ],
+     "to": [
+      589,
+      1050
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      424,
+      1202,
+      51,
+      2
+     ],
+     "to": [
+      588,
+      1052
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      424,
+      1200,
+      52,
+      2
+     ],
+     "to": [
+      587,
+      1054
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      423,
+      1198,
+      53,
+      2
+     ],
+     "to": [
+      587,
+      1056
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      423,
+      1196,
+      53,
+      2
+     ],
+     "to": [
+      587,
+      1058
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      423,
+      1194,
+      54,
+      2
+     ],
+     "to": [
+      586,
+      1060
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      423,
+      1192,
+      54,
+      2
+     ],
+     "to": [
+      586,
+      1062
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      423,
+      1190,
+      54,
+      2
+     ],
+     "to": [
+      586,
+      1064
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      423,
+      1188,
+      53,
+      2
+     ],
+     "to": [
+      587,
+      1066
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      423,
+      1186,
+      53,
+      2
+     ],
+     "to": [
+      587,
+      1068
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      424,
+      1184,
+      52,
+      2
+     ],
+     "to": [
+      587,
+      1070
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      424,
+      1182,
+      51,
+      2
+     ],
+     "to": [
+      588,
+      1072
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      425,
+      1180,
+      49,
+      2
+     ],
+     "to": [
+      589,
+      1074
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      426,
+      1178,
+      47,
+      2
+     ],
+     "to": [
+      590,
+      1076
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      428,
+      1176,
+      44,
+      2
+     ],
+     "to": [
+      591,
+      1078
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      429,
+      1174,
+      41,
+      2
+     ],
+     "to": [
+      593,
+      1080
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      431,
+      1172,
+      37,
+      2
+     ],
+     "to": [
+      595,
+      1082
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      434,
+      1170,
+      32,
+      2
+     ],
+     "to": [
+      597,
+      1084
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      437,
+      1168,
+      25,
+      2
+     ],
+     "to": [
+      601,
+      1086
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      442,
+      1166,
+      15,
+      2
+     ],
+     "to": [
+      606,
+      1088
+     ],
+     "flip": "hv"
+    }
+   ],
+   "note": "The DEEDS card whole: frame, medallion, the word, the EMPTY plate (its words are set in type). The red count disc on the medallion's shoulder (centre 613.3,1063, 26.5 with its rim and shadow) is lifted two rows at a time by the medallion itself turned half a circle about its centre (531.5,1128, found by matching the ring either side of the disc): the ring maps onto the ring and the panel onto the panel, lit from the same side, where a mirror image put the upper left's highlight on the upper right. The strips keep off the medallion's own picture (radius 78), which the disc does not cover. The count is drawn back live (court/badge) only when something waits."
+  },
+  {
+   "name": "family/honours_road",
+   "rect": [
+    664,
+    1021,
+    251,
+    286
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "patch": [
+    {
+     "from": [
+      696,
+      1219,
+      16,
+      2
+     ],
+     "to": [
+      858,
+      1036
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      691,
+      1217,
+      26,
+      2
+     ],
+     "to": [
+      853,
+      1038
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      688,
+      1215,
+      32,
+      2
+     ],
+     "to": [
+      850,
+      1040
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      686,
+      1213,
+      36,
+      2
+     ],
+     "to": [
+      848,
+      1042
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      684,
+      1211,
+      40,
+      2
+     ],
+     "to": [
+      846,
+      1044
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      682,
+      1209,
+      44,
+      2
+     ],
+     "to": [
+      844,
+      1046
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      681,
+      1207,
+      46,
+      2
+     ],
+     "to": [
+      843,
+      1048
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      680,
+      1205,
+      48,
+      2
+     ],
+     "to": [
+      842,
+      1050
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      679,
+      1203,
+      50,
+      2
+     ],
+     "to": [
+      841,
+      1052
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      678,
+      1201,
+      52,
+      2
+     ],
+     "to": [
+      840,
+      1054
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      678,
+      1199,
+      52,
+      2
+     ],
+     "to": [
+      840,
+      1056
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      677,
+      1197,
+      54,
+      2
+     ],
+     "to": [
+      839,
+      1058
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      677,
+      1195,
+      54,
+      2
+     ],
+     "to": [
+      839,
+      1060
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      677,
+      1193,
+      54,
+      2
+     ],
+     "to": [
+      839,
+      1062
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      677,
+      1191,
+      54,
+      2
+     ],
+     "to": [
+      839,
+      1064
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      677,
+      1189,
+      54,
+      2
+     ],
+     "to": [
+      839,
+      1066
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      678,
+      1187,
+      52,
+      2
+     ],
+     "to": [
+      840,
+      1068
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      678,
+      1185,
+      52,
+      2
+     ],
+     "to": [
+      840,
+      1070
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      679,
+      1183,
+      50,
+      2
+     ],
+     "to": [
+      841,
+      1072
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      680,
+      1181,
+      48,
+      2
+     ],
+     "to": [
+      842,
+      1074
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      681,
+      1179,
+      46,
+      2
+     ],
+     "to": [
+      843,
+      1076
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      682,
+      1177,
+      44,
+      2
+     ],
+     "to": [
+      844,
+      1078
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      684,
+      1175,
+      40,
+      2
+     ],
+     "to": [
+      846,
+      1080
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      686,
+      1173,
+      36,
+      2
+     ],
+     "to": [
+      848,
+      1082
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      688,
+      1171,
+      32,
+      2
+     ],
+     "to": [
+      850,
+      1084
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      691,
+      1169,
+      26,
+      2
+     ],
+     "to": [
+      853,
+      1086
+     ],
+     "flip": "hv"
+    },
+    {
+     "from": [
+      696,
+      1167,
+      16,
+      2
+     ],
+     "to": [
+      858,
+      1088
+     ],
+     "flip": "hv"
+    }
+   ],
+   "note": "The ROAD card whole: frame, medallion, the word, the EMPTY plate (its words are set in type). The red count disc on the medallion's shoulder (centre 866,1063, 26.5 with its rim and shadow) is lifted two rows at a time by the medallion itself turned half a circle about its centre (785,1128.5, found by matching the ring either side of the disc): the ring maps onto the ring and the panel onto the panel, lit from the same side, where a mirror image put the upper left's highlight on the upper right. The strips keep off the medallion's own picture (radius 78), which the disc does not cover. The count is drawn back live (court/badge) only when something waits."
+  }
+ ]
+}

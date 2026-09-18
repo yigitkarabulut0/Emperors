@@ -1,0 +1,177 @@
+{
+  "_comment": "Yetenek agaci. A point every three levels from ten, and one for each Legacy: 17 + 10 = 27 against 51 ranks, so the tree is a choice. Every rank feeds a channel the game already has -- the same bucket names the Family's upgrades use -- and is folded in where an upgrade is, in the PERMANENT lane, under the same caps. A branch's deeper tiers open as its own points are spent (0/3/6/10/14). Respec costs gold and doubles each time, to a ceiling.",
+  "section": "talents",
+  "first_level": 10,
+  "levels_per_point": 3,
+  "point_per_legacy": 1,
+  "tier_gates": [
+    0,
+    3,
+    6,
+    10,
+    14
+  ],
+  "respec": {
+    "base_gold": 8000,
+    "step_bp": 20000,
+    "max_gold": 200000
+  },
+  "branches": [
+    {
+      "id": "war",
+      "name": "WAR",
+      "blurb": "What you take.",
+      "talents": [
+        {
+          "id": "war_edge",
+          "name": "Sharpened Steel",
+          "tier": 1,
+          "bucket": "soldier_atk_bp",
+          "per_rank": 150,
+          "ranks": 4,
+          "blurb": "Your soldiers hit harder."
+        },
+        {
+          "id": "war_speed",
+          "name": "Light Horse",
+          "tier": 2,
+          "bucket": "soldier_spd_bp",
+          "per_rank": 200,
+          "ranks": 3,
+          "blurb": "Your soldiers strike first more often."
+        },
+        {
+          "id": "war_spoils",
+          "name": "Right of Spoils",
+          "tier": 3,
+          "bucket": "steal_cap_bp",
+          "per_rank": 250,
+          "ranks": 4,
+          "blurb": "A raid carries more away."
+        },
+        {
+          "id": "war_ransom",
+          "name": "Ransom Custom",
+          "tier": 4,
+          "bucket": "ransom_bp",
+          "per_rank": 300,
+          "ranks": 3,
+          "blurb": "Holding off a raid pays better."
+        },
+        {
+          "id": "war_fury",
+          "name": "The Old Fury",
+          "tier": 5,
+          "bucket": "soldier_atk_bp",
+          "per_rank": 250,
+          "ranks": 3,
+          "blurb": "Your soldiers hit harder still."
+        }
+      ]
+    },
+    {
+      "id": "defence",
+      "name": "DEFENCE",
+      "blurb": "What you keep.",
+      "talents": [
+        {
+          "id": "def_wall",
+          "name": "Shield Wall",
+          "tier": 1,
+          "bucket": "soldier_def_bp",
+          "per_rank": 150,
+          "ranks": 4,
+          "blurb": "Your soldiers take less."
+        },
+        {
+          "id": "def_larder",
+          "name": "Deep Larder",
+          "tier": 2,
+          "bucket": "max_energy_flat",
+          "per_rank": 6,
+          "ranks": 4,
+          "blurb": "Your pool holds more."
+        },
+        {
+          "id": "def_vigil",
+          "name": "The Night Watch",
+          "tier": 3,
+          "bucket": "energy_regen_bp",
+          "per_rank": 150,
+          "ranks": 3,
+          "blurb": "Energy comes back faster."
+        },
+        {
+          "id": "def_stores",
+          "name": "Long Stores",
+          "tier": 4,
+          "bucket": "storehouse_minutes",
+          "per_rank": 30,
+          "ranks": 3,
+          "blurb": "The storehouse keeps more of a day."
+        },
+        {
+          "id": "def_bastion",
+          "name": "Bastion",
+          "tier": 5,
+          "bucket": "soldier_def_bp",
+          "per_rank": 250,
+          "ranks": 3,
+          "blurb": "Your soldiers take less still."
+        }
+      ]
+    },
+    {
+      "id": "economy",
+      "name": "ECONOMY",
+      "blurb": "What you make.",
+      "talents": [
+        {
+          "id": "eco_granary",
+          "name": "Full Granaries",
+          "tier": 1,
+          "bucket": "collect_income_bp",
+          "per_rank": 200,
+          "ranks": 4,
+          "blurb": "Every collect pays more."
+        },
+        {
+          "id": "eco_ledger",
+          "name": "The Ledger",
+          "tier": 2,
+          "bucket": "xp_bp",
+          "per_rank": 200,
+          "ranks": 4,
+          "blurb": "You learn faster."
+        },
+        {
+          "id": "eco_tithe",
+          "name": "Tithe Rights",
+          "tier": 3,
+          "bucket": "tax_income_bp",
+          "per_rank": 100,
+          "ranks": 3,
+          "blurb": "Your estates earn more."
+        },
+        {
+          "id": "eco_market",
+          "name": "Market Standing",
+          "tier": 4,
+          "bucket": "shop_discount_bp",
+          "per_rank": 150,
+          "ranks": 3,
+          "blurb": "The market asks less of you."
+        },
+        {
+          "id": "eco_fortune",
+          "name": "A Lucky Hand",
+          "tier": 5,
+          "bucket": "luck_bp",
+          "per_rank": 200,
+          "ranks": 3,
+          "blurb": "Better rolls, everywhere they are rolled."
+        }
+      ]
+    }
+  ]
+}

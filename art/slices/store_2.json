@@ -1,0 +1,443 @@
+{
+ "source": "store_2.png",
+ "notes": [
+  "The Royal Store's second painting (art/reference/store_2.png): the sections under the diamonds, stacked below store.json's in the same scroll. Each section is cut tight to its panel (x 155..928; the panels' own borders at y 95..362, 372..680, 690..1043, 1053..1264, 1275..1494, all 10 units apart) and laid on the view's ground.",
+  "Every plate and green button is painted empty; prices, counts and the Stipend's words are live. Painted words kept: the section titles, THE STEWARD / THE QUARTERMASTER, CLAIM TODAY, FREE, WATCH, RESTORE PURCHASES, TERMS, PRIVACY.",
+  "Daily deals: each slot keeps its painted picture (gift box, potions, charter, frame) while what is in it rotates, and each card is also cut on its own so a claimed slot can be dimmed. The fourth slot sells a Splendour cosmetic and shows that cosmetic's own picture: its card (store/deal_card_3) has the painted frame softened out, and the frame itself is kept as store/deal_frame_art for a frame cosmetic this build has no picture of.",
+  "icons/colour_chip and icons/colour_chip_face are the wardrobe painting's enamel chip (art/reference/wardrobe.png, x 367..459, y 1320..1424): the face is drawn over the chip in a name colour's own hue. The wardrobe will reuse them.",
+  "rewards/steward, quartermaster, largesse, patronage and stipend are the store's five products as reward lines (Art.reward_icon), for the Royal Delivery, the mail and the store's own tiles. The store paintings paint these things inside their scenes, where no key lifts them cleanly; the same subjects are painted large on the plain navy of the icon sheets (reward_icons.png, rewards_sheet.png), cut square round each object and drawn down to 120 -- every place draws a reward at 46..102."
+ ],
+ "crops": [
+  {
+   "name": "store/stipend",
+   "rect": [
+    155,
+    94,
+    774,
+    270
+   ]
+  },
+  {
+   "name": "store/claim_today",
+   "rect": [
+    559,
+    276,
+    200,
+    66
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/stipend_buy",
+   "rect": [
+    773,
+    276,
+    134,
+    66
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/deals",
+   "rect": [
+    155,
+    371,
+    774,
+    311
+   ]
+  },
+  {
+   "name": "store/deal_card_0",
+   "rect": [
+    168,
+    434,
+    182,
+    237
+   ]
+  },
+  {
+   "name": "store/deal_card_1",
+   "rect": [
+    358,
+    434,
+    181,
+    237
+   ]
+  },
+  {
+   "name": "store/deal_card_2",
+   "rect": [
+    547,
+    434,
+    181,
+    237
+   ]
+  },
+  {
+   "name": "store/deal_card_3",
+   "rect": [
+    735,
+    434,
+    180,
+    237
+   ],
+   "erase": [
+    {
+     "rect": [
+      754,
+      440,
+      140,
+      170
+     ],
+     "sample_x": [
+      741,
+      750
+     ]
+    }
+   ],
+   "soften": [
+    [
+     746,
+     436,
+     160,
+     178
+    ]
+   ]
+  },
+  {
+   "name": "store/deal_frame_art",
+   "rect": [
+    758,
+    441,
+    130,
+    166
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 8
+  },
+  {
+   "name": "store/deal_free",
+   "rect": [
+    177,
+    609,
+    164,
+    51
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/comforts",
+   "rect": [
+    155,
+    688,
+    774,
+    358
+   ]
+  },
+  {
+   "name": "store/steward_buy",
+   "rect": [
+    232,
+    965,
+    236,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/qm_buy",
+   "rect": [
+    612,
+    965,
+    235,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/herald",
+   "rect": [
+    155,
+    1051,
+    774,
+    216
+   ]
+  },
+  {
+   "name": "store/herald_watch",
+   "rect": [
+    673,
+    1177,
+    234,
+    68
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/largesse",
+   "rect": [
+    155,
+    1273,
+    774,
+    224
+   ]
+  },
+  {
+   "name": "store/largesse_buy",
+   "rect": [
+    636,
+    1405,
+    272,
+    70
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/footer",
+   "rect": [
+    155,
+    1502,
+    786,
+    170
+   ]
+  },
+  {
+   "name": "store/restore",
+   "rect": [
+    160,
+    1513,
+    291,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/terms",
+   "rect": [
+    463,
+    1513,
+    228,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/privacy",
+   "rect": [
+    703,
+    1513,
+    223,
+    58
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "icons/colour_chip",
+   "src": "wardrobe.png",
+   "rect": [
+    364,
+    1317,
+    98,
+    110
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     2,
+     2,
+     96,
+     108
+    ],
+    "feather": 1
+   }
+  },
+  {
+   "name": "icons/colour_chip_face",
+   "src": "wardrobe.png",
+   "rect": [
+    375,
+    1328,
+    76,
+    88
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     75,
+     87
+    ],
+    "feather": 1
+   }
+  },
+  {
+   "name": "rewards/steward",
+   "src": "rewards_sheet.png",
+   "rect": [
+    654,
+    1333,
+    282,
+    282
+   ],
+   "mode": "darkkey",
+   "k": 55,
+   "floor": 8,
+   "bg": [
+    8,
+    20,
+    30
+   ],
+   "scale": [
+    120,
+    120
+   ],
+   "note": "The Steward's reward line (key steward): the crowned key of rewards_sheet.png -- a steward keeps the house's keys, as the Comforts card paints him."
+  },
+  {
+   "name": "rewards/quartermaster",
+   "src": "reward_icons.png",
+   "rect": [
+    688,
+    528,
+    236,
+    236
+   ],
+   "mode": "darkkey",
+   "k": 55,
+   "floor": 8,
+   "bg": [
+    8,
+    20,
+    30
+   ],
+   "scale": [
+    120,
+    120
+   ],
+   "note": "The Quartermaster's (key quartermaster): the laden supply cart of reward_icons.png -- more room for what a lord carries."
+  },
+  {
+   "name": "rewards/largesse",
+   "src": "rewards_sheet.png",
+   "rect": [
+    609,
+    324,
+    332,
+    332
+   ],
+   "mode": "darkkey",
+   "k": 55,
+   "floor": 8,
+   "bg": [
+    8,
+    20,
+    30
+   ],
+   "scale": [
+    120,
+    120
+   ],
+   "note": "Royal Largesse's (key largesse): the royal chest thrown open, from rewards_sheet.png -- a treasure given to the whole kingdom."
+  },
+  {
+   "name": "rewards/patronage",
+   "src": "rewards_sheet.png",
+   "rect": [
+    0,
+    999,
+    325,
+    325
+   ],
+   "mode": "darkkey",
+   "k": 55,
+   "floor": 8,
+   "bg": [
+    8,
+    20,
+    30
+   ],
+   "scale": [
+    120,
+    120
+   ],
+   "note": "Crown Patronage's (key patronage): the crown on its crimson cushion, the same crown the patron card paints, on rewards_sheet.png's plain ground."
+  },
+  {
+   "name": "rewards/stipend",
+   "src": "reward_icons.png",
+   "rect": [
+    216,
+    508,
+    272,
+    272
+   ],
+   "mode": "darkkey",
+   "k": 55,
+   "floor": 8,
+   "bg": [
+    8,
+    20,
+    30
+   ],
+   "scale": [
+    120,
+    120
+   ],
+   "note": "The Royal Stipend's (key stipend): the royal writ, ribboned, with its quill, from reward_icons.png."
+  },
+  {
+   "name": "store/tile_potions",
+   "rect": [
+    378,
+    441,
+    149,
+    164
+   ],
+   "mode": "darkkey",
+   "k": 55,
+   "floor": 8,
+   "bg": [
+    12,
+    31,
+    43
+   ],
+   "scale": [
+    109,
+    120
+   ],
+   "note": "The Energy Potions the day's deals paint (slot 1), lifted off the card's navy for the offer popup's tiles: the store's own energy potions, at a size the popup's 120-unit picture box can draw without drawing up. The mail's small rewards/energy_potion is the same flask, drawn for a 46-unit window."
+  }
+ ]
+}

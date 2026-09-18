@@ -11,8 +11,8 @@
   "Header: this screen's baked pills were larger than the shared chrome pills (gold 185..412, diamond 432..650, energy 668..903, y 24..84). They are inpainted; up to 15 px right of and 5 px below each shared pill shows inpainted sky. The might number's background (263,281,146,50) is inpainted too; the rendered number covers it.",
   "Fonts: 'title' glyphs in the reference are ~25-30% narrower than Cinzel at the same cap height; sizes below are cap-height*1.4 and the width budget is the rect. 'body' is a transitional serif (Crimson Pro / EB Garamond are close).",
   "Soldier cards in the reference are not uniform (x=174 w145 selected, 320 w149, 481 w147, 631 w137, next slot 778 w143). Template is card 3's frame (149x337); use pitch 151 -> slots at 174,325,476,627 and next slot at 778 which matches the reference exactly.",
-  "portraits/soldier_villager is 134x172 (cut inside the selected card's thicker frame); it must be drawn stretched to the 139x166 portrait interior (3.7%). mercenary/gladiator are cut at 139x166.",
-  "Only numerals I, II, III exist in the reference (army/numeral_1..3); tier IV+ needs one more plate. Only the villager exists as a large portrait (portraits/soldier_villager_large); for other selected types scale the small portrait interior into the large tile or reuse the frame.",
+  "Soldier portraits come from art/reference/soldiers_sheet.png (art/slices/soldiers_sheet.json): every type in three looks, rough / fine / gilded, chosen by tier in client/scripts/ui/soldier_art.gd. The strip card draws portraits/soldier_<type>_<look> (133x164) in its window; the selected soldier draws portraits/soldier_<type>_<look>_large (202x286) in sel_window under the ring. The villager painted into army.png (and baked into army/selected_panel) is no longer cut on its own.",
+  "Tier numerals come from art/reference/numerals_sheet.png (art/slices/numerals_sheet.json): army/tier_1..7, the plain diamond, for every card and list; army/tier_large_1..7, the fleur diamond, for the selected soldier's badge. The painting's own I-III and the blank plate with the numeral in type are gone.",
   "The troop bar is 100% full in the reference; army/troop_bar_full is the full bar, clip it from the left for partial values (no empty track exists in the reference).",
   "army/card_selected_frame is a nine-patch drawn with draw_center=false over a card slot at offset (-2,-11), size 153x349, margins l8 t14 r10 b14.",
   "Gear tile level badges: the plate under 'Lv. N' is kept (row-filled), text is live.",
@@ -66,49 +66,52 @@
    "id": "support_attack",
    "kind": "text",
    "rect": [
-    284,
+    290,
     420,
     90,
     44
    ],
    "font": "body",
-   "size": 40,
+   "size": 32,
    "weight": 600,
    "color": "#FAFAFB",
    "align": "left",
-   "sample": "+18%"
+   "sample": "+18%",
+   "note": "Measured off the painting's own +18 per cent: its ink is 71x22 from x 292, y 431 -- EB Garamond 32. At 40 it was 91 wide and a quarter again as tall as the painted figures."
   },
   {
    "id": "support_defence",
    "kind": "text",
    "rect": [
-    516,
+    522,
     420,
     90,
     44
    ],
    "font": "body",
-   "size": 40,
+   "size": 32,
    "weight": 600,
    "color": "#FAFAFB",
    "align": "left",
-   "sample": "+12%"
+   "sample": "+12%",
+   "note": "Measured off the painting's own +18 per cent: its ink is 71x22 from x 524, y 431 -- EB Garamond 32. At 40 it was 91 wide and a quarter again as tall as the painted figures."
   },
   {
    "id": "support_troop",
    "kind": "text",
    "rect": [
-    760,
+    766,
     420,
     90,
     44
    ],
    "font": "body",
-   "size": 40,
+   "size": 32,
    "weight": 600,
    "color": "#FAFAFB",
    "align": "left",
-   "sample": "+18%"
+   "sample": "+18%",
+   "note": "Measured off the painting's own +18 per cent: its ink is 71x22 from x 768, y 431 -- EB Garamond 32. At 40 it was 91 wide and a quarter again as tall as the painted figures."
   },
   {
    "id": "support_info",
@@ -176,7 +179,7 @@
       {
        "id": "portrait",
        "kind": "image",
-       "asset": "portraits/soldier_{type}",
+       "asset": "portraits/soldier_{type}_{look}",
        "rect": [
         3,
         11,
@@ -184,12 +187,7 @@
         164
        ],
        "fit": "stretch",
-       "types": {
-        "villager": "portraits/soldier_villager",
-        "mercenary": "portraits/soldier_mercenary",
-        "gladiator": "portraits/soldier_gladiator"
-       },
-       "note": "The card frame's own window (x 483..615, y 570..733 on the painting). Each portrait is cut inside its own card's window and drawn here; the villager's window is five rows shorter, so it is the only one that stretches, by three percent."
+       "note": "The card frame's own window (x 483..615, y 570..733 on the painting). The portrait is the type in the look of its tier (SoldierArt.portrait), cut from the soldier sheet at exactly this size."
       },
       {
        "id": "name",
@@ -293,7 +291,7 @@
       {
        "id": "numeral",
        "kind": "image",
-       "asset": "army/numeral_{tier}",
+       "asset": "army/tier_{tier}",
        "rect": [
         0,
         8,
@@ -305,7 +303,7 @@
         2,
         3
        ],
-       "note": "Every badge's diamond centred at (25,33) on its card, where the painting's own diamonds sit on theirs; the crops are centred on their diamonds, so the box goes where the diamond goes."
+       "note": "The plain tier diamond (SoldierArt.numeral), cut to its rim and centred in this box, so it sits in the same place on every card."
       },
       {
        "id": "tap",
@@ -353,18 +351,18 @@
        "id": "price",
        "kind": "text",
        "rect": [
-        48,
-        216,
-        92,
+        58,
+        215,
+        78,
         36
        ],
        "font": "body",
-       "size": 34,
-       "weight": 700,
-       "color": "#F2E851",
+       "size": 26,
+       "weight": 400,
+       "color": "#FFF351",
        "align": "left",
        "sample": "2.50M",
-       "note": "On the painted coin's line (the price the painting erased ran 768..804 in a tile cut from 559). It stood 26 units higher, floating over the coin."
+       "note": "On the painted coin's line (the price the painting erased ran 768..804 in a tile cut from 559). It stood 26 units higher, floating over the coin. The painting's 2.50M is ink 837..900 by 777..793 (64 x 17), set here 837.. by 777..793, core colour (255, 243, 81): EB Garamond 26 at 400 -- the recruit cards' price type -- is 66 x 18. It was 34 at 700 from x 826: 76,076 ran from the coin's rim to the tile's frame. The box ends at 914, inside the frame (918)."
       },
       {
        "id": "unlock",
@@ -437,18 +435,6 @@
    "note": "Cut from below the painted cards' feet, so no painted card edge -- and no gold of the painting's selection -- is drawn over the live row."
   },
   {
-   "id": "sel_portrait",
-   "kind": "image",
-   "asset": "portraits/soldier_villager_large",
-   "rect": [
-    183,
-    955,
-    214,
-    301
-   ],
-   "note": "frame+portrait; only villager exists"
-  },
-  {
    "id": "sel_window",
    "kind": "group",
    "rect": [
@@ -457,7 +443,7 @@
     202,
     286
    ],
-   "note": "The window inside the ring: where a soldier without a large painting is drawn, cover-fitted."
+   "note": "The window inside the ring, where the selected soldier is drawn (SoldierArt.large, 202x286, this size exactly); it covers the villager baked into army/selected_panel. An empty slot draws the rough villager here, dimmed."
   },
   {
    "id": "sel_frame",
@@ -469,55 +455,61 @@
     211,
     297
    ],
-   "note": "The large portrait's gold ring alone. A mercenary or gladiator has no large painting, so it is drawn in the window under this ring (sel_window) rather than stretched over the villager's frame."
+   "note": "The large portrait's gold ring alone, over the window; it covers the baked villager's own frame."
   },
   {
    "id": "sel_numeral",
    "kind": "image",
-   "asset": "army/numeral_large_1",
+   "asset": "army/tier_large_{tier}",
    "rect": [
-    189,
-    968,
-    72,
-    68
+    196,
+    969,
+    58,
+    90
    ],
-   "tiers_available": [
-    1
-   ]
+   "note": "The fleur tier diamond (SoldierArt.numeral_large, cut at 80x124 for the reroll panel and drawn down here), in the window's top-left where the painting has its I; its top fleur stays inside the ring."
   },
   {
    "id": "sel_name",
    "kind": "text",
    "rect": [
-    398,
-    968,
-    150,
+    403,
+    969,
+    211,
     36
    ],
    "font": "title",
-   "size": 34,
-   "weight": 700,
+   "size": 29,
+   "weight": 550,
    "color": "#F6F6F6",
    "align": "left",
-   "sample": "VILLAGER"
+   "sample": "VILLAGER",
+   "note": "The painting's VILLAGER is ink 404..545 by 975..995 (142 x 21), its stems 4 units: Cinzel 29 at 550 is 21 tall, stems 4, 146 wide -- the painting's letters are set a little tighter than Cinzel's. Every name is set at that one size, and the tier chip follows the name at the painting's gap (army.gd), so MERCENARY and GLADIATOR no longer shrink to 22 against a chip pinned at 553. The box is the room the name has: to 614, where a chip after it still ends clear of the troop column's divider (716). It was [398, 968, 150, 36] at 34/700: built 181 wide round its sample, and every name fitted to 150 came out at 28 or smaller, five units left of the painting's."
   },
   {
    "id": "sel_tier_chip",
-   "kind": "image",
+   "kind": "ninepatch",
    "asset": "army/tier_chip",
    "rect": [
     553,
     972,
     84,
     28
-   ]
+   ],
+   "margin": [
+    12,
+    8,
+    12,
+    8
+   ],
+   "note": "The painting's chip, round TIER I. It follows the name (army.gd), and a longer word widens it by what the word is longer, its chamfered ends kept: TIER III and TIER VII ran into its rims."
   },
   {
    "id": "sel_tier_text",
    "kind": "text",
    "rect": [
-    553,
-    972,
+    554,
+    974,
     84,
     28
    ],
@@ -526,7 +518,8 @@
    "weight": 500,
    "color": "#D5DCE5",
    "align": "center",
-   "sample": "TIER I"
+   "sample": "TIER I",
+   "note": "The painting's TIER I is ink 570..619 by 980..992 in the chip at 553; set on the chip's own rect it came out two units high and one left."
   },
   {
    "id": "sel_description",
@@ -534,19 +527,19 @@
    "rect": [
     408,
     1006,
-    280,
+    286,
     54
    ],
    "font": "body",
    "size": 20,
-   "weight": 500,
+   "weight": 400,
    "color": "#B3C2CD",
    "align": "left",
    "lines": 2,
    "line_height": 22,
    "sample": "Humble but reliable. The backbone\nof every army.",
    "wrap": true,
-   "note": "wraps from the start, so the label keeps the painting's width: set after its text, the wrap came too late and the label had already grown to one line's width, past the column's divider",
+   "note": "wraps from the start, so the label keeps the painting's width: set after its text, the wrap came too late and the label had already grown to one line's width, past the column's divider The painting's first line, 'Humble but reliable. The backbone', is 276 units of ink: EB Garamond 20 at the lifted regular weight (400 here) is 281 to its advance, so the box is 286 -- at 500 and 280 'backbone' fell to the second line and the text read a size larger than the painting's.",
    "valign": "top"
   },
   {
@@ -720,42 +713,96 @@
    ]
   },
   {
-   "id": "sel_troop_text",
+   "id": "sel_state",
    "kind": "text",
    "rect": [
-    763,
-    968,
-    130,
-    30
+    722,
+    950,
+    190,
+    40
    ],
    "font": "body",
-   "size": 23,
+   "size": 24,
    "weight": 500,
    "color": "#BFC0C4",
    "align": "center",
-   "sample": "320 / 320"
+   "sample": "IN THE YARD",
+   "note": "What this soldier is doing: standing in the yard, away on a road with what is left of it, or home at the gate. It stands where the painting put a troop count that never moved -- 320/320 whatever happened -- and the crowd and the bar frame under it are lifted out of the panel (art/slices/army.json)."
   },
   {
-   "id": "sel_troop_bar",
-   "kind": "image",
-   "asset": "army/troop_bar_full",
+   "id": "hunt",
+   "kind": "group",
+   "rect": [
+    726,
+    1005,
+    179,
+    77
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "army/reroll_plate",
+     "rect": [
+      0,
+      0,
+      179,
+      77
+     ]
+    },
+    {
+     "id": "icon",
+     "kind": "image",
+     "asset": "icons/crosshair",
+     "rect": [
+      16,
+      20,
+      37,
+      37
+     ]
+    },
+    {
+     "id": "label",
+     "kind": "text",
+     "rect": [
+      58,
+      19,
+      112,
+      40
+     ],
+     "font": "title",
+     "size": 26,
+     "weight": 700,
+     "color": "#F4EFE6",
+     "align": "center",
+     "valign": "center",
+     "sample": "HUNT"
+    }
+   ],
+   "note": "HUNT, which the painting has had all along: its own green plate with the word and the crosshair taken off (make_button_plates.gd) and both put back live, because the word changes with what the soldier is doing -- HUNT, BACK, AWAY."
+  },
+  {
+   "id": "hunt_tap",
+   "kind": "button",
    "rect": [
     728,
-    1002,
+    996,
     178,
-    24
+    95
    ],
-   "fill": "left"
+   "action": "hunt",
+   "note": "The tap target: a thumb's 95 units, from the state line's foot to REROLL's own plate."
   },
   {
    "id": "reroll",
    "kind": "group",
    "rect": [
     726,
-    1056,
+    1102,
     179,
     77
    ],
+   "note": "REROLL. army.png's selected panel carries two plates and this column needs three, so this used to be the dialogs' quiet navy plate. hunt.png -- the same screen painted with the third button -- has REROLL in the SAME green as HUNT, and army/reroll_plate is that plate, cut at 179x77 and already worn by HUNT. One object, one look.",
    "parts": [
     {
      "id": "plate",
@@ -797,20 +844,18 @@
      "sample": "REROLL",
      "static": true
     }
-   ],
-   "note": "HUNT's painted plate with its crosshair and word taken off, the shop's reroll arrows, and the word in type -- the same object as DISMISS under it."
+   ]
   },
   {
    "id": "reroll_tap",
    "kind": "button",
    "rect": [
     728,
-    1041,
+    1093,
     178,
     95
    ],
-   "action": "reroll",
-   "note": "The tap target: 95 tall, from the troop bar's foot to DISMISS's top, so the two never share a pixel."
+   "action": "reroll"
   },
   {
    "id": "dismiss",
@@ -818,7 +863,7 @@
    "asset": "army/dismiss",
    "rect": [
     728,
-    1136,
+    1190,
     178,
     95
    ],
@@ -826,7 +871,7 @@
    "keep_texture_size": true,
    "paint_rect": [
     728,
-    1144,
+    1199,
     178,
     78
    ]

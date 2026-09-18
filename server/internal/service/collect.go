@@ -10,8 +10,19 @@ import (
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
+	"github.com/yigitkarabulut0/emperors/server/internal/ledger"
 )
+
+// levelRef names the levels a level-up grant was for, as the diamond ledger's
+// reference: "L12-13". Empty when no level was crossed.
+func levelRef(from int32, to int) string {
+	if int(from) >= to {
+		return ""
+	}
+	return fmt.Sprintf("L%d-%d", from, to)
+}
 
 // CollectResult is what one Collect returns. It carries the deltas as well as
 // the new snapshot so the client can reconcile its optimistic prediction and
@@ -24,8 +35,12 @@ type CollectResult struct {
 	MilestoneHit   int64 `json:"milestone_hit,omitempty"`
 	// Which job crossed it. Without this the client knows a milestone happened
 	// but not what it was for, and a batch can span more than one job.
-	MilestoneJob string    `json:"milestone_job,omitempty"`
-	Snapshot     *Snapshot `json:"snapshot"`
+	MilestoneJob string `json:"milestone_job,omitempty"`
+	// The part of GoldGained the Golden Hour added, and whether this collect
+	// lit it (retention.frenzy). The client shows the burst; it never predicts.
+	FrenzyGold    int64     `json:"frenzy_gold"`
+	FrenzyStarted bool      `json:"frenzy_started"`
+	Snapshot      *Snapshot `json:"snapshot"`
 }
 
 // Collect performs one job.
@@ -93,14 +108,22 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 		}
 		collectsBefore := progress.Collects - 1
 
-		reward := economy.Collect(d.Config, job, collectsBefore, eff.Bonuses)
+		// The Golden Hour: this collect fills its meter, or is paid its bonus in
+		// the timed lane of the collect bucket -- the gold it added is the
+		// difference, both sides through the one formula.
+		golden := d.newFrenzyRun(p, now)
+		bonuses, covered := d.frenzyBonuses(golden, eff.Bonuses, job.EnergyCost, maxEnergy, int(p.Level), now)
+		reward := economy.Collect(d.Config, job, collectsBefore, bonuses)
+		if covered {
+			golden.gold = reward.Gold - economy.Collect(d.Config, job, collectsBefore, eff.Bonuses).Gold
+		}
 		up := economy.AwardXP(d.Config, int(p.Level), p.Xp, reward.XP, eff.Bonuses)
 
 		// Levelling refills energy, which must happen AFTER the spend or the
 		// level-up would silently refund the cost of the collect that caused it.
 		final := spent
 		if up.Refilled {
-			final = economy.Refill(economy.MaxEnergy(d.Config, int64(p.Level), int64(p.StatEnergy), eff.MaxEnergyFlat), now)
+			final = economy.Refill(levelUpMax(d.Config, p, up, eff), now)
 		}
 
 		after, err := q.ApplyCollect(ctx, sqlcdb.ApplyCollectParams{
@@ -122,14 +145,29 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 		// the admin dashboard's "sinks absorb N% of what faucets create", the one
 		// number that says whether the currency is inflating, was computed
 		// without the source of most of the currency.
-		if reward.Gold > 0 {
-			if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
-				PlayerID: playerID, Delta: reward.Gold, BalanceAfter: after.Gold,
-				Reason: "collect", RefID: nil,
-			}); err != nil {
-				return fmt.Errorf("record collect: %w", err)
-			}
+		if err := recordCollectGold(ctx, q, playerID, reward.Gold, golden.gold, after.Gold); err != nil {
+			return err
 		}
+		if err := golden.save(ctx, q, p); err != nil {
+			return err
+		}
+		if err := ledger.Diamonds(ctx, q, p, after, up.Diamonds, ledger.LevelUp,
+			levelRef(p.Level, up.Level)); err != nil {
+			return err
+		}
+
+		// A single collect is a collect. Only the batch route used to count
+		// toward today's tasks, so a player whose taps went one at a time -- a
+		// slow network, the first tap after a refresh -- saw "Collect 20 times"
+		// stall behind collects that really happened.
+		done := deeds.Deeds{
+			deeds.Collects: 1, deeds.Energy: job.EnergyCost,
+			deeds.XP: economy.ApplyBucket(reward.XP, eff.Bonuses, economy.BucketXPGain),
+		}
+		if golden.started {
+			done[deeds.GoldenHours] = 1
+		}
+		d.recordDeeds(ctx, tx, p, done)
 
 		res = CollectResult{
 			GoldGained: reward.Gold,
@@ -140,12 +178,13 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 			XPGained:       economy.ApplyBucket(reward.XP, eff.Bonuses, economy.BucketXPGain),
 			LevelsGained:   up.LevelsGained,
 			DiamondsGained: up.Diamonds,
+			FrenzyGold:     golden.gold,
+			FrenzyStarted:  golden.started,
 		}
 		if reward.MilestoneHit != nil {
 			res.MilestoneHit = reward.MilestoneHit.Collects
 			res.MilestoneJob = job.ID
 		}
-		_ = maxEnergy
 		_ = period
 		return nil
 	})
@@ -161,4 +200,24 @@ func (d Deps) Collect(ctx context.Context, playerID uuid.UUID, jobID string, wan
 	}
 	res.Snapshot = snap
 	return &res, nil
+}
+
+// recordCollectGold writes a run of collects' gold to the ledger: the Golden
+// Hour's share on its own row, so the economy's faucets say what it added.
+func recordCollectGold(ctx context.Context, q *sqlcdb.Queries, playerID uuid.UUID, gold, golden, balance int64) error {
+	if base := gold - golden; base > 0 {
+		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+			PlayerID: playerID, Delta: base, BalanceAfter: balance - golden, Reason: "collect",
+		}); err != nil {
+			return fmt.Errorf("record collect: %w", err)
+		}
+	}
+	if golden > 0 {
+		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+			PlayerID: playerID, Delta: golden, BalanceAfter: balance, Reason: "golden_hour",
+		}); err != nil {
+			return fmt.Errorf("record the golden hour: %w", err)
+		}
+	}
+	return nil
 }

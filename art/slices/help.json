@@ -1,0 +1,166 @@
+{
+  "source": "help.png",
+  "note": "THE KINGDOM'S HELP -- the Kingdom tab's HELP sub-tab (scenes/kingdom/help_section.gd): the day's shared goal and the calls for aid. The section is built in code, as LORDS, WORKS and RANKS are (kingdom_section.gd), so what is cut here are the painting's own objects at their painted sizes and not a page template. The two panels themselves are the kit's card frame (inventory/card_frame), which is what LORDS, WORKS and RANKS already stand in on this tab -- the painting's gold-cornered frame cannot be lifted off its own contents, and two frames on one tab would be two looks. A lord's face in an aid row is portraits/avatar_<id>_ring with their own frame over it, the same object the hall and the medallions draw.",
+  "crops": [
+    {
+      "name": "help/title_goal",
+      "rect": [
+        190,
+        258,
+        320,
+        50
+      ],
+      "note": "TODAY'S GOAL, the words baked: the goal's KIND changes (hands to the work, swords of the realm) and is set in type under this, but what the panel is never changes."
+    },
+    {
+      "name": "help/goal_scene",
+      "rect": [
+        178,
+        300,
+        748,
+        340
+      ],
+      "note": "The kingdom raising its banner: the goal's own picture, whichever goal the day asks for. There is one scene because there is one goal a day -- a second painting for the second kind would be a second thing to keep true."
+    },
+    {
+      "name": "help/bar_track",
+      "rect": [
+        686,
+        638,
+        240,
+        34
+      ],
+      "note": "The bar the day's work fills, cut from the stretch the painting leaves EMPTY (x 686 on): the painted bar is two thirds full, and a track cut from the filled part would be a bar that starts full."
+    },
+    {
+      "name": "help/bar_fill",
+      "rect": [
+        186,
+        641,
+        240,
+        28
+      ],
+      "note": "The gold that fills it, cut from the painting's own filled stretch and drawn to whatever width the kingdom has reached."
+    },
+    {
+      "name": "help/knob",
+      "rect": [
+        430,
+        638,
+        26,
+        34
+      ],
+      "note": "The knob a chest sits on, on the bar."
+    },
+    {
+      "name": "help/plate",
+      "rect": [
+        377,
+        672,
+        126,
+        36
+      ],
+      "note": "The small plate under a chest, for what it holds."
+    },
+    {
+      "name": "help/share",
+      "rect": [
+        215,
+        720,
+        310,
+        76
+      ],
+      "note": "The share plate with its glyph baked: a kingdom telling its lords the goal is close."
+    },
+    {
+      "name": "help/claim",
+      "rect": [
+        547,
+        720,
+        336,
+        76
+      ],
+      "note": "CLAIM, the word baked: it never changes. Dimmed while there is nothing to take."
+    },
+    {
+      "name": "help/aid_scene",
+      "rect": [
+        178,
+        842,
+        748,
+        170
+      ],
+      "note": "The clasped gauntlets: what a call for aid is."
+    },
+    {
+      "name": "help/stat_members",
+      "rect": [
+        177,
+        1000,
+        382,
+        68
+      ],
+      "note": "The plate that says how many lords are standing, its figure of three baked as the icon it is."
+    },
+    {
+      "name": "help/stat_energy",
+      "rect": [
+        560,
+        1000,
+        362,
+        68
+      ],
+      "note": "The plate beside it, for what the aid is worth."
+    },
+    {
+      "name": "help/hand",
+      "rect": [
+        304,
+        1192,
+        42,
+        72
+      ],
+      "note": "The raised hand on its banner: the mark beside a lord who has asked and is still waiting."
+    },
+    {
+      "name": "help/row_name",
+      "rect": [
+        354,
+        1200,
+        240,
+        52
+      ],
+      "note": "The plate a lord's name is set on in an aid row."
+    },
+    {
+      "name": "help/row_small",
+      "rect": [
+        604,
+        1194,
+        116,
+        58
+      ],
+      "note": "The small plate beside it, for how many have answered."
+    },
+    {
+      "name": "help/aid_button",
+      "rect": [
+        774,
+        1188,
+        126,
+        68
+      ],
+      "note": "AID, baked. The word is the same on every row and never changes."
+    },
+    {
+      "name": "help/ask",
+      "rect": [
+        177,
+        1490,
+        744,
+        84
+      ],
+      "note": "ASK FOR AID, baked: the one thing a lord does for themselves on this page."
+    }
+  ]
+}

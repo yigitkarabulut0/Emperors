@@ -1,0 +1,442 @@
+{
+ "screen": "talents",
+ "source": "talents.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0B151F",
+ "notes": [
+  "THE TALENT TREE (client/scenes/pages/talents_page.gd). Every rect is measured off the painting's own gold.",
+  "The three columns stand at x 185, 467 and 749; the five medallions at y 608, 797, 981, 1166 and 1352. One template, fifteen instances, each knowing its branch and its place in it.",
+  "A medallion's state is drawn OVER the painting: the ring crop (lit or plain) covers the painted ring and puts five empty sockets under it, and a lit gem is laid on each rank the lord has bought. The painting lights its top two rows; a lord's tree is its own.",
+  "'medallions' below says WHICH talent stands on which painted medallion, because the icons mean something: the sword is Sharpened Steel, the brazier is The Night Watch, the clover is A Lucky Hand. A talent the list does not name falls back to the branch's own order, so a new one in balance/talents.json cannot break the page.",
+  "The one band that may stretch is the six rows of bare ground between the columns' pointed feet (which end at 1483) and the button bar's rail (1492). It has to be BELOW every medallion: the medallions are drawn as live nodes over the painting, and a band between two of them would move the painting's own medallion out from under the one drawn on top of it. Those rows are levelled flat in art/slices/talents.json, because six rows drawn forty high show every grain as a streak."
+ ],
+ "fonts": {
+  "title": "Cinzel",
+  "body": "transitional serif (Crimson Pro / EB Garamond class)"
+ },
+ "medallions": {
+  "war": [
+   "war_edge",
+   "war_speed",
+   "war_spoils",
+   "war_ransom",
+   "war_fury"
+  ],
+  "defence": [
+   "def_wall",
+   "def_stores",
+   "def_larder",
+   "def_vigil",
+   "def_bastion"
+  ],
+  "economy": [
+   "eco_granary",
+   "eco_market",
+   "eco_tithe",
+   "eco_fortune",
+   "eco_ledger"
+  ]
+ },
+ "medallion_icons": {
+  "war": [
+   "a sword",
+   "a knight riding",
+   "a captured banner",
+   "a laurel",
+   "a war horn"
+  ],
+  "defence": [
+   "a lion shield",
+   "a granary tower",
+   "a strongbox",
+   "a watchfire",
+   "a castle gate"
+  ],
+  "economy": [
+   "a wheat sheaf",
+   "a pair of scales",
+   "a charter",
+   "a four-leaf clover",
+   "a ledger book"
+  ]
+ },
+ "stretch": [
+  [
+   1484,
+   6
+  ]
+ ],
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "talents/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "points",
+   "kind": "text",
+   "rect": [
+    676,
+    67,
+    201,
+    57
+   ],
+   "font": "title",
+   "size": 30,
+   "cap": 21,
+   "weight": 700,
+   "color": "#EDD9A3",
+   "align": "center",
+   "valign": "center",
+   "sample": "5 POINTS",
+   "uppercase": true,
+   "note": "On the painting's empty plate beside the title (668,67,217,57)."
+  },
+  {
+   "id": "medallion",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    190,
+    200
+   ],
+   "note": "One talent: its ring, its five pip sockets and the tap over it. The painted icon in the middle is the page's own and is never drawn again.",
+   "parts": [
+    {
+     "id": "face",
+     "kind": "image",
+     "rect": [
+      33,
+      33,
+      124,
+      124
+     ],
+     "note": "The medallion's own painted face, cut from the page where it already stands (talents/face_<branch>_<n>, set per instance). Drawing it changes nothing until it is drawn BACK, which is how a tier the lord has not opened dims with its ring instead of leaving a grey ring round a bright icon."
+    },
+    {
+     "id": "ring",
+     "kind": "image",
+     "rect": [
+      0,
+      0,
+      190,
+      200
+     ],
+     "note": "The medallion's ring, in the state the server says: talents/ring_lit_<branch> or ring_dark_<branch>. It carries the five empty pip sockets under it, so a row never keeps the painting's own ranks."
+    },
+    {
+     "id": "pip_1",
+     "kind": "image",
+     "rect": [
+      23,
+      157,
+      28,
+      26
+     ],
+     "asset": "talents/pip_lit"
+    },
+    {
+     "id": "pip_2",
+     "kind": "image",
+     "rect": [
+      53,
+      157,
+      28,
+      26
+     ],
+     "asset": "talents/pip_lit"
+    },
+    {
+     "id": "pip_3",
+     "kind": "image",
+     "rect": [
+      84,
+      157,
+      28,
+      26
+     ],
+     "asset": "talents/pip_lit"
+    },
+    {
+     "id": "pip_4",
+     "kind": "image",
+     "rect": [
+      114,
+      157,
+      28,
+      26
+     ],
+     "asset": "talents/pip_lit"
+    },
+    {
+     "id": "pip_5",
+     "kind": "image",
+     "rect": [
+      143,
+      157,
+      28,
+      26
+     ],
+     "asset": "talents/pip_lit"
+    },
+    {
+     "id": "hit",
+     "kind": "button",
+     "rect": [
+      22,
+      22,
+      146,
+      146
+     ],
+     "action": "talent",
+     "note": "The medallion itself: a tap opens what the rank is worth, and buys it."
+    }
+   ],
+   "instances": [
+    {
+     "pos": [
+      90,
+      513
+     ],
+     "data": {
+      "branch": "war",
+      "index": 0
+     },
+     "assets": {
+      "face": "talents/face_war_1"
+     }
+    },
+    {
+     "pos": [
+      90,
+      702
+     ],
+     "data": {
+      "branch": "war",
+      "index": 1
+     },
+     "assets": {
+      "face": "talents/face_war_2"
+     }
+    },
+    {
+     "pos": [
+      90,
+      886
+     ],
+     "data": {
+      "branch": "war",
+      "index": 2
+     },
+     "assets": {
+      "face": "talents/face_war_3"
+     }
+    },
+    {
+     "pos": [
+      90,
+      1071
+     ],
+     "data": {
+      "branch": "war",
+      "index": 3
+     },
+     "assets": {
+      "face": "talents/face_war_4"
+     }
+    },
+    {
+     "pos": [
+      90,
+      1257
+     ],
+     "data": {
+      "branch": "war",
+      "index": 4
+     },
+     "assets": {
+      "face": "talents/face_war_5"
+     }
+    },
+    {
+     "pos": [
+      372,
+      513
+     ],
+     "data": {
+      "branch": "defence",
+      "index": 0
+     },
+     "assets": {
+      "face": "talents/face_defence_1"
+     }
+    },
+    {
+     "pos": [
+      372,
+      702
+     ],
+     "data": {
+      "branch": "defence",
+      "index": 1
+     },
+     "assets": {
+      "face": "talents/face_defence_2"
+     }
+    },
+    {
+     "pos": [
+      372,
+      886
+     ],
+     "data": {
+      "branch": "defence",
+      "index": 2
+     },
+     "assets": {
+      "face": "talents/face_defence_3"
+     }
+    },
+    {
+     "pos": [
+      372,
+      1071
+     ],
+     "data": {
+      "branch": "defence",
+      "index": 3
+     },
+     "assets": {
+      "face": "talents/face_defence_4"
+     }
+    },
+    {
+     "pos": [
+      372,
+      1257
+     ],
+     "data": {
+      "branch": "defence",
+      "index": 4
+     },
+     "assets": {
+      "face": "talents/face_defence_5"
+     }
+    },
+    {
+     "pos": [
+      654,
+      513
+     ],
+     "data": {
+      "branch": "economy",
+      "index": 0
+     },
+     "assets": {
+      "face": "talents/face_economy_1"
+     }
+    },
+    {
+     "pos": [
+      654,
+      702
+     ],
+     "data": {
+      "branch": "economy",
+      "index": 1
+     },
+     "assets": {
+      "face": "talents/face_economy_2"
+     }
+    },
+    {
+     "pos": [
+      654,
+      886
+     ],
+     "data": {
+      "branch": "economy",
+      "index": 2
+     },
+     "assets": {
+      "face": "talents/face_economy_3"
+     }
+    },
+    {
+     "pos": [
+      654,
+      1071
+     ],
+     "data": {
+      "branch": "economy",
+      "index": 3
+     },
+     "assets": {
+      "face": "talents/face_economy_4"
+     }
+    },
+    {
+     "pos": [
+      654,
+      1257
+     ],
+     "data": {
+      "branch": "economy",
+      "index": 4
+     },
+     "assets": {
+      "face": "talents/face_economy_5"
+     }
+    }
+   ]
+  },
+  {
+   "id": "respec",
+   "kind": "button",
+   "asset": "talents/respec",
+   "rect": [
+    107,
+    1505,
+    343,
+    95
+   ],
+   "action": "respec",
+   "paint_rect": [
+    107,
+    1511,
+    343,
+    83
+   ],
+   "keep_texture_size": true
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "talents/close",
+   "rect": [
+    489,
+    1505,
+    344,
+    95
+   ],
+   "action": "close",
+   "paint_rect": [
+    489,
+    1511,
+    344,
+    83
+   ],
+   "keep_texture_size": true
+  }
+ ]
+}

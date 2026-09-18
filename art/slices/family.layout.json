@@ -104,8 +104,8 @@
      "id": "level",
      "kind": "text",
      "rect": [
-      244,
-      82,
+      239,
+      84,
       150,
       26
      ],
@@ -115,7 +115,8 @@
      "color": "#E7BA4D",
      "align": "left",
      "valign": "center",
-     "sample": "LEVEL 33"
+     "sample": "LEVEL 33",
+     "note": "On the painted LEVEL's ink: x 409..543, rows 728..747 on the painting. At [244, 82] the live line stood five units right of it and two above."
     },
     {
      "id": "xp_track",
@@ -579,6 +580,18 @@
        ]
       },
       {
+       "id": "art_frame",
+       "kind": "image",
+       "asset": "family/art_frame",
+       "rect": [
+        21,
+        13,
+        364,
+        216
+       ],
+       "note": "the frame's edge and chamfered corner over the scene, the same on every card"
+      },
+      {
        "id": "name",
        "kind": "text",
        "rect": [
@@ -664,6 +677,837 @@
        ]
       }
      ]
+    }
+   ]
+  },
+  {
+   "id": "storehouse_card",
+   "kind": "template",
+   "rect": [
+    172,
+    1323,
+    748,
+    307
+   ],
+   "source": "family_storehouse.png",
+   "note": "The STOREHOUSE card (family_storehouse.png, art/slices/family_storehouse.json), the first card of the ledger, where the painting puts it under the stats. Measured off the painting's card (x 158..920, y 703..1009) with its window at the state vignettes' own size (242x227, painted smaller than the card's 347x282 scene and never drawn up) and its column stretched into the width that leaves: the column's pieces keep the painting's rows and offsets, each plate 92 wider. Built by family.gd, which moves the ledger down by its height.",
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_card",
+     "rect": [
+      0,
+      0,
+      748,
+      307
+     ],
+     "margin": [
+      24,
+      24,
+      24,
+      24
+     ],
+     "note": "the painting's card, 763 wide, its middle drawn 15 narrower"
+    },
+    {
+     "id": "picture",
+     "kind": "image",
+     "asset": "family/storehouse_half",
+     "rect": [
+      18,
+      20,
+      226,
+      213
+     ],
+     "note": "family/storehouse_empty|half|full by how full it is (family.storehouse_state)"
+    },
+    {
+     "id": "window",
+     "kind": "image",
+     "asset": "family/storehouse_window",
+     "rect": [
+      10,
+      13,
+      242,
+      227
+     ],
+     "note": "the vignette's frame, where the painting's window starts (x 168, y 716)"
+    },
+    {
+     "id": "holds_plate",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_plate",
+     "rect": [
+      10,
+      249,
+      242,
+      47
+     ],
+     "margin": [
+      16,
+      0,
+      16,
+      0
+     ],
+     "note": "the timer plate under the window: the window ends where the painting's does (y 999)"
+    },
+    {
+     "id": "holds",
+     "kind": "text",
+     "rect": [
+      22,
+      249,
+      218,
+      47
+     ],
+     "font": "title",
+     "size": 19,
+     "weight": 600,
+     "color": "#B9C2CC",
+     "align": "center",
+     "valign": "center",
+     "sample": "HOLDS 8H"
+    },
+    {
+     "id": "title",
+     "kind": "image",
+     "asset": "family/storehouse_title",
+     "rect": [
+      280,
+      18,
+      258,
+      38
+     ]
+    },
+    {
+     "id": "amount_plate",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_amount",
+     "rect": [
+      271,
+      62,
+      441,
+      50
+     ],
+     "margin": [
+      16,
+      0,
+      16,
+      0
+     ]
+    },
+    {
+     "id": "coin",
+     "kind": "image",
+     "asset": "icons/coin",
+     "rect": [
+      285,
+      68,
+      40,
+      38
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "amount",
+     "kind": "text",
+     "rect": [
+      335,
+      62,
+      260,
+      50
+     ],
+     "font": "body",
+     "size": 32,
+     "weight": 600,
+     "color": "#E9C46A",
+     "align": "left",
+     "valign": "center",
+     "sample": "12,345"
+    },
+    {
+     "id": "capacity",
+     "kind": "text",
+     "rect": [
+      560,
+      62,
+      140,
+      50
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 500,
+     "color": "#B8AE9C",
+     "align": "left",
+     "valign": "center",
+     "sample": "/ 20,000",
+     "note": "set on the amount's baseline, just after it"
+    },
+    {
+     "id": "bar",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_bar",
+     "rect": [
+      267,
+      117,
+      453,
+      28
+     ],
+     "margin": [
+      14,
+      0,
+      14,
+      0
+     ]
+    },
+    {
+     "id": "fill",
+     "kind": "image",
+     "asset": "family/storehouse_fill",
+     "rect": [
+      281,
+      120,
+      425,
+      21
+     ],
+     "fill": "left",
+     "track": [
+      281,
+      120,
+      425,
+      21
+     ],
+     "caps": [
+      3,
+      4
+     ],
+     "note": "the painted gold (reference x 547..770) as a nine-patch across the track between the diamonds"
+    },
+    {
+     "id": "hourglass",
+     "kind": "image",
+     "asset": "family/storehouse_hourglass",
+     "rect": [
+      282,
+      148,
+      42,
+      60
+     ]
+    },
+    {
+     "id": "timer_plate",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_plate",
+     "rect": [
+      341,
+      154,
+      354,
+      47
+     ],
+     "margin": [
+      16,
+      0,
+      16,
+      0
+     ]
+    },
+    {
+     "id": "full_in",
+     "kind": "text",
+     "rect": [
+      355,
+      154,
+      326,
+      47
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "Full in 3h 20m"
+    },
+    {
+     "id": "collect",
+     "kind": "button",
+     "asset": "family/storehouse_collect",
+     "label": "COLLECT",
+     "size": 26,
+     "weight": 700,
+     "color": "#F4EFE6",
+     "margin": 16,
+     "rect": [
+      267,
+      206,
+      238,
+      95
+     ],
+     "paint_rect": [
+      267,
+      216,
+      238,
+      75
+     ],
+     "action": "carry_purse",
+     "note": "the painting's COLLECT (x 533..725, y 919..993), its word lifted and set in type at the painted size (cap height 20)"
+    },
+    {
+     "id": "to_vault",
+     "kind": "button",
+     "asset": "family/storehouse_vault",
+     "label": "To Vault",
+     "size": 25,
+     "weight": 700,
+     "color": "#F4EFE6",
+     "margin": 16,
+     "rect": [
+      519,
+      206,
+      211,
+      95
+     ],
+     "paint_rect": [
+      519,
+      218,
+      211,
+      71
+     ],
+     "action": "carry_treasury",
+     "note": "the painting's TO VAULT (x 739..904, y 921..991), its word lifted and set in type as painted (Cinzel's small capitals after the T and the V, cap height 18), raised for the fee under it"
+    },
+    {
+     "id": "vault_fee",
+     "kind": "text",
+     "rect": [
+      533,
+      254,
+      183,
+      22
+     ],
+     "font": "title",
+     "size": 15,
+     "weight": 600,
+     "color": "#B9C2CC",
+     "align": "center",
+     "valign": "center",
+     "sample": "10% FEE"
+    }
+   ]
+  },
+  {
+   "id": "treasury_card",
+   "kind": "template",
+   "rect": [
+    172,
+    1639,
+    748,
+    252
+   ],
+   "source": "family_treasury.png",
+   "note": "The ROYAL TREASURY card, the bank, right under STOREHOUSE (family_treasury.png, art/slices/family_treasury.json): the owner's painted card, x 158..918, y 989..1240, its hairline 11 under STOREHOUSE's as the painting has it (STOREHOUSE itself stays where family_storehouse.png put it). Laid out as STOREHOUSE is: its window at the vault states' own size (241x139, painted smaller than the card's 360x236 scene and never drawn up) where STOREHOUSE's window starts, and its column's pieces at the painting's rows and offsets, the plates and buttons stretched into the width that leaves. Built by family.gd, which moves the ledger down by its height.",
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "ninepatch",
+     "asset": "family/treasury_card",
+     "rect": [
+      0,
+      0,
+      748,
+      252
+     ],
+     "margin": [
+      24,
+      24,
+      24,
+      24
+     ],
+     "note": "the painted card, 761 wide, its middle drawn 13 narrower"
+    },
+    {
+     "id": "picture",
+     "kind": "image",
+     "asset": "family/treasury_empty",
+     "rect": [
+      15,
+      19,
+      230,
+      127
+     ],
+     "note": "family/treasury_empty|half|full by the vault's gold (family.treasury_picture)"
+    },
+    {
+     "id": "window",
+     "kind": "image",
+     "asset": "family/treasury_window",
+     "rect": [
+      10,
+      13,
+      241,
+      139
+     ],
+     "note": "the shut vault's frame, where STOREHOUSE's window starts"
+    },
+    {
+     "id": "raid_plate",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_plate",
+     "rect": [
+      10,
+      183,
+      241,
+      47
+     ],
+     "margin": [
+      16,
+      0,
+      16,
+      0
+     ],
+     "note": "under the window, as STOREHOUSE says HOLDS 8H there; on the buttons' row"
+    },
+    {
+     "id": "raid_proof",
+     "kind": "text",
+     "rect": [
+      22,
+      183,
+      217,
+      47
+     ],
+     "font": "title",
+     "size": 19,
+     "weight": 600,
+     "color": "#B9C2CC",
+     "align": "center",
+     "valign": "center",
+     "sample": "RAID-PROOF",
+     "note": "RAID-PROOF; below the vault's level, when it opens, in gold"
+    },
+    {
+     "id": "title",
+     "kind": "image",
+     "asset": "family/treasury_title",
+     "rect": [
+      278,
+      13,
+      322,
+      33
+     ],
+     "note": "the painted title (x 544, y 1002 on the painting)"
+    },
+    {
+     "id": "vault_icon",
+     "kind": "image",
+     "asset": "family/treasury_icon_vault",
+     "rect": [
+      277,
+      43,
+      71,
+      79
+     ],
+     "note": "the painted keyhole shield (x 543, y 1032)"
+    },
+    {
+     "id": "vault_plate",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_plate",
+     "rect": [
+      356,
+      59,
+      366,
+      47
+     ],
+     "margin": [
+      16,
+      0,
+      16,
+      0
+     ],
+     "note": "the painting's EMPTY plate beside the shield (x 622..892, y 1048..1094), STOREHOUSE's plate stretched"
+    },
+    {
+     "id": "vault",
+     "kind": "text",
+     "rect": [
+      370,
+      59,
+      230,
+      47
+     ],
+     "font": "body",
+     "size": 32,
+     "weight": 600,
+     "color": "#E9C46A",
+     "align": "left",
+     "valign": "center",
+     "sample": "12,345,678"
+    },
+    {
+     "id": "vault_word",
+     "kind": "text",
+     "rect": [
+      560,
+      59,
+      140,
+      47
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 500,
+     "color": "#B8AE9C",
+     "align": "left",
+     "valign": "center",
+     "sample": "in the vault",
+     "note": "set on the amount's baseline, just after it, as STOREHOUSE's capacity is"
+    },
+    {
+     "id": "hand_icon",
+     "kind": "image",
+     "asset": "family/treasury_icon_coins",
+     "rect": [
+      265,
+      120,
+      90,
+      52
+     ],
+     "note": "the painted heap of gold (x 531, y 1109)"
+    },
+    {
+     "id": "hand_plate",
+     "kind": "ninepatch",
+     "asset": "family/storehouse_plate",
+     "rect": [
+      356,
+      117,
+      366,
+      47
+     ],
+     "margin": [
+      16,
+      0,
+      16,
+      0
+     ],
+     "note": "the painting's EMPTY plate beside the gold (x 622..892, y 1106..1153)"
+    },
+    {
+     "id": "on_hand",
+     "kind": "text",
+     "rect": [
+      370,
+      117,
+      338,
+      47
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "On hand 1,234,567"
+    },
+    {
+     "id": "deposit",
+     "kind": "button",
+     "asset": "family/treasury_deposit",
+     "label": "DEPOSIT",
+     "size": 26,
+     "weight": 700,
+     "color": "#F4EFE6",
+     "margin": 16,
+     "rect": [
+      267,
+      158,
+      226,
+      96
+     ],
+     "paint_rect": [
+      267,
+      173,
+      226,
+      66
+     ],
+     "action": "deposit",
+     "note": "the painting's DEPOSIT (x 533..710, y 1162..1227), its word lifted and set in type at the painted size (cap height 20), raised for the fee under it"
+    },
+    {
+     "id": "deposit_fee",
+     "kind": "text",
+     "rect": [
+      281,
+      208,
+      198,
+      22
+     ],
+     "font": "title",
+     "size": 15,
+     "weight": 600,
+     "color": "#D6E6CC",
+     "align": "center",
+     "valign": "center",
+     "sample": "10% FEE"
+    },
+    {
+     "id": "withdraw",
+     "kind": "button",
+     "asset": "family/treasury_withdraw",
+     "label": "WITHDRAW",
+     "size": 25,
+     "weight": 700,
+     "color": "#F4EFE6",
+     "margin": 16,
+     "rect": [
+      502,
+      158,
+      227,
+      95
+     ],
+     "paint_rect": [
+      502,
+      173,
+      227,
+      65
+     ],
+     "action": "withdraw",
+     "note": "the painting's WITHDRAW (x 720..899, y 1162..1226), its word lifted and set in type as painted (cap height 19), raised for the line under it"
+    },
+    {
+     "id": "withdraw_note",
+     "kind": "text",
+     "rect": [
+      516,
+      208,
+      199,
+      22
+     ],
+     "font": "title",
+     "size": 15,
+     "weight": 600,
+     "color": "#B9C2CC",
+     "align": "center",
+     "valign": "center",
+     "sample": "FREE"
+    }
+   ]
+  },
+  {
+   "id": "honours",
+   "kind": "template",
+   "rect": [
+    171,
+    1898,
+    751,
+    286
+   ],
+   "source": "family_storehouse.png",
+   "note": "TALENTS, DEEDS and ROAD (family_storehouse.png's strip under the STOREHOUSE card, x 160..913, y 1022..1305; art/slices/family_storehouse.json): each card as painted, the strip laid 11 under the storehouse card as the painting has it, its outer frames on the ledger's edges (x 172..920) with 9 between the cards where the painting has 12. Each card's words go on its EMPTY plate (inside x 16..225, y 231..266 of its crop); ROAD's count sits on its medallion's shoulder where the painting's red disc was, in the COURT cards' own disc (court/badge) drawn down to the painting's 49. Built by family.gd, which moves the ledger down by its height. Under the TREASURY card: family_treasury.png puts the strip's hairline 11 under the card's (1639 + 259).",
+   "parts": [
+    {
+     "id": "card_talents",
+     "kind": "image",
+     "asset": "family/honours_talents",
+     "rect": [
+      0,
+      0,
+      243,
+      286
+     ]
+    },
+    {
+     "id": "card_deeds",
+     "kind": "image",
+     "asset": "family/honours_deeds",
+     "rect": [
+      250,
+      0,
+      242,
+      286
+     ]
+    },
+    {
+     "id": "card_road",
+     "kind": "image",
+     "asset": "family/honours_road",
+     "rect": [
+      499,
+      0,
+      251,
+      286
+     ]
+    },
+    {
+     "id": "status_talents",
+     "kind": "text",
+     "rect": [
+      18,
+      231,
+      206,
+      35
+     ],
+     "sample": "Opens soon",
+     "font": "body",
+     "size": 26,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "status_deeds",
+     "kind": "text",
+     "rect": [
+      268,
+      231,
+      207,
+      35
+     ],
+     "sample": "Opens soon",
+     "font": "body",
+     "size": 26,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "status_road",
+     "kind": "text",
+     "rect": [
+      518,
+      231,
+      212,
+      35
+     ],
+     "sample": "5 rewards waiting",
+     "font": "body",
+     "size": 26,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "badge_road",
+     "kind": "image",
+     "asset": "court/badge",
+     "rect": [
+      677,
+      18,
+      49,
+      49
+     ],
+     "note": "the disc's centre (866, 1063 on the painting) at (701.5, 42.5)"
+    },
+    {
+     "id": "count_road",
+     "kind": "text",
+     "rect": [
+      677,
+      28,
+      49,
+      28
+     ],
+     "font": "title",
+     "size": 20,
+     "weight": 800,
+     "color": "#FFF4EC",
+     "align": "center",
+     "valign": "center",
+     "sample": "9+"
+    },
+    {
+     "id": "badge_talents",
+     "kind": "image",
+     "asset": "court/badge",
+     "rect": [
+      176,
+      18,
+      49,
+      49
+     ]
+    },
+    {
+     "id": "count_talents",
+     "kind": "text",
+     "rect": [
+      176,
+      28,
+      49,
+      28
+     ],
+     "font": "title",
+     "size": 20,
+     "weight": 800,
+     "color": "#FFF4EC",
+     "align": "center",
+     "valign": "center",
+     "sample": "9+"
+    },
+    {
+     "id": "badge_deeds",
+     "kind": "image",
+     "asset": "court/badge",
+     "rect": [
+      425,
+      18,
+      49,
+      49
+     ],
+     "note": "the DEEDS card's painted disc (614, 1063 on the painting, 252 left of ROAD's) at (449.5, 42.5)"
+    },
+    {
+     "id": "count_deeds",
+     "kind": "text",
+     "rect": [
+      425,
+      28,
+      49,
+      28
+     ],
+     "font": "title",
+     "size": 20,
+     "weight": 800,
+     "color": "#FFF4EC",
+     "align": "center",
+     "valign": "center",
+     "sample": "9+"
+    },
+    {
+     "id": "hit_deeds",
+     "kind": "hotspot",
+     "rect": [
+      250,
+      0,
+      242,
+      286
+     ],
+     "action": "deeds"
+    },
+    {
+     "id": "hit_road",
+     "kind": "hotspot",
+     "rect": [
+      499,
+      0,
+      251,
+      286
+     ],
+     "action": "road"
+    },
+    {
+     "id": "hit_talents",
+     "kind": "hotspot",
+     "rect": [
+      0,
+      0,
+      243,
+      286
+     ],
+     "action": "talents"
     }
    ]
   },

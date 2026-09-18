@@ -1,0 +1,838 @@
+{
+ "source": "events.png",
+ "notes": [
+  "COURT \u25b8 EVENTS (client/scenes/court/events_view.gd, layout client/layout/events.json), cut from events.png in five bands laid edge to edge where they were painted -- the header, the hero card, the two cards, ROYAL HOURS, UPCOMING -- and the foot, pinned to the screen's foot. The painting's pills sit 4 under the chrome's; they are filled, and nothing else is moved.",
+  "The festivals' scenes are event_themes.png's (the owner's banners of the three festivals: harvest, blood moon, caravan), drawn down to cover each card's window and drawn under the card, whose scene is cleared: the same picture of a festival wherever it is shown, the hero, a card, its page (events/banner_*, the banner with its frame).",
+  "Written by fork B's scratchpad script forkB/gen_events.py from its measurements."
+ ],
+ "crops": [
+  {
+   "name": "events/header",
+   "rect": [
+    155,
+    0,
+    786,
+    402
+   ],
+   "inpaint": [
+    {
+     "polygon": [
+      [
+       173,
+       22
+      ],
+      [
+       399,
+       22
+      ],
+      [
+       399,
+       86
+      ],
+      [
+       173,
+       86
+      ]
+     ],
+     "radius": 9,
+     "blur": 21
+    },
+    {
+     "polygon": [
+      [
+       429,
+       22
+      ],
+      [
+       656,
+       22
+      ],
+      [
+       656,
+       86
+      ],
+      [
+       429,
+       86
+      ]
+     ],
+     "radius": 9,
+     "blur": 21
+    },
+    {
+     "polygon": [
+      [
+       659,
+       22
+      ],
+      [
+       909,
+       22
+      ],
+      [
+       909,
+       86
+      ],
+      [
+       659,
+       86
+      ]
+     ],
+     "radius": 9,
+     "blur": 21
+    },
+    {
+     "polygon": [
+      [
+       175,
+       100
+      ],
+      [
+       374,
+       100
+      ],
+      [
+       374,
+       161
+      ],
+      [
+       175,
+       161
+      ]
+     ],
+     "radius": 9,
+     "blur": 21
+    }
+   ],
+   "note": "The courtyard festival with EVENTS and 'Festivals, hunts and royal hours.' baked (fixed copy). Its pills (gold x 176..395, diamonds 432..652, energy 662..905, y 25..82) and its COURT plate (x 178..370, y 103..157) are Telea-filled, grown 3, and the fill softened (blur 21) so it reads as the scene's own out-of-focus leaves and sky: the shell draws its own pills over them (x 180..400, 439..647, 666..890, y 21..78), and CourtBack the shared plate (x 165..327, y 106..155); only their margins show."
+  },
+  {
+   "name": "events/hero",
+   "rect": [
+    155,
+    402,
+    786,
+    407
+   ],
+   "patch": [
+    {
+     "from": [
+      173,
+      716,
+      12,
+      28
+     ],
+     "to": [
+      173,
+      686
+     ]
+    },
+    {
+     "from": [
+      905,
+      716,
+      13,
+      28
+     ],
+     "to": [
+      905,
+      686
+     ]
+    }
+   ],
+   "refill": [
+    {
+     "rect": [
+      643,
+      720,
+      258,
+      71
+     ],
+     "band": [
+      715,
+      720
+     ],
+     "samples": [
+      {
+       "rows": [
+        716,
+        794
+       ],
+       "x": [
+        [
+         500,
+         640
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      18,
+      36
+     ],
+     [
+      18,
+      32
+     ],
+     [
+      23,
+      28
+     ],
+     [
+      29,
+      25
+     ],
+     [
+      33,
+      19
+     ],
+     [
+      37,
+      12
+     ],
+     [
+      42,
+      9
+     ],
+     [
+      734,
+      9
+     ],
+     [
+      739,
+      9
+     ],
+     [
+      742,
+      12
+     ],
+     [
+      746,
+      17
+     ],
+     [
+      750,
+      23
+     ],
+     [
+      756,
+      27
+     ],
+     [
+      761,
+      30
+     ],
+     [
+      762,
+      35
+     ],
+     [
+      762,
+      284
+     ],
+     [
+      749,
+      284
+     ],
+     [
+      749,
+      270
+     ],
+     [
+      738,
+      258
+     ],
+     [
+      41,
+      258
+     ],
+     [
+      30,
+      269
+     ],
+     [
+      30,
+      284
+     ],
+     [
+      18,
+      284
+     ]
+    ]
+   },
+   "note": "The hero card (gold frame x 162..927, y 402..803) with the ground round it, its scene cleared to the frame's rails and the ornaments' inner curves (the festival's own scene, events/scene_*_hero, is drawn under it at x 173..917, y 411..686), the title plate (x 185..903, y 661..714), the hourglass and the timer plate (x 255..494, y 735..780) kept, VIEW lifted into the panel's own navy."
+  },
+  {
+   "name": "events/view",
+   "rect": [
+    644,
+    721,
+    256,
+    68
+   ],
+   "note": "VIEW (plate x 645..897, y 723..787, its word baked): the hero card's button."
+  },
+  {
+   "name": "events/cards",
+   "rect": [
+    155,
+    809,
+    786,
+    365
+   ],
+   "patch": [
+    {
+     "from": [
+      160,
+      812,
+      68,
+      61
+     ],
+     "to": [
+      462,
+      812
+     ],
+     "flip": "h",
+     "feather": 2
+    },
+    {
+     "from": [
+      700,
+      810,
+      60,
+      19
+     ],
+     "to": [
+      860,
+      810
+     ],
+     "feather": 3
+    },
+    {
+     "from": [
+      541,
+      812,
+      9,
+      19
+     ],
+     "to": [
+      914,
+      812
+     ],
+     "flip": "h"
+    },
+    {
+     "from": [
+      912,
+      876,
+      13,
+      40
+     ],
+     "to": [
+      912,
+      836
+     ]
+    },
+    {
+     "from": [
+      917,
+      876,
+      8,
+      6
+     ],
+     "to": [
+      917,
+      830
+     ]
+    },
+    {
+     "from": [
+      548,
+      819,
+      13,
+      24
+     ],
+     "to": [
+      904,
+      819
+     ],
+     "flip": "h"
+    }
+   ],
+   "hole": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       19,
+       29
+      ],
+      [
+       31,
+       17
+      ],
+      [
+       350,
+       17
+      ],
+      [
+       362,
+       29
+      ],
+      [
+       362,
+       236
+      ],
+      [
+       19,
+       236
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       393,
+       29
+      ],
+      [
+       405,
+       17
+      ],
+      [
+       749,
+       17
+      ],
+      [
+       761,
+       29
+      ],
+      [
+       761,
+       236
+      ],
+      [
+       393,
+       236
+      ]
+     ]
+    }
+   ],
+   "note": "The two event cards (steel frames x 161..529 and 537..928, y 815..1169; gold lines inside) with their scenes cleared inside the gold lines down to the title plates (the festivals' own, events/scene_*_left|right, drawn under them) and their red discs lifted -- each disc's corner is the same card's top-left turned over (the rims match to the pixel on axes 345 and 732) -- so a disc (court/badge) is drawn only when the card has something to claim. Title plates (y 1046..1097), hourglasses and timer plates (y 1110..1149) kept."
+  },
+  {
+   "name": "events/hours",
+   "rect": [
+    155,
+    1174,
+    786,
+    138
+   ],
+   "note": "ROYAL HOURS as painted (panel x 160..927, y 1181..1306): the seal, the heading, the name plate (x 296..536, y 1236..1285), the hourglass, the timer plate (x 591..727, y 1242..1282), NEXT and its plate (x 759..899, y 1239..1282). Every plate EMPTY; the hour's words are set live."
+  },
+  {
+   "name": "events/upcoming",
+   "rect": [
+    155,
+    1312,
+    786,
+    254
+   ],
+   "refill": [
+    {
+     "rect": [
+      178,
+      1353,
+      731,
+      206
+     ],
+     "band": [
+      1347,
+      1354
+     ],
+     "samples": [
+      {
+       "rows": [
+        1353,
+        1500
+       ],
+       "x": [
+        [
+         166,
+         176
+        ],
+        [
+         910,
+         918
+        ]
+       ]
+      },
+      {
+       "rows": [
+        1501,
+        1535
+       ],
+       "x": [
+        [
+         166,
+         176
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "patch": [
+    {
+     "from": [
+      908,
+      1430,
+      33,
+      70
+     ],
+     "to": [
+      908,
+      1496
+     ]
+    },
+    {
+     "from": [
+      880,
+      1312,
+      61,
+      39
+     ],
+     "to": [
+      880,
+      1528
+     ],
+     "flip": "v"
+    },
+    {
+     "from": [
+      155,
+      1312,
+      30,
+      39
+     ],
+     "to": [
+      155,
+      1528
+     ],
+     "flip": "v"
+    },
+    {
+     "from": [
+      300,
+      1557,
+      40,
+      6
+     ],
+     "to": [
+      185,
+      1557
+     ]
+    }
+   ],
+   "note": "UPCOMING (panel x 160..927, y 1317..1562) with its heading baked and its three rows lifted (refill from the panel's own surface), the foreground leaves over its foot taken off (the foot draws them, events/foot), so the panel stands alone above a pinned foot on a tall phone."
+  },
+  {
+   "name": "events/foot",
+   "rect": [
+    155,
+    1500,
+    786,
+    172
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      40
+     ],
+     [
+      13,
+      37
+     ],
+     [
+      27,
+      41
+     ],
+     [
+      41,
+      48
+     ],
+     [
+      50,
+      56
+     ],
+     [
+      57,
+      66
+     ],
+     [
+      685,
+      66
+     ],
+     [
+      705,
+      52
+     ],
+     [
+      725,
+      40
+     ],
+     [
+      745,
+      22
+     ],
+     [
+      763,
+      6
+     ],
+     [
+      777,
+      -2
+     ],
+     [
+      786,
+      -4
+     ],
+     [
+      786,
+      172
+     ],
+     [
+      0,
+      172
+     ]
+    ],
+    "feather": 5
+   },
+   "note": "The foreground leaves and the wall under the panel, pinned to the screen's foot: everything under the panel's foot (y 1566), and above it only the leaves at the two sides."
+  },
+  {
+   "name": "events/scene_harvest_hero",
+   "src": "event_themes.png",
+   "rect": [
+    25,
+    200,
+    892,
+    330
+   ],
+   "scale": [
+    745,
+    276
+   ],
+   "patch": [
+    {
+     "from": [
+      25,
+      596,
+      892,
+      44
+     ],
+     "to": [
+      25,
+      500
+     ],
+     "feather": 0,
+     "feather_y": 14
+    }
+   ]
+  },
+  {
+   "name": "events/scene_harvest_left",
+   "src": "event_themes.png",
+   "rect": [
+    98,
+    110,
+    746,
+    477
+   ],
+   "scale": [
+    344,
+    220
+   ]
+  },
+  {
+   "name": "events/scene_harvest_right",
+   "src": "event_themes.png",
+   "rect": [
+    71,
+    110,
+    800,
+    477
+   ],
+   "scale": [
+    369,
+    220
+   ]
+  },
+  {
+   "name": "events/banner_harvest",
+   "src": "event_themes.png",
+   "rect": [
+    13,
+    98,
+    916,
+    499
+   ],
+   "scale": [
+    813,
+    443
+   ]
+  },
+  {
+   "name": "events/scene_blood_moon_hero",
+   "src": "event_themes.png",
+   "rect": [
+    25,
+    655,
+    892,
+    330
+   ],
+   "scale": [
+    745,
+    276
+   ],
+   "patch": [
+    {
+     "from": [
+      25,
+      596,
+      892,
+      44
+     ],
+     "to": [
+      25,
+      955
+     ],
+     "feather": 0,
+     "feather_y": 14
+    }
+   ]
+  },
+  {
+   "name": "events/scene_blood_moon_left",
+   "src": "event_themes.png",
+   "rect": [
+    120,
+    649,
+    701,
+    448
+   ],
+   "scale": [
+    344,
+    220
+   ]
+  },
+  {
+   "name": "events/scene_blood_moon_right",
+   "src": "event_themes.png",
+   "rect": [
+    95,
+    649,
+    751,
+    448
+   ],
+   "scale": [
+    369,
+    220
+   ]
+  },
+  {
+   "name": "events/banner_blood_moon",
+   "src": "event_themes.png",
+   "rect": [
+    13,
+    639,
+    916,
+    468
+   ],
+   "scale": [
+    813,
+    415
+   ]
+  },
+  {
+   "name": "events/scene_caravan_hero",
+   "src": "event_themes.png",
+   "rect": [
+    25,
+    1226,
+    892,
+    330
+   ],
+   "scale": [
+    745,
+    276
+   ],
+   "patch": [
+    {
+     "from": [
+      25,
+      596,
+      892,
+      44
+     ],
+     "to": [
+      25,
+      1526
+     ],
+     "feather": 0,
+     "feather_y": 14
+    }
+   ]
+  },
+  {
+   "name": "events/scene_caravan_left",
+   "src": "event_themes.png",
+   "rect": [
+    111,
+    1156,
+    719,
+    460
+   ],
+   "scale": [
+    344,
+    220
+   ]
+  },
+  {
+   "name": "events/scene_caravan_right",
+   "src": "event_themes.png",
+   "rect": [
+    85,
+    1156,
+    772,
+    460
+   ],
+   "scale": [
+    369,
+    220
+   ]
+  },
+  {
+   "name": "events/banner_caravan",
+   "src": "event_themes.png",
+   "rect": [
+    13,
+    1146,
+    916,
+    480
+   ],
+   "scale": [
+    813,
+    426
+   ]
+  }
+ ]
+}

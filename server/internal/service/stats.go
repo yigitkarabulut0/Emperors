@@ -10,6 +10,7 @@ import (
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 )
 
 var (
@@ -54,6 +55,7 @@ func (d Deps) SpendStats(ctx context.Context, playerID uuid.UUID, energy, attack
 			}
 			return fmt.Errorf("spend stat points: %w", err)
 		}
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{deeds.StatSpends: int64(total)})
 		return nil
 	})
 	if err != nil {

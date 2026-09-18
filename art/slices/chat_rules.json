@@ -1,0 +1,11 @@
+{
+  "source": "chat_rules.png",
+  "note": "THE RULES OF THE HALL -- scenes/pages/rules_of_the_hall.gd, the page a lord agrees to before speaking (App Review 1.2 asks for the rules, and for a way to report, where the talking is). The page is cut whole: its scroll is empty as painted and the rules are set in type on it, and its two plates never change and never dim, so they are the painting's own with a hotspot over each -- the profile page's rows are drawn the same way.",
+  "crops": [
+    {
+      "name": "rules/back",
+      "rect": [0, 0, 941, 1672],
+      "note": "The whole page: the frame, the vista, the scroll and both plates. Nothing is lifted off it because nothing on it comes and goes."
+    }
+  ]
+}

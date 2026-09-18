@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
 )
 
@@ -43,6 +45,28 @@ type ItemView struct {
 	// it, because only it has the roster to hand; a client that needs to say
 	// who would otherwise have to fetch the army and match ids itself.
 	WornBy string `json:"worn_by,omitempty"`
+	// The anvil's offer for this piece, when the bag holds enough of its slot
+	// and rank to make one. Nil otherwise, and the card's FORGE says why.
+	Forge *ForgeOffer `json:"forge,omitempty"`
+}
+
+// ForgeOffer is what the anvil would do with this piece: which three go in,
+// what comes out and what it asks for the work.
+//
+// The whole offer is the SERVER'S, ids and all, because the fee follows the
+// best MARK of the three and picking the three is therefore part of pricing
+// it. A client that chose its own three and was quoted a fee for different
+// ones would be showing a price the server will not charge.
+type ForgeOffer struct {
+	// The three pieces, this one first: its two plainest companions of the same
+	// slot and rank, so what a lord keeps is the best of what they had.
+	Items []string `json:"items"`
+	Tier  string   `json:"tier"`
+	Ilvl  int64    `json:"ilvl"`
+	Fee   int64    `json:"fee"`
+	// How many pieces of this slot and rank are free in the bag at all: what
+	// the card says when there are not enough.
+	Have int `json:"have"`
 }
 
 // InventoryView is the Armory tab.
@@ -52,6 +76,10 @@ type InventoryView struct {
 	Used     int64                `json:"used"`
 	Cap      int64                `json:"cap"`
 	Hero     HeroStats            `json:"hero"`
+	// The anvil's own rules, published: how many pieces it takes, the band a
+	// forged piece's quality is rolled in and the chance of a masterwork. A
+	// gamble a lord is asked to take is a gamble whose odds are on the screen.
+	Forge ForgeView `json:"forge"`
 }
 
 // HeroStats is the hero as the Army fights with them: the level's base, the
@@ -96,7 +124,7 @@ func (d Deps) GetInventory(ctx context.Context, playerID uuid.UUID) (*InventoryV
 		Items:    make([]ItemView, 0, len(rows)),
 		Equipped: map[string]*ItemView{"weapon": nil, "armor": nil, "horse": nil},
 		Used:     int64(len(rows)),
-		Cap:      inventoryCap,
+		Cap:      d.bagCap(p),
 	}
 	for _, r := range rows {
 		iv := d.itemView(r)
@@ -113,7 +141,63 @@ func (d Deps) GetInventory(ctx context.Context, playerID uuid.UUID) (*InventoryV
 		}
 	}
 	view.Hero = d.heroStats(p, view.Equipped)
+	view.Forge = d.forgeView(p)
+	d.offerForge(p, view)
 	return view, nil
+}
+
+// offerForge attaches the anvil's offer to every piece that has one.
+//
+// The rule the offer follows is the one that makes the anvil worth using: the
+// piece that comes out keeps the best MARK of the three, so the two the lord
+// gives up are the two PLAINEST of that slot and rank. Equipped pieces are
+// never offered -- taking a sword off a soldier to feed it to a fire is not
+// something a screen should do on a tap.
+func (d Deps) offerForge(p sqlcdb.AppPlayer, v *InventoryView) {
+	f := d.Config.Forge
+	if int(p.Level) < d.Config.SectionLevel(f.Section) || f.Pieces < 2 {
+		return
+	}
+	// The free pieces of each slot and rank, plainest first.
+	groups := map[string][]int{}
+	for i := range v.Items {
+		it := &v.Items[i]
+		if it.Equipped || it.EquippedOn != "" || !f.CanForge(it.Tier) {
+			continue
+		}
+		key := it.Slot + ":" + it.Tier
+		groups[key] = append(groups[key], i)
+	}
+	for _, idx := range groups {
+		sort.SliceStable(idx, func(a, b int) bool {
+			return v.Items[idx[a]].Power < v.Items[idx[b]].Power
+		})
+		have := len(idx)
+		for _, i := range idx {
+			it := &v.Items[i]
+			it.Forge = &ForgeOffer{Have: have, Tier: items.NextTier(d.Config, it.Tier)}
+			if have < f.Pieces || it.Forge.Tier == "" {
+				continue
+			}
+			pick := []string{it.ID}
+			ilvl := it.Ilvl
+			for _, j := range idx {
+				if len(pick) >= f.Pieces {
+					break
+				}
+				if j == i {
+					continue
+				}
+				pick = append(pick, v.Items[j].ID)
+				if v.Items[j].Ilvl > ilvl {
+					ilvl = v.Items[j].Ilvl
+				}
+			}
+			it.Forge.Items = pick
+			it.Forge.Ilvl = ilvl
+			it.Forge.Fee = items.ForgeFee(d.Config, it.Slot, it.Tier, ilvl)
+		}
+	}
 }
 
 // soldierTypeName is a type's name as the config has it now, falling back to
@@ -291,6 +375,7 @@ func (d Deps) Sell(ctx context.Context, playerID, itemID uuid.UUID, wantSeq int6
 			return fmt.Errorf("ledger: %w", err)
 		}
 
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{deeds.Sells: 1})
 		res = SellResult{Gained: price, GoldLeft: itoa(after.Gold)}
 		return nil
 	})
@@ -402,6 +487,7 @@ func (d Deps) SellMany(ctx context.Context, playerID uuid.UUID, itemIDs []uuid.U
 			return fmt.Errorf("ledger: %w", err)
 		}
 
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{deeds.Sells: int64(res.Sold)})
 		res.Gained = total
 		res.GoldLeft = itoa(after.Gold)
 		return nil

@@ -1,0 +1,643 @@
+{
+ "source": "store.png",
+ "notes": [
+  "The Royal Store's first painting (art/reference/store.png): the header and the shelves above the Stipend. store_2.json cuts the rest; the view (client/scenes/court/store_view.gd, layout client/layout/store.json) stacks the two paintings' sections into one scroll, 10 units apart as both paintings space them.",
+  "The paintings' plates and green buttons are painted EMPTY, so nothing is erased from them: every price, count, perk and timer is set live. Only two painted words are lifted: the offer card's STARTER CRATE (the card shows whichever offer is live, by its own title), and the x2 FIRST PURCHASE seal baked on the first pack (every pack pays double its first time, so the seal is its own crop, store/seal, drawn over any pack whose first_bonus is true).",
+  "The seal is lifted off pack 1 by its own traced outline (the red wax, grown 15 px for its shadow), filled with Telea and softened, so the fill reads as the card's own out-of-focus wall; the frame's corner under it is patched from pack 2's identical corner (256 px to the right) and kept out of the fill.",
+  "The header's own painted COURT plate (x 174..339, y 105..163) is lifted (Telea, the plate's rect grown 3): every Court view draws the one shared plate, chrome/court_back, where the mail always has (165,106), through CourtBack."
+ ],
+ "crops": [
+  {
+   "name": "store/header",
+   "rect": [
+    155,
+    0,
+    786,
+    354
+   ],
+   "inpaint": [
+    [
+     174,
+     25,
+     238,
+     61
+    ],
+    [
+     432,
+     20,
+     240,
+     67
+    ],
+    [
+     684,
+     26,
+     236,
+     61
+    ],
+    [
+     171,
+     102,
+     173,
+     66
+    ]
+   ]
+  },
+  {
+   "name": "store/offer_card",
+   "rect": [
+    161,
+    355,
+    766,
+    265
+   ],
+   "soften": [
+    [
+     188,
+     372,
+     294,
+     34
+    ]
+   ]
+  },
+  {
+   "name": "store/offer_buy",
+   "rect": [
+    679,
+    534,
+    213,
+    66
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/patron_card",
+   "rect": [
+    161,
+    628,
+    766,
+    265
+   ]
+  },
+  {
+   "name": "store/patron_buy",
+   "rect": [
+    674,
+    811,
+    222,
+    66
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/diamonds_head",
+   "rect": [
+    161,
+    899,
+    766,
+    46
+   ]
+  },
+  {
+   "name": "store/pack_1",
+   "rect": [
+    162,
+    947,
+    251,
+    287
+   ],
+   "patch": [
+    {
+     "from": [
+      572,
+      940,
+      102,
+      17
+     ],
+     "to": [
+      316,
+      940
+     ]
+    },
+    {
+     "from": [
+      659,
+      940,
+      15,
+      112
+     ],
+     "to": [
+      403,
+      940
+     ]
+    }
+   ],
+   "inpaint": [
+    {
+     "polygon": [
+      [
+       372,
+       944
+      ],
+      [
+       357,
+       945
+      ],
+      [
+       349,
+       949
+      ],
+      [
+       342,
+       950
+      ],
+      [
+       335,
+       958
+      ],
+      [
+       329,
+       961
+      ],
+      [
+       324,
+       968
+      ],
+      [
+       324,
+       984
+      ],
+      [
+       320,
+       996
+      ],
+      [
+       323,
+       1004
+      ],
+      [
+       326,
+       1006
+      ],
+      [
+       328,
+       1010
+      ],
+      [
+       328,
+       1020
+      ],
+      [
+       330,
+       1025
+      ],
+      [
+       339,
+       1031
+      ],
+      [
+       360,
+       1037
+      ],
+      [
+       362,
+       1039
+      ],
+      [
+       362,
+       1041
+      ],
+      [
+       365,
+       1043
+      ],
+      [
+       367,
+       1043
+      ],
+      [
+       368,
+       1040
+      ],
+      [
+       378,
+       1039
+      ],
+      [
+       386,
+       1032
+      ],
+      [
+       393,
+       1031
+      ],
+      [
+       398,
+       1026
+      ],
+      [
+       401,
+       1026
+      ],
+      [
+       403,
+       1020
+      ],
+      [
+       403,
+       1015
+      ],
+      [
+       404,
+       1014
+      ],
+      [
+       410,
+       1014
+      ],
+      [
+       407,
+       1013
+      ],
+      [
+       407,
+       1009
+      ],
+      [
+       411,
+       1008
+      ],
+      [
+       413,
+       1002
+      ],
+      [
+       413,
+       994
+      ],
+      [
+       410,
+       988
+      ],
+      [
+       410,
+       983
+      ],
+      [
+       412,
+       981
+      ],
+      [
+       412,
+       974
+      ],
+      [
+       411,
+       970
+      ],
+      [
+       409,
+       970
+      ],
+      [
+       407,
+       967
+      ],
+      [
+       407,
+       962
+      ],
+      [
+       408,
+       961
+      ],
+      [
+       407,
+       956
+      ],
+      [
+       396,
+       950
+      ],
+      [
+       387,
+       950
+      ],
+      [
+       378,
+       945
+      ],
+      [
+       373,
+       945
+      ]
+     ],
+     "dilate": 15,
+     "radius": 12,
+     "blur": 31,
+     "exclude": [
+      [
+       316,
+       940,
+       102,
+       17
+      ],
+      [
+       403,
+       940,
+       15,
+       112
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "store/pack_2",
+   "rect": [
+    420,
+    947,
+    249,
+    287
+   ]
+  },
+  {
+   "name": "store/pack_3",
+   "rect": [
+    675,
+    947,
+    252,
+    287
+   ]
+  },
+  {
+   "name": "store/pack_4",
+   "rect": [
+    162,
+    1241,
+    251,
+    291
+   ]
+  },
+  {
+   "name": "store/pack_5",
+   "rect": [
+    420,
+    1241,
+    249,
+    291
+   ]
+  },
+  {
+   "name": "store/pack_6",
+   "rect": [
+    675,
+    1241,
+    252,
+    291
+   ]
+  },
+  {
+   "name": "store/pack_buy",
+   "rect": [
+    187,
+    1169,
+    199,
+    49
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/pack_buy_b",
+   "rect": [
+    187,
+    1470,
+    199,
+    47
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  },
+  {
+   "name": "store/seal",
+   "rect": [
+    318,
+    942,
+    98,
+    106
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      54,
+      2
+     ],
+     [
+      39,
+      3
+     ],
+     [
+      31,
+      7
+     ],
+     [
+      24,
+      8
+     ],
+     [
+      17,
+      16
+     ],
+     [
+      11,
+      19
+     ],
+     [
+      6,
+      26
+     ],
+     [
+      6,
+      42
+     ],
+     [
+      2,
+      54
+     ],
+     [
+      5,
+      62
+     ],
+     [
+      8,
+      64
+     ],
+     [
+      10,
+      68
+     ],
+     [
+      10,
+      78
+     ],
+     [
+      12,
+      83
+     ],
+     [
+      21,
+      89
+     ],
+     [
+      42,
+      95
+     ],
+     [
+      44,
+      97
+     ],
+     [
+      44,
+      99
+     ],
+     [
+      47,
+      101
+     ],
+     [
+      49,
+      101
+     ],
+     [
+      50,
+      98
+     ],
+     [
+      60,
+      97
+     ],
+     [
+      68,
+      90
+     ],
+     [
+      75,
+      89
+     ],
+     [
+      80,
+      84
+     ],
+     [
+      83,
+      84
+     ],
+     [
+      85,
+      78
+     ],
+     [
+      85,
+      73
+     ],
+     [
+      86,
+      72
+     ],
+     [
+      92,
+      72
+     ],
+     [
+      89,
+      71
+     ],
+     [
+      89,
+      67
+     ],
+     [
+      93,
+      66
+     ],
+     [
+      95,
+      60
+     ],
+     [
+      95,
+      52
+     ],
+     [
+      92,
+      46
+     ],
+     [
+      92,
+      41
+     ],
+     [
+      94,
+      39
+     ],
+     [
+      94,
+      32
+     ],
+     [
+      93,
+      28
+     ],
+     [
+      91,
+      28
+     ],
+     [
+      89,
+      25
+     ],
+     [
+      89,
+      20
+     ],
+     [
+      90,
+      19
+     ],
+     [
+      89,
+      14
+     ],
+     [
+      78,
+      8
+     ],
+     [
+      69,
+      8
+     ],
+     [
+      60,
+      3
+     ],
+     [
+      55,
+      3
+     ]
+    ],
+    "feather": 1
+   }
+  }
+ ]
+}

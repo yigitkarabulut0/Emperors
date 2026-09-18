@@ -9,8 +9,11 @@ const FRAMES := {
 	"epic": [["shop/card_frame_epic_l", 0, 0], ["shop/card_frame_epic_r", 150, 0]],
 	"rare": [["shop/card_frame_rare_t", 0, 0], ["shop/card_frame_rare_b", 0, 62]],
 	"uncommon": [["shop/card_frame_uncommon_t", 0, 0], ["shop/card_frame_uncommon_b", 0, 56]],
+	# Not painted: the uncommon card drained to grey (shop.json), so a common
+	# piece's grey velvet is not set in a green card.
+	"common": [["shop/card_frame_common_t", 0, 0], ["shop/card_frame_common_b", 0, 56]],
 }
-const FRAME_FALLBACK := {"common": "uncommon", "mystic": "epic", "special": "legendary"}
+const FRAME_FALLBACK := {"mystic": "epic", "special": "legendary"}
 ## The rarity badge is the same object on every screen, so it is drawn from one
 ## set. The shop reference paints its own -- a hexagon with a diamond finial and
 ## a flaming tail, in pink for epic and red for legendary -- and cutting those
@@ -37,6 +40,20 @@ var _loaded_ms := -100000
 var _busy := false
 var _titles: Dictionary = {}       ## good id -> its live heading on the panel
 var _goods_home := 0.0
+## While the hour's Fresh Wares gives free restocks, the REROLL MARKET button
+## wears its free face (shop/reroll_button_free: the diamond and the price
+## lifted, art/slices/shop.json) and FREE is set centred under its title's words
+## (x 738..889 on shop.png).
+const REROLL_FREE_FACE := "shop/reroll_button_free"
+const REROLL_FACE := "shop/reroll_button"
+const REROLL_FREE_WORD := Rect2(763.5, 590, 100, 30)
+var _reroll_cost_home := Rect2()
+## While a sale (Quartermaster's Sale) has the refill cheaper, the price it had
+## stands after the sale's, smaller and struck through, inside the price plate.
+const WAS_SIZE := 18
+const WAS_GAP := 4.0
+const WAS_INK := Color("#C9BFAF")
+var _refill_was: Label
 
 
 func _ready() -> void:
@@ -61,6 +78,7 @@ func _ready() -> void:
 	for i in _cards.size():
 		var parts: Dictionary = _cards[i]["parts"]
 		parts["buy"].pressed.connect(_buy.bind(i))
+		GuideTargets.register("shop.offer.%d" % i, parts["buy"])
 		# The frame is stitched per tier; the template's single frame image is replaced.
 		parts["frame"].visible = false
 		_cards[i]["frame_pieces"] = []
@@ -73,6 +91,8 @@ func _ready() -> void:
 		_cards[i]["stat"] = stat
 		_cards[i]["home"] = _cards[i]["node"].position
 	_ui["reroll"].pressed.connect(_reroll)
+	var cost: Label = _ui["reroll_cost"]
+	_reroll_cost_home = Rect2(cost.position, cost.size)
 	_goods_home = _ui["diamond_panel"].position.y
 	_fit_page()
 	var dp: Dictionary = _ui["diamond_panel"].get_meta("parts")
@@ -88,6 +108,15 @@ func _ready() -> void:
 		UI.place(t, pair[1])
 		panel.add_child(t)
 		_titles[pair[0]] = t
+	_refill_was = UI.label("", WAS_SIZE, WAS_INK, "body", 600)
+	_refill_was.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var strike := ColorRect.new()
+	strike.name = "strike"
+	strike.color = UI.RED
+	strike.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_refill_was.add_child(strike)
+	_refill_was.visible = false
+	panel.add_child(_refill_was)
 	set_process(true)
 
 
@@ -119,8 +148,10 @@ func refresh() -> void:
 func _process(_dt: float) -> void:
 	if not visible or _shop.is_empty():
 		return
-	var left := int(_shop.get("seconds_left", 0)) - (Time.get_ticks_msec() - _loaded_ms) / 1000
-	if left < 0:
+	var gone := (Time.get_ticks_msec() - _loaded_ms) / 1000
+	var left := int(_shop.get("seconds_left", 0)) - gone
+	# The window turned, or the hour's free restock ran out: ask again.
+	if left < 0 or (int(_shop.get("free_rerolls", 0)) > 0 and int(_shop.get("free_ends_in", 0)) - gone < 0):
 		_load()
 		return
 	_ui["refresh_time"].text = "%02d:%02d" % [left / 60, left % 60]
@@ -140,10 +171,13 @@ func _load() -> void:
 func _paint() -> void:
 	if _shop.is_empty():
 		return
-	_ui["reroll_cost"].text = str(int(_shop.get("reroll_cost", 0)))
-	# The server says whether the reroll can be paid for; the button says so
-	# before the tap instead of after it.
-	_ui["reroll"].modulate = Color.WHITE if bool(_shop.get("can_afford_reroll", true)) else Color(0.55, 0.55, 0.55)
+	_paint_reroll_face()
+	# The server says whether the reroll can be paid for and whether the day's
+	# allowance has any left; the button says so before the tap, not after it.
+	_ui["reroll"].modulate = reroll_look(_shop)
+	# The diamonds figure is its own label over the plate: it dims with the
+	# plate, or a spent reroll still showed its price in full white.
+	_ui["reroll_cost"].modulate = reroll_look(_shop)
 	var offers: Array = _shop.get("offers", [])
 	for i in _cards.size():
 		var c: Dictionary = _cards[i]
@@ -157,6 +191,9 @@ func _paint() -> void:
 		var tier := str(item.get("tier", "common"))
 		_set_frame(c, tier)
 		p["painting"].texture = Art.item(str(item.get("art", "")))
+		# The piece on its rarity's velvet: the soft cut, as the card's picture
+		# has no ring of its own and the card's own ground runs under it.
+		ItemGround.under(p["painting"], tier, SHOP_GROUND, true)
 		p["badge"].texture = Art.tex(BADGE_PREFIX + tier)
 		p["badge"].size = p["badge"].texture.get_size()
 		p["name"].text = str(item.get("name", ""))
@@ -176,7 +213,7 @@ func _paint() -> void:
 	var goods: Array = _store.get("goods", [])
 	for g in goods:
 		var id := str(g.get("id", ""))
-		var buyable := bool(g.get("useful", true)) and bool(g.get("affordable", true))
+		var buyable := Goods.buyable(g)
 		if _titles.has(id):
 			_titles[id].text = str(g.get("title", g.get("name", ""))).to_upper()
 			UI.fit_label(_titles[id], 21, 16)
@@ -185,11 +222,18 @@ func _paint() -> void:
 			UI.fit_label(dp["energy_desc"], 20, 15)
 			dp["energy_amount"].text = UI.grouped(int(g.get("amount", 0)))
 			dp["energy_price"].text = str(int(g.get("diamonds", 0)))
+			_paint_was(dp["energy_price"], Goods.on_sale(g))
 			dp["energy_buy"].modulate = Color.WHITE if buyable else Color(0.5, 0.5, 0.5)
 		elif id == "shield":
 			dp["shield_desc"].text = str(g.get("caption", ""))
 			dp["shield_price"].text = str(int(g.get("diamonds", 0)))
 			dp["shield_buy"].modulate = Color.WHITE if buyable else Color(0.5, 0.5, 0.5)
+
+
+## The card's picture area the velvet glows across: the painting's own item
+## region on the card (shop.json's item crops, 192 x 216 from the card's corner),
+## wider than the drawn picture so the cloth shows round it.
+const SHOP_GROUND := Rect2(5, 22, 192, 208)
 
 
 func _set_frame(c: Dictionary, tier: String) -> void:
@@ -227,17 +271,100 @@ func _buy(i: int) -> void:
 	_busy = false
 
 
+## Whether the market can be rerolled now: "free" (the hour's Fresh Wares
+## gives it for nothing, whatever the purse and the day's allowance), "ok",
+## "poor" (the purse is short) or "spent" (the day's allowance is used,
+## whatever the purse holds). A shop from a server that sends no allowance is
+## never "spent".
+static func reroll_state(shop: Dictionary) -> String:
+	if int(shop.get("free_rerolls", 0)) > 0:
+		return "free"
+	if shop.has("rerolls_left") and int(shop.get("rerolls_left", 0)) <= 0:
+		return "spent"
+	if not bool(shop.get("can_afford_reroll", true)):
+		return "poor"
+	return "ok"
+
+
+## How the REROLL plate and everything on it is drawn: lit while a reroll can
+## be had, and otherwise dimmed the way every plate that cannot be pressed is
+## (StorePrice.DIMMED, UI.plate_face's disabled look).
+static func reroll_look(shop: Dictionary) -> Color:
+	return Color.WHITE if reroll_state(shop) in ["ok", "free"] else StorePrice.DIMMED
+
+
+## The REROLL MARKET button's face: its price over the painted diamond, or --
+## while the hour gives a restock for nothing -- the free face with FREE under
+## its title.
+func _paint_reroll_face() -> void:
+	var b: TextureButton = _ui["reroll"]
+	var cost: Label = _ui["reroll_cost"]
+	var free := reroll_state(_shop) == "free"
+	b.texture_normal = Art.tex(REROLL_FREE_FACE if free else REROLL_FACE)
+	if free:
+		cost.text = "FREE"
+		UI.place(cost, REROLL_FREE_WORD)
+		cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	else:
+		cost.text = str(int(_shop.get("reroll_cost", 0)))
+		UI.place(cost, _reroll_cost_home)
+		cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+
+
+## The refill's price before the sale, small and struck through, after the
+## sale's price in its plate; hidden with no sale on.
+func _paint_was(price: Label, was: int) -> void:
+	_refill_was.visible = was > 0
+	if was <= 0:
+		return
+	var f := price.label_settings.font
+	var w_price := f.get_string_size(price.text, HORIZONTAL_ALIGNMENT_LEFT, -1, price.label_settings.font_size).x
+	_refill_was.text = str(was)
+	var s := _refill_was.label_settings
+	var w_was := s.font.get_string_size(_refill_was.text, HORIZONTAL_ALIGNMENT_LEFT, -1, WAS_SIZE).x
+	UI.place(_refill_was, Rect2(price.position.x + w_price + WAS_GAP, price.position.y, ceilf(w_was) + 1.0, price.size.y))
+	# The rule through the figures' middle: Garamond's figures stand 0.65 of the
+	# size above the baseline, which sits at the line's middle plus a third of it.
+	var strike: ColorRect = _refill_was.get_node("strike")
+	strike.size = Vector2(ceilf(w_was) + 2.0, 2.0)
+	strike.position = Vector2(-1.0, roundf(price.size.y / 2.0 - 1.0))
+
+
+## The day's allowance as the confirm dialog says it: "" when the server sends
+## none.
+static func rerolls_left_line(shop: Dictionary) -> String:
+	if not shop.has("rerolls_left"):
+		return ""
+	var left := int(shop.get("rerolls_left", 0))
+	return "%d of today's %d rerolls left." % [left, int(shop.get("rerolls_per_day", left))]
+
+
 func _reroll() -> void:
 	if _busy or _shop.is_empty():
 		return
 	var cost := int(_shop.get("reroll_cost", 0))
 	var have := int(GameState.player().get("diamonds", 0))
-	if not bool(_shop.get("can_afford_reroll", true)):
+	var state := reroll_state(_shop)
+	# What cannot be done is said and nothing is sent.
+	if state == "spent":
 		await Dialog.ask(self, {"title": "Reroll the market",
-			"body": "New offers cost %d diamonds, and you have %d.\nDiamonds come with every level and with the daily reward." % [cost, have],
+			"body": "You have rerolled the market %d times today, the most a day allows. It can be rerolled again after midnight." % int(_shop.get("rerolls_per_day", 0)),
 			"confirm_text": "OK"})
 		return
-	if not await Dialog.ask(self, {"title": "Reroll the market?", "body": "New offers for %d diamonds. You have %d." % [cost, have], "confirm_text": "Reroll"}):
+	if state == "poor":
+		await Dialog.ask(self, {"title": "Reroll the market",
+			"body": "New offers cost %d diamonds, and you have %d.\n%s" % [cost, have, Goods.WHERE_DIAMONDS],
+			"confirm_text": "OK"})
+		return
+	# The free hour and the bought reroll ask in their own words and are sent
+	# the same way, through the one guard below.
+	var body := "Fresh Wares: new offers for nothing this hour. Your rerolls for today are not touched."
+	if state != "free":
+		body = "New offers for %d diamonds. You have %d." % [cost, have]
+		var left := rerolls_left_line(_shop)
+		if left != "":
+			body += "\n" + left
+	if not await Dialog.ask(self, {"title": "Reroll the market?", "body": body, "confirm_text": "Reroll"}):
 		return
 	_busy = true
 	var res: Api.Response = await GameState.act("/v1/shop/reroll", {})

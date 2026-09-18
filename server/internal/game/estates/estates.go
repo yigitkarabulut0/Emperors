@@ -47,6 +47,10 @@ type Effects struct {
 	OfflineCapSeconds int64
 }
 
+// TitheBarn is the Family upgrade whose levels lengthen the storehouse: 12
+// minutes each (estates.tax.offline_cap_per_tithe_level), 12 hours at its top.
+const TitheBarn = "tithe_barn"
+
 // Derive folds upgrade and holding levels into their effects.
 //
 // Every percentage lands in a bucket and is applied once, so upgrades never
@@ -67,6 +71,9 @@ func Derive(cfg *gameconfig.Bundle, level int64, upgradeLevels, holdingLevels ma
 			lv = int64(u.MaxLevel)
 		}
 		amount := u.PerLevel * lv
+		if u.ID == TitheBarn {
+			titheLevel = int(lv)
+		}
 
 		switch u.Bucket {
 		case gameconfig.BucketCollectIncome:
@@ -77,7 +84,6 @@ func Derive(cfg *gameconfig.Bundle, level int64, upgradeLevels, holdingLevels ma
 			e.Bonuses.Add(economy.BucketEnergyRegen, amount)
 		case gameconfig.BucketTaxIncome:
 			taxIncomeBP += amount
-			titheLevel = int(lv)
 		case gameconfig.BucketMaxEnergyFlat:
 			e.MaxEnergyFlat += amount
 		case gameconfig.BucketShopDiscount:
@@ -142,31 +148,74 @@ func TaxRate(cfg *gameconfig.Bundle, level int64, holdingLevels map[string]int, 
 	return perHour
 }
 
-// TaxState is the stored accrual, mirroring how energy works.
-type TaxState struct {
-	Milli     int64
-	UpdatedAt time.Time
+// Storehouse is estate income waiting to be carried in: what it holds in
+// milli-gold and when that was last settled. Income fills it at the hourly rate
+// up to its capacity, and stops there -- the time past it is lost, which is the
+// reason to come back. Gold in it cannot be stolen; gold carried out of it into
+// the purse can.
+type Storehouse struct {
+	Milli int64
+	At    time.Time
 }
 
-// SettleTax advances accrual to now, clamped by the offline cap.
-func SettleTax(s TaxState, ratePerHour, capSeconds int64, now time.Time) TaxState {
-	if ratePerHour <= 0 {
-		return TaxState{Milli: s.Milli, UpdatedAt: now}
+// StorehouseCap is how much a storehouse holds: the hourly rate for the cap's
+// seconds (8 hours, and 12 minutes more for each Tithe Barn level).
+func StorehouseCap(ratePerHour, capSeconds int64) int64 {
+	if ratePerHour <= 0 || capSeconds <= 0 {
+		return 0
 	}
-	elapsed := int64(now.Sub(s.UpdatedAt).Seconds())
-	if elapsed <= 0 {
-		return s
-	}
-	// The cap is what stops uncollected tax becoming an infinite, unstealable
-	// bank. Time past it is simply lost, which is the pressure to come back.
-	if elapsed > capSeconds {
-		elapsed = capSeconds
-	}
-	return TaxState{Milli: s.Milli + ratePerHour*elapsed/3600, UpdatedAt: now}
+	return ratePerHour * capSeconds / 3600
 }
 
-// Whole returns claimable gold.
-func Whole(s TaxState) int64 { return s.Milli / 1000 }
+// maxFillMs bounds one settlement's elapsed time. Anything longer only matters
+// up to the capacity anyway, and the bound keeps rate x elapsed inside int64.
+const maxFillMs = int64(400 * 24 * 3600 * 1000)
+
+// Fill advances a storehouse to now at a rate, up to its capacity. What is
+// already over the capacity -- a rate that fell since it filled -- is kept, and
+// nothing more is added. The query RefreshStorehouse is the same sum in SQL; the
+// integration tests hold the two together.
+//
+// Both clocks are cut to the microsecond, as Postgres keeps them, and elapsed
+// time is floored to the millisecond, as the query floors it, so the two sums
+// never differ by a milli.
+func Fill(s Storehouse, ratePerHour, capMilli int64, now time.Time) Storehouse {
+	now = now.Truncate(time.Microsecond)
+	s.At = s.At.Truncate(time.Microsecond)
+	elapsed := now.Sub(s.At).Milliseconds()
+	if elapsed <= 0 || ratePerHour <= 0 {
+		return Storehouse{Milli: s.Milli, At: laterOf(s.At, now)}
+	}
+	if elapsed > maxFillMs {
+		elapsed = maxFillMs
+	}
+	milli := s.Milli
+	if milli < capMilli {
+		milli += ratePerHour * elapsed / 3600000
+		if milli > capMilli {
+			milli = capMilli
+		}
+	}
+	return Storehouse{Milli: milli, At: now}
+}
+
+// FullIn is how long a storehouse takes to fill from what it holds, rounded up
+// to the whole second so it never reads zero before it is full: zero when it
+// is, or when nothing fills it.
+func FullIn(milli, ratePerHour, capMilli int64) time.Duration {
+	if ratePerHour <= 0 || milli >= capMilli {
+		return 0
+	}
+	ms := ((capMilli-milli)*3600000 + ratePerHour - 1) / ratePerHour
+	return time.Duration((ms+999)/1000) * time.Second
+}
+
+func laterOf(a, b time.Time) time.Time {
+	if b.After(a) {
+		return b
+	}
+	return a
+}
 
 // ApplyKingdom folds a kingdom's upgrades into a member's effects.
 //

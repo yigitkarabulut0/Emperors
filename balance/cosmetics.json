@@ -1,0 +1,704 @@
+{
+  "_comment": "Cosmetics. kind is frame | title | name_color | crest. dupe_diamonds is paid when a cosmetic is granted to someone who already owns it; shop_diamonds, when present, is its price in the Splendour shop. A name colour must reach 4.5:1 contrast on both the card plate and the navy page.",
+  "items": [
+    {
+      "id": "crest_lion",
+      "kind": "crest",
+      "name": "Lion Rampant",
+      "art": "icons/crest_lion",
+      "dupe_diamonds": 0,
+      "default_owned": true
+    },
+    {
+      "id": "crest_wolf",
+      "kind": "crest",
+      "name": "Silver Wolf",
+      "art": "icons/crest_wolf",
+      "dupe_diamonds": 0,
+      "default_owned": true
+    },
+    {
+      "id": "crest_stag",
+      "kind": "crest",
+      "name": "Forest Stag",
+      "art": "icons/crest_stag",
+      "dupe_diamonds": 0,
+      "default_owned": true
+    },
+    {
+      "id": "crest_eagle",
+      "kind": "crest",
+      "name": "Black Eagle",
+      "art": "icons/crest_eagle",
+      "dupe_diamonds": 0,
+      "default_owned": true
+    },
+    {
+      "id": "crest_bear",
+      "kind": "crest",
+      "name": "Brown Bear",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 150,
+      "art": "icons/crest_bear"
+    },
+    {
+      "id": "crest_dragon",
+      "kind": "crest",
+      "name": "Red Dragon",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 150,
+      "art": "icons/crest_dragon"
+    },
+    {
+      "id": "crest_boar",
+      "kind": "crest",
+      "name": "Black Boar",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 150,
+      "art": "icons/crest_boar"
+    },
+    {
+      "id": "crest_falcon",
+      "kind": "crest",
+      "name": "White Falcon",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 150,
+      "art": "icons/crest_falcon"
+    },
+    {
+      "id": "crest_tower",
+      "kind": "crest",
+      "name": "Stone Tower",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 150,
+      "art": "icons/crest_tower"
+    },
+    {
+      "id": "crest_rose",
+      "kind": "crest",
+      "name": "Red Rose",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 150,
+      "art": "icons/crest_rose"
+    },
+    {
+      "id": "crest_sun",
+      "kind": "crest",
+      "name": "Golden Sun",
+      "dupe_diamonds": 25,
+      "source_hint": "Victory Road, level 60",
+      "art": "icons/crest_sun"
+    },
+    {
+      "id": "crest_constancy",
+      "kind": "crest",
+      "name": "Crown of Constancy",
+      "dupe_diamonds": 25,
+      "source_hint": "The daily rewards, day 28",
+      "art": "icons/crest_constancy"
+    },
+    {
+      "id": "crest_raven",
+      "kind": "crest",
+      "name": "Grey Raven",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 150,
+      "art": "icons/crest_raven"
+    },
+    {
+      "id": "frame_oak",
+      "kind": "frame",
+      "name": "Oak Wreath",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 120,
+      "art": "frames/oak"
+    },
+    {
+      "id": "frame_laurel",
+      "kind": "frame",
+      "name": "Laurel",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 250,
+      "art": "frames/laurel"
+    },
+    {
+      "id": "frame_laurel_gilded",
+      "kind": "frame",
+      "name": "Gilded Laurel",
+      "dupe_diamonds": 25,
+      "source_hint": "Royal Favour V",
+      "art": "frames/laurel_gilded"
+    },
+    {
+      "id": "frame_founder",
+      "kind": "frame",
+      "name": "Founder's Frame",
+      "dupe_diamonds": 25,
+      "source_hint": "The Founder's Crate",
+      "art": "frames/founder"
+    },
+    {
+      "id": "frame_patron",
+      "kind": "frame",
+      "name": "Patron's Frame",
+      "dupe_diamonds": 25,
+      "source_hint": "Crown Patronage",
+      "art": "frames/patron"
+    },
+    {
+      "id": "frame_aureole",
+      "kind": "frame",
+      "name": "Aureole",
+      "dupe_diamonds": 25,
+      "source_hint": "Royal Favour X",
+      "art": "frames/aureole"
+    },
+    {
+      "id": "frame_loyal_vassal",
+      "kind": "frame",
+      "name": "Loyal Vassal",
+      "dupe_diamonds": 25,
+      "source_hint": "The daily rewards, day 14",
+      "art": "frames/loyal_vassal"
+    },
+    {
+      "id": "frame_rising_lord",
+      "kind": "frame",
+      "name": "Rising Lord",
+      "dupe_diamonds": 25,
+      "source_hint": "Victory Road, level 20",
+      "art": "frames/rising_lord"
+    },
+    {
+      "id": "frame_heir",
+      "kind": "frame",
+      "name": "Heir",
+      "dupe_diamonds": 25,
+      "source_hint": "The steward's guide, finished",
+      "art": "frames/heir"
+    },
+    {
+      "id": "title_founder",
+      "kind": "title",
+      "name": "The Founder",
+      "dupe_diamonds": 25,
+      "source_hint": "The Founder's Crate",
+      "text": "the Founder"
+    },
+    {
+      "id": "title_generous",
+      "kind": "title",
+      "name": "The Generous",
+      "dupe_diamonds": 25,
+      "source_hint": "Royal Largesse",
+      "text": "the Generous"
+    },
+    {
+      "id": "title_steadfast",
+      "kind": "title",
+      "name": "The Steadfast",
+      "dupe_diamonds": 25,
+      "source_hint": "The daily rewards, day 7",
+      "text": "the Steadfast"
+    },
+    {
+      "id": "title_wayfarer",
+      "kind": "title",
+      "name": "The Wayfarer",
+      "dupe_diamonds": 25,
+      "source_hint": "Victory Road, level 40",
+      "text": "the Wayfarer"
+    },
+    {
+      "id": "color_patron",
+      "kind": "name_color",
+      "name": "Patron's Gold",
+      "dupe_diamonds": 25,
+      "source_hint": "Crown Patronage",
+      "color": "#E8C46A"
+    },
+    {
+      "id": "color_emerald",
+      "kind": "name_color",
+      "name": "Emerald",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 120,
+      "color": "#6FD28A"
+    },
+    {
+      "id": "color_rose",
+      "kind": "name_color",
+      "name": "Rose",
+      "dupe_diamonds": 25,
+      "source_hint": "The Splendour shop",
+      "shop_diamonds": 120,
+      "color": "#F08A8E"
+    },
+    {
+      "id": "color_azure",
+      "kind": "name_color",
+      "name": "Azure",
+      "dupe_diamonds": 25,
+      "source_hint": "Royal Favour III",
+      "color": "#8FB8FF"
+    },
+    {
+      "id": "frame_event_harvest",
+      "kind": "frame",
+      "name": "Harvest Festival",
+      "dupe_diamonds": 25,
+      "source_hint": "The Harvest Festival's points",
+      "art": "frames/event_harvest"
+    },
+    {
+      "id": "frame_event_blood_moon",
+      "kind": "frame",
+      "name": "Blood Moon",
+      "dupe_diamonds": 25,
+      "source_hint": "The Blood Moon's points",
+      "art": "frames/event_blood_moon"
+    },
+    {
+      "id": "frame_event_caravan",
+      "kind": "frame",
+      "name": "Merchant Caravan",
+      "dupe_diamonds": 25,
+      "source_hint": "The Merchant Caravan's points",
+      "art": "frames/event_caravan"
+    },
+    {
+      "id": "title_bountiful",
+      "kind": "title",
+      "name": "The Bountiful",
+      "dupe_diamonds": 25,
+      "source_hint": "First at a Harvest Festival",
+      "text": "the Bountiful"
+    },
+    {
+      "id": "title_crimson",
+      "kind": "title",
+      "name": "The Crimson",
+      "dupe_diamonds": 25,
+      "source_hint": "First under a Blood Moon",
+      "text": "the Crimson"
+    },
+    {
+      "id": "title_caravaneer",
+      "kind": "title",
+      "name": "The Caravaneer",
+      "dupe_diamonds": 25,
+      "source_hint": "First at a Merchant Caravan",
+      "text": "the Caravaneer"
+    },
+    {
+      "id": "color_charter",
+      "kind": "name_color",
+      "name": "Charter Copper",
+      "dupe_diamonds": 25,
+      "source_hint": "The Royal Charter, tier 10",
+      "color": "#F0A868"
+    },
+    {
+      "id": "title_chartered",
+      "kind": "title",
+      "name": "The Chartered",
+      "dupe_diamonds": 25,
+      "source_hint": "The Royal Charter, tier 25",
+      "text": "the Chartered"
+    },
+    {
+      "id": "frame_charter",
+      "kind": "frame",
+      "name": "Royal Charter",
+      "dupe_diamonds": 25,
+      "source_hint": "The Royal Charter, tier 50",
+      "art": "frames/charter"
+    },
+    {
+      "id": "frame_noble_emperor",
+      "kind": "frame",
+      "name": "Emperor",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, 1st",
+      "art": "frames/noble_emperor"
+    },
+    {
+      "id": "title_noble_emperor",
+      "kind": "title",
+      "name": "Emperor",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, 1st",
+      "text": "Emperor"
+    },
+    {
+      "id": "frame_noble_prince",
+      "kind": "frame",
+      "name": "Prince",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, 2nd to 5th",
+      "art": "frames/noble_prince"
+    },
+    {
+      "id": "title_noble_prince",
+      "kind": "title",
+      "name": "Prince",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, 2nd to 5th",
+      "text": "Prince"
+    },
+    {
+      "id": "frame_noble_duke",
+      "kind": "frame",
+      "name": "Duke",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, 6th to 25th",
+      "art": "frames/noble_duke"
+    },
+    {
+      "id": "title_noble_duke",
+      "kind": "title",
+      "name": "Duke",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, 6th to 25th",
+      "text": "Duke"
+    },
+    {
+      "id": "frame_noble_count",
+      "kind": "frame",
+      "name": "Count",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, top 5%",
+      "art": "frames/noble_count"
+    },
+    {
+      "id": "title_noble_count",
+      "kind": "title",
+      "name": "Count",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, top 5%",
+      "text": "Count"
+    },
+    {
+      "id": "frame_noble_baron",
+      "kind": "frame",
+      "name": "Baron",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, top 20%",
+      "art": "frames/noble_baron"
+    },
+    {
+      "id": "title_noble_baron",
+      "kind": "title",
+      "name": "Baron",
+      "dupe_diamonds": 25,
+      "source_hint": "The season's renown, top 20%",
+      "text": "Baron"
+    },
+    {
+      "id": "frame_noble_knight",
+      "kind": "frame",
+      "name": "Knight",
+      "dupe_diamonds": 25,
+      "source_hint": "The Royal Charter, tier 25",
+      "art": "frames/noble_knight"
+    },
+    {
+      "id": "title_noble_knight",
+      "kind": "title",
+      "name": "Knight",
+      "dupe_diamonds": 25,
+      "source_hint": "The Royal Charter, tier 25",
+      "text": "Knight"
+    },
+    {
+      "id": "title_ach_honest_labour",
+      "kind": "title",
+      "name": "The Tireless",
+      "dupe_diamonds": 25,
+      "source_hint": "Honest Labour, fourth tier",
+      "text": "the Tireless"
+    },
+    {
+      "id": "title_ach_spent_in_service",
+      "kind": "title",
+      "name": "The Unwearied",
+      "dupe_diamonds": 25,
+      "source_hint": "Spent in Service, fourth tier",
+      "text": "the Unwearied"
+    },
+    {
+      "id": "title_ach_master_of_trades",
+      "kind": "title",
+      "name": "The Master",
+      "dupe_diamonds": 25,
+      "source_hint": "Master of Trades, fourth tier",
+      "text": "the Master"
+    },
+    {
+      "id": "title_ach_raider",
+      "kind": "title",
+      "name": "The Reaver",
+      "dupe_diamonds": 25,
+      "source_hint": "Raider, fourth tier",
+      "text": "the Reaver"
+    },
+    {
+      "id": "title_ach_iron_wall",
+      "kind": "title",
+      "name": "The Unbroken",
+      "dupe_diamonds": 25,
+      "source_hint": "Iron Wall, fourth tier",
+      "text": "the Unbroken"
+    },
+    {
+      "id": "title_ach_paid_in_kind",
+      "kind": "title",
+      "name": "The Avenger",
+      "dupe_diamonds": 25,
+      "source_hint": "Paid in Kind, fourth tier",
+      "text": "the Avenger"
+    },
+    {
+      "id": "title_ach_plunderer",
+      "kind": "title",
+      "name": "The Plunderer",
+      "dupe_diamonds": 25,
+      "source_hint": "Plunderer, fourth tier",
+      "text": "the Plunderer"
+    },
+    {
+      "id": "title_ach_faithful_vassal",
+      "kind": "title",
+      "name": "The Loyal",
+      "dupe_diamonds": 25,
+      "source_hint": "Faithful Vassal, fourth tier",
+      "text": "the Loyal"
+    },
+    {
+      "id": "title_ach_recruiter",
+      "kind": "title",
+      "name": "The Captain",
+      "dupe_diamonds": 25,
+      "source_hint": "Recruiter, fourth tier",
+      "text": "the Captain"
+    },
+    {
+      "id": "title_ach_drill_master",
+      "kind": "title",
+      "name": "The Drillmaster",
+      "dupe_diamonds": 25,
+      "source_hint": "Drill Master, fourth tier",
+      "text": "the Drillmaster"
+    },
+    {
+      "id": "title_ach_rising_star",
+      "kind": "title",
+      "name": "The Ascendant",
+      "dupe_diamonds": 25,
+      "source_hint": "Rising Star, fourth tier",
+      "text": "the Ascendant"
+    },
+    {
+      "id": "title_ach_might_of_arms",
+      "kind": "title",
+      "name": "The Mighty",
+      "dupe_diamonds": 25,
+      "source_hint": "Might of Arms, fourth tier",
+      "text": "the Mighty"
+    },
+    {
+      "id": "title_ach_builder",
+      "kind": "title",
+      "name": "The Builder",
+      "dupe_diamonds": 25,
+      "source_hint": "Builder of Estates, fourth tier",
+      "text": "the Builder"
+    },
+    {
+      "id": "title_ach_lord_of_the_land",
+      "kind": "title",
+      "name": "The Landed",
+      "dupe_diamonds": 25,
+      "source_hint": "Lord of the Land, fourth tier",
+      "text": "the Landed"
+    },
+    {
+      "id": "title_ach_duty_bound",
+      "kind": "title",
+      "name": "The Dutiful",
+      "dupe_diamonds": 25,
+      "source_hint": "Duty Bound, fourth tier",
+      "text": "the Dutiful"
+    },
+    {
+      "id": "title_ach_week_by_week",
+      "kind": "title",
+      "name": "The Diligent",
+      "dupe_diamonds": 25,
+      "source_hint": "Week by Week, fourth tier",
+      "text": "the Diligent"
+    },
+    {
+      "id": "title_ach_faithful_attendance",
+      "kind": "title",
+      "name": "The Constant",
+      "dupe_diamonds": 25,
+      "source_hint": "Faithful Attendance, fourth tier",
+      "text": "the Constant"
+    },
+    {
+      "id": "title_ach_well_read",
+      "kind": "title",
+      "name": "The Well-Read",
+      "dupe_diamonds": 25,
+      "source_hint": "Letters from the Crown, fourth tier",
+      "text": "the Well-Read"
+    },
+    {
+      "id": "title_ach_golden_touch",
+      "kind": "title",
+      "name": "The Golden",
+      "dupe_diamonds": 25,
+      "source_hint": "Golden Touch, fourth tier",
+      "text": "the Golden"
+    },
+    {
+      "id": "title_ach_tollkeeper",
+      "kind": "title",
+      "name": "The Tollkeeper",
+      "dupe_diamonds": 25,
+      "source_hint": "Tollkeeper, fourth tier",
+      "text": "the Tollkeeper"
+    },
+    {
+      "id": "title_ach_outfitted",
+      "kind": "title",
+      "name": "The Outfitted",
+      "dupe_diamonds": 25,
+      "source_hint": "The Armourer's Friend, fourth tier",
+      "text": "the Outfitted"
+    },
+    {
+      "id": "title_ach_prosperous",
+      "kind": "title",
+      "name": "The Prosperous",
+      "dupe_diamonds": 25,
+      "source_hint": "Merchant, fourth tier",
+      "text": "the Prosperous"
+    },
+    {
+      "id": "title_ach_trader",
+      "kind": "title",
+      "name": "The Trader",
+      "dupe_diamonds": 25,
+      "source_hint": "Trader, fourth tier",
+      "text": "the Trader"
+    },
+    {
+      "id": "title_ach_curator",
+      "kind": "title",
+      "name": "The Curator",
+      "dupe_diamonds": 25,
+      "source_hint": "Curator, fourth tier",
+      "text": "the Curator"
+    },
+    {
+      "id": "title_ach_champion",
+      "kind": "title",
+      "name": "The Champion",
+      "dupe_diamonds": 25,
+      "source_hint": "Champion, fourth tier",
+      "text": "the Champion"
+    },
+    {
+      "id": "title_ach_headhunter",
+      "kind": "title",
+      "name": "The Headhunter",
+      "dupe_diamonds": 25,
+      "source_hint": "Headhunter, fourth tier",
+      "text": "the Headhunter"
+    },
+    {
+      "id": "title_ach_open_handed",
+      "kind": "title",
+      "name": "The Generous",
+      "dupe_diamonds": 25,
+      "source_hint": "Open-Handed, fourth tier",
+      "text": "the Generous"
+    },
+    {
+      "id": "title_ach_shoulder_to_shoulder",
+      "kind": "title",
+      "name": "The Stalwart",
+      "dupe_diamonds": 25,
+      "source_hint": "Shoulder to Shoulder, fourth tier",
+      "text": "the Stalwart"
+    },
+    {
+      "id": "title_slayer",
+      "kind": "title",
+      "name": "Slayer",
+      "dupe_diamonds": 25,
+      "source_hint": "Most damage to a kingdom boss",
+      "text": "the Slayer"
+    },
+    {
+      "id": "title_warlord",
+      "kind": "title",
+      "name": "Warlord of the Week",
+      "dupe_diamonds": 25,
+      "source_hint": "Most points in a Kingdom War",
+      "text": "the Warlord"
+    },
+    {
+      "id": "frame_arena_platinum",
+      "kind": "frame",
+      "name": "Platinum Lists",
+      "dupe_diamonds": 25,
+      "source_hint": "Hold the Platinum league",
+      "art": "frames/arena_platinum"
+    },
+    {
+      "id": "frame_arena_sapphire",
+      "kind": "frame",
+      "name": "Sapphire Lists",
+      "dupe_diamonds": 25,
+      "source_hint": "Hold the Sapphire league",
+      "art": "frames/arena_sapphire"
+    },
+    {
+      "id": "frame_imperial",
+      "kind": "frame",
+      "name": "Imperial",
+      "dupe_diamonds": 25,
+      "source_hint": "Emperor of the Week",
+      "art": "frames/imperial"
+    },
+    {
+      "id": "title_crowned_emperor",
+      "kind": "title",
+      "name": "Crowned Emperor",
+      "dupe_diamonds": 25,
+      "source_hint": "Emperor of the Week",
+      "text": "the Crowned"
+    },
+    {
+      "id": "title_imperial_court",
+      "kind": "title",
+      "name": "Imperial Court",
+      "dupe_diamonds": 25,
+      "source_hint": "The Emperor's kingdom, for the reign",
+      "text": "the Imperial"
+    }
+  ]
+}

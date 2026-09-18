@@ -34,6 +34,18 @@ type Service struct {
 	// process. Optional: nil makes the live endpoints answer an empty board
 	// rather than fail, which is what the tests use.
 	Presence LiveSet
+
+	// Billing is the game service's hands on a purchase (see billing.go).
+	Billing Billing
+
+	// Dev is the game service's test hands (dev.go): given only by a server
+	// that is not production, nil there.
+	Dev DevTools
+
+	// Game is the game service, for the live-ops desk (liveops.go): the rules
+	// of the hour, the festival and the season are the game's own. Handed the
+	// live balance on every call. Nil makes the desk answer ErrNoGame.
+	Game *service.Deps
 }
 
 // LiveSet is the slice of the presence registry the admin surface reads. An

@@ -169,9 +169,9 @@ func _short_replay() -> Dictionary:
 	return r
 
 
-## Text and bars are placed by hand here, not by a layout file, so nothing
-## measures them but this. Both of the overlaps it found were real: the might
-## line sat on the health bar, and BATTLE sat on ROUND 1.
+## Nothing sits on anything else. Both of the overlaps this found on the old
+## screen were real: the might line sat on the health bar, and BATTLE sat on
+## ROUND 1.
 func _nothing_sits_on_anything_else() -> void:
 	for i in _boxes.size():
 		for j in range(i + 1, _boxes.size()):
@@ -179,11 +179,18 @@ func _nothing_sits_on_anything_else() -> void:
 			var b: Array = _boxes[j]
 			if (a[1] as Rect2).intersects(b[1] as Rect2):
 				_fail("%s: \"%s\" overlaps \"%s\"" % [_tag, a[0], b[0]])
-	# And no text on a health bar, which is a texture and so not in the list above.
+	# And no text on a health bar but its own HP figures, which are set in it.
 	for box in _boxes:
 		for bar in _bars:
-			if (box[1] as Rect2).intersects(bar as Rect2):
+			if not bool(box[2]) and (box[1] as Rect2).intersects(bar as Rect2):
 				_fail("%s: \"%s\" sits on a health bar" % [_tag, box[0]])
+	if _bars.size() < 4:
+		_fail("%s: %d HP fills drawn, want a fill and a ghost a side" % [_tag, _bars.size()])
+
+
+## A side's HP figures ("4,212 / 4,364"), which are set in its bar.
+static func _is_hp(l: Label) -> bool:
+	return l.text.contains(" / ")
 
 
 func _walk(n: Node) -> void:
@@ -192,15 +199,15 @@ func _walk(n: Node) -> void:
 		# Only the fixed furniture: floating numbers are meant to cross things.
 		if (n as Control).get_parent().name != "floaters":
 			_boxes.append([(n as Label).text.substr(0, 18),
-				Rect2((n as Control).global_position, (n as Control).size)])
+				Rect2((n as Control).global_position, (n as Control).size), _is_hp(n as Label)])
 		var r := Rect2(n.global_position, (n as Control).size)
 		if r.size.x > 0 and not _screen_rect.intersects(r):
 			_fail("%s: \"%s\" is entirely off the screen at %s"
 				% [_tag, (n as Label).text.substr(0, 20), str(r)])
-	if n is TextureRect and (n as TextureRect).texture != null \
-			and (n as TextureRect).texture.resource_path.contains("xp_track"):
-		_bars.append(Rect2((n as Control).global_position, (n as Control).size))
-	if n is Button:
+	# The HP channels: only each side's own HP figures belong on them.
+	if n is Control and (str(n.name).begins_with("Fill_") or str(n.name).begins_with("Ghost_")):
+		_bars.append(Rect2((n as Control).global_position, (n as Control).get_meta("full", (n as Control).size)))
+	if n is BaseButton:
 		_buttons += 1
 		var br := Rect2((n as Control).global_position, (n as Control).size)
 		if not _screen_rect.encloses(br):

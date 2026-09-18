@@ -1,0 +1,327 @@
+{
+ "screen": "expedition",
+ "source": "expedition.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0b1620",
+ "stretch": [
+  [
+   1483,
+   10
+  ]
+ ],
+ "notes": [
+  "THE HUNT: the roads a soldier is sent down (client/scenes/pages/hunt_page.gd).",
+  "Every rect is measured off expedition.png. The four cards are ONE template, 410x512, standing at (55,441) (476,441) (55,967) (476,967) -- the painting's own grid, pitch 421 across and 526 down. The page's own copy of them is erased (art/slices/expedition.json), so what is drawn is the template and nothing shows through it.",
+  "The chosen road wears the painting's glow as its own part, 'lit', laid over the plain card at (-11,0): the glow reaches exactly the 11px gutter, so a lit card never touches its neighbour.",
+  "Text 'size' is cap-height x 1.4 (cap recorded too), as every layout here records it.",
+  "The one band that may stretch is the ten rows of bare ground between the cards' feet (1479) and the gold rule above the buttons (1502): on a taller phone the cards stay where the painting stands them, the rule keeps its place over SEND and CLOSE, and only the dark between them grows. The rule itself must never be in the band -- stretched, its thin gold ran into streaks down the whole page."
+ ],
+ "fonts": {
+  "title": "Cinzel",
+  "body": "transitional serif (Crimson Pro / EB Garamond class)"
+ },
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "expedition/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "soldier_face",
+   "kind": "image",
+   "rect": [
+    66,
+    165,
+    208,
+    202
+   ],
+   "note": "The soldier being sent, drawn under the frame and showing through its window."
+  },
+  {
+   "id": "soldier_frame",
+   "kind": "image",
+   "asset": "expedition/soldier_frame",
+   "rect": [
+    60,
+    159,
+    220,
+    261
+   ]
+  },
+  {
+   "id": "soldier_name",
+   "kind": "text",
+   "rect": [
+    70,
+    372,
+    200,
+    38
+   ],
+   "font": "body",
+   "size": 24,
+   "cap": 17,
+   "weight": 600,
+   "color": "#EDE6D6",
+   "align": "center",
+   "valign": "center",
+   "sample": "Mercenary"
+  },
+  {
+   "id": "soldier_badge",
+   "kind": "image",
+   "asset": "expedition/soldier_badge",
+   "rect": [
+    295,
+    350,
+    66,
+    70
+   ]
+  },
+  {
+   "id": "soldier_tier",
+   "kind": "text",
+   "rect": [
+    295,
+    350,
+    66,
+    70
+   ],
+   "font": "title",
+   "size": 30,
+   "cap": 21,
+   "weight": 700,
+   "color": "#EDD9A3",
+   "align": "center",
+   "valign": "center",
+   "sample": "III"
+  },
+  {
+   "id": "walked",
+   "kind": "text",
+   "rect": [
+    380,
+    372,
+    500,
+    38
+   ],
+   "font": "body",
+   "size": 23,
+   "cap": 16,
+   "weight": 500,
+   "color": "#C9D2DA",
+   "align": "left",
+   "valign": "center",
+   "sample": "0 of 2 roads walked \u00b7 one more at level 40"
+  },
+  {
+   "id": "card",
+   "kind": "template",
+   "rect": [
+    55,
+    441,
+    410,
+    512
+   ],
+   "note": "One road. Instances at (55,441) (476,441) (55,967) (476,967). The parts are listed in the order they are drawn: the card's own picture is the ground, the glow goes over it when the road is chosen, then the field's scene over the card's, then the words on the plates the painting left empty.",
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "expedition/card",
+     "rect": [
+      0,
+      0,
+      410,
+      512
+     ]
+    },
+    {
+     "id": "lit",
+     "kind": "image",
+     "asset": "expedition/card_lit",
+     "rect": [
+      -11,
+      0,
+      432,
+      525
+     ],
+     "note": "The painting's selection glow, shown only on the chosen road. It carries the whole card, so the plain one under it is covered."
+    },
+    {
+     "id": "scene",
+     "kind": "image",
+     "rect": [
+      7,
+      8,
+      395,
+      246
+     ],
+     "note": "The card's scene window, measured to its frame: the field's own painting fills it."
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      43,
+      254,
+      322,
+      49
+     ],
+     "font": "title",
+     "size": 27,
+     "cap": 19,
+     "weight": 700,
+     "color": "#EDD9A3",
+     "align": "center",
+     "valign": "center",
+     "sample": "THE KING'S WOOD",
+     "uppercase": true,
+     "note": "On the painting's empty name plate (23,254,362,49), inset 20 each side so a long name never touches its gold."
+    },
+    {
+     "id": "time",
+     "kind": "text",
+     "rect": [
+      135,
+      312,
+      181,
+      47
+     ],
+     "font": "body",
+     "size": 25,
+     "cap": 18,
+     "weight": 600,
+     "color": "#EDE6D6",
+     "align": "center",
+     "valign": "center",
+     "sample": "2h 00m",
+     "note": "The plate beside the hourglass (125,312,201,47)."
+    },
+    {
+     "id": "gold",
+     "kind": "text",
+     "rect": [
+      25,
+      460,
+      105,
+      34
+     ],
+     "font": "body",
+     "size": 20,
+     "cap": 14,
+     "weight": 600,
+     "color": "#EDD9A3",
+     "align": "center",
+     "valign": "center",
+     "sample": "39 - 68"
+    },
+    {
+     "id": "xp",
+     "kind": "text",
+     "rect": [
+      151,
+      460,
+      103,
+      34
+     ],
+     "font": "body",
+     "size": 20,
+     "cap": 14,
+     "weight": 600,
+     "color": "#EDE6D6",
+     "align": "center",
+     "valign": "center",
+     "sample": "3 - 3"
+    },
+    {
+     "id": "gear",
+     "kind": "text",
+     "rect": [
+      276,
+      460,
+      104,
+      34
+     ],
+     "font": "body",
+     "size": 20,
+     "cap": 14,
+     "weight": 600,
+     "color": "#C9D2DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "3 in 100"
+    },
+    {
+     "id": "lock",
+     "kind": "image",
+     "asset": "expedition/lock",
+     "rect": [
+      323,
+      9,
+      84,
+      110
+     ],
+     "note": "The padlock the painting hangs on the corner of a card -- it measured on the fourth, and sits at the same corner of every one. It is the HUNT's own lock, not a road's: balance/hunt.json gates no field, but the hunt itself opens at level 8 and the Army's HUNT stands on every soldier from the first, so under that level the server refuses the send. Then every card wears it and the card is dimmed."
+    },
+    {
+     "id": "hit",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      410,
+      512
+     ],
+     "action": "choose"
+    }
+   ]
+  },
+  {
+   "id": "send",
+   "kind": "button",
+   "asset": "expedition/send",
+   "rect": [
+    78,
+    1516,
+    375,
+    95
+   ],
+   "action": "send",
+   "paint_rect": [
+    78,
+    1520,
+    375,
+    88
+   ],
+   "keep_texture_size": true
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "expedition/close",
+   "rect": [
+    488,
+    1516,
+    375,
+    95
+   ],
+   "action": "close",
+   "paint_rect": [
+    488,
+    1520,
+    375,
+    88
+   ],
+   "keep_texture_size": true
+  }
+ ]
+}

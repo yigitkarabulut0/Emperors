@@ -1,0 +1,1394 @@
+{
+ "source": "collect_events.png",
+ "notes": [
+  "collect_events.png is the Collect tab as Wave 3 paints it: the event band, THIS WEEK'S QUESTS and the week's chest bar, and the Golden Hour's wheel in the header.",
+  "Its content column runs x 156..928; collect.png's, which the tab is built on, x 166..927. Everything cut from the column is drawn down uniformly by 762/773 (0.98577) so it stands on the same edges as the job rows. The wheel and its plate sit in the header, which is at the same scale in both paintings, and are not scaled."
+ ],
+ "crops": [
+  {
+   "name": "collect/event_band",
+   "rect": [
+    156,
+    345,
+    773,
+    149
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   },
+   "scale": [
+    762,
+    147
+   ],
+   "note": "The Collect tab's event band: the harvest-market scene, the empty name plate (source x 525..714, y 403..460 inside its rim), the hourglass, the empty time plate (x 769..872, y 430..460) and the gold chevron (x 885..912, y 393..449), in its double frame (outer rim x 157..928, y 345..492, its corners cut 12 on the diagonal, at the frame line's outer edge; the mask keeps what is inside them). collect_events.png's content runs x 156..928; collect.png's, which the tab is built on, x 166..927, so the band is drawn down uniformly to 762 wide (0.9858) to stand on the same edges as the quests panel and the job rows. Drawn down, never up. Both plates are painted empty: nothing to erase."
+  },
+  {
+   "name": "collect/week_panel",
+   "rect": [
+    156,
+    505,
+    773,
+    296
+   ],
+   "scale": [
+    762,
+    292
+   ],
+   "inpaint": [
+    {
+     "text": [
+      176,
+      513,
+      308,
+      42
+     ],
+     "d": 10,
+     "dilate": 6
+    },
+    {
+     "text": [
+      847,
+      519,
+      58,
+      32
+     ],
+     "d": 16,
+     "dilate": 4
+    },
+    {
+     "text": [
+      240,
+      570,
+      98,
+      92
+     ],
+     "d": 14,
+     "dilate": 4
+    },
+    {
+     "text": [
+      488,
+      571,
+      100,
+      88
+     ],
+     "d": 12,
+     "dilate": 6
+    },
+    {
+     "text": [
+      738,
+      570,
+      98,
+      92
+     ],
+     "d": 14,
+     "dilate": 4
+    }
+   ],
+   "note": "The quests panel of the pager (TODAY'S QUESTS and THIS WEEK'S QUESTS share it): outer rim x 156..928, y 505..800, and its three painted tiles (x 171..410, 419..657, 666..909; y 563..787) with their empty plates -- name x 188..393 y 665..698, progress x 189..392 y 705..724, reward x 210..371 y 736..775 on the first. The title (ink x 180..475, caps y 523..542) is lifted by its ink and set live; so are the page dots (x 853..898, y 526..544), drawn from their own crops. The three icons (scroll x 251..326, bolt 515..562 with its glow, swords 748..825; y 578..656) are lifted by their ink, glow and shadow, the tile's own grain left round them: each tile wears its task's icon, drawn over the place."
+  },
+  {
+   "name": "collect/week_tile",
+   "rect": [
+    171,
+    563,
+    240,
+    225
+   ],
+   "scale": [
+    237,
+    222
+   ],
+   "inpaint": [
+    {
+     "text": [
+      240,
+      570,
+      98,
+      92
+     ],
+     "d": 14,
+     "dilate": 4
+    }
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 10
+   },
+   "note": "The first tile alone, its icon lifted as in the panel, for the weekly page's grid of six. The chamfer cuts its corners where the panel's ground shows past the painted bevel."
+  },
+  {
+   "name": "collect/quest_plate",
+   "rect": [
+    188,
+    704,
+    206,
+    22
+   ],
+   "scale": [
+    203,
+    22
+   ],
+   "note": "The first tile's empty progress plate (x 188..393, y 704..725), drawn under a tile's fill so a tile's bar stands on its own plate wherever the tile is drawn: the panel paints it once, the weekly page's tiles again, the same pixels in the same place."
+  },
+  {
+   "name": "icons/quest_scroll_lg",
+   "rect": [
+    247,
+    574,
+    84,
+    87
+   ],
+   "mode": "darkkey",
+   "bg": [
+    7,
+    24,
+    36
+   ],
+   "scale": [
+    83,
+    86
+   ],
+   "note": "The scroll as the weekly tile paints it (ink x 251..326, y 578..656), on the tile's navy."
+  },
+  {
+   "name": "icons/quest_bolt_lg",
+   "rect": [
+    500,
+    571,
+    78,
+    92
+   ],
+   "mode": "darkkey",
+   "bg": [
+    7,
+    24,
+    36
+   ],
+   "scale": [
+    77,
+    91
+   ],
+   "note": "The bolt (ink x 515..562, y 580..654) with its glow."
+  },
+  {
+   "name": "icons/quest_swords_lg",
+   "rect": [
+    744,
+    574,
+    86,
+    86
+   ],
+   "mode": "darkkey",
+   "bg": [
+    7,
+    24,
+    36
+   ],
+   "scale": [
+    85,
+    85
+   ],
+   "note": "The crossed swords (ink x 748..825, y 578..655)."
+  },
+  {
+   "name": "collect/page_dot_on",
+   "rect": [
+    851,
+    524,
+    23,
+    23
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1.5,
+     1.5,
+     21.5,
+     21.5
+    ]
+   },
+   "scale": [
+    23,
+    23
+   ],
+   "note": "The lit page dot (ink x 853..871, y 526..544)."
+  },
+  {
+   "name": "collect/page_dot_off",
+   "rect": [
+    878,
+    524,
+    23,
+    23
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1.5,
+     1.5,
+     21.5,
+     21.5
+    ]
+   },
+   "scale": [
+    23,
+    23
+   ],
+   "note": "The unlit page dot (ink x 880..898, y 526..544)."
+  },
+  {
+   "name": "collect/week_bar",
+   "rect": [
+    164,
+    862,
+    751,
+    28
+   ],
+   "patch": [
+    {
+     "from": [
+      612,
+      862,
+      148,
+      28
+     ],
+     "to": [
+      174,
+      862
+     ]
+    },
+    {
+     "from": [
+      612,
+      862,
+      148,
+      28
+     ],
+     "to": [
+      322,
+      862
+     ]
+    },
+    {
+     "from": [
+      612,
+      862,
+      148,
+      28
+     ],
+     "to": [
+      470,
+      862
+     ]
+    },
+    {
+     "from": [
+      612,
+      862,
+      132,
+      28
+     ],
+     "to": [
+      760,
+      862
+     ]
+    },
+    {
+     "from": [
+      904,
+      862,
+      11,
+      28
+     ],
+     "to": [
+      164,
+      862
+     ],
+     "flip": "h"
+    }
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      10,
+      1.5
+     ],
+     [
+      741,
+      1.5
+     ],
+     [
+      747.8,
+      13.5
+     ],
+     [
+      741,
+      26
+     ],
+     [
+      10,
+      26
+     ],
+     [
+      2.5,
+      13.5
+     ]
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    740,
+    28
+   ],
+   "note": "The week's chest bar, empty: the steel channel from its left point (x 167) to its right (x 911), rims y 864..866 and 885..887. The painted fill (x 171..515), the three chests' feet and the three markers standing in it are covered with the clean empty stretch x 612..760, laid end to end; the left point is the right one mirrored. The live fill, the chests and the markers are drawn over it."
+  },
+  {
+   "name": "collect/week_bar_fill",
+   "rect": [
+    171,
+    869,
+    128,
+    15
+   ],
+   "scale": [
+    126,
+    15
+   ],
+   "note": "The painted fill's rounded head and first stretch (x 171..299, rows 869..883), clear of the bronze chest. Drawn as a nine-patch along the channel: the head keeps its size and the plain gold stretches, so the bar's head is the painting's at every length. The tiles' progress plates use the same fill."
+  },
+  {
+   "name": "collect/chest_bronze",
+   "rect": [
+    296,
+    806,
+    94,
+    78
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      2.5,
+      27.0
+     ],
+     [
+      5.5,
+      20.0
+     ],
+     [
+      8.5,
+      14.0
+     ],
+     [
+      11.5,
+      10.0
+     ],
+     [
+      14.5,
+      7.0
+     ],
+     [
+      17.5,
+      5.0
+     ],
+     [
+      20.5,
+      3.0
+     ],
+     [
+      23.5,
+      3.0
+     ],
+     [
+      26.5,
+      4.0
+     ],
+     [
+      29.5,
+      5.0
+     ],
+     [
+      32.5,
+      6.0
+     ],
+     [
+      35.5,
+      6.0
+     ],
+     [
+      38.5,
+      7.0
+     ],
+     [
+      41.5,
+      7.0
+     ],
+     [
+      44.5,
+      7.0
+     ],
+     [
+      47.5,
+      7.0
+     ],
+     [
+      50.5,
+      7.0
+     ],
+     [
+      53.5,
+      8.0
+     ],
+     [
+      56.5,
+      9.0
+     ],
+     [
+      59.5,
+      10.0
+     ],
+     [
+      62.5,
+      9.0
+     ],
+     [
+      65.5,
+      8.0
+     ],
+     [
+      68.5,
+      9.0
+     ],
+     [
+      71.5,
+      9.0
+     ],
+     [
+      74.5,
+      9.0
+     ],
+     [
+      77.5,
+      10.0
+     ],
+     [
+      80.5,
+      12.0
+     ],
+     [
+      83.5,
+      16.0
+     ],
+     [
+      86.5,
+      23.0
+     ],
+     [
+      88.5,
+      29.0
+     ],
+     [
+      90.5,
+      31.0
+     ],
+     [
+      90.5,
+      34.0
+     ],
+     [
+      90.5,
+      37.0
+     ],
+     [
+      88.5,
+      40.0
+     ],
+     [
+      87.5,
+      43.0
+     ],
+     [
+      87.5,
+      46.0
+     ],
+     [
+      87.5,
+      49.0
+     ],
+     [
+      87.5,
+      52.0
+     ],
+     [
+      87.5,
+      55.0
+     ],
+     [
+      90.0,
+      57.0
+     ],
+     [
+      89.5,
+      62.2
+     ],
+     [
+      88.0,
+      63.2
+     ],
+     [
+      86.0,
+      69.2
+     ],
+     [
+      82.0,
+      72.2
+     ],
+     [
+      78.0,
+      74.2
+     ],
+     [
+      76.0,
+      75.2
+     ],
+     [
+      56.0,
+      74.7
+     ],
+     [
+      50.0,
+      72.2
+     ],
+     [
+      31.0,
+      70.2
+     ],
+     [
+      21.0,
+      68.7
+     ],
+     [
+      12.0,
+      68.2
+     ],
+     [
+      9.0,
+      67.2
+     ],
+     [
+      6.0,
+      66.2
+     ],
+     [
+      5.0,
+      63.2
+     ],
+     [
+      4.5,
+      57.0
+     ],
+     [
+      5.5,
+      54.0
+     ],
+     [
+      5.5,
+      51.0
+     ],
+     [
+      5.5,
+      48.0
+     ],
+     [
+      5.5,
+      45.0
+     ],
+     [
+      4.5,
+      42.0
+     ],
+     [
+      3.5,
+      39.0
+     ],
+     [
+      2.5,
+      36.0
+     ],
+     [
+      2.5,
+      33.0
+     ],
+     [
+      2.5,
+      30.0
+     ]
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    93,
+    77
+   ],
+   "note": "The first chest (x 300..385, lid y 812), cut along its own outline: the lid and sides from where they leave the navy, the feet where it stands in the channel traced column by column against the fill (873 at x 302, 876 at 326, 881 under its shadowed right front at 352..372, 870 again at 384) and lifted a unit off it, so the live fill shows round it and never through it. On the navy the outline's unit of ground is the game's own."
+  },
+  {
+   "name": "collect/chest_silver",
+   "rect": [
+    521,
+    812,
+    91,
+    72
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1.5,
+      28.0
+     ],
+     [
+      4.5,
+      18.0
+     ],
+     [
+      7.5,
+      11.0
+     ],
+     [
+      10.5,
+      7.0
+     ],
+     [
+      13.5,
+      5.0
+     ],
+     [
+      16.5,
+      4.0
+     ],
+     [
+      19.5,
+      3.0
+     ],
+     [
+      22.5,
+      3.0
+     ],
+     [
+      25.5,
+      3.0
+     ],
+     [
+      28.5,
+      3.0
+     ],
+     [
+      31.5,
+      5.0
+     ],
+     [
+      34.5,
+      5.0
+     ],
+     [
+      37.5,
+      6.0
+     ],
+     [
+      40.5,
+      5.0
+     ],
+     [
+      43.5,
+      5.0
+     ],
+     [
+      46.5,
+      5.0
+     ],
+     [
+      49.5,
+      5.0
+     ],
+     [
+      52.5,
+      6.0
+     ],
+     [
+      55.5,
+      8.0
+     ],
+     [
+      58.5,
+      8.0
+     ],
+     [
+      61.5,
+      8.0
+     ],
+     [
+      64.5,
+      7.0
+     ],
+     [
+      67.5,
+      7.0
+     ],
+     [
+      70.5,
+      7.0
+     ],
+     [
+      73.5,
+      7.0
+     ],
+     [
+      76.5,
+      8.0
+     ],
+     [
+      79.5,
+      9.0
+     ],
+     [
+      82.5,
+      12.0
+     ],
+     [
+      85.5,
+      17.0
+     ],
+     [
+      88.5,
+      49.0
+     ],
+     [
+      89.5,
+      49.0
+     ],
+     [
+      88.0,
+      54.0
+     ],
+     [
+      87.0,
+      57.5
+     ],
+     [
+      85.0,
+      63.5
+     ],
+     [
+      79.0,
+      64.5
+     ],
+     [
+      69.0,
+      66.5
+     ],
+     [
+      64.0,
+      69.5
+     ],
+     [
+      55.0,
+      69.5
+     ],
+     [
+      49.0,
+      67.5
+     ],
+     [
+      27.0,
+      64.5
+     ],
+     [
+      13.0,
+      63.0
+     ],
+     [
+      7.0,
+      62.5
+     ],
+     [
+      4.0,
+      59.5
+     ],
+     [
+      3.5,
+      54.0
+     ],
+     [
+      3.5,
+      51.0
+     ],
+     [
+      4.5,
+      48.0
+     ],
+     [
+      4.5,
+      45.0
+     ],
+     [
+      4.5,
+      42.0
+     ],
+     [
+      4.5,
+      39.0
+     ],
+     [
+      2.5,
+      36.0
+     ],
+     [
+      2.5,
+      33.0
+     ],
+     [
+      1.5,
+      30.0
+     ]
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    90,
+    71
+   ],
+   "note": "The second chest (x 525..609), cut along its outline; its feet traced against the empty channel (875 at x 528..548, 882 under its right front bracket at 576..585, 876 at 600..606). Its dark wood is nearly the navy, so it is cut by shape, never keyed."
+  },
+  {
+   "name": "collect/chest_gold",
+   "rect": [
+    758,
+    812,
+    97,
+    74
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      2.5,
+      24.0
+     ],
+     [
+      5.5,
+      16.0
+     ],
+     [
+      8.5,
+      10.0
+     ],
+     [
+      11.5,
+      7.0
+     ],
+     [
+      14.5,
+      5.0
+     ],
+     [
+      17.5,
+      3.0
+     ],
+     [
+      20.5,
+      3.0
+     ],
+     [
+      23.5,
+      3.0
+     ],
+     [
+      26.5,
+      3.0
+     ],
+     [
+      29.5,
+      3.0
+     ],
+     [
+      32.5,
+      5.0
+     ],
+     [
+      35.5,
+      5.0
+     ],
+     [
+      38.5,
+      4.0
+     ],
+     [
+      41.5,
+      4.0
+     ],
+     [
+      44.5,
+      3.0
+     ],
+     [
+      47.5,
+      3.0
+     ],
+     [
+      50.5,
+      3.0
+     ],
+     [
+      53.5,
+      5.0
+     ],
+     [
+      56.5,
+      5.0
+     ],
+     [
+      59.5,
+      5.0
+     ],
+     [
+      62.5,
+      7.0
+     ],
+     [
+      65.5,
+      8.0
+     ],
+     [
+      68.5,
+      8.0
+     ],
+     [
+      71.5,
+      7.0
+     ],
+     [
+      74.5,
+      7.0
+     ],
+     [
+      77.5,
+      8.0
+     ],
+     [
+      80.5,
+      8.0
+     ],
+     [
+      83.5,
+      8.0
+     ],
+     [
+      86.5,
+      9.0
+     ],
+     [
+      89.5,
+      13.0
+     ],
+     [
+      92.5,
+      19.0
+     ],
+     [
+      94.5,
+      25.0
+     ],
+     [
+      96.5,
+      28.0
+     ],
+     [
+      96.5,
+      31.0
+     ],
+     [
+      95.5,
+      34.0
+     ],
+     [
+      95.5,
+      37.0
+     ],
+     [
+      93.5,
+      40.0
+     ],
+     [
+      93.5,
+      43.0
+     ],
+     [
+      93.5,
+      46.0
+     ],
+     [
+      93.5,
+      49.0
+     ],
+     [
+      94.5,
+      54.0
+     ],
+     [
+      93.0,
+      57.5
+     ],
+     [
+      90.0,
+      61.5
+     ],
+     [
+      82.0,
+      64.5
+     ],
+     [
+      70.0,
+      66.5
+     ],
+     [
+      68.0,
+      71.5
+     ],
+     [
+      58.0,
+      71.5
+     ],
+     [
+      56.0,
+      67.5
+     ],
+     [
+      50.0,
+      66.5
+     ],
+     [
+      29.0,
+      64.5
+     ],
+     [
+      17.0,
+      63.5
+     ],
+     [
+      7.0,
+      62.5
+     ],
+     [
+      4.0,
+      59.5
+     ],
+     [
+      3.5,
+      54.0
+     ],
+     [
+      4.5,
+      51.0
+     ],
+     [
+      5.5,
+      48.0
+     ],
+     [
+      5.5,
+      45.0
+     ],
+     [
+      5.5,
+      42.0
+     ],
+     [
+      5.5,
+      39.0
+     ],
+     [
+      3.5,
+      36.0
+     ],
+     [
+      2.5,
+      33.0
+     ],
+     [
+      2.5,
+      30.0
+     ],
+     [
+      2.5,
+      27.0
+     ]
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    96,
+    73
+   ],
+   "note": "The third chest (x 762..852), cut along its outline; its feet traced against the empty channel (875 at x 764..786, 884 under its front foot at 816..826, 877 at 840)."
+  },
+  {
+   "name": "collect/chest_marker",
+   "rect": [
+    548,
+    869,
+    23,
+    23
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      11.5,
+      1.2
+     ],
+     [
+      21.8,
+      11.8
+     ],
+     [
+      11.7,
+      21.2
+     ],
+     [
+      1.6,
+      11.8
+     ]
+    ],
+    "feather": 0.5
+   },
+   "scale": [
+    23,
+    23
+   ],
+   "note": "The gold rhombus at the second chest's feet (top x 559 y 871, sides 550 and 569 at 881, foot 890), which marks where the fill reaches a chest. One crop for all three: the markers are one design."
+  },
+  {
+   "name": "collect/chest_plate",
+   "rect": [
+    279,
+    892,
+    123,
+    38
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   },
+   "scale": [
+    121,
+    37
+   ],
+   "note": "The empty plate under the first chest (x 280..400, y 893..928), for all three: what a chest needs, or OPEN."
+  },
+  {
+   "name": "collect/golden_wheel",
+   "rect": [
+    765,
+    109,
+    162,
+    148
+   ],
+   "patch": [
+    {
+     "from": [
+      846,
+      109,
+      81,
+      148
+     ],
+     "to": [
+      765,
+      109
+     ],
+     "flip": "h"
+    },
+    {
+     "from": [
+      816,
+      165,
+      60,
+      60
+     ],
+     "to": [
+      816,
+      165
+     ]
+    }
+   ],
+   "mask": [
+    {
+     "type": "ellipse",
+     "box": [
+      5,
+      10,
+      157,
+      162
+     ],
+     "feather": 0.6
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       81,
+       1
+      ],
+      [
+       84.5,
+       4
+      ],
+      [
+       88,
+       7.5
+      ],
+      [
+       92,
+       9.5
+      ],
+      [
+       92,
+       12
+      ],
+      [
+       70,
+       12
+      ],
+      [
+       70,
+       9.5
+      ],
+      [
+       74,
+       7.5
+      ],
+      [
+       77.5,
+       4
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       9,
+       79.5
+      ],
+      [
+       5,
+       81
+      ],
+      [
+       1.5,
+       85
+      ],
+      [
+       5,
+       89.5
+      ],
+      [
+       9,
+       91
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       153,
+       79.5
+      ],
+      [
+       157,
+       81
+      ],
+      [
+       160.5,
+       85
+      ],
+      [
+       157,
+       89.5
+      ],
+      [
+       153,
+       91
+      ]
+     ]
+    }
+   ],
+   "note": "The Golden Hour's wheel, dark: its ring (centre x 846, y 195, outer radius 75.5), the fleur on top (x 837..855, y 111..125) and the knobs at its sides. The painting lights the left six of its twelve cells; the right half, mirrored, darkens them, and the hourglass in the middle is put back as painted. The plate covers its foot."
+  },
+  {
+   "name": "collect/golden_wheel_lit",
+   "rect": [
+    765,
+    109,
+    162,
+    148
+   ],
+   "patch": [
+    {
+     "from": [
+      765,
+      109,
+      81,
+      148
+     ],
+     "to": [
+      846,
+      109
+     ],
+     "flip": "h"
+    }
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     13,
+     18,
+     149,
+     154
+    ],
+    "feather": 0.8
+   },
+   "hole": [
+    {
+     "type": "ellipse",
+     "box": [
+      39,
+      44,
+      123,
+      128
+     ]
+    }
+   ],
+   "note": "The wheel's twelve cells all lit: the painting's lit left half, mirrored onto the right, kept only in the band of cells (radius 42 to 68 round the ring's centre, x 81, y 86 of the crop), between the inner rim and the outer ring, which the dark wheel under it always draws. Laid over the dark wheel as the meter fills, counter-clockwise from the top (the painting's half-lit wheel is its left half), and burnt back clockwise from the top as the hour runs out."
+  },
+  {
+   "name": "collect/golden_plate",
+   "rect": [
+    778,
+    257,
+    137,
+    44
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 9
+   },
+   "note": "The wheel's empty plate (x 779..912, y 258..299): what the Golden Hour is doing, in type."
+  }
+ ]
+}

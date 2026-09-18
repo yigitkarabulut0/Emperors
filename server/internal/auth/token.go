@@ -119,6 +119,31 @@ func (s *Signer) Verify(raw string) (playerID, deviceID string, err error) {
 	return c.Subject, c.SessionID, nil
 }
 
+// Expiry is when a valid access token runs out, for the one caller that needs
+// to plan around it: the hall's websocket, which holds a connection open for
+// longer than a token lives and closes it with "sign in again" (4001) at
+// exactly the right moment instead of letting it rot.
+//
+// It returns the zero time for a token that is not valid, because a caller
+// planning around an invalid token has already gone wrong.
+func (s *Signer) Expiry(raw string) time.Time {
+	var c Claims
+	_, err := jwt.ParseWithClaims(raw, &c, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodEd25519); !ok {
+			return nil, fmt.Errorf("unexpected signing method %v", t.Header["alg"])
+		}
+		return s.pub, nil
+	},
+		jwt.WithValidMethods([]string{"EdDSA"}),
+		jwt.WithIssuer("emperors"),
+		jwt.WithTimeFunc(s.now),
+	)
+	if err != nil || c.ExpiresAt == nil {
+		return time.Time{}
+	}
+	return c.ExpiresAt.Time
+}
+
 // NewRefreshToken returns a fresh opaque token and the hash to store.
 //
 // Refresh tokens are random bytes, not JWTs: they must be revocable, and a

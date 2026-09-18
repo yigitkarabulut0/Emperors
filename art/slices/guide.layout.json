@@ -1,0 +1,27 @@
+{
+ "screen": "guide",
+ "source": "guide.png",
+ "ground": "#0b151f",
+ "_comment": "The guide's overlay (scripts/ui/guide.gd), from guide.png and ftue_sheet.png. `speech` is laid out in the scroll's own painted space (882x208, drawn 1:1): the words sit on the plain parchment between the sealed left roller and the right one (parchment y 27..172, x 128..770 on the crop); the steward stands behind the scroll's upper edge, his coat's foot hidden by the parchment (the steward on the left looks right, into the screen; the one on the right looks left); SKIP stands at the other end, its tap area a thumb high round the painted plate. The pointer's `tip` is where the fingertip is in its drawn crop, so the finger, not the crop's corner, lands on the target.",
+ "elements": [
+  {"id": "speech", "kind": "template", "rect": [30, 0, 882, 208], "parts": [
+   {"id": "steward_r", "kind": "image", "asset": "guide/steward_r", "rect": [8, -254, 307, 339]},
+   {"id": "steward_l", "kind": "image", "asset": "guide/steward_l", "rect": [567, -252, 317, 337]},
+   {"id": "scroll", "kind": "image", "asset": "guide/speech", "rect": [0, 0, 882, 208]},
+   {"id": "title", "kind": "text", "rect": [132, 32, 496, 35], "font": "title", "size": 25, "weight": 700,
+    "color": "#3A2412", "align": "left", "shadow": false, "sample": "WELCOME, MY LORD"},
+   {"id": "level", "kind": "text", "rect": [630, 32, 132, 35], "font": "title", "size": 19, "weight": 700,
+    "color": "#8E1B1E", "align": "right", "shadow": false, "sample": "LEVEL 3 OF 4"},
+   {"id": "body", "kind": "text", "rect": [132, 69, 630, 98], "font": "body", "size": 24, "weight": 500,
+    "color": "#2E1D0E", "align": "left", "valign": "top", "wrap": true, "shadow": false,
+    "sample": "I am your steward. Your family's name is small and its purse is thin, but that is a thing we can mend together. Let me show you the realm."},
+   {"id": "skip_r", "kind": "button", "asset": "guide/skip", "rect": [644, -110, 228, 112], "keep_texture_size": true, "action": "skip"},
+   {"id": "skip_l", "kind": "button", "asset": "guide/skip", "rect": [10, -110, 228, 112], "keep_texture_size": true, "action": "skip"}
+  ]},
+  {"id": "story", "kind": "image", "asset": "guide/story", "rect": [191, 0, 559, 356]},
+  {"id": "hand", "kind": "image", "asset": "ftue/hand", "rect": [0, 0, 200, 250], "tip": [6, 6]},
+  {"id": "hand_press", "kind": "image", "asset": "ftue/hand_press", "rect": [0, 0, 235, 256], "tip": [43, 37]},
+  {"id": "ring", "kind": "image", "asset": "ftue/ring", "rect": [0, 0, 160, 161]},
+  {"id": "arrow", "kind": "image", "asset": "ftue/arrow", "rect": [0, 0, 165, 198], "tip": [14, 15]}
+ ]
+}

@@ -43,9 +43,9 @@
    "name": "collect/quests_panel",
    "rect": [
     166,
-    281,
+    286,
     762,
-    228
+    223
    ],
    "erase": [
     {
@@ -73,7 +73,36 @@
      ]
     }
    ],
-   "note": "The three painted quest cards are erased: the live cards are drawn in their place, and until the day's quests arrived the painting's own -- 'Spend 30 energy, +50 diamonds' -- showed as the player's."
+   "note": "The three painted quest cards are erased: the live cards are drawn in their place, and until the day's quests arrived the painting's own -- 'Spend 30 energy, +50 diamonds' -- showed as the player's. The crop starts at the rim's gold line (y 286), and its top corners are cut 12 on the diagonal at the rim's outer shadow line: above and outside the rim is the header's painting, which the header itself draws (to y 292), so with nothing live the tab is as painted -- and under the Crown's event band (collect_events.png) the panel stands 161 lower, where the painting has the dark ground above and beside its rim, not five rows of fields.",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      12,
+      0
+     ],
+     [
+      750,
+      0
+     ],
+     [
+      762,
+      12
+     ],
+     [
+      762,
+      223
+     ],
+     [
+      0,
+      223
+     ],
+     [
+      0,
+      12
+     ]
+    ]
+   }
   },
   {
    "name": "collect/quest_card",
@@ -306,58 +335,191 @@
    "mode": "darkkey"
   },
   {
-   "name": "collect/job_grapes",
+   "name": "collect/job_frame",
    "rect": [
     168,
     515,
     190,
     158
+   ],
+   "mask": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       190,
+       0
+      ],
+      [
+       190,
+       11.75
+      ],
+      [
+       0,
+       11.75
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       149
+      ],
+      [
+       190,
+       149
+      ],
+      [
+       190,
+       158
+      ],
+      [
+       0,
+       158
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       11.75
+      ],
+      [
+       10.75,
+       11.75
+      ],
+      [
+       10.75,
+       149
+      ],
+      [
+       0,
+       149
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       172,
+       11.75
+      ],
+      [
+       190,
+       11.75
+      ],
+      [
+       190,
+       149
+      ],
+      [
+       172,
+       149
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       11,
+       12
+      ],
+      [
+       18,
+       12
+      ],
+      [
+       11,
+       19
+      ]
+     ]
+    }
+   ],
+   "note": "the grapes row's own steel frame with its window cut out: laid over every job's painting so all fifteen rows wear one frame. The window is x 11..172, y 12..149 of this crop (the painted bevel stays on the frame), its top-left corner chamfered along x + y = 30. The top and left bands end a quarter unit short (11.75, 10.75): the slicer fills a polygon's edge row inclusively, and a band ending on 12 left a quarter of row 12 opaque inside the window. The row's title (GRAPES, from x 354) is erased exactly as collect/job_row erases it: the frame's right band reaches x 358 and would otherwise carry the first sliver of the painted G onto every row.",
+   "erase": [
+    {
+     "rect": [
+      354,
+      529,
+      290,
+      40
+     ],
+     "sample_x": [
+      500,
+      600
+     ]
+    }
    ]
+  },
+  {
+   "name": "collect/job_grapes",
+   "rect": [
+    177,
+    525,
+    165,
+    141
+   ],
+   "note": "the painting inside this row's frame, two units past the window on every side so the frame drawn over it (collect/job_frame) always meets painting; the window is x 13..173, y 10..146 of the row"
   },
   {
    "name": "collect/job_strawberries",
    "rect": [
-    168,
-    679,
-    190,
-    158
-   ]
+    177,
+    689,
+    165,
+    141
+   ],
+   "note": "the painting inside this row's frame, two units past the window on every side so the frame drawn over it (collect/job_frame) always meets painting; the window is x 13..173, y 10..146 of the row"
   },
   {
    "name": "collect/job_wheat",
    "rect": [
-    168,
-    846,
-    190,
-    158
-   ]
+    177,
+    856,
+    165,
+    141
+   ],
+   "note": "the painting inside this row's frame, two units past the window on every side so the frame drawn over it (collect/job_frame) always meets painting; the window is x 13..173, y 10..146 of the row"
   },
   {
    "name": "collect/job_timber",
    "rect": [
-    168,
-    1014,
-    190,
-    158
-   ]
+    177,
+    1024,
+    165,
+    141
+   ],
+   "note": "the painting inside this row's frame, two units past the window on every side so the frame drawn over it (collect/job_frame) always meets painting; the window is x 13..173, y 10..146 of the row"
   },
   {
    "name": "collect/job_stone",
    "rect": [
-    168,
-    1183,
-    190,
-    158
-   ]
+    177,
+    1193,
+    165,
+    141
+   ],
+   "note": "the painting inside this row's frame, two units past the window on every side so the frame drawn over it (collect/job_frame) always meets painting; the window is x 13..173, y 10..146 of the row"
   },
   {
-   "name": "collect/job_tax",
+   "name": "collect/job_tithe",
    "rect": [
-    168,
-    1352,
-    190,
-    158
-   ]
+    177,
+    1362,
+    165,
+    141
+   ],
+   "note": "the painting inside this row's frame, two units past the window on every side so the frame drawn over it (collect/job_frame) always meets painting; the window is x 13..173, y 10..146 of the row"
   },
   {
    "name": "collect/mastery_fill",

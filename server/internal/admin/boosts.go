@@ -21,7 +21,9 @@ type BoostRow struct {
 	Note      string `json:"note"`
 	CreatedBy string `json:"created_by"`
 	Live      bool   `json:"live"`
-	Revoked   bool   `json:"revoked"`
+	// Scheduled: it starts later. The game announces it a day ahead.
+	Scheduled bool `json:"scheduled"`
+	Revoked   bool `json:"revoked"`
 }
 
 // Boostable is one bucket an event may drive, described for the panel.
@@ -48,12 +50,15 @@ type Boostable struct {
 // away. Two numbers that must agree should not be two numbers.
 func BoostableBuckets() []Boostable {
 	return []Boostable{
+		// Events ride the TIMED lane, whose ceiling sits on top of the permanent
+		// one -- so the cap an operator can type is the timed lane's, and an event
+		// reaches every lord, including those whose upgrades already hit +150%.
 		{gameconfig.BucketCollectIncome, "Job payout",
-			"Gold from every collect. Shares its cap with job mastery and the Granary.",
-			economy.Caps[economy.BucketCollectIncome]},
+			"Gold from every collect. Events have their own ceiling on top of mastery and the Granary, so they lift even a lord at the permanent cap.",
+			economy.Caps[economy.BucketCollectIncomeTemp]},
 		{gameconfig.BucketXP, "Experience",
-			"Experience from every source.",
-			economy.Caps[economy.BucketXPGain]},
+			"Experience from every source, with the same timed ceiling on top of the permanent one.",
+			economy.Caps[economy.BucketXPGainTemp]},
 		{gameconfig.BucketLuck, "Fortune",
 			"Shifts the tier ladder for shop stock and recruits. +10000 doubles the level coefficient.",
 			gameconfig.MaxLuckBP},
@@ -84,19 +89,21 @@ func (s *Service) ListBoosts(ctx context.Context, limit int32) ([]BoostRow, erro
 			StartsAt: r.StartsAt.UTC().Format("2006-01-02 15:04"),
 			EndsAt:   r.EndsAt.UTC().Format("2006-01-02 15:04"),
 			Note:     r.Note, CreatedBy: r.CreatedBy,
-			Live:    r.RevokedAt == nil && r.StartsAt.Before(now) && r.EndsAt.After(now),
-			Revoked: r.RevokedAt != nil,
+			Live:      r.RevokedAt == nil && !r.StartsAt.After(now) && r.EndsAt.After(now),
+			Scheduled: r.RevokedAt == nil && r.StartsAt.After(now),
+			Revoked:   r.RevokedAt != nil,
 		})
 	}
 	return out, nil
 }
 
-// CreateBoost starts a server-wide event.
+// CreateBoost starts a server-wide event, now or in startsIn hours.
 //
 // Designer and above: this changes the game for everyone at once, which is a
-// larger act than adjusting one player's balance.
+// larger act than adjusting one player's balance. A scheduled one is announced
+// in the game a day before it starts (service.LiveView.Upcoming).
 func (s *Service) CreateBoost(ctx context.Context, who *Identity,
-	bucket string, amountBP int64, hours int, note string) (*BoostRow, error) {
+	bucket string, amountBP int64, hours, startsIn int, note string) (*BoostRow, error) {
 	if !AtLeast(who.Role, "designer") {
 		return nil, ErrForbidden
 	}
@@ -105,6 +112,9 @@ func (s *Service) CreateBoost(ctx context.Context, who *Identity,
 	}
 	if hours < 1 || hours > 24*30 {
 		return nil, fmt.Errorf("%w: an event runs between an hour and a month", ErrOutOfRange)
+	}
+	if startsIn < 0 || startsIn > 24*30 {
+		return nil, fmt.Errorf("%w: an event starts now or within a month", ErrOutOfRange)
 	}
 	if amountBP == 0 {
 		return nil, ErrNothingToDo
@@ -121,10 +131,10 @@ func (s *Service) CreateBoost(ctx context.Context, who *Identity,
 			ErrOutOfRange, bucket, cap, amountBP)
 	}
 
-	now := s.now()
+	start := s.now().Add(time.Duration(startsIn) * time.Hour)
 	row, err := sqlcdb.New(s.Pool).CreateBoost(ctx, sqlcdb.CreateBoostParams{
 		Bucket: bucket, AmountBp: amountBP,
-		StartsAt: now, EndsAt: now.Add(time.Duration(hours) * time.Hour),
+		StartsAt: start, EndsAt: start.Add(time.Duration(hours) * time.Hour),
 		Note: note, CreatedBy: who.Username,
 	})
 	if err != nil {
@@ -137,13 +147,13 @@ func (s *Service) CreateBoost(ctx context.Context, who *Identity,
 		_ = s.Boosts.Refresh(ctx)
 	}
 	s.Audit(ctx, who, "boost.create", fmt.Sprint(row.ID), nil,
-		map[string]any{"bucket": bucket, "amount_bp": amountBP, "hours": hours}, note)
+		map[string]any{"bucket": bucket, "amount_bp": amountBP, "hours": hours, "starts_in_hours": startsIn}, note)
 
 	return &BoostRow{
 		ID: row.ID, Bucket: row.Bucket, AmountBP: row.AmountBp,
 		StartsAt: row.StartsAt.UTC().Format("2006-01-02 15:04"),
 		EndsAt:   row.EndsAt.UTC().Format("2006-01-02 15:04"),
-		Note:     row.Note, CreatedBy: row.CreatedBy, Live: true,
+		Note:     row.Note, CreatedBy: row.CreatedBy, Live: startsIn == 0, Scheduled: startsIn > 0,
 	}, nil
 }
 

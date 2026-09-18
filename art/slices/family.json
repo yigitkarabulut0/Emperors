@@ -38,44 +38,42 @@
     760,
     198
    ],
-   "erase": [
+   "inpaint": [
     {
-     "rect": [
+     "text": [
       355,
       655,
       490,
       58
      ],
-     "sample_x": [
-      600,
-      610
-     ]
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
     },
     {
-     "rect": [
+     "text": [
       405,
       722,
       160,
       26
      ],
-     "sample_x": [
-      600,
-      610
-     ]
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
     },
     {
-     "rect": [
+     "text": [
       355,
       790,
       250,
       28
      ],
-     "sample_x": [
-      600,
-      610
-     ]
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
     }
-   ]
+   ],
+   "_note_ink": "Lifted by their ink alone (the slicer's text inpaint), not a flat erase: a flat row fill left each live word on a box a shade off the plate's grain -- the name, LEVEL and the XP line on the identity plate; the name and the level and bonus rows on a ledger card; the selected soldier's name, blurb, troop count and figures."
   },
   {
    "name": "family/xp_track",
@@ -193,44 +191,42 @@
     752,
     190
    ],
-   "erase": [
+   "inpaint": [
     {
-     "rect": [
+     "text": [
       190,
       968,
       226,
-      42
+      48
      ],
-     "sample_x": [
-      192,
-      200
-     ]
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
     },
     {
-     "rect": [
+     "text": [
       438,
       968,
       222,
-      42
+      48
      ],
-     "sample_x": [
-      440,
-      448
-     ]
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
     },
     {
-     "rect": [
+     "text": [
       680,
       968,
       232,
-      42
+      48
      ],
-     "sample_x": [
-      682,
-      690
-     ]
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
     }
-   ]
+   ],
+   "_note_ink": "The three figures lifted by their ink, 48 tall: the painted POWER's comma runs to row 1010 and a 42-tall flat erase left its tail standing under the live figure as a white speck."
   },
   {
    "name": "icons/stat_attack",
@@ -397,6 +393,92 @@
    ]
   },
   {
+   "name": "family/gear_tile_ring",
+   "rect": [
+    200,
+    1113,
+    220,
+    192
+   ],
+   "hole": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       12,
+       10
+      ],
+      [
+       206,
+       10
+      ],
+      [
+       213,
+       17
+      ],
+      [
+       213,
+       175
+      ],
+      [
+       206,
+       182
+      ],
+      [
+       12,
+       182
+      ],
+      [
+       5,
+       175
+      ],
+      [
+       5,
+       17
+      ]
+     ]
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      207,
+      1123,
+      205,
+      150
+     ],
+     "sample_x": [
+      214,
+      220
+     ]
+    },
+    {
+     "rect": [
+      207,
+      1266,
+      70,
+      30
+     ],
+     "sample_x": [
+      274,
+      280
+     ]
+    },
+    {
+     "rect": [
+      338,
+      1272,
+      74,
+      23
+     ],
+     "sample_x": [
+      326,
+      336
+     ]
+    }
+   ]
+  },
+  {
    "name": "family/upgrade_card",
    "rect": [
     172,
@@ -405,30 +487,6 @@
     253
    ],
    "erase": [
-    {
-     "rect": [
-      578,
-      1346,
-      300,
-      38
-     ],
-     "sample_x": [
-      880,
-      900
-     ]
-    },
-    {
-     "rect": [
-      572,
-      1388,
-      334,
-      82
-     ],
-     "sample_x": [
-      880,
-      900
-     ]
-    },
     {
      "rect": [
       193,
@@ -454,7 +512,32 @@
      ]
     }
    ],
-   "note": "Everything live is erased: the name, the level and bonus rows, the icon beside them, the painting and the button. The card is the frame and its navy body."
+   "note": "Everything live is erased: the name, the level and bonus rows, the icon beside them, the painting and the button. The card is the frame and its navy body.",
+   "inpaint": [
+    {
+     "text": [
+      578,
+      1346,
+      300,
+      38
+     ],
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
+    },
+    {
+     "text": [
+      572,
+      1388,
+      334,
+      82
+     ],
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
+    }
+   ],
+   "_note_ink": "Lifted by their ink alone (the slicer's text inpaint), not a flat erase: a flat row fill left each live word on a box a shade off the plate's grain -- the name, LEVEL and the XP line on the identity plate; the name and the level and bonus rows on a ledger card; the selected soldier's name, blurb, troop count and figures."
   },
   {
    "name": "family/granary_art",
@@ -464,6 +547,98 @@
     364,
     216
    ]
+  },
+  {
+   "name": "family/art_frame",
+   "rect": [
+    193,
+    1336,
+    364,
+    216
+   ],
+   "mask": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       364,
+       0
+      ],
+      [
+       364,
+       1.75
+      ],
+      [
+       0,
+       1.75
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       2.75,
+       0
+      ],
+      [
+       2.75,
+       216
+      ],
+      [
+       0,
+       216
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       361,
+       0
+      ],
+      [
+       364,
+       0
+      ],
+      [
+       364,
+       216
+      ],
+      [
+       361,
+       216
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       14,
+       0
+      ],
+      [
+       0,
+       14
+      ]
+     ]
+    }
+   ],
+   "note": "The card frame's own edge inside the art window: the chamfered top-left corner with its dark rim, and the two or three units of frame the granary painting keeps on its left, top and right. Laid over every card's scene, so a scene cut square wears the window the Granary does. Measured: the granary's sky starts at x 196, y 1338, along x + y = 1543 at the corner, and the frame resumes at x 554."
   },
   {
    "name": "icons/gold_stack",
@@ -557,7 +732,30 @@
     1273,
     40,
     34
-   ]
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      20.0,
+      0.0
+     ],
+     [
+      38.5,
+      19.0
+     ],
+     [
+      20.0,
+      38.0
+     ],
+     [
+      1.5,
+      19.0
+     ]
+    ],
+    "feather": 1
+   },
+   "note": "The tier's stone on a gear tile's lower rim, cut round its gold setting: the tile's window is its rarity's velvet now (ItemGround), and the plain rect carried a box of the painting's dark interior round the stone onto the cloth. The rim runs on under it in the tile's ring."
   },
   {
    "name": "family/art_army",

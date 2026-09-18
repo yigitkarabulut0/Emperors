@@ -1,0 +1,326 @@
+{
+ "screen": "wardrobe",
+ "source": "wardrobe.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#392C1E",
+ "notes": [
+  "SPLENDOUR (client/scenes/court/wardrobe_view.gd), on the painted pages' host (PaintedPage). `page` is the whole painting. Its stretch band is the grid's erased ground (rows 470..1250, the same all the way down between the frame's sides), so a taller canvas shows more tiles; `ground` is the blurred surround's colour at the top, carried up behind the notch.",
+  "tabs: the game's one tab strip (TabStrip) in the painted row's place: its plates are narrower than the painting's (tabs_sheet_b), so the strip's rect is centred on the row (y 412) and its floor is the plates' foot.",
+  "grid: tiles of `tile` in three columns at pitch 284 x 270 from (50, 461) -- 3 x 272 + 2 x 12 across the painting's 50..890 -- inside a scroll, as many rows as the tab holds. A tile's frame (frames/<art>_tile), crest (drawn down to the box), title (on the scroll) or colour (icons/colour_chip with its face tinted, as the Royal Store draws one) is centred in `art`; `name` is on the painted plate, with `hint` under it for a locked one.",
+  "strip: the lord as the realm sees them: their face in the frame they wear, their name in their colour, their title on the scroll, their colour's chip and their crest.",
+  "equip: the painted plate with its word set in type (EQUIP's ink is 40 tall): EQUIP, TAKE OFF, the price, or LOCKED."
+ ],
+ "stretch": [
+  [
+   470,
+   780
+  ]
+ ],
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "wardrobe/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "tabs",
+   "kind": "rect",
+   "rect": [
+    44,
+    364,
+    851,
+    71
+   ]
+  },
+  {
+   "id": "grid",
+   "kind": "rect",
+   "rect": [
+    36,
+    455,
+    868,
+    813
+   ],
+   "origin": [
+    50,
+    461
+   ],
+   "pitch": [
+    284,
+    270
+   ],
+   "columns": 3
+  },
+  {
+   "id": "tile",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    272,
+    261
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "ninepatch",
+     "asset": "wardrobe/tile",
+     "rect": [
+      0,
+      0,
+      272,
+      261
+     ],
+     "margin": [
+      14,
+      14,
+      14,
+      14
+     ]
+    },
+    {
+     "id": "art",
+     "kind": "rect",
+     "rect": [
+      24,
+      6,
+      224,
+      190
+     ]
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      36,
+      204,
+      200,
+      36
+     ],
+     "font": "title",
+     "weight": 600,
+     "size": 19,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "Gilded Laurel"
+    },
+    {
+     "id": "hint",
+     "kind": "text",
+     "rect": [
+      36,
+      222,
+      200,
+      18
+     ],
+     "font": "body",
+     "weight": 600,
+     "size": 14,
+     "color": "#B8AE9C",
+     "align": "center",
+     "valign": "center",
+     "sample": "Royal Favour 5"
+    },
+    {
+     "id": "diamond",
+     "kind": "image",
+     "asset": "icons/diamond",
+     "rect": [
+      44,
+      209,
+      26,
+      26
+     ]
+    },
+    {
+     "id": "seal",
+     "kind": "image",
+     "asset": "icons/tick_seal",
+     "rect": [
+      196,
+      8,
+      70,
+      72
+     ]
+    },
+    {
+     "id": "lock",
+     "kind": "image",
+     "asset": "icons/padlock",
+     "rect": [
+      214,
+      10,
+      44,
+      56
+     ]
+    },
+    {
+     "id": "sel",
+     "kind": "ninepatch",
+     "asset": "army/card_selected_frame",
+     "rect": [
+      -5,
+      -5,
+      282,
+      271
+     ],
+     "margin": [
+      9,
+      9,
+      7,
+      5
+     ],
+     "draw_center": false
+    }
+   ]
+  },
+  {
+   "id": "strip",
+   "kind": "rect",
+   "rect": [
+    48,
+    1282,
+    845,
+    181
+   ]
+  },
+  {
+   "id": "look_frame",
+   "kind": "rect",
+   "rect": [
+    66,
+    1293,
+    160,
+    160
+   ],
+   "note": "the frame worn, square, round the lord's face"
+  },
+  {
+   "id": "look_face",
+   "kind": "rect",
+   "rect": [
+    90,
+    1317,
+    112,
+    112
+   ]
+  },
+  {
+   "id": "look_name",
+   "kind": "text",
+   "rect": [
+    244,
+    1296,
+    360,
+    44
+   ],
+   "font": "title",
+   "weight": 700,
+   "size": 30,
+   "color": "#F1E9DA",
+   "align": "left",
+   "valign": "center",
+   "sample": "Wwwwwwwwwwwwwwww"
+  },
+  {
+   "id": "look_scroll",
+   "kind": "image",
+   "asset": "wardrobe/title_scroll",
+   "rect": [
+    240,
+    1338,
+    286,
+    114
+   ]
+  },
+  {
+   "id": "look_title",
+   "kind": "text",
+   "rect": [
+    282,
+    1377,
+    202,
+    34
+   ],
+   "font": "title",
+   "weight": 700,
+   "size": 24,
+   "color": "#4A3016",
+   "align": "center",
+   "valign": "center",
+   "sample": "the Founder"
+  },
+  {
+   "id": "look_chip",
+   "kind": "image",
+   "asset": "icons/colour_chip",
+   "rect": [
+    625,
+    1317,
+    98,
+    110
+   ]
+  },
+  {
+   "id": "look_enamel",
+   "kind": "image",
+   "asset": "icons/colour_chip_face",
+   "rect": [
+    636,
+    1328,
+    76,
+    88
+   ]
+  },
+  {
+   "id": "look_crest",
+   "kind": "image",
+   "asset": "icons/crest_lion",
+   "rect": [
+    764,
+    1312,
+    91,
+    120
+   ]
+  },
+  {
+   "id": "equip",
+   "kind": "button",
+   "asset": "wardrobe/equip_plate",
+   "rect": [
+    93,
+    1486,
+    361,
+    103
+   ],
+   "label": "EQUIP",
+   "size": 54,
+   "weight": 700,
+   "color": "#FEFCD4",
+   "margin": 18,
+   "action": "equip"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "wardrobe/close",
+   "rect": [
+    481,
+    1486,
+    363,
+    103
+   ],
+   "action": "close"
+  }
+ ]
+}

@@ -23,10 +23,12 @@ func (q *Queries) ClearBoard(ctx context.Context, board string) error {
 }
 
 const fillBoardLevel = `-- name: FillBoardLevel :exec
-INSERT INTO app.leaderboard_entries (board, rank, player_id, value)
-SELECT 'level', row_number() OVER (ORDER BY level DESC, xp DESC, id), id, level
+INSERT INTO app.leaderboard_entries (board, rank, place, player_id, value)
+SELECT 'level', row_number() OVER w, row_number() OVER w, id, level
 FROM app.players
 WHERE state = 'active' AND NOT is_bot
+WINDOW w AS (ORDER BY level DESC, xp DESC, id)
+ORDER BY level DESC, xp DESC, id
 LIMIT $1
 `
 
@@ -36,10 +38,12 @@ func (q *Queries) FillBoardLevel(ctx context.Context, lim int32) error {
 }
 
 const fillBoardMight = `-- name: FillBoardMight :exec
-INSERT INTO app.leaderboard_entries (board, rank, player_id, value)
-SELECT 'might', row_number() OVER (ORDER BY might DESC, id), id, might
+INSERT INTO app.leaderboard_entries (board, rank, place, player_id, value)
+SELECT 'might', row_number() OVER w, row_number() OVER w, id, might
 FROM app.players
 WHERE state = 'active' AND NOT is_bot AND might > 0
+WINDOW w AS (ORDER BY might DESC, id)
+ORDER BY might DESC, id
 LIMIT $1
 `
 
@@ -52,11 +56,12 @@ func (q *Queries) FillBoardMight(ctx context.Context, lim int32) error {
 }
 
 const fillBoardWealth = `-- name: FillBoardWealth :exec
-INSERT INTO app.leaderboard_entries (board, rank, player_id, value)
-SELECT 'wealth', row_number() OVER (ORDER BY (gold + treasury_gold) DESC, id),
-       id, gold + treasury_gold
+INSERT INTO app.leaderboard_entries (board, rank, place, player_id, value)
+SELECT 'wealth', row_number() OVER w, row_number() OVER w, id, gold + treasury_gold
 FROM app.players
 WHERE state = 'active' AND NOT is_bot
+WINDOW w AS (ORDER BY (gold + treasury_gold) DESC, id)
+ORDER BY (gold + treasury_gold) DESC, id
 LIMIT $1
 `
 
@@ -68,7 +73,7 @@ func (q *Queries) FillBoardWealth(ctx context.Context, lim int32) error {
 }
 
 const myRank = `-- name: MyRank :one
-SELECT rank, value FROM app.leaderboard_entries
+SELECT rank, place, value FROM app.leaderboard_entries
 WHERE board = $1 AND player_id = $2
 `
 
@@ -79,18 +84,20 @@ type MyRankParams struct {
 
 type MyRankRow struct {
 	Rank  int32
+	Place int32
 	Value int64
 }
 
 func (q *Queries) MyRank(ctx context.Context, arg MyRankParams) (MyRankRow, error) {
 	row := q.db.QueryRow(ctx, myRank, arg.Board, arg.PlayerID)
 	var i MyRankRow
-	err := row.Scan(&i.Rank, &i.Value)
+	err := row.Scan(&i.Rank, &i.Place, &i.Value)
 	return i, err
 }
 
 const readBoard = `-- name: ReadBoard :many
-SELECT e.rank, e.value, p.display_name, p.avatar, p.level, p.kingdom_id
+SELECT e.rank, e.place, e.value, p.display_name, p.avatar, p.level, p.kingdom_id,
+       p.cos_frame, p.cos_title, p.cos_color, p.cos_crest, p.vip_points
 FROM app.leaderboard_entries e
 JOIN app.players p ON p.id = e.player_id
 WHERE e.board = $1
@@ -105,11 +112,17 @@ type ReadBoardParams struct {
 
 type ReadBoardRow struct {
 	Rank        int32
+	Place       int32
 	Value       int64
 	DisplayName string
 	Avatar      string
 	Level       int32
 	KingdomID   *uuid.UUID
+	CosFrame    *string
+	CosTitle    *string
+	CosColor    *string
+	CosCrest    *string
+	VipPoints   int64
 }
 
 func (q *Queries) ReadBoard(ctx context.Context, arg ReadBoardParams) ([]ReadBoardRow, error) {
@@ -123,11 +136,17 @@ func (q *Queries) ReadBoard(ctx context.Context, arg ReadBoardParams) ([]ReadBoa
 		var i ReadBoardRow
 		if err := rows.Scan(
 			&i.Rank,
+			&i.Place,
 			&i.Value,
 			&i.DisplayName,
 			&i.Avatar,
 			&i.Level,
 			&i.KingdomID,
+			&i.CosFrame,
+			&i.CosTitle,
+			&i.CosColor,
+			&i.CosCrest,
+			&i.VipPoints,
 		); err != nil {
 			return nil, err
 		}

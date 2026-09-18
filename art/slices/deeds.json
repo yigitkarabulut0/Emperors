@@ -1,0 +1,105 @@
+{
+ "source": "deeds.png",
+ "note": "THE DEEDS (art/reference/deeds.png) on the painted pages' host. The painting is the page (deeds/page): its frame, its castle header, DEEDS and the flourishes beside CLOSE. Its tab row, its seven category discs and its six achievement rows are cleared back to the panel (refill), the rule the tabs stand on put back at both ends from the painting itself; the tabs are a TabStrip (the sheet's plates, as the Victory Road's), the discs and the rows are their own crops laid over it. A row is row 1's plate with its medallion, its bar's fill and its count plate lifted (each its own crop), the two EMPTY plates kept; the six medallions are the six painted states, each cut centred on its own disc so they all stand on one point of the row; CLAIM is row 3's, the tick seal row 4's, the fill row 4's (the longest).",
+ "crops": [
+  {
+   "name": "deeds/page",
+   "rect": [0, 0, 941, 1672],
+   "refill": [
+    {
+     "rect": [41, 362, 860, 1075],
+     "band": [1410, 1432],
+     "samples": [
+      {"rows": [362, 433], "x": [[42, 48], [893, 899]]},
+      {"rows": [450, 1436], "x": [[42, 48], [893, 899]]}
+     ]
+    }
+   ],
+   "patch": [
+    {"from": [40, 437, 29, 8], "to": [40, 437]},
+    {"from": [873, 437, 28, 8], "to": [873, 437]},
+    {"from": [873, 437, 5, 8], "to": [868, 437]}
+   ]
+  },
+  {
+   "name": "deeds/row",
+   "rect": [50, 575, 842, 133],
+   "erase": [
+    {"rect": [77, 584, 137, 119], "sample_x": [71, 75], "sample_x2": [210, 216]},
+    {"rect": [223, 659, 487, 21], "sample_x": [470, 700]},
+    {"rect": [723, 636, 146, 58], "sample_x": [714, 720], "sample_x2": [870, 876]}
+   ],
+   "mask": {"type": "polygon", "points": [[0, 19], [20, 2], [822, 2], [840, 20], [840, 120], [822, 131], [20, 131], [0, 120]], "feather": 0.5}
+  },
+  {
+   "name": "deeds/medal_bronze",
+   "rect": [66, 572, 146, 146],
+   "mask": {"type": "ellipse", "box": [15, 15, 132, 132], "feather": 0.75}
+  },
+  {
+   "name": "deeds/medal_silver",
+   "rect": [66, 708, 146, 146],
+   "mask": {"type": "ellipse", "box": [15, 15, 132, 132], "feather": 0.75}
+  },
+  {
+   "name": "deeds/medal_gold",
+   "rect": [65, 845, 146, 146],
+   "mask": {"type": "ellipse", "box": [14, 14, 133, 133], "feather": 0.75}
+  },
+  {
+   "name": "deeds/medal_imperial",
+   "rect": [65, 983, 146, 146],
+   "mask": [
+    {"type": "ellipse", "box": [10, 10, 136, 136], "feather": 0.75},
+    {"type": "ellipse", "box": [59, 7, 87, 35], "feather": 0.75},
+    {"type": "ellipse", "box": [59, 111, 87, 139], "feather": 0.75},
+    {"type": "ellipse", "box": [7, 59, 35, 87], "feather": 0.75},
+    {"type": "ellipse", "box": [111, 59, 139, 87], "feather": 0.75}
+   ]
+  },
+  {
+   "name": "deeds/medal_locked",
+   "rect": [65, 1128, 146, 146],
+   "mask": {"type": "ellipse", "box": [14, 14, 133, 133], "feather": 0.75}
+  },
+  {
+   "name": "deeds/medal_unknown",
+   "rect": [65, 1269, 146, 146],
+   "mask": {"type": "ellipse", "box": [14, 14, 133, 133], "feather": 0.75}
+  },
+  {
+   "name": "deeds/count_plate",
+   "rect": [725, 638, 141, 54]
+  },
+  {
+   "name": "deeds/bar_fill",
+   "rect": [224, 1077, 465, 18]
+  },
+  {
+   "name": "deeds/claim",
+   "rect": [724, 885, 150, 83],
+   "mask": {"type": "polygon", "points": [[0, 13], [13, 0], [137, 0], [150, 13], [150, 70], [137, 83], [13, 83], [0, 70]], "feather": 0.5}
+  },
+  {
+   "name": "deeds/seal",
+   "rect": [746, 1001, 104, 121],
+   "mode": "darkkey",
+   "k": 70,
+   "bg": [12, 30, 42],
+   "floor": 4,
+   "solid": {"type": "ellipse", "box": [12, 10, 92, 86]}
+  },
+  {
+   "name": "deeds/close",
+   "rect": [285, 1436, 370, 89],
+   "mask": {"type": "polygon", "points": [[1, 16], [15, 2], [355, 2], [369, 16], [369, 72], [355, 88], [15, 88], [1, 72]], "feather": 0.5}
+  },
+  {"name": "deeds/cat_work", "rect": [65, 460, 104, 106], "mask": {"type": "ellipse", "box": [3, 4, 101, 102], "feather": 0.75}},
+  {"name": "deeds/cat_war", "rect": [182, 460, 104, 106], "mask": {"type": "ellipse", "box": [3, 4, 101, 102], "feather": 0.75}},
+  {"name": "deeds/cat_kingdom", "rect": [300, 460, 104, 106], "mask": {"type": "ellipse", "box": [3, 4, 101, 102], "feather": 0.75}},
+  {"name": "deeds/cat_crown", "rect": [418, 460, 104, 106], "mask": {"type": "ellipse", "box": [3, 4, 101, 102], "feather": 0.75}},
+  {"name": "deeds/cat_scroll", "rect": [536, 460, 104, 106], "mask": {"type": "ellipse", "box": [3, 4, 101, 102], "feather": 0.75}},
+  {"name": "deeds/cat_laurel", "rect": [654, 460, 104, 106], "mask": {"type": "ellipse", "box": [3, 4, 101, 102], "feather": 0.75}},
+  {"name": "deeds/cat_chest", "rect": [771, 460, 104, 106], "mask": {"type": "ellipse", "box": [3, 4, 101, 102], "feather": 0.75}}
+ ]
+}

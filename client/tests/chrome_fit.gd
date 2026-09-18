@@ -10,7 +10,7 @@ var _fails: int = 0
 
 func _initialize() -> void:
 	_level_badge_sits_on_the_plaque()
-	_empty_button_has_no_green_and_no_word()
+	_no_energy_face_covers_collect()
 	if _fails > 0:
 		print("FAIL  %d check(s)" % _fails)
 		quit(1)
@@ -87,40 +87,50 @@ func _is_rim(c: Color) -> bool:
 	return c.a > 0.5 and c.r > 0.62 and c.g > 0.45 and c.b < 0.42 and c.r - c.b > 0.28
 
 
-## The baked "no energy" button must be the Collect button with a red field and
-## no word on it: same size, same gold frame, no green left anywhere, and no
-## near-white pixels where COLLECT used to be.
-func _empty_button_has_no_green_and_no_word() -> void:
-	var green := Image.load_from_file("res://assets/collect/collect_button.png")
-	var red := Image.load_from_file("res://assets/collect/collect_button_empty.png")
-	if red.get_size() != green.get_size():
-		_fail("collect_button_empty is %s, collect_button is %s"
-			% [str(red.get_size()), str(green.get_size())])
+## The NO ENERGY face covers the painted COLLECT whole. collect.gd lays the
+## painted plate (collect/no_energy_plate, from art/reference/plates_sheet.png)
+## over COLLECT_PLATE, in the button picture's space; the picture stands at 566,
+## 13 in the row. Re-derived from the images: the COLLECT plate's rim in the row
+## painting must lie inside that rect, and the NO ENERGY plate's corner may cut
+## no deeper than COLLECT's or a sliver of green rim shows at each corner. The
+## face used to be the COLLECT picture baked red (collect_button_empty), which
+## must be gone.
+func _no_energy_face_covers_collect() -> void:
+	if FileAccess.file_exists("res://assets/collect/collect_button_empty.png"):
+		_fail("the baked red COLLECT (collect_button_empty) is still shipped")
+	var face := _rect_in("scenes/tabs/collect.gd", "COLLECT_PLATE := ")
+	if face.size == Vector2.ZERO:
+		_fail("collect.gd has no COLLECT_PLATE")
 		return
-
-	var still_green := 0
-	var word := 0
-	var frame_moved := 0
-	for y in red.get_height():
-		for x in red.get_width():
-			var c := red.get_pixel(x, y)
-			if c.a <= 0.004:
-				continue
-			if c.g > c.r + 0.02 and c.g > c.b + 0.02:
-				still_green += 1
-			if x >= 12 and x < 166 and y >= 10 and y < 66:
-				if minf(minf(c.r, c.g), c.b) > 0.34:
-					word += 1
-			# The frame and the silhouette are not ours to change.
-			var g := green.get_pixel(x, y)
-			if absf(c.a - g.a) > 0.02:
-				frame_moved += 1
-	if still_green > 0:
-		_fail("%d green pixels left on the no-energy button" % still_green)
-	if word > 0:
-		_fail("%d pixels of the painted word left on the no-energy button" % word)
-	if frame_moved > 0:
-		_fail("%d pixels of the button's silhouette moved" % frame_moved)
+	face.position += Vector2(566, 13)
+	var row := Image.load_from_file("res://assets/collect/job_row.png")
+	var lo := Vector2i(100000, 100000)
+	var hi := Vector2i(-1, -1)
+	# The button's band of the row, above the mastery bar and its gold markers.
+	for y in range(0, 96):
+		for x in range(540, 762):
+			if _is_rim(row.get_pixel(x, y)):
+				lo = Vector2i(mini(lo.x, x), mini(lo.y, y))
+				hi = Vector2i(maxi(hi.x, x), maxi(hi.y, y))
+	if hi.x < 0:
+		_fail("no painted COLLECT rim found in the row")
+		return
+	var rim := Rect2(lo, hi - lo + Vector2i.ONE)
+	if not face.grow(0.5).encloses(rim):
+		_fail("the NO ENERGY face %s does not cover the painted COLLECT %s" % [face, rim])
+	var plate := Image.load_from_file("res://assets/collect/no_energy_plate.png")
+	if plate == null:
+		_fail("there is no collect/no_energy_plate")
+		return
+	# The corner cut: how far along the top edge the plate's first solid pixel sits.
+	var cut := 0
+	while cut < plate.get_width() and plate.get_pixel(cut, 0).a < 0.5:
+		cut += 1
+	var green_cut := 0
+	while green_cut < 40 and not _is_rim(row.get_pixel(lo.x + green_cut, lo.y)):
+		green_cut += 1
+	if cut > green_cut + 1:
+		_fail("the NO ENERGY plate's corner cuts %d deep against COLLECT's %d: green shows at its corners" % [cut, green_cut])
 
 
 ## Reads a literal Rect2(a, b, c, d) that follows `needle` in a source file, so

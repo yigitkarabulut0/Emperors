@@ -8,6 +8,7 @@ extends SceneTree
 ##
 ## Run: godot --headless --path client --script tests/mastery_track.gd
 
+const PAINTED_ROW_Y := 517.0
 var _fails: int = 0
 var _L: GDScript
 var _C: GDScript
@@ -48,7 +49,11 @@ func _markers_and_fill_sit_on_the_painting(row: Dictionary) -> void:
 	if img == null:
 		_fail("could not read art/reference/collect.png")
 		return
-	var origin: Vector2 = _L.rect_of(row).position
+	# The row's parts are measured against collect.png's first row, painted at
+	# y 517; the list itself starts lower since Wave 3 put the week's chest bar
+	# above it (the layout's job_row stands at 720), so the parts are laid on
+	# the painted row, not wherever the list begins.
+	var origin := Vector2(_L.rect_of(row).position.x, PAINTED_ROW_Y)
 	# The diamonds are the warm-gold columns in the band of the first row's
 	# track: gold (r well above b) for six rows or more, where the track's own
 	# edge lines are neutral grey and only one row thick.

@@ -44,56 +44,53 @@
     771,
     148
    ],
-   "erase": [
+   "inpaint": [
     {
-     "rect": [
+     "text": [
       284,
       424,
       90,
       40
      ],
-     "sample_x": [
-      395,
-      435
-     ]
+     "d": 40,
+     "dilate": 6,
+     "radius": 6
     },
     {
-     "rect": [
+     "text": [
       516,
       424,
       90,
       40
      ],
-     "sample_x": [
-      620,
-      680
-     ]
+     "d": 40,
+     "dilate": 6,
+     "radius": 6
     },
     {
-     "rect": [
+     "text": [
       760,
       424,
       90,
       40
      ],
-     "sample_x": [
-      870,
-      900
-     ]
+     "d": 40,
+     "dilate": 6,
+     "radius": 6
     },
     {
-     "rect": [
+     "text": [
       762,
       397,
       116,
       26
      ],
-     "sample_x": [
-      880,
-      900
-     ]
+     "d": 40,
+     "dilate": 6,
+     "radius": 6
     }
-   ]
+   ],
+   "_note": "The three figures and the painted TROOP HP lifted off the navy by their ink alone (the text inpaint): the flat erases each left a box a shade off the plate's grain, round every live figure."
   },
   {
    "name": "army/soldiers_panel",
@@ -193,54 +190,6 @@
     },
     {
      "rect": [
-      487,
-      740,
-      137,
-      30
-     ],
-     "sample_x": [
-      484,
-      500
-     ]
-    },
-    {
-     "rect": [
-      534,
-      771,
-      82,
-      29
-     ],
-     "sample_x": [
-      617,
-      623
-     ]
-    },
-    {
-     "rect": [
-      534,
-      799,
-      82,
-      29
-     ],
-     "sample_x": [
-      617,
-      623
-     ]
-    },
-    {
-     "rect": [
-      534,
-      827,
-      82,
-      31
-     ],
-     "sample_x": [
-      617,
-      623
-     ]
-    },
-    {
-     "rect": [
       546,
       858,
       66,
@@ -251,7 +200,54 @@
       510
      ]
     }
-   ]
+   ],
+   "inpaint": [
+    {
+     "text": [
+      487,
+      740,
+      137,
+      24
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 5
+    },
+    {
+     "text": [
+      534,
+      771,
+      82,
+      29
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 5
+    },
+    {
+     "text": [
+      534,
+      799,
+      82,
+      29
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 5
+    },
+    {
+     "text": [
+      534,
+      827,
+      82,
+      31
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 5
+    }
+   ],
+   "_note_ink": "The name and the three stat figures lifted by their ink alone: the flat erases showed as a band behind the name and a pale column behind the figures on every card. The name's rect stops at 763, above the sword's tip (769)."
   },
   {
    "name": "army/card_selected_frame",
@@ -267,189 +263,6 @@
     7,
     5
    ]
-  },
-  {
-   "name": "portraits/soldier_villager",
-   "rect": [
-    178,
-    573,
-    133,
-    159
-   ],
-   "soften": [
-    [
-     178,
-     573,
-     48,
-     41
-    ]
-   ]
-  },
-  {
-   "name": "portraits/soldier_mercenary",
-   "rect": [
-    332,
-    570,
-    133,
-    163
-   ],
-   "soften": [
-    [
-     332,
-     570,
-     43,
-     48
-    ]
-   ]
-  },
-  {
-   "name": "portraits/soldier_gladiator",
-   "rect": [
-    483,
-    570,
-    133,
-    164
-   ],
-   "soften": [
-    [
-     483,
-     570,
-     50,
-     47
-    ]
-   ]
-  },
-  {
-   "name": "portraits/soldier_villager_large",
-   "rect": [
-    183,
-    955,
-    214,
-    301
-   ]
-  },
-  {
-   "name": "army/numeral_1",
-   "rect": [
-    176,
-    567,
-    50,
-    50
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      25,
-      0
-     ],
-     [
-      50,
-      25
-     ],
-     [
-      25,
-      50
-     ],
-     [
-      0,
-      25
-     ]
-    ]
-   },
-   "_note": "Centred on the painted diamond, measured off its gold rim (I at 200.5,592; II at 351.5,593; III at 504,592.5). The I was cut four units high and the III two and a half to the right of their diamonds, so the badges sat at three different places on three cards -- and the live IV and up, set in the middle of the box, sat off the diamond's middle."
-  },
-  {
-   "name": "army/numeral_2",
-   "rect": [
-    327,
-    568,
-    50,
-    50
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      25,
-      0
-     ],
-     [
-      50,
-      25
-     ],
-     [
-      25,
-      50
-     ],
-     [
-      0,
-      25
-     ]
-    ]
-   },
-   "_note": "Centred on the painted diamond, measured off its gold rim (I at 200.5,592; II at 351.5,593; III at 504,592.5). The I was cut four units high and the III two and a half to the right of their diamonds, so the badges sat at three different places on three cards -- and the live IV and up, set in the middle of the box, sat off the diamond's middle."
-  },
-  {
-   "name": "army/numeral_3",
-   "rect": [
-    479,
-    567,
-    50,
-    50
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      25,
-      0
-     ],
-     [
-      50,
-      25
-     ],
-     [
-      25,
-      50
-     ],
-     [
-      0,
-      25
-     ]
-    ]
-   },
-   "_note": "Centred on the painted diamond, measured off its gold rim (I at 200.5,592; II at 351.5,593; III at 504,592.5). The I was cut four units high and the III two and a half to the right of their diamonds, so the badges sat at three different places on three cards -- and the live IV and up, set in the middle of the box, sat off the diamond's middle."
-  },
-  {
-   "name": "army/numeral_large_1",
-   "rect": [
-    189,
-    968,
-    72,
-    68
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      36,
-      0
-     ],
-     [
-      72,
-      34
-     ],
-     [
-      36,
-      68
-     ],
-     [
-      0,
-      34
-     ]
-    ]
-   }
   },
   {
    "name": "army/next_slot",
@@ -490,91 +303,6 @@
     388
    ],
    "erase": [
-    {
-     "rect": [
-      398,
-      968,
-      150,
-      36
-     ],
-     "sample_x": [
-      660,
-      700
-     ]
-    },
-    {
-     "rect": [
-      566,
-      978,
-      62,
-      20
-     ],
-     "sample_x": [
-      556,
-      562
-     ]
-    },
-    {
-     "rect": [
-      398,
-      1010,
-      316,
-      56
-     ],
-     "sample_x": [
-      690,
-      712
-     ]
-    },
-    {
-     "rect": [
-      430,
-      1100,
-      80,
-      34
-     ],
-     "sample_x": [
-      706,
-      714
-     ]
-    },
-    {
-     "rect": [
-      530,
-      1100,
-      80,
-      34
-     ],
-     "sample_x": [
-      706,
-      714
-     ]
-    },
-    {
-     "rect": [
-      628,
-      1100,
-      76,
-      34
-     ],
-     "sample_x": [
-      706,
-      714
-     ]
-    },
-    {
-     "rect": [
-      779,
-      968,
-      130,
-      36
-     ],
-     "sample_x": [
-      906,
-      911
-     ],
-     "_note": "the troop count, stopping above the troop bar's top frame (row 1004): at 40 tall it took that edge, which nothing showed while the bar was always full"
-    },
     {
      "rect": [
       444,
@@ -638,32 +366,6 @@
     },
     {
      "rect": [
-      553,
-      970,
-      86,
-      32
-     ],
-     "sample_x": [
-      660,
-      700
-     ],
-     "_note": "the tier chip's plate: drawn live when a soldier is selected, and an empty slot's title ran into the painted one"
-    },
-    {
-     "rect": [
-      734,
-      1006,
-      167,
-      16
-     ],
-     "sample_x": [
-      906,
-      911
-     ],
-     "_note": "the troop bar's green: an empty track inside the gold frame, which the live bar fills; an empty slot showed a full bar"
-    },
-    {
-     "rect": [
       726,
       1142,
       90,
@@ -686,9 +388,114 @@
       905,
       910
      ]
+    },
+    {
+     "rect": [
+      736,
+      962,
+      48,
+      44
+     ],
+     "sample_x": [
+      722,
+      734
+     ],
+     "_note": "The painted crowd of figures beside the troop count. It is lifted as tightly as it is painted so the count's OWN box beside it -- already lifted, and where the wave's state line now stands -- keeps the panel's grain (tests/live_words_on_grain.gd)."
+    },
+    {
+     "rect": [
+      728,
+      1004,
+      188,
+      34
+     ],
+     "sample_x": [
+      720,
+      730
+     ],
+     "_note": "The troop bar's frame under it. The bar was a figure that never moved -- 320/320 whatever happened -- and the wave needs the room for a third plate."
     }
    ],
-   "_note": "Cut from 898, below the painted cards' feet: from 888 it carried their bottom edges and the gold of the painting's selection frame, drawn over the live row under slot one whatever was selected."
+   "_note": "Cut from 898, below the painted cards' feet: from 888 it carried their bottom edges and the gold of the painting's selection frame, drawn over the live row under slot one whatever was selected. The right column's troop icon and bar frame are erased (Wave 7): the column carries HUNT, REROLL and DISMISS now, and a state line above them.",
+   "inpaint": [
+    [
+     553,
+     970,
+     86,
+     32
+    ],
+    {
+     "text": [
+      398,
+      968,
+      150,
+      36
+     ],
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
+    },
+    {
+     "text": [
+      398,
+      1010,
+      316,
+      56
+     ],
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
+    },
+    {
+     "text": [
+      434,
+      1100,
+      66,
+      34
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6,
+     "_note": "434..500: the sword's guard ends at 423, the shield begins at 508"
+    },
+    {
+     "text": [
+      538,
+      1100,
+      72,
+      34
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6,
+     "_note": "from 538: the shield ends at 531, and a wider lift took its right edge"
+    },
+    {
+     "text": [
+      640,
+      1100,
+      64,
+      34
+     ],
+     "d": 40,
+     "dilate": 3,
+     "radius": 6,
+     "_note": "from 640: the POWER mark's gold runs to 636"
+    },
+    {
+     "text": [
+      779,
+      968,
+      130,
+      36
+     ],
+     "d": 40,
+     "dilate": 5,
+     "radius": 6
+    }
+   ],
+   "_note_ink": "Lifted by their ink alone (the slicer's text inpaint), not a flat erase: a flat row fill left each live word on a box a shade off the plate's grain -- the name, LEVEL and the XP line on the identity plate; the name and the level and bonus rows on a ledger card; the selected soldier's name, blurb, troop count and figures.",
+   "_note_chip": "553..639 x 970..1002, the tier chip, plate and word, is filled from the ground round it (Telea). The chip is drawn live and follows the name, so the ground it stood on shows beside it, and under EMPTY SLOT; a flat erase there was a box one shade off the ground, with edges."
   },
   {
    "name": "army/tier_chip",
@@ -698,18 +505,18 @@
     84,
     28
    ],
-   "erase": [
+   "inpaint": [
     {
-     "rect": [
+     "text": [
       566,
-      978,
+      977,
       62,
-      20
+      19
      ],
-     "sample_x": [
-      556,
-      562
-     ]
+     "d": 40,
+     "dilate": 3,
+     "radius": 5,
+     "_note": "TIER I lifted by its ink: the plate's light runs 83 at its top to 60 in its middle, and the flat erase (sampled across the rim at 557) left a lighter box with edges round the live word"
     }
    ]
   },
@@ -915,21 +722,38 @@
     231,
     241
    ],
-   "soften": [
+   "_note": "The chip and the odds line lifted together with soften: the ground here is lit from the portrait side and falls away to the right, and a row fill from the right-hand columns left a dark box where the chip had been, which showed the moment the chip moved. The live chip sits centred between the name and the price.",
+   "inpaint": [
     [
-     258,
-     1376,
-     146,
-     72
+     280,
+     1383,
+     96,
+     27
     ],
-    [
-     264,
-     1455,
-     104,
-     48
-    ]
+    {
+     "text": [
+      272,
+      1411,
+      132,
+      35
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
+    },
+    {
+     "text": [
+      270,
+      1457,
+      98,
+      44
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
+    }
    ],
-   "_note": "The chip and the odds line lifted together with soften: the ground here is lit from the portrait side and falls away to the right, and a row fill from the right-hand columns left a dark box where the chip had been, which showed the moment the chip moved. The live chip sits centred between the name and the price."
+   "_note_ink": "The painted tier chip filled from the navy round it (Telea, as a rect: its plate is the panel's own dark, so lifting its ink left a ghost of it above the live chip, and softening it a pale block); the odds and the price lifted by their ink, clear of the portrait and of the painted coin, which stays."
   },
   {
    "name": "army/recruit_mercenary",
@@ -939,21 +763,38 @@
     236,
     241
    ],
-   "soften": [
+   "_note": "The chip and the odds line lifted together with soften: the ground here is lit from the portrait side and falls away to the right, and a row fill from the right-hand columns left a dark box where the chip had been, which showed the moment the chip moved. The live chip sits centred between the name and the price.",
+   "inpaint": [
     [
-     498,
-     1376,
-     154,
-     72
+     527,
+     1383,
+     107,
+     27
     ],
-    [
-     503,
-     1455,
-     108,
-     48
-    ]
+    {
+     "text": [
+      516,
+      1411,
+      136,
+      35
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
+    },
+    {
+     "text": [
+      511,
+      1457,
+      100,
+      44
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
+    }
    ],
-   "_note": "The chip and the odds line lifted together with soften: the ground here is lit from the portrait side and falls away to the right, and a row fill from the right-hand columns left a dark box where the chip had been, which showed the moment the chip moved. The live chip sits centred between the name and the price."
+   "_note_ink": "The painted tier chip filled from the navy round it (Telea, as a rect: its plate is the panel's own dark, so lifting its ink left a ghost of it above the live chip, and softening it a pale block); the odds and the price lifted by their ink, clear of the portrait and of the painted coin, which stays."
   },
   {
    "name": "army/recruit_gladiator",
@@ -963,21 +804,38 @@
     240,
     241
    ],
-   "soften": [
+   "_note": "The chip and the odds line lifted together with soften: the ground here is lit from the portrait side and falls away to the right, and a row fill from the right-hand columns left a dark box where the chip had been, which showed the moment the chip moved. The live chip sits centred between the name and the price.",
+   "inpaint": [
     [
-     746,
-     1376,
-     162,
-     72
-    ],
-    [
-     755,
-     1455,
+     778,
+     1383,
      112,
-     48
-    ]
+     27
+    ],
+    {
+     "text": [
+      758,
+      1411,
+      150,
+      35
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
+    },
+    {
+     "text": [
+      758,
+      1457,
+      109,
+      44
+     ],
+     "d": 40,
+     "dilate": 4,
+     "radius": 6
+    }
    ],
-   "_note": "The chip and the odds line lifted together with soften: the ground here is lit from the portrait side and falls away to the right, and a row fill from the right-hand columns left a dark box where the chip had been, which showed the moment the chip moved. The live chip sits centred between the name and the price."
+   "_note_ink": "The painted tier chip filled from the navy round it (Telea, as a rect: its plate is the panel's own dark, so lifting its ink left a ghost of it above the live chip, and softening it a pale block); the odds and the price lifted by their ink, clear of the portrait and of the painted coin, which stays."
   },
   {
    "name": "army/bottom",
@@ -1012,125 +870,98 @@
    ]
   },
   {
-   "name": "army/numeral_blank",
-   "rect": [
-    176,
-    567,
-    50,
-    50
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      25,
-      0
-     ],
-     [
-      50,
-      25
-     ],
-     [
-      25,
-      50
-     ],
-     [
-      0,
-      25
-     ]
-    ]
-   },
-   "erase": [
-    {
-     "rect": [
-      197,
-      582,
-      4,
-      22
-     ],
-     "sample_x": [
-      194,
-      196
-     ]
-    },
-    {
-     "rect": [
-      201,
-      582,
-      5,
-      22
-     ],
-     "sample_x": [
-      206,
-      207
-     ]
-    }
-   ],
-   "_note": "Centred on the painted diamond, measured off its gold rim (I at 200.5,592; II at 351.5,593; III at 504,592.5). The I was cut four units high and the III two and a half to the right of their diamonds, so the badges sat at three different places on three cards -- and the live IV and up, set in the middle of the box, sat off the diamond's middle."
-  },
-  {
-   "name": "army/numeral_large_blank",
-   "rect": [
-    189,
-    968,
-    72,
-    68
-   ],
-   "mask": {
-    "type": "polygon",
-    "points": [
-     [
-      36,
-      0
-     ],
-     [
-      72,
-      34
-     ],
-     [
-      36,
-      68
-     ],
-     [
-      0,
-      34
-     ]
-    ]
-   },
-   "erase": [
-    {
-     "rect": [
-      219,
-      988,
-      7,
-      28
-     ],
-     "sample_x": [
-      215,
-      217
-     ]
-    },
-    {
-     "rect": [
-      226,
-      988,
-      7,
-      28
-     ],
-     "sample_x": [
-      234,
-      236
-     ]
-    }
-   ]
-  },
-  {
    "name": "army/gear_tile_empty",
    "rect": [
     396,
     1156,
     98,
     100
+   ],
+   "erase": [
+    {
+     "rect": [
+      402,
+      1162,
+      86,
+      44
+     ],
+     "sample_x": [
+      402,
+      405
+     ]
+    },
+    {
+     "rect": [
+      402,
+      1206,
+      86,
+      24
+     ],
+     "sample_x": [
+      486,
+      489
+     ]
+    },
+    {
+     "rect": [
+      402,
+      1230,
+      86,
+      22
+     ],
+     "sample_x": [
+      434,
+      440
+     ]
+    }
+   ]
+  },
+  {
+   "name": "army/gear_tile_ring",
+   "rect": [
+    396,
+    1156,
+    98,
+    100
+   ],
+   "hole": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       8,
+       4
+      ],
+      [
+       90,
+       4
+      ],
+      [
+       94,
+       8
+      ],
+      [
+       94,
+       91
+      ],
+      [
+       90,
+       95
+      ],
+      [
+       8,
+       95
+      ],
+      [
+       4,
+       91
+      ],
+      [
+       4,
+       8
+      ]
+     ]
+    }
    ],
    "erase": [
     {
@@ -1196,6 +1027,28 @@
     77
    ],
    "_note": "HUNT's painted button, cut whole. client/tools/make_button_plates.gd then takes its crosshair and word off in place, filling from the plate's own shading -- run it after re-cutting this."
+  },
+  {
+   "name": "icons/crosshair",
+   "rect": [
+    750,
+    1075,
+    48,
+    48
+   ],
+   "mode": "darkkey",
+   "k": 78,
+   "bg": [
+    30,
+    101,
+    42
+   ],
+   "floor": 6,
+   "scale": [
+    37,
+    37
+   ],
+   "note": "HUNT's own crosshair, lifted off its green plate (the plate's own colour is the key) and drawn down to the size the reroll arrows are drawn at beside it. make_button_plates.gd takes the crosshair and the word OFF the plate so both can be live; this is the crosshair put back, so the painting's HUNT is still the painting's."
   }
  ]
 }

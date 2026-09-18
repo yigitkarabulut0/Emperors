@@ -1,0 +1,187 @@
+{
+ "screen": "deeds",
+ "source": "deeds.png",
+ "canvas": [941, 1672],
+ "ground": "#111F2C",
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "notes": [
+  "The painting is the page (deeds/page): its frame, its castle header, DEEDS and the flourishes beside CLOSE. Its tab row, discs and rows are cleared back to the panel; the rule under the tabs is the painting's own at both ends.",
+  "DEEDS / VICTORY ROAD are a TabStrip standing on the painting's rule (y 447: the plates' bottom rim, rows 79-81 of the sheet's 87, on it), 68..870 as on the Victory Road, the same two plates at the same size, so the pair reads as one page under two tabs.",
+  "The seven category discs are their own crops at their painted places (centres 117..822.5, 117.6 apart, on y 512.5): lit together while no category is chosen; the chosen one lit and the rest dimmed as a TabStrip dims a tab that is off. A disc wears the rail's count bubble on its shoulder while a deed in it has a tier to claim.",
+  "The rows are row 1 of the painting as a template (row), 137 apart as painted, in a scroll (list) over the cleared panel. Template units are the painting's less (50, 575): the row plate's outer edge runs 3..130 as painted (578..705).",
+  "The medallion stands on the bronze's centre (139, 645 as painted) in every state: each state was cut centred on its own disc. The seal is row 4's, lifted 4 so its ribbons end on this shorter plate's bottom rim; CLAIM is row 3's, centred where painted; the count plate is row 1's.",
+  "One stretch band in the list's middle: on 941x2040 the list grows and shows more rows."
+ ],
+ "stretch": [
+  [760, 480]
+ ],
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "deeds/page",
+   "rect": [0, 0, 941, 1672]
+  },
+  {
+   "id": "tabs",
+   "kind": "template",
+   "rect": [68, 367, 802, 87],
+   "tabs": ["deeds", "victory_road"],
+   "note": "DEEDS / VICTORY ROAD: a TabStrip over the cleared row (the painted plates stood 70..870, 377..447); the sheet's plates at 1:1 stand their bottom rims on the painting's rule at y 447"
+  },
+  {
+   "id": "category",
+   "kind": "template",
+   "rect": [65, 460, 104, 106],
+   "note": "a category's disc, its ring's centre at (52, 52.5) of the crop; the count bubble on its upper right shoulder (the ring at 45 degrees, where TabStrip puts a plate's)",
+   "instances": [
+    {"pos": [65, 460], "assets": {"disc": "deeds/cat_work"}, "data": {"id": "work"}},
+    {"pos": [182, 460], "assets": {"disc": "deeds/cat_war"}, "data": {"id": "war"}},
+    {"pos": [300, 460], "assets": {"disc": "deeds/cat_kingdom"}, "data": {"id": "kingdom"}},
+    {"pos": [418, 460], "assets": {"disc": "deeds/cat_crown"}, "data": {"id": "crown"}},
+    {"pos": [536, 460], "assets": {"disc": "deeds/cat_scroll"}, "data": {"id": "scroll"}},
+    {"pos": [654, 460], "assets": {"disc": "deeds/cat_laurel"}, "data": {"id": "laurel"}},
+    {"pos": [771, 460], "assets": {"disc": "deeds/cat_chest"}, "data": {"id": "chest"}}
+   ],
+   "parts": [
+    {
+     "id": "disc",
+     "kind": "button",
+     "asset": "deeds/cat_work",
+     "rect": [0, 0, 104, 106],
+     "action": "category"
+    },
+    {
+     "id": "bubble",
+     "kind": "image",
+     "asset": "icons/count_bubble",
+     "rect": [65, -3, 42, 42]
+    },
+    {
+     "id": "count",
+     "kind": "text",
+     "rect": [65, -3, 42, 40],
+     "font": "title",
+     "size": 24,
+     "weight": 800,
+     "color": "#FFF4EC",
+     "align": "center",
+     "valign": "center",
+     "sample": "3"
+    }
+   ]
+  },
+  {
+   "id": "list",
+   "kind": "scroll",
+   "rect": [50, 575, 842, 822],
+   "content": ["row"],
+   "note": "the rows, 137 apart from the painted row 1's top; six whole rows on the painting's canvas, ending under the sixth's shadow so no sliver of a seventh's rim shows over CLOSE's flourishes (on a taller phone the band grows it)"
+  },
+  {
+   "id": "row",
+   "kind": "template",
+   "rect": [0, 0, 842, 133],
+   "pitch": 137,
+   "note": "One deed. Units are the painting's less (50, 575). The EMPTY title plate is painted 221..467 x 596..648 (the name inside it, 6 in), the EMPTY description plate 482..711 (the blurb, two lines), the bar's track 223..709 x 660..679, the count plate 727..863 x 640..689.",
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "deeds/row",
+     "rect": [0, 0, 842, 133]
+    },
+    {
+     "id": "medal",
+     "kind": "image",
+     "asset": "deeds/medal_unknown",
+     "rect": [16, -3, 146, 146]
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [177, 26, 234, 42],
+     "font": "title",
+     "size": 24,
+     "weight": 700,
+     "color": "#E9C46A",
+     "align": "center",
+     "valign": "center",
+     "sample": "Honest Labour"
+    },
+    {
+     "id": "blurb",
+     "kind": "text",
+     "rect": [438, 26, 217, 42],
+     "font": "body",
+     "size": 21,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "wrap": true,
+     "line_height": 1.0,
+     "sample": "Work the jobs of the realm."
+    },
+    {
+     "id": "fill",
+     "kind": "image",
+     "asset": "deeds/bar_fill",
+     "rect": [174, 86, 465, 18],
+     "fill": "left",
+     "track": [174, 86, 485, 18],
+     "caps": [9, 9]
+    },
+    {
+     "id": "count_plate",
+     "kind": "image",
+     "asset": "deeds/count_plate",
+     "rect": [675, 63, 141, 54]
+    },
+    {
+     "id": "count",
+     "kind": "text",
+     "rect": [683, 70, 125, 40],
+     "font": "body",
+     "size": 24,
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "5 / 100"
+    },
+    {
+     "id": "seal",
+     "kind": "image",
+     "asset": "deeds/seal",
+     "rect": [696, 9, 104, 121]
+    },
+    {
+     "id": "tap",
+     "kind": "hotspot",
+     "rect": [3, 3, 836, 127],
+     "action": "detail"
+    },
+    {
+     "id": "claim",
+     "kind": "button",
+     "asset": "deeds/claim",
+     "rect": [666, 26, 166, 100],
+     "keep_texture_size": true,
+     "action": "claim"
+    }
+   ]
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "deeds/close",
+   "rect": [285, 1432, 370, 98],
+   "keep_texture_size": true,
+   "action": "close"
+  }
+ ]
+}

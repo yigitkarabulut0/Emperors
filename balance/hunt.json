@@ -1,0 +1,63 @@
+{
+  "_comment": "Seferler. A soldier sent out for 1, 2, 4 or 8 hours comes back with wages -- what that much energy earns at your best job -- scaled by their rank (a quarter of the tier ladder, so your best gladiator is worth about twice a villager), rolled AT DISPATCH inside the spread and frozen. One expedition at level 8, two at 20, three at 40. Away, a soldier does not fight and cannot be rerolled, dismissed or re-geared. A recall pays nothing.",
+  "section": "hunt",
+  "slots": [
+    {
+      "level": 8,
+      "slots": 1
+    },
+    {
+      "level": 20,
+      "slots": 2
+    },
+    {
+      "level": 40,
+      "slots": 3
+    }
+  ],
+  "fields": [
+    {
+      "id": "meadow",
+      "name": "The Meadow",
+      "hours": 1,
+      "blurb": "Close work. An afternoon in the grass.",
+      "gold_wages": 2,
+      "xp_wages": 1,
+      "item_chance_bp": 150,
+      "item_tier": "common"
+    },
+    {
+      "id": "wood",
+      "name": "The King's Wood",
+      "hours": 2,
+      "blurb": "Deeper in, where the king's deer are.",
+      "gold_wages": 5,
+      "xp_wages": 1,
+      "item_chance_bp": 300,
+      "item_tier": "common"
+    },
+    {
+      "id": "hills",
+      "name": "The Iron Hills",
+      "hours": 4,
+      "blurb": "A day's walk, and the old workings.",
+      "gold_wages": 11,
+      "xp_wages": 3,
+      "item_chance_bp": 600,
+      "item_tier": "uncommon"
+    },
+    {
+      "id": "wilds",
+      "name": "The Far Wilds",
+      "hours": 8,
+      "blurb": "A night out. Whatever is out there is out there.",
+      "gold_wages": 24,
+      "xp_wages": 6,
+      "item_chance_bp": 1200,
+      "item_tier": "rare"
+    }
+  ],
+  "tier_share_bp": 2500,
+  "spread_bp": 2000,
+  "recall_pays": false
+}

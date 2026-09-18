@@ -36,6 +36,34 @@ export const READS = {
   audit: { path: "/audit", params: ["limit"] },
   balance: { path: "/balance", params: [] },
   balanceVersions: { path: "/balance/versions", params: [] },
+  playerDiamonds: { path: "/players/diamonds", params: ["id", "limit", "offset"] },
+  mailPreview: { path: "/mail/preview", params: ["target", "min_level", "max_level", "active_days"] },
+  mailBroadcasts: { path: "/mail/broadcasts", params: ["limit"] },
+  jobs: { path: "/jobs", params: [] },
+  dev: { path: "/dev", params: [] },
+  billingSummary: { path: "/billing/summary", params: ["days"] },
+  billingTransactions: { path: "/billing/transactions", params: ["player", "env", "state", "q", "before", "limit"] },
+  billingNotifications: { path: "/billing/notifications", params: ["open", "limit"] },
+  playerBilling: { path: "/players/billing", params: ["id"] },
+  experiments: { path: "/experiments", params: [] },
+  promo: { path: "/promo", params: [] },
+  promoRedemptions: { path: "/promo/redemptions", params: ["code"] },
+  // The realm's calendar: the hourly schedule, the festivals, the season.
+  liveopsHourly: { path: "/liveops/hourly", params: [] },
+  liveopsFestivals: { path: "/liveops/festivals", params: [] },
+  liveopsFestivalBoard: { path: "/liveops/festivals/board", params: ["id"] },
+  liveopsSeason: { path: "/liveops/season", params: [] },
+  // Rekabet: the arena's ladder, the board's escrow and the Throne.
+  depth: { path: "/depth", params: ["hours"] },
+  // Krallik Boss ve Savaslari: the beasts standing and the week's wars.
+  kingdomWar: { path: "/kingdom-war", params: ["hours"] },
+  pvpArena: { path: "/pvp/arena", params: ["limit"] },
+  pvpBounties: { path: "/pvp/bounties", params: ["limit"] },
+  pvpThrone: { path: "/pvp/throne", params: [] },
+  // Sosyal: the halls' moderation queue, one line's room, and the silences.
+  modQueue: { path: "/mod/queue", params: ["limit"] },
+  modContext: { path: "/mod/context", params: ["id", "span"] },
+  modMutes: { path: "/mod/mutes", params: ["limit"] },
 } as const satisfies Record<string, { path: string; params: readonly string[] }>;
 
 export type ReadOp = keyof typeof READS;
@@ -72,7 +100,7 @@ export const WRITES = {
   },
   boostCreate: {
     path: "/boosts", role: "designer",
-    fields: ["bucket", "amount_bp", "hours", "note"], idempotent: false,
+    fields: ["bucket", "amount_bp", "hours", "starts_in_hours", "note"], idempotent: false,
   },
   boostRevoke: {
     path: "/boosts/revoke", role: "designer",
@@ -85,6 +113,118 @@ export const WRITES = {
   balanceRollback: {
     path: "/balance/rollback", role: "designer",
     fields: ["version_id", "reason"], idempotent: true,
+  },
+  // The floor, not the whole rule: what a letter CARRIES raises the role it
+  // needs (see mailRole in features/mail), and admin.Service decides. A letter
+  // is a grant, so a blind retry after a timeout would send it twice.
+  mailSend: {
+    path: "/mail/send", role: "moderator",
+    fields: ["target", "player_id", "segment", "sender", "title", "body", "attachments",
+      "expires_days", "include_new", "note"],
+    idempotent: false,
+  },
+  mailRevoke: {
+    path: "/mail/revoke", role: "designer",
+    fields: ["broadcast_id", "note"], idempotent: true,
+  },
+  // The billing desk. A retry acts on a notification once and says "already
+  // processed" after; a take-back of a purchase already undone says so and
+  // takes nothing more; a debt already forgiven is "nothing to change". All
+  // three are safe to press twice.
+  billingRetry: {
+    path: "/billing/notifications/retry", role: "moderator",
+    fields: ["id"], idempotent: true,
+  },
+  billingTakeBack: {
+    path: "/billing/take-back", role: "designer",
+    fields: ["transaction_id", "state", "note"], idempotent: true,
+  },
+  forgiveDebt: {
+    path: "/players/forgive-debt", role: "designer",
+    fields: ["player_id", "note"], idempotent: true,
+  },
+  // Dev tools, a server that is not production only. A warp or a count moves
+  // clocks and counters forward, so a blind retry would do it twice.
+  devTimeWarp: {
+    path: "/dev/timewarp", role: "designer",
+    fields: ["player_id", "hours"], idempotent: false,
+  },
+  devDeeds: {
+    path: "/dev/deeds", role: "designer",
+    fields: ["player_id", "deed", "n"], idempotent: false,
+  },
+  devRunJob: {
+    path: "/dev/jobs/run", role: "designer",
+    fields: ["name"], idempotent: false,
+  },
+  // Back to the guide's first step: a second press finds it there already.
+  devGuide: {
+    path: "/dev/guide", role: "designer",
+    fields: ["player_id"], idempotent: true,
+  },
+  // Giving a right already held, or taking back one already gone, is refused
+  // as nothing to do: a retry cannot give twice.
+  entitlement: {
+    path: "/players/entitlement", role: "designer",
+    fields: ["player_id", "entitlement", "grant", "note"], idempotent: true,
+  },
+  // A code is refused a second time under the same name, so a retry after a
+  // timeout cannot make two; disabling twice is a no-op.
+  promoCreate: {
+    path: "/promo", role: "designer",
+    fields: ["code", "note", "reward", "max_uses", "expires_days"], idempotent: true,
+  },
+  promoDisable: {
+    path: "/promo/disable", role: "designer",
+    fields: ["code", "note"], idempotent: true,
+  },
+  // The hourly schedule: setting an hour to what it already says changes
+  // nothing, so a retry is safe. A festival scheduled twice is refused as a
+  // clash with itself, but the first may have landed: no blind retry.
+  liveopsSetHour: {
+    path: "/liveops/hourly", role: "designer",
+    fields: ["hour", "event", "note"], idempotent: true,
+  },
+  festivalSchedule: {
+    path: "/liveops/festivals", role: "designer",
+    fields: ["template", "starts_at", "starts_in_hours", "note"], idempotent: false,
+  },
+  festivalRevoke: {
+    path: "/liveops/festivals/revoke", role: "designer",
+    fields: ["id"], idempotent: true,
+  },
+  // A price already withdrawn gives nothing more back and says so, so a retry
+  // after a timeout cannot refund twice.
+  bountyRevoke: {
+    path: "/pvp/bounties/revoke", role: "designer",
+    fields: ["id", "note"], idempotent: true,
+  },
+  // The week is claimed in admin.period_closes and the reign's own key refuses
+  // a second crowning, so running it again crowns nobody twice.
+  // A line down or back up, and a tongue silenced or freed. Moderator's, and
+  // every one is audited with the line's own id: a silence with no name
+  // against it is how a hall becomes a rumour about the crown.
+  modHide: {
+    path: "/mod/hide", role: "moderator",
+    fields: ["id", "hide", "note"], idempotent: true,
+  },
+  modMute: {
+    path: "/mod/mute", role: "moderator",
+    fields: ["player_id", "minutes", "reason", "note"], idempotent: true,
+  },
+  modUnmute: {
+    path: "/mod/unmute", role: "moderator",
+    fields: ["player_id", "note"], idempotent: true,
+  },
+  // The lords' queue answered: the desk has looked at this lord. What it
+  // decided to do is one of the buttons above, or a letter, or nothing.
+  modClear: {
+    path: "/mod/clear", role: "moderator",
+    fields: ["player_id", "note"], idempotent: true,
+  },
+  throneSettle: {
+    path: "/pvp/throne/settle", role: "designer",
+    fields: ["note"], idempotent: true,
   },
 } as const satisfies Record<
   string,

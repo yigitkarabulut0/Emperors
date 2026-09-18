@@ -1,0 +1,736 @@
+{
+ "screen": "calendar",
+ "source": "calendar.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "notes": [
+  "The painting is the page (calendar/page) with its grid, its BROKEN row, its chests, the bar's fill and CLAIM lifted: the page draws them from the server's calendar.",
+  "square: the 24 plain places, at the painting's rows (548, 699, 850, 1001) and its columns evened to one pitch (50 to 653, 120.6 apart; the painted ones stray by up to 2). Each is the plain square (or, on the day a claim takes, calendar/square_today at -2,-1 with calendar/today_glow behind it), the picture its `kind` names, the claimed seal (icons/tick_seal, the painting's own seal a unit or two larger) over a dimmed picture, and the amount on its EMPTY plate.",
+  "crown: the four laurel squares, at the plain rows' own origins (each drawn whole from 18 above, its crown standing over the row), with the picture its reward names (title, frame, gear, crest); the glow, a nine-patch of today_glow, round the one a claim takes.",
+  "The BROKEN row (ribbon, RESTORE with its price on the painted plate, USE PARDON with the pardons held in the rail's count bubble, START ANEW) shows only while the streak is broken; otherwise row_title and row_note say what a pardon is and how many are held.",
+  "THIS WEEK: points on the painted plate, the bar's fill along the channel from 201 to 825 (the rails' end) with its painted ends held, each point placed between the painted markers (80 at 451, 160 at 637, 240 at 832), the chests dimmed until reached and sealed once taken, their thresholds on the plates under them.",
+  "CLAIM is shown while a plain claim can be made; otherwise CLOSE, the navy plate from plates_sheet with its word in Cinzel, stands in the same place (the painting has no CLOSE)."
+ ],
+ "stretch": [
+  [
+   524,
+   22,
+   1
+  ],
+  [
+   1142,
+   10,
+   1
+  ],
+  [
+   1283,
+   10,
+   1
+  ],
+  [
+   1467,
+   12,
+   1
+  ]
+ ],
+ "ground": "#07131b",
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "calendar/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "streak",
+   "kind": "text",
+   "rect": [
+    248,
+    475,
+    446,
+    36
+   ],
+   "font": "title",
+   "size": 26,
+   "weight": 700,
+   "color": "#E9C477",
+   "align": "center",
+   "valign": "center",
+   "sample": "DAY 6 \u00b7 33 DAYS IN A ROW"
+  },
+  {
+   "id": "square",
+   "kind": "template",
+   "rect": [
+    50,
+    548,
+    113,
+    137
+   ],
+   "instances": [
+    [
+     50,
+     548
+    ],
+    [
+     171,
+     548
+    ],
+    [
+     291,
+     548
+    ],
+    [
+     412,
+     548
+    ],
+    [
+     532,
+     548
+    ],
+    [
+     653,
+     548
+    ],
+    [
+     50,
+     699
+    ],
+    [
+     171,
+     699
+    ],
+    [
+     291,
+     699
+    ],
+    [
+     412,
+     699
+    ],
+    [
+     532,
+     699
+    ],
+    [
+     653,
+     699
+    ],
+    [
+     50,
+     850
+    ],
+    [
+     171,
+     850
+    ],
+    [
+     291,
+     850
+    ],
+    [
+     412,
+     850
+    ],
+    [
+     532,
+     850
+    ],
+    [
+     653,
+     850
+    ],
+    [
+     50,
+     1001
+    ],
+    [
+     171,
+     1001
+    ],
+    [
+     291,
+     1001
+    ],
+    [
+     412,
+     1001
+    ],
+    [
+     532,
+     1001
+    ],
+    [
+     653,
+     1001
+    ]
+   ],
+   "parts": [
+    {
+     "id": "glow",
+     "kind": "ninepatch",
+     "asset": "calendar/today_glow",
+     "rect": [
+      -8,
+      -18,
+      125,
+      168
+     ],
+     "margin": [
+      12,
+      24,
+      12,
+      18
+     ]
+    },
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "calendar/square",
+     "rect": [
+      0,
+      0,
+      113,
+      137
+     ]
+    },
+    {
+     "id": "icon",
+     "kind": "image",
+     "asset": "calendar/icon_diamond",
+     "rect": [
+      7,
+      7,
+      99,
+      93
+     ]
+    },
+    {
+     "id": "seal",
+     "kind": "image",
+     "asset": "icons/tick_seal",
+     "rect": [
+      35,
+      43,
+      64,
+      66
+     ]
+    },
+    {
+     "id": "amount",
+     "kind": "text",
+     "rect": [
+      12,
+      101,
+      89,
+      30
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 700,
+     "color": "#F2EADB",
+     "align": "center",
+     "valign": "center",
+     "sample": "12.3K"
+    },
+    {
+     "id": "hit",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      113,
+      137
+     ],
+     "action": "square"
+    }
+   ]
+  },
+  {
+   "id": "crown",
+   "kind": "template",
+   "rect": [
+    768,
+    548,
+    126,
+    137
+   ],
+   "instances": [
+    [
+     768,
+     548
+    ],
+    [
+     768,
+     699
+    ],
+    [
+     768,
+     850
+    ],
+    [
+     768,
+     1001
+    ]
+   ],
+   "parts": [
+    {
+     "id": "glow",
+     "kind": "ninepatch",
+     "asset": "calendar/today_glow",
+     "rect": [
+      -4,
+      -17,
+      133,
+      166
+     ],
+     "margin": [
+      12,
+      24,
+      12,
+      18
+     ]
+    },
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "calendar/crown_title",
+     "rect": [
+      0,
+      -18,
+      126,
+      158
+     ]
+    },
+    {
+     "id": "seal",
+     "kind": "image",
+     "asset": "icons/tick_seal",
+     "rect": [
+      50,
+      40,
+      64,
+      66
+     ]
+    },
+    {
+     "id": "amount",
+     "kind": "text",
+     "rect": [
+      16,
+      101,
+      94,
+      30
+     ],
+     "font": "body",
+     "size": 22,
+     "weight": 700,
+     "color": "#F2EADB",
+     "align": "center",
+     "valign": "center",
+     "sample": "+100"
+    },
+    {
+     "id": "hit",
+     "kind": "button",
+     "rect": [
+      0,
+      -18,
+      126,
+      158
+     ],
+     "action": "square"
+    }
+   ]
+  },
+  {
+   "id": "row_title",
+   "kind": "text",
+   "rect": [
+    60,
+    1180,
+    820,
+    39
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#E9C477",
+   "align": "center",
+   "valign": "center",
+   "sample": "ROYAL PARDONS  1 OF 2"
+  },
+  {
+   "id": "row_note",
+   "kind": "text",
+   "rect": [
+    80,
+    1226,
+    780,
+    60
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 500,
+   "color": "#F2EADB",
+   "align": "center",
+   "valign": "top",
+   "wrap": true,
+   "sample": "Miss a day, and a pardon or a few diamonds keep the streak. A pardon comes with every new month of days."
+  },
+  {
+   "id": "broken",
+   "kind": "image",
+   "asset": "calendar/broken",
+   "rect": [
+    44,
+    1152,
+    322,
+    141
+   ]
+  },
+  {
+   "id": "restore",
+   "kind": "button",
+   "asset": "calendar/btn_restore",
+   "rect": [
+    370,
+    1158,
+    198,
+    118
+   ],
+   "action": "restore"
+  },
+  {
+   "id": "restore_price",
+   "kind": "text",
+   "rect": [
+    452,
+    1218,
+    86,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 800,
+   "color": "#F2EADB",
+   "align": "center",
+   "valign": "center",
+   "sample": "50"
+  },
+  {
+   "id": "pardon",
+   "kind": "button",
+   "asset": "calendar/btn_pardon",
+   "rect": [
+    574,
+    1158,
+    154,
+    118
+   ],
+   "action": "pardon"
+  },
+  {
+   "id": "pardon_bubble",
+   "kind": "image",
+   "asset": "icons/count_bubble",
+   "rect": [
+    702,
+    1152,
+    42,
+    42
+   ]
+  },
+  {
+   "id": "pardon_count",
+   "kind": "text",
+   "rect": [
+    702,
+    1156,
+    42,
+    34
+   ],
+   "font": "title",
+   "size": 24,
+   "weight": 800,
+   "color": "#FFF4EC",
+   "align": "center",
+   "valign": "center",
+   "sample": "2"
+  },
+  {
+   "id": "anew",
+   "kind": "button",
+   "asset": "calendar/btn_anew",
+   "rect": [
+    732,
+    1158,
+    159,
+    118
+   ],
+   "action": "anew"
+  },
+  {
+   "id": "points",
+   "kind": "text",
+   "rect": [
+    62,
+    1405,
+    127,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 700,
+   "color": "#F2EADB",
+   "align": "center",
+   "valign": "center",
+   "sample": "120/240"
+  },
+  {
+   "id": "week_fill",
+   "kind": "image",
+   "asset": "calendar/week_fill",
+   "rect": [
+    201,
+    1416,
+    161,
+    21
+   ],
+   "fill": "left",
+   "track": [
+    201,
+    1416,
+    624,
+    21
+   ],
+   "caps": [
+    3,
+    4
+   ]
+  },
+  {
+   "id": "chest_0",
+   "kind": "image",
+   "asset": "calendar/chest_bronze",
+   "rect": [
+    400,
+    1336,
+    100,
+    76
+   ]
+  },
+  {
+   "id": "chest_1",
+   "kind": "image",
+   "asset": "calendar/chest_silver",
+   "rect": [
+    583,
+    1333,
+    104,
+    79
+   ]
+  },
+  {
+   "id": "chest_2",
+   "kind": "image",
+   "asset": "calendar/chest_gold",
+   "rect": [
+    758,
+    1325,
+    122,
+    87
+   ]
+  },
+  {
+   "id": "chest_0_seal",
+   "kind": "image",
+   "asset": "icons/tick_seal",
+   "rect": [
+    434,
+    1346,
+    48,
+    50
+   ]
+  },
+  {
+   "id": "chest_1_seal",
+   "kind": "image",
+   "asset": "icons/tick_seal",
+   "rect": [
+    620,
+    1345,
+    48,
+    50
+   ]
+  },
+  {
+   "id": "chest_2_seal",
+   "kind": "image",
+   "asset": "icons/tick_seal",
+   "rect": [
+    805,
+    1342,
+    48,
+    50
+   ]
+  },
+  {
+   "id": "marker_0",
+   "kind": "image",
+   "asset": "calendar/marker",
+   "rect": [
+    438,
+    1406,
+    27,
+    30
+   ]
+  },
+  {
+   "id": "marker_1",
+   "kind": "image",
+   "asset": "calendar/marker",
+   "rect": [
+    624,
+    1406,
+    27,
+    30
+   ]
+  },
+  {
+   "id": "marker_2",
+   "kind": "image",
+   "asset": "calendar/marker",
+   "rect": [
+    819,
+    1406,
+    27,
+    30
+   ]
+  },
+  {
+   "id": "chest_0_at",
+   "kind": "text",
+   "rect": [
+    412,
+    1436,
+    77,
+    27
+   ],
+   "font": "body",
+   "size": 20,
+   "weight": 700,
+   "color": "#F2EADB",
+   "align": "center",
+   "valign": "center",
+   "sample": "80"
+  },
+  {
+   "id": "chest_1_at",
+   "kind": "text",
+   "rect": [
+    596,
+    1436,
+    77,
+    27
+   ],
+   "font": "body",
+   "size": 20,
+   "weight": 700,
+   "color": "#F2EADB",
+   "align": "center",
+   "valign": "center",
+   "sample": "160"
+  },
+  {
+   "id": "chest_2_at",
+   "kind": "text",
+   "rect": [
+    794,
+    1436,
+    77,
+    27
+   ],
+   "font": "body",
+   "size": 20,
+   "weight": 700,
+   "color": "#F2EADB",
+   "align": "center",
+   "valign": "center",
+   "sample": "240"
+  },
+  {
+   "id": "chest_0_hit",
+   "kind": "button",
+   "rect": [
+    396,
+    1322,
+    110,
+    146
+   ],
+   "action": "chest0"
+  },
+  {
+   "id": "chest_1_hit",
+   "kind": "button",
+   "rect": [
+    579,
+    1322,
+    112,
+    146
+   ],
+   "action": "chest1"
+  },
+  {
+   "id": "chest_2_hit",
+   "kind": "button",
+   "rect": [
+    752,
+    1318,
+    134,
+    150
+   ],
+   "action": "chest2"
+  },
+  {
+   "id": "claim",
+   "kind": "button",
+   "asset": "calendar/btn_claim",
+   "rect": [
+    264,
+    1482,
+    410,
+    112
+   ],
+   "action": "claim"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "plates/navy_l",
+   "label": "CLOSE",
+   "rect": [
+    264,
+    1482,
+    410,
+    112
+   ],
+   "size": 40,
+   "weight": 700,
+   "color": "#F4EFE6",
+   "margin": 24,
+   "action": "close"
+  }
+ ]
+}

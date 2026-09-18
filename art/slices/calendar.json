@@ -1,0 +1,1106 @@
+{
+ "source": "calendar.png",
+ "notes": [
+  "DAILY REWARDS (docs/art/PAINTING_BRIEFS.md 2.2): the 28-day calendar, a painted page. calendar/page is the painting with everything that changes lifted: the whole 4x7 grid (a refill from the gaps between the squares and the clean band under them, rows 1142-1156), the BROKEN row (the ribbon, RESTORE, USE PARDON and START ANEW are their own crops, shown only while the streak is broken), the three chests above the weekly bar (their own crops: a chest is dimmed until reached and sealed once taken), the bar's gold fill (a row-erase from the empty channel beside it) and CLAIM (its own crop, so it can be dimmed). The steward's header, the frame, THIS WEEK, the bar's rails, and every EMPTY plate stay painted. The bar's three markers are drawn over the fill from one crop of the first (calendar/marker), so the page is erased round their tips with the chests' feet.",
+  "calendar/square is one plain square (row 2's first, its diamond lifted by a refill from the interior's clean sides and top) with its EMPTY plate, drawn at each of the 24 plain places; calendar/square_today is the painting's glowing square (row 1's sixth, its diamond lifted), drawn in the plain square's place on the day a claim takes, with calendar/today_glow -- the light round it, keyed off the ground with the square itself holed out -- behind it (a nine-patch round a crown square).",
+  "calendar/icon_<kind> are the five square pictures, each keyed off its square's own interior from the same box inside the square (7 in, 99x93 above the plate), so a picture sits in any square where the painting put it: diamond, purse, flask, scroll and cart are row 2's first five. The claimed seal is the game's icons/tick_seal (the same red wax and gold tick, a unit or two larger), not cut again.",
+  "calendar/crown_<what> are the four laurel squares whole, each with its crown above and its picture: title (the crown on its cushion, day 7), frame (the portrait in its frame, day 14), gear (the chest, day 21), crest (the lion shield, day 28); masked to the octagon of the frame and the box of its crown. The Crown of Constancy crest itself (icons/crest_constancy, 182x240) is cut from its own painting: art/slices/crest_constancy.json.",
+  "Measured with scratchpad scans of the painting (square edges by brightness runs along rows and columns, pictures by ink against each interior's median, the crown ornaments row by row) and grid.py zooms at 2-6x.",
+  "calendar/broken keys off the page with a floor of 16, the page's own grain there (it reaches 12 to 15 from the ground), so the ribbon sits on any row the tall canvas moves it to without a haze of the painting's texture round it; a hole under the seal clears the three specks of that texture brighter than any floor could take without eating the ribbon's dark folds."
+ ],
+ "crops": [
+  {
+   "name": "calendar/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "refill": [
+    {
+     "rect": [
+      42,
+      524,
+      858,
+      628
+     ],
+     "band": [
+      1142,
+      1156
+     ],
+     "samples": [
+      {
+       "rows": [
+        524,
+        1151
+       ],
+       "x": [
+        [
+         42,
+         46
+        ],
+        [
+         894,
+         898
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "rect": [
+      42,
+      1152,
+      858,
+      141
+     ],
+     "band": [
+      1142,
+      1156
+     ],
+     "samples": [
+      {
+       "rows": [
+        1152,
+        1292
+       ],
+       "x": [
+        [
+         42,
+         44
+        ],
+        [
+         892,
+         898
+        ]
+       ]
+      },
+      {
+       "rows": [
+        1282,
+        1292
+       ],
+       "x": [
+        [
+         42,
+         299
+        ],
+        [
+         371,
+         898
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "rect": [
+      263,
+      1480,
+      413,
+      119
+     ],
+     "band": [
+      1467,
+      1478
+     ],
+     "samples": [
+      {
+       "rows": [
+        1480,
+        1598
+       ],
+       "x": [
+        [
+         253,
+         261
+        ],
+        [
+         676,
+         683
+        ]
+       ]
+      },
+      {
+       "rows": [
+        1467,
+        1478
+       ],
+       "x": [
+        [
+         230,
+         700
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      201,
+      1416,
+      162,
+      21
+     ],
+     "sample_x": [
+      372,
+      405
+     ]
+    },
+    {
+     "rect": [
+      398,
+      1322,
+      102,
+      85
+     ],
+     "sample_x": [
+      380,
+      396
+     ],
+     "sample_x2": [
+      500,
+      516
+     ]
+    },
+    {
+     "rect": [
+      583,
+      1322,
+      106,
+      85
+     ],
+     "sample_x": [
+      566,
+      582
+     ],
+     "sample_x2": [
+      690,
+      706
+     ]
+    },
+    {
+     "rect": [
+      757,
+      1322,
+      124,
+      85
+     ],
+     "sample_x": [
+      740,
+      756
+     ],
+     "sample_x2": [
+      882,
+      898
+     ]
+    },
+    {
+     "rect": [
+      396,
+      1405,
+      492,
+      7
+     ],
+     "sample_x": [
+      380,
+      394
+     ],
+     "sample_x2": [
+      882,
+      898
+     ]
+    }
+   ]
+  },
+  {
+   "name": "calendar/square",
+   "rect": [
+    50,
+    699,
+    113,
+    137
+   ],
+   "refill": [
+    {
+     "rect": [
+      57,
+      706,
+      99,
+      93
+     ],
+     "band": [
+      707,
+      714
+     ],
+     "samples": [
+      {
+       "rows": [
+        706,
+        798
+       ],
+       "x": [
+        [
+         57,
+         64
+        ],
+        [
+         149,
+         155
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   }
+  },
+  {
+   "name": "calendar/square_today",
+   "rect": [
+    651,
+    547,
+    113,
+    140
+   ],
+   "refill": [
+    {
+     "rect": [
+      660,
+      556,
+      95,
+      92
+     ],
+     "band": [
+      557,
+      563
+     ],
+     "samples": [
+      {
+       "rows": [
+        556,
+        647
+       ],
+       "x": [
+        [
+         660,
+         666
+        ],
+        [
+         748,
+         754
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "calendar/today_glow",
+   "rect": [
+    645,
+    530,
+    125,
+    168
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 12,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      6,
+      17
+     ],
+     [
+      119,
+      17
+     ],
+     [
+      119,
+      157
+     ],
+     [
+      6,
+      157
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/icon_diamond",
+   "rect": [
+    57,
+    706,
+    99,
+    93
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "mask": {
+    "type": "polygon",
+    "feather": 2,
+    "points": [
+     [
+      8,
+      1
+     ],
+     [
+      90,
+      1
+     ],
+     [
+      95,
+      6
+     ],
+     [
+      95,
+      86
+     ],
+     [
+      90,
+      91
+     ],
+     [
+      8,
+      91
+     ],
+     [
+      1,
+      86
+     ],
+     [
+      1,
+      8
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/icon_purse",
+   "rect": [
+    178,
+    706,
+    99,
+    93
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "mask": {
+    "type": "polygon",
+    "feather": 2,
+    "points": [
+     [
+      8,
+      1
+     ],
+     [
+      90,
+      1
+     ],
+     [
+      95,
+      6
+     ],
+     [
+      95,
+      86
+     ],
+     [
+      90,
+      91
+     ],
+     [
+      8,
+      91
+     ],
+     [
+      1,
+      86
+     ],
+     [
+      1,
+      8
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/icon_flask",
+   "rect": [
+    300,
+    706,
+    99,
+    93
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "mask": {
+    "type": "polygon",
+    "feather": 2,
+    "points": [
+     [
+      8,
+      1
+     ],
+     [
+      90,
+      1
+     ],
+     [
+      95,
+      6
+     ],
+     [
+      95,
+      86
+     ],
+     [
+      90,
+      91
+     ],
+     [
+      8,
+      91
+     ],
+     [
+      1,
+      86
+     ],
+     [
+      1,
+      8
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/icon_scroll",
+   "rect": [
+    420,
+    706,
+    99,
+    93
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "mask": {
+    "type": "polygon",
+    "feather": 2,
+    "points": [
+     [
+      8,
+      1
+     ],
+     [
+      90,
+      1
+     ],
+     [
+      95,
+      6
+     ],
+     [
+      95,
+      86
+     ],
+     [
+      90,
+      91
+     ],
+     [
+      8,
+      91
+     ],
+     [
+      1,
+      86
+     ],
+     [
+      1,
+      8
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/icon_cart",
+   "rect": [
+    541,
+    706,
+    99,
+    93
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "mask": {
+    "type": "polygon",
+    "feather": 2,
+    "points": [
+     [
+      8,
+      1
+     ],
+     [
+      90,
+      1
+     ],
+     [
+      95,
+      6
+     ],
+     [
+      95,
+      86
+     ],
+     [
+      90,
+      91
+     ],
+     [
+      8,
+      91
+     ],
+     [
+      1,
+      86
+     ],
+     [
+      1,
+      8
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/crown_title",
+   "rect": [
+    768,
+    530,
+    126,
+    158
+   ],
+   "mask": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       12,
+       18
+      ],
+      [
+       113,
+       18
+      ],
+      [
+       123,
+       28
+      ],
+      [
+       123,
+       146
+      ],
+      [
+       113,
+       156
+      ],
+      [
+       12,
+       156
+      ],
+      [
+       2,
+       146
+      ],
+      [
+       2,
+       28
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       45,
+       0
+      ],
+      [
+       80,
+       0
+      ],
+      [
+       80,
+       19
+      ],
+      [
+       45,
+       19
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "calendar/crown_frame",
+   "rect": [
+    768,
+    681,
+    126,
+    158
+   ],
+   "mask": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       12,
+       18
+      ],
+      [
+       113,
+       18
+      ],
+      [
+       123,
+       28
+      ],
+      [
+       123,
+       146
+      ],
+      [
+       113,
+       156
+      ],
+      [
+       12,
+       156
+      ],
+      [
+       2,
+       146
+      ],
+      [
+       2,
+       28
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       45,
+       5
+      ],
+      [
+       80,
+       5
+      ],
+      [
+       80,
+       19
+      ],
+      [
+       45,
+       19
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "calendar/crown_gear",
+   "rect": [
+    768,
+    832,
+    126,
+    158
+   ],
+   "mask": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       12,
+       18
+      ],
+      [
+       113,
+       18
+      ],
+      [
+       123,
+       28
+      ],
+      [
+       123,
+       146
+      ],
+      [
+       113,
+       156
+      ],
+      [
+       12,
+       156
+      ],
+      [
+       2,
+       146
+      ],
+      [
+       2,
+       28
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       45,
+       5
+      ],
+      [
+       80,
+       5
+      ],
+      [
+       80,
+       19
+      ],
+      [
+       45,
+       19
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "calendar/crown_crest",
+   "rect": [
+    768,
+    983,
+    126,
+    158
+   ],
+   "mask": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       12,
+       18
+      ],
+      [
+       113,
+       18
+      ],
+      [
+       123,
+       28
+      ],
+      [
+       123,
+       146
+      ],
+      [
+       113,
+       156
+      ],
+      [
+       12,
+       156
+      ],
+      [
+       2,
+       146
+      ],
+      [
+       2,
+       28
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       45,
+       5
+      ],
+      [
+       80,
+       5
+      ],
+      [
+       80,
+       19
+      ],
+      [
+       45,
+       19
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "name": "calendar/broken",
+   "rect": [
+    44,
+    1152,
+    322,
+    141
+   ],
+   "mode": "darkkey",
+   "k": 40,
+   "floor": 16,
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      222,
+      130
+     ],
+     [
+      300,
+      130
+     ],
+     [
+      300,
+      141
+     ],
+     [
+      222,
+      141
+     ]
+    ]
+   },
+   "bg": [
+    8,
+    24,
+    34
+   ]
+  },
+  {
+   "name": "calendar/btn_restore",
+   "rect": [
+    370,
+    1158,
+    198,
+    118
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 11
+   }
+  },
+  {
+   "name": "calendar/btn_pardon",
+   "rect": [
+    574,
+    1158,
+    154,
+    118
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 11
+   }
+  },
+  {
+   "name": "calendar/btn_anew",
+   "rect": [
+    732,
+    1158,
+    159,
+    118
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 11
+   }
+  },
+  {
+   "name": "calendar/week_fill",
+   "rect": [
+    201,
+    1416,
+    161,
+    21
+   ]
+  },
+  {
+   "name": "calendar/marker",
+   "rect": [
+    438,
+    1406,
+    27,
+    30
+   ],
+   "mask": {
+    "type": "polygon",
+    "feather": 0.8,
+    "points": [
+     [
+      14,
+      1
+     ],
+     [
+      26,
+      14
+     ],
+     [
+      14,
+      28
+     ],
+     [
+      1,
+      14
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/chest_bronze",
+   "rect": [
+    400,
+    1336,
+    100,
+    76
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "bg": [
+    8,
+    24,
+    34
+   ],
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      51,
+      70
+     ],
+     [
+      64,
+      83
+     ],
+     [
+      38,
+      83
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/chest_silver",
+   "rect": [
+    583,
+    1333,
+    104,
+    79
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "bg": [
+    8,
+    24,
+    34
+   ],
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      54,
+      73
+     ],
+     [
+      67,
+      86
+     ],
+     [
+      41,
+      86
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/chest_gold",
+   "rect": [
+    758,
+    1325,
+    122,
+    87
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 5,
+   "bg": [
+    8,
+    24,
+    34
+   ],
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      75,
+      81
+     ],
+     [
+      88,
+      94
+     ],
+     [
+      62,
+      94
+     ]
+    ]
+   }
+  },
+  {
+   "name": "calendar/btn_claim",
+   "rect": [
+    264,
+    1482,
+    410,
+    112
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 13
+   }
+  }
+ ]
+}

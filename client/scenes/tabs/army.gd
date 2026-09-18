@@ -5,22 +5,34 @@ extends Control
 
 const SCREEN := "army"
 const RerollPanel := preload("res://scenes/army/reroll_panel.gd")
-const PORTRAIT := {"peasant": "portraits/soldier_villager", "mercenary": "portraits/soldier_mercenary", "gladiator": "portraits/soldier_gladiator"}
 const DISPLAY_NAME := {"peasant": "VILLAGER", "mercenary": "MERCENARY", "gladiator": "GLADIATOR"}
 const BLURB := {"peasant": "Humble but reliable. The backbone of every army.",
 	"mercenary": "Fights for coin, and fights well. Loyal while paid.",
 	"gladiator": "Bred for the arena. Deadly, proud and expensive."}
-const TIER_INDEX := {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5, "mystic": 6, "special": 7}
 const ROMAN := ["", "I", "II", "III", "IV", "V", "VI", "VII"]
 const RECRUIT_TYPES := ["peasant", "mercenary", "gladiator"]
+## The live SPEED label in the HERO SUPPORT row, measured off the painted
+## DEFENCE beside it (ink x 523, rows 409..419, #BFCAD7).
+const SUPPORT_LABEL_SIZE := 16
+const SUPPORT_LABEL_COLOR := Color("#BFCAD7")
+const SUPPORT_LABEL_RECT := Rect2(765, 402, 130, 24)
 ## How far a finger may travel on a card and still be tapping it. The strip's
 ## own deadzone, so a touch the strip would scroll on is never also a tap.
 const DRAG_SLOP := 14.0
-## The live numeral for tiers without a painted one is fitted to what the
-## diamond's dark centre holds, not to the diamond's box: "VII" at the plate's
-## size touched its gold edge.
-const NUMERAL_ROOM := 30.0
-const LARGE_NUMERAL_ROOM := 44.0
+## From the end of the selected soldier's name to the tier chip after it: the
+## painting has eight units from VILLAGER's ink (545) to the chip (553), and
+## Cinzel's R at the name's size ends 2 units before its advance.
+const TIER_CHIP_GAP := 6.0
+## Where the tier chip must end: ten units short of the troop column's divider
+## (716), as the troop bar starts twelve after it. MERCENARY with TIER VII, the
+## longest name with the longest word, ends there.
+const TIER_CHIP_RIGHT := 706.0
+## The AWAY / BACK ribbon on a soldier's card: across the portrait's foot, where
+## the painting leaves the figure's own shadow and nothing else stands. The
+## portrait behind it is drawn back, so a card reads as away at a glance.
+const RIBBON_Y := 128.0
+const AWAY_TINT := Color(0.45, 0.5, 0.58)
+const HuntPage := preload("res://scenes/pages/hunt_page.gd")
 
 var _ui: Dictionary = {}
 var _cards: Array = []
@@ -32,10 +44,9 @@ var _support: Dictionary = {}
 var _selected := 1
 var _loaded_ms := -100000
 var _busy := false
-var _numeral_labels: Dictionary = {}
 var _next_card: Dictionary = {}
-var _sel_numeral_label: Label
-var _sel_small: TextureRect
+## The selected soldier's portrait, in the window under the ring.
+var _sel_art: TextureRect
 ## A press on a card, and how far it has travelled since.
 var _press_travel := 0.0
 var _press_scrolled := false
@@ -59,9 +70,13 @@ func _ready() -> void:
 	_ui["auto_equip"].pressed.connect(_auto_equip)
 	_ui["dismiss"].pressed.connect(_dismiss)
 	_ui["reroll_tap"].pressed.connect(_open_reroll)
-	# The word is set in type on HUNT's plate, fitted to what the plate holds
-	# beside the arrows, as DISMISS's word is to its own.
-	UI.fit_label((_ui["reroll"].get_meta("parts") as Dictionary)["label"], 26, 18)
+	_ui["hunt_tap"].pressed.connect(_hunt)
+	# Both words are set in type on their plates, fitted to what a plate holds
+	# beside its icon, as DISMISS's word is baked into its own. HUNT's changes
+	# with what the soldier is doing and is set on every paint; REROLL's is
+	# fixed copy and is the layout's own.
+	for id in ["hunt", "reroll"]:
+		UI.fit_label((_ui[id].get_meta("parts") as Dictionary)["label"], 26, 18)
 	_ui["recruit_info"].pressed.connect(_show_odds)
 	_ui["support_info"].pressed.connect(func() -> void:
 		Dialog.ask(self, {"title": "Hero support", "body": "Your Family upgrades (Armoury, Bulwark, Stables) lift every soldier's attack, defence and speed.", "confirm_text": "OK"}))
@@ -77,30 +92,31 @@ func _ready() -> void:
 	_recruit_cards = _ui["recruit_card"]
 	for i in _recruit_cards.size():
 		_recruit_cards[i]["parts"]["recruit"].pressed.connect(_recruit.bind(RECRUIT_TYPES[i]))
+		if i == 0: GuideTargets.register("army.recruit", _recruit_cards[i]["parts"]["recruit"])
 		var card: TextureRect = _recruit_cards[i]["parts"]["card"]
 		card.texture = Art.tex("army/recruit_" + ["villager", "mercenary", "gladiator"][i])
 		var chip: Control = _recruit_cards[i]["parts"]["chip"]
 		if chip is NinePatchRect:
 			chip.patch_margin_left = 8; chip.patch_margin_right = 8; chip.patch_margin_top = 6; chip.patch_margin_bottom = 6
 	# The third support cell reads the Stables bonus (soldier speed); its painted
-	# label said "troop hp", so the label is live.
-	var speed_label := UI.label("SPEED", 18, Color("#C9D2DC"), "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(speed_label, Rect2(745, 398, 150, 24))
+	# label said "troop hp", so the label is live, set as the painted ATTACK and
+	# DEFENCE are: from their left edge in the cell (x 767), caps 11 tall on
+	# rows 409..419 (Cinzel 16), in their grey-blue. It was centred in the cell,
+	# six units above the others, at 18.
+	var speed_label := UI.label("SPEED", SUPPORT_LABEL_SIZE, SUPPORT_LABEL_COLOR, "title", 500)
+	UI.place(speed_label, SUPPORT_LABEL_RECT)
 	add_child(speed_label)
-	# A soldier with no large painting of its own is drawn in the ring's window,
-	# cover-fitted, under the ring -- not stretched over the villager's frame.
+	# Every soldier is drawn in the ring's window, under the ring, at the
+	# window's own size: each type has a large painting in each look now
+	# (SoldierArt). The panel behind has the painting's villager baked in, frame
+	# and numeral; the window and the ring cover all of it.
 	var window: Control = _ui["sel_window"]
-	_sel_small = TextureRect.new()
-	_sel_small.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_sel_small.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	_sel_small.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UI.place(_sel_small, Rect2(Vector2.ZERO, window.size))
-	window.add_child(_sel_small)
-	_sel_numeral_label = UI.label("", 30, Color("#F2E6C8"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_sel_numeral_label, Layout.rect_of(Layout.element(SCREEN, "sel_numeral")))
-	_sel_numeral_label.set_meta("box_w", LARGE_NUMERAL_ROOM)
-	_sel_numeral_label.visible = false
-	add_child(_sel_numeral_label)
+	_sel_art = TextureRect.new()
+	_sel_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_sel_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_sel_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UI.place(_sel_art, Rect2(Vector2.ZERO, window.size))
+	window.add_child(_sel_art)
 	# Everything on the page by the section it stands in; the ground, pinned
 	# to the foot, stays where it is.
 	for c in get_children():
@@ -131,6 +147,12 @@ func refresh() -> void:
 		_load()
 	else:
 		_paint()
+
+
+## Reads the army again at once, whatever the last read's age: what a page that
+## changed something (the roads) calls when it is done.
+func reload_now() -> void:
+	await _load()
 
 
 func _load() -> void:
@@ -215,14 +237,6 @@ func _build_strip(count: int) -> void:
 			if ev is InputEventMouseMotion and (ev as InputEventMouseMotion).button_mask != 0:
 				_press_travel += (ev as InputEventMouseMotion).relative.length())
 		tap.pressed.connect(_tapped.bind(i + 1))
-		var l := UI.label("", 22, Color("#F2E6C8"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-		UI.place(l, Layout.rect_of(Layout.find(SCREEN, "numeral")))
-		l.set_meta("box_w", NUMERAL_ROOM)
-		l.visible = false
-		built["node"].add_child(l)
-		# Above the plate, below the tap target that has to stay on top.
-		built["node"].move_child(l, tap.get_index())
-		_numeral_labels[i] = l
 		_cards.append(built)
 	for i in _cards.size():
 		_cards[i]["node"].visible = i < count
@@ -231,7 +245,10 @@ func _build_strip(count: int) -> void:
 		content.add_child(_next_card["node"])
 		_next_card["parts"]["unlock"].pressed.connect(_buy_slot)
 	_next_card["node"].position = Vector2(origin.x + count * pitch, 0)
-	content.custom_minimum_size = Vector2(origin.x + count * pitch + 143 + 8, sc.size.y)
+	# Every slot owned: no next one to buy, so no card for it and no room left.
+	var more := next_slot(_army) != {}
+	_next_card["node"].visible = more
+	content.custom_minimum_size = Vector2(origin.x + count * pitch + (143 + 8 if more else 0), sc.size.y)
 
 
 ## A card was let go of. Only a touch that stayed put selects: a swipe along
@@ -255,10 +272,11 @@ func _paint_card(i: int) -> void:
 	p["selected_frame"].visible = selected
 	if soldier is Dictionary:
 		var type := str(soldier.get("type", "peasant"))
-		var tier := int(TIER_INDEX.get(str(soldier.get("tier", "common")), 1))
-		p["portrait"].texture = Art.tex(PORTRAIT.get(type, PORTRAIT["peasant"]))
+		var tier := SoldierArt.tier_of(str(soldier.get("tier", "common")))
+		p["portrait"].texture = Art.tex(SoldierArt.portrait(type, tier))
 		p["portrait"].modulate = Color.WHITE
-		_numeral(p["numeral"], _numeral_labels[i], tier)
+		p["numeral"].texture = Art.tex(SoldierArt.numeral(tier))
+		p["numeral"].visible = true
 		p["name"].text = DISPLAY_NAME.get(type, type.to_upper())
 		# At the painting's size, with its margins: at 22 GLADIATOR and
 		# MERCENARY ran from one edge of the card to the other.
@@ -270,34 +288,55 @@ func _paint_card(i: int) -> void:
 		for k in ["attack", "defence", "power"]:
 			UI.fit_label(p[k], 22, 16)
 		UI.fit_label(p["troop"], 20, 15)
+		# The ribbon: a soldier on a road is not in the yard, and the card says
+		# so before a lord taps it and finds out.
+		_ribbon(c, soldier.get("away", null))
 	else:
-		p["portrait"].texture = Art.tex("portraits/soldier_villager")
+		p["portrait"].texture = Art.tex(SoldierArt.portrait("peasant", 1))
 		p["portrait"].modulate = Color(0.25, 0.25, 0.3)
 		p["numeral"].visible = false
-		_numeral_labels[i].visible = false
 		p["name"].text = "EMPTY"
 		for k in ["attack", "defence", "power", "troop"]:
 			p[k].text = "-"
+		_ribbon(c, null)
 
 
-## Tiers I-III have painted numerals; higher tiers get the blank plate and live text.
-func _numeral(plate: TextureRect, label: Label, tier: int) -> void:
-	plate.visible = true
-	if tier <= 3:
-		plate.texture = Art.tex("army/numeral_%d" % tier)
-		label.visible = false
-	else:
-		plate.texture = Art.tex("army/numeral_blank")
-		label.text = ROMAN[clampi(tier, 1, 7)]
-		UI.fit_label(label, 22, 14)
-		label.visible = true
+## AWAY / BACK across a soldier's card: one label on the painted card, in the
+## card's own type, drawn over the portrait's foot where nothing else stands.
+func _ribbon(card: Dictionary, away: Variant) -> void:
+	var l: Label = card.get("ribbon")
+	if l == null:
+		var node: Control = card["node"]
+		l = UI.label("", 20, UI.INK, "title", 800, HORIZONTAL_ALIGNMENT_CENTER)
+		UI.place(l, Rect2(6, RIBBON_Y, node.size.x - 12, 30))
+		l.set_meta("box_w", node.size.x - 12)
+		node.add_child(l)
+		card["ribbon"] = l
+	var on := away is Dictionary
+	l.visible = on
+	(card["parts"]["portrait"] as CanvasItem).modulate = AWAY_TINT if on else Color.WHITE
+	if not on:
+		return
+	var a: Dictionary = away
+	l.text = "BACK" if bool(a.get("back", false)) else "AWAY"
+	l.modulate = UI.GOLD if bool(a.get("back", false)) else Color("#BFCAD7")
+
+
+## The army view's next slot to buy, or {} when every slot is owned: the
+## server sends null then, and a null read into a Dictionary is a script error.
+static func next_slot(army: Dictionary) -> Dictionary:
+	var ns: Variant = army.get("next_slot", null)
+	return ns if ns is Dictionary else {}
 
 
 func _paint_next_slot() -> void:
 	if _next_card.is_empty():
 		return
 	var np: Dictionary = _next_card["parts"]
-	var ns: Dictionary = _army.get("next_slot", {})
+	var ns := next_slot(_army)
+	_next_card["node"].visible = not ns.is_empty()
+	if ns.is_empty():
+		return
 	var unlocked := bool(ns.get("unlocked", false))
 	if bool(ns.get("free", false)):
 		np["price"].text = "FREE"
@@ -305,6 +344,9 @@ func _paint_next_slot() -> void:
 		np["price"].text = UI.short_number(int(ns.get("cost", 0)))
 	else:
 		np["price"].text = "LV %d" % int(ns.get("level_gate", 1))
+	# In the tile, clear of its frame: an unfitted 76,076 grew its label past
+	# the box and ran to the tile's edge.
+	UI.fit_line(np["price"], 26, 18)
 	np["unlock"].modulate = Color.WHITE if unlocked else Color(0.5, 0.5, 0.5)
 
 
@@ -312,35 +354,30 @@ func _paint_selected() -> void:
 	var s := _slot(_selected)
 	var soldier: Variant = s.get("soldier", null) if not s.is_empty() else null
 	var has := soldier is Dictionary
-	for id in ["sel_tier_chip", "sel_troop_bar"]:
-		_ui[id].visible = has
+	_ui["sel_tier_chip"].visible = has
 	# REROLL and DISMISS stay, dimmed when there is nobody to roll or dismiss:
 	# the panel is cut with both taken off, and an empty slot used to show the
 	# painting's DISMISS at full strength beside an empty troop bar that read
 	# full.
 	_ui["reroll"].modulate = Color.WHITE if has else Color(0.5, 0.5, 0.5)
+	_ui["hunt"].modulate = Color.WHITE if has else Color(0.5, 0.5, 0.5)
 	_ui["dismiss"].modulate = Color.WHITE if has else Color(0.5, 0.5, 0.5)
 	_ui["dismiss"].disabled = not has
-	var portrait: TextureRect = _ui["sel_portrait"]
 	if not has:
 		_ui["sel_name"].text = "EMPTY SLOT"
 		_ui["sel_tier_text"].text = ""
+		_fit_title()
 		_ui["sel_description"].text = "Recruit a soldier below into this slot."
 		for k in ["sel_attack", "sel_defence", "sel_power"]:
 			_ui[k].text = "-"
-		_ui["sel_troop_text"].text = ""
-		_sel_numeral_label.visible = false
-		# A blank plate over the painted "I" the villager's portrait carries:
-		# an empty slot has no tier.
-		_ui["sel_numeral"].visible = true
-		_ui["sel_numeral"].texture = Art.tex("army/numeral_large_blank")
-		_ui["sel_numeral"].modulate = Color(0.45, 0.45, 0.5)
-		# The villager's painting, dimmed: the panel has it baked under the
-		# portrait, so hiding the portrait would show it undimmed.
-		portrait.visible = true
-		portrait.texture = Art.tex("portraits/soldier_villager_large")
-		portrait.modulate = Color(0.25, 0.25, 0.3)
-		_sel_small.visible = false
+		_ui["sel_state"].text = ""
+		_hunt_word("HUNT")
+		# An empty slot has no tier, so no numeral; and a dimmed villager in the
+		# window rather than nothing, since the panel's own villager -- numeral
+		# and all -- is baked in under it and an empty window would show him lit.
+		_ui["sel_numeral"].visible = false
+		_sel_art.texture = Art.tex(SoldierArt.large("peasant", 1))
+		_sel_art.modulate = Color(0.25, 0.25, 0.3)
 		# Empty tiles, not hidden ones: the panel behind has the painting's own
 		# gear baked into it, so hiding the tiles showed a spear, a jerkin and a
 		# horse on a slot that holds nobody.
@@ -353,31 +390,14 @@ func _paint_selected() -> void:
 			t["word"].visible = false
 		return
 	var type := str(soldier.get("type", "peasant"))
-	var tier := int(TIER_INDEX.get(str(soldier.get("tier", "common")), 1))
-	portrait.modulate = Color.WHITE
-	if type == "peasant":
-		# Only the villager has a large painting, frame and all.
-		portrait.visible = true
-		portrait.texture = Art.tex("portraits/soldier_villager_large")
-		_sel_small.visible = false
-	else:
-		portrait.visible = false
-		_sel_small.texture = Art.tex(PORTRAIT.get(type, PORTRAIT["peasant"]))
-		_sel_small.visible = true
-	# Only tier I exists as a large painted numeral; the rest use the blank plate.
+	var tier := SoldierArt.tier_of(str(soldier.get("tier", "common")))
+	_sel_art.texture = Art.tex(SoldierArt.large(type, tier))
+	_sel_art.modulate = Color.WHITE
 	_ui["sel_numeral"].visible = true
-	_ui["sel_numeral"].modulate = Color.WHITE
-	if tier == 1:
-		_ui["sel_numeral"].texture = Art.tex("army/numeral_large_1")
-		_sel_numeral_label.visible = false
-	else:
-		_ui["sel_numeral"].texture = Art.tex("army/numeral_large_blank")
-		_sel_numeral_label.text = ROMAN[clampi(tier, 1, 7)]
-		UI.fit_label(_sel_numeral_label, 30, 18)
-		_sel_numeral_label.visible = true
+	_ui["sel_numeral"].texture = Art.tex(SoldierArt.numeral_large(tier))
 	_ui["sel_name"].text = DISPLAY_NAME.get(type, type.to_upper())
-	UI.fit_label(_ui["sel_name"], 34, 20)
 	_ui["sel_tier_text"].text = "TIER " + ROMAN[clampi(tier, 1, 7)]
+	_fit_title()
 	_ui["sel_description"].text = BLURB.get(type, "")
 	_ui["sel_attack"].text = UI.grouped(int(soldier.get("attack", 0)))
 	_ui["sel_defence"].text = UI.grouped(int(soldier.get("defense", 0)))
@@ -386,10 +406,7 @@ func _paint_selected() -> void:
 	_ui["sel_power"].text = UI.grouped(int(soldier.get("might", soldier.get("ehp", 0))))
 	for k in ["sel_attack", "sel_defence", "sel_power"]:
 		UI.fit_label(_ui[k], 24, 16)
-	var hp := int(soldier.get("hp", 0))
-	_ui["sel_troop_text"].text = "%s / %s" % [UI.grouped(hp), UI.grouped(hp)]
-	UI.fit_label(_ui["sel_troop_text"], 23, 16)
-	Layout.set_fill(_ui["sel_troop_bar"], 1.0)
+	_paint_away(soldier)
 	var eq: Dictionary = soldier.get("equipped", {})
 	for i in _gear_tiles.size():
 		var slot: String = ["weapon", "armor", "horse"][i]
@@ -403,11 +420,84 @@ func _paint_selected() -> void:
 		t["ghost"].visible = not (item is Dictionary)
 		t["word"].visible = not (item is Dictionary)
 		t["parts"]["art"].modulate = Color.WHITE
+		# The worn piece on its rarity's velvet; a bare slot keeps its empty tile.
+		ItemGround.in_gear_tile(painting, t["parts"]["art"], "army/gear_tile_empty",
+			str(item.get("tier", "common")) if item is Dictionary else "")
 		if item is Dictionary:
 			painting.texture = Art.item(str(item.get("art", "")))
 			t["parts"]["level"].text = "Lv. %d" % int(item.get("ilvl", 1))
 		else:
 			t["parts"]["level"].text = ""
+
+
+## The selected soldier's name at the painting's one size, in its box, and the
+## tier chip after it, holding its word at the chip's one size.
+##
+## The chip was pinned where the painting has it (553), so the name's box ended
+## there, and each name was shrunk to fit it: VILLAGER at 28, GLADIATOR at 23,
+## MERCENARY at 22 -- the name changed size from one soldier to the next -- and
+## EMPTY SLOT was not fitted at all, so it kept whichever size the soldier
+## before it had. Built round its sample the label was also wider than its box
+## (181 against 150). Every name now fits the box the layout gives it (only a
+## name that could not would shrink), the label is sized back to that box, and
+## the chip moves to follow the name.
+##
+## The chip is the painting's, drawn round TIER I; TIER III and TIER VII ran
+## into its rims. A longer word widens it by what the word is longer, to no
+## further than TIER_CHIP_RIGHT, and only a word held there would shrink.
+## The selected soldier's own state: in the yard, on a road, or at the gate.
+##
+## The word on HUNT's plate changes with it, because it is the same decision
+## each time -- send them, call them back, let them in -- and three plates for
+## three states would be two plates a lord can never press.
+func _paint_away(soldier: Dictionary) -> void:
+	var away: Variant = soldier.get("away", null)
+	if not (away is Dictionary):
+		_ui["sel_state"].text = "IN THE YARD"
+		UI.fit_label(_ui["sel_state"], 24, 16)
+		_hunt_word("HUNT")
+		return
+	var a: Dictionary = away
+	var back := bool(a.get("back", false))
+	_ui["sel_state"].text = "AT THE GATE" if back else "%s  ·  %s" % [
+		str(a.get("field", "AWAY")).to_upper(), UI.short_duration(int(a.get("ends_in", 0)))]
+	UI.fit_label(_ui["sel_state"], 24, 14)
+	_hunt_word("BACK" if back else "AWAY")
+
+
+## The word on HUNT's plate, and its icon: the crosshair while there is somebody
+## to send, and nothing but the word once they are gone.
+func _hunt_word(word: String) -> void:
+	var parts: Dictionary = _ui["hunt"].get_meta("parts")
+	(parts["label"] as Label).text = word
+	UI.fit_label(parts["label"], 26, 18)
+	(parts["icon"] as Control).visible = word == "HUNT"
+
+
+func _fit_title() -> void:
+	var l: Label = _ui["sel_name"]
+	UI.fit_line(l, int(Layout.element(SCREEN, "sel_name").get("size", 29)), 20)
+	var x := roundf(l.position.x + minf(_advance(l, l.text), float(l.get_meta("box_w", l.size.x))) + TIER_CHIP_GAP)
+	var chip: Control = _ui["sel_tier_chip"]
+	var word: Label = _ui["sel_tier_text"]
+	var chip_rect := Layout.rect_of(Layout.element(SCREEN, "sel_tier_chip"))
+	var word_part := Layout.element(SCREEN, "sel_tier_text")
+	var word_size := int(word_part.get("size", 18))
+	word.label_settings.font_size = word_size
+	var room := chip_rect.size.x - _advance(word, "TIER I")
+	var w := clampf(_advance(word, word.text) + room, chip_rect.size.x, TIER_CHIP_RIGHT - x)
+	chip.position.x = x
+	chip.size.x = w
+	word.position.x = x + Layout.rect_of(word_part).position.x - chip_rect.position.x
+	word.size.x = w
+	word.set_meta("box_w", w - room)
+	UI.fit_label(word, word_size, 13)
+
+
+## How wide `text` is in the label's type at its current size.
+func _advance(l: Label, text: String) -> float:
+	var s := l.label_settings
+	return s.font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s.font_size).x
 
 
 ## What an empty gear tile shows: a faint ghost of the painting's own piece for
@@ -456,7 +546,7 @@ func _tier_span(type: String) -> Vector2i:
 	var hi := 0
 	for o in _odds_for(type):
 		if int(o.get("bp", 0)) > 0:
-			var ti := int(TIER_INDEX.get(str(o.get("tier", "common")), 1))
+			var ti := SoldierArt.tier_of(str(o.get("tier", "common")))
 			lo = mini(lo, ti)
 			hi = maxi(hi, ti)
 	return Vector2i(lo, hi) if hi > 0 else Vector2i.ZERO
@@ -570,6 +660,68 @@ func _dismiss() -> void:
 ## Opens the reroll panel on the selected soldier. The Army screen stops
 ## loading underneath it, and loads once when it closes: the panel has changed
 ## the soldier, perhaps a hundred times.
+## HUNT: the roads for this soldier, or what to do about one already on a road.
+func _hunt() -> void:
+	var soldier: Variant = _slot(_selected).get("soldier", null)
+	if _busy or not (soldier is Dictionary):
+		GameState.action_failed.emit("Recruit a soldier into this slot to send them out")
+		return
+	var s: Dictionary = soldier
+	var away: Variant = s.get("away", null)
+	_busy = true
+	if away is Dictionary:
+		await _settle_hunt(s, away)
+	else:
+		var res: Api.Response = await Api.get_json("/v1/hunt?soldier=%s" % str(s.get("id", "")))
+		if res.ok and res.data is Dictionary:
+			# Their kind goes with them: the page draws the same figure the
+			# yard's card does, and without it every soldier went out a peasant.
+			HuntPage.open(self, self, {
+				"id": str(s.get("id", "")), "name": str(s.get("name", "")),
+				"tier": str(s.get("tier", "")), "type": str(s.get("type", "peasant")),
+			}, res.data)
+		else:
+			GameState.action_failed.emit(res.error)
+	_busy = false
+
+
+## A soldier at the gate is let in with what they found; one still on the road
+## may be called back, and brings nothing at all.
+func _settle_hunt(soldier: Dictionary, away: Dictionary) -> void:
+	var id := str(away.get("id", ""))
+	if bool(away.get("back", false)):
+		var res: Api.Response = await GameState.act("/v1/hunt/collect", {"id": id},
+			{"hunt_soon": "They are still on the road.", "hunt_gone": "They are home already."})
+		if res.ok:
+			GameState.toast("%s is home: %s" % [str(soldier.get("name", "The soldier")),
+				_haul_words(res.data.get("granted", {}))])
+			await _load()
+		return
+	if not await Dialog.ask(self, {
+			"title": "Call them back?",
+			"body": "%s is %s from home. Called back early they bring NOTHING: the haul is what the road paid for the waiting." % [
+				str(soldier.get("name", "The soldier")), UI.short_duration(int(away.get("ends_in", 0)))],
+			"confirm_text": "Call back", "danger": true}):
+		return
+	var res: Api.Response = await Api.post_json("/v1/hunt/recall", {"id": id})
+	if res.ok:
+		GameState.toast("%s is called back, empty-handed." % str(soldier.get("name", "The soldier")))
+		await _load()
+	else:
+		GameState.action_failed.emit(res.error)
+
+
+## What a haul was worth, in the words the server wrote for it.
+static func _haul_words(granted: Dictionary) -> String:
+	var lines: Array = granted.get("lines", [])
+	if lines.is_empty():
+		return "nothing at all"
+	var words: Array[String] = []
+	for i in mini(lines.size(), 3):
+		words.append(str(lines[i].get("text", "")))
+	return ", ".join(words)
+
+
 func _open_reroll() -> void:
 	var soldier: Variant = _slot(_selected).get("soldier", null)
 	if _busy or _reroll != null:
@@ -582,7 +734,7 @@ func _open_reroll() -> void:
 		"soldier": soldier,
 		"odds": _odds_for(type),
 		"name": DISPLAY_NAME.get(type, type.to_upper()),
-		"portrait": PORTRAIT.get(type, PORTRAIT["peasant"]),
+		"type": type,
 	})
 	_reroll.closed.connect(func() -> void:
 		_reroll = null

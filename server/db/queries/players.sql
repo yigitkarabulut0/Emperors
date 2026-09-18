@@ -28,8 +28,17 @@ UPDATE app.players SET last_seen_at = now() WHERE id = $1;
 -- request in memory and flushes the set here once every thirty seconds -- one
 -- statement regardless of how many players are online, instead of one write per
 -- request.
+--
+-- The same statement records the day in app.player_days, so "who played on the
+-- 3rd" is kept after last_seen_at has moved on: the active series and retention
+-- read that, and a flush that cannot write one cannot write the other.
 -- name: TouchPlayersSeen :exec
-UPDATE app.players SET last_seen_at = now() WHERE id = ANY($1::uuid[]);
+WITH seen AS (
+    UPDATE app.players SET last_seen_at = now() WHERE id = ANY($1::uuid[]) RETURNING id
+)
+INSERT INTO app.player_days (player_id, day)
+SELECT id, (now() AT TIME ZONE 'UTC')::date FROM seen
+ON CONFLICT DO NOTHING;
 
 -- The players seen recently, to repopulate the presence registry after a
 -- restart. Without it a deploy shows every player leaving at once.
@@ -81,34 +90,25 @@ LIMIT 20;
 -- name: BumpActionSeq :one
 UPDATE app.players SET action_seq = $2 WHERE id = $1 RETURNING *;
 
--- Claims today's calendar square.
---
--- The whole rule lives in the WHERE: it only lands when the player has not
--- already claimed on this local date. Two taps, two devices, a retried request —
--- the second one gets zero rows and grants nothing. There is no read-then-write
--- window to lose.
--- name: ClaimDailyLogin :one
-UPDATE app.players
-SET daily_streak     = sqlc.arg(streak),
-    daily_claimed_on = sqlc.arg(today),
-    diamonds         = diamonds + sqlc.arg(diamonds)
-WHERE id = sqlc.arg(id)
-  AND (daily_claimed_on IS NULL OR daily_claimed_on < sqlc.arg(today))
-RETURNING *;
-
 -- Bumps today's quest counters, creating the row on first action of the day.
 --
 -- One statement so the hot paths (collect, attack, buy) pay a single round trip
 -- and never a read-then-write race.
 -- name: BumpQuestProgress :one
-INSERT INTO app.player_quests (player_id, day, collects, wins, buys, energy, quest_ids)
+INSERT INTO app.player_quests (player_id, day, collects, wins, buys, energy,
+                               stages, hunts, aids, blows, quest_ids)
 VALUES (sqlc.arg(player_id), sqlc.arg(day), sqlc.arg(collects), sqlc.arg(wins),
-        sqlc.arg(buys), sqlc.arg(energy), sqlc.arg(quest_ids))
+        sqlc.arg(buys), sqlc.arg(energy), sqlc.arg(stages), sqlc.arg(hunts),
+        sqlc.arg(aids), sqlc.arg(blows), sqlc.arg(quest_ids))
 ON CONFLICT (player_id, day) DO UPDATE
 SET collects = app.player_quests.collects + EXCLUDED.collects,
     wins     = app.player_quests.wins     + EXCLUDED.wins,
     buys     = app.player_quests.buys     + EXCLUDED.buys,
     energy   = app.player_quests.energy   + EXCLUDED.energy,
+    stages   = app.player_quests.stages   + EXCLUDED.stages,
+    hunts    = app.player_quests.hunts    + EXCLUDED.hunts,
+    aids     = app.player_quests.aids     + EXCLUDED.aids,
+    blows    = app.player_quests.blows    + EXCLUDED.blows,
     updated_at = now()
 RETURNING *;
 
@@ -176,6 +176,8 @@ SELECT * FROM app.identities WHERE player_id = $1 AND kind = 'password';
 
 -- Removes a player and, through every foreign key's ON DELETE CASCADE, all that
 -- was theirs: identities and sessions, items, soldiers, estates, battles, the
--- ledger, revenge, quests, the collection, device tokens.
+-- gold ledger, revenge, quests, deeds, mail, the collection, device tokens.
+-- What has no foreign key outlives them on purpose: the diamond ledger and
+-- app.player_days (see 00027 and 00033).
 -- name: DeletePlayer :execrows
 DELETE FROM app.players WHERE id = $1;

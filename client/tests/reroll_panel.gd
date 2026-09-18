@@ -50,7 +50,7 @@ func _check(canvas: Vector2) -> void:
 	# preload that fails to compile leaves every call below failing quietly.
 	var script: GDScript = load("res://scenes/army/reroll_panel.gd")
 	var panel: Control = script.open(host, {"soldier": soldier, "odds": _odds(),
-		"name": "GLADIATOR", "portrait": "portraits/soldier_gladiator"}) if script != null else null
+		"name": "GLADIATOR", "type": "gladiator"}) if script != null else null
 	if panel == null:
 		_fail("the reroll panel did not open")
 		host.queue_free()

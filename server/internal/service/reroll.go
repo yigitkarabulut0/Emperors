@@ -11,6 +11,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
@@ -76,6 +77,10 @@ func (d Deps) RerollSoldier(ctx context.Context, playerID, soldierID uuid.UUID, 
 			}
 			return fmt.Errorf("lock soldier: %w", err)
 		}
+		// A soldier on the road cannot be rerolled into somebody else.
+		if err := d.mustBeHome(ctx, q, soldierID); err != nil {
+			return err
+		}
 		t := d.Config.SoldierType(s.TypeID)
 		if t == nil {
 			return ErrNotFound
@@ -135,6 +140,7 @@ func (d Deps) RerollSoldier(ctx context.Context, playerID, soldierID uuid.UUID, 
 			}
 		}
 
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{deeds.Rerolls: 1})
 		res = RerollResult{
 			Soldier:    d.soldierUnit(after, rolled, gear, eff),
 			TierBefore: s.Tier,

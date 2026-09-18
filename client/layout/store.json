@@ -1,0 +1,1505 @@
+{
+ "screen": "store",
+ "source": "store.png + store_2.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#09151E",
+ "notes": [
+  "The Royal Store as a Court view (client/scenes/court/store_view.gd), cut from art/reference/store.png and store_2.png (art/slices/store.json, store_2.json). The two paintings are one page: the header stays, and every section under it scrolls, stacked in the paintings' order 10 units apart (both paintings space their panels so). A section with nothing to show -- no live offer, Herald's Tidings while this server has no adverts -- is left out and the rest close up.",
+  "Section templates: rect x is from the scroll's left edge (x 155), y is 0 (the view stacks them); every part is relative to its section's own crop. Section crops are cut tight to their panels, so the panels sit on the view's ground as they sit on the paintings'.",
+  "Prices are the App Store's own (Billing.price), set on the painted green buttons in the Shop's price type (body 700). A button whose price is not known yet, or on a phone without StoreKit, is dimmed; the note line under the header then says Billing.NOT_HERE.",
+  "Diamond packs: the six arts are drawn in the catalogue's order, the ribboned ones (MOST POPULAR, BEST VALUE) for the products whose badge says so, so a ribbon always names the pack it is on. pack_art_rows says which of the painting's two rows an art was cut from: row b's plate and button sit 6 and 7 units lower, and the third column's 2 units right (dx). The x2 FIRST PURCHASE seal (store/seal) is drawn on every pack whose first purchase still pays double.",
+  "Daily deals keep the painting's four pictures; the fourth slot shows the Splendour cosmetic it sells in cosmetic_box (a crest, a colour chip, or the painted frame for a frame this build has no picture of)."
+ ],
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "store/header",
+   "rect": [
+    155,
+    0,
+    786,
+    354
+   ]
+  },
+  {
+   "id": "list",
+   "kind": "scroll",
+   "rect": [
+    155,
+    354,
+    786,
+    1318
+   ],
+   "grow": "bottom",
+   "content": []
+  },
+  {
+   "id": "stack_gap",
+   "kind": "rect",
+   "rect": [
+    0,
+    0,
+    0,
+    10
+   ],
+   "note": "The space between two sections: both paintings leave 10 units between panels."
+  },
+  {
+   "id": "stack_top",
+   "kind": "rect",
+   "rect": [
+    0,
+    0,
+    0,
+    1
+   ],
+   "note": "Where the first section starts under the header: the offer card's own top border (y 355) is one unit under the header's foot (354)."
+  },
+  {
+   "id": "note",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    786,
+    70
+   ],
+   "parts": [
+    {
+     "id": "text",
+     "kind": "text",
+     "rect": [
+      40,
+      4,
+      706,
+      62
+     ],
+     "size": 22,
+     "sample": "Purchases are not open in this build of the game yet.\nThe prices shown are in US dollars.",
+     "font": "body",
+     "weight": 500,
+     "color": "#B8AE9C",
+     "align": "center",
+     "valign": "center",
+     "wrap": true
+    }
+   ]
+  },
+  {
+   "id": "sec_offer",
+   "kind": "template",
+   "rect": [
+    6,
+    0,
+    766,
+    265
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/offer_card",
+     "rect": [
+      0,
+      0,
+      766,
+      265
+     ]
+    },
+    {
+     "id": "title",
+     "kind": "text",
+     "rect": [
+      31,
+      17,
+      478,
+      34
+     ],
+     "size": 33,
+     "sample": "THE FOUNDER'S CRATE",
+     "font": "title",
+     "weight": 700,
+     "color": "#F1D48D",
+     "align": "left",
+     "valign": "center",
+     "uppercase": true
+    },
+    {
+     "id": "timer",
+     "kind": "text",
+     "rect": [
+      561,
+      23,
+      178,
+      34
+     ],
+     "size": 23,
+     "sample": "47h 59m",
+     "font": "body",
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "icon_1",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      351,
+      80,
+      74,
+      62
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_2",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      470,
+      80,
+      75,
+      62
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "icon_3",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      595,
+      80,
+      78,
+      62
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "count_1",
+     "kind": "text",
+     "rect": [
+      343,
+      139,
+      90,
+      22
+     ],
+     "size": 20,
+     "sample": "300",
+     "font": "body",
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "count_2",
+     "kind": "text",
+     "rect": [
+      461,
+      139,
+      92,
+      22
+     ],
+     "size": 20,
+     "sample": "3",
+     "font": "body",
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "count_3",
+     "kind": "text",
+     "rect": [
+      582,
+      139,
+      104,
+      22
+     ],
+     "size": 20,
+     "sample": "",
+     "font": "body",
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "tiles_hit",
+     "kind": "button",
+     "rect": [
+      339,
+      69,
+      352,
+      95
+     ],
+     "action": "lines",
+     "pass_drag": true,
+     "asset": "",
+     "paint_rect": [
+      339,
+      71,
+      352,
+      93
+     ]
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "store/offer_buy",
+     "rect": [
+      518,
+      164,
+      213,
+      96
+     ],
+     "action": "buy",
+     "pass_drag": true,
+     "paint_rect": [
+      518,
+      179,
+      213,
+      66
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      518,
+      179,
+      213,
+      66
+     ],
+     "size": 30,
+     "sample": "US$4.99",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    }
+   ]
+  },
+  {
+   "id": "sec_patron",
+   "kind": "template",
+   "rect": [
+    6,
+    0,
+    766,
+    265
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/patron_card",
+     "rect": [
+      0,
+      0,
+      766,
+      265
+     ]
+    },
+    {
+     "id": "title",
+     "kind": "text",
+     "rect": [
+      359,
+      27,
+      377,
+      55
+     ],
+     "size": 28,
+     "sample": "CROWN PATRONAGE",
+     "font": "title",
+     "weight": 700,
+     "color": "#F1D48D",
+     "align": "center",
+     "valign": "center",
+     "uppercase": true
+    },
+    {
+     "id": "perk_1",
+     "kind": "text",
+     "rect": [
+      411,
+      105,
+      305,
+      28
+     ],
+     "size": 21,
+     "sample": "60 diamonds each month",
+     "font": "body",
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "left",
+     "valign": "center"
+    },
+    {
+     "id": "perk_2",
+     "kind": "text",
+     "rect": [
+      411,
+      141,
+      305,
+      28
+     ],
+     "size": 21,
+     "sample": "1 free energy refill each day",
+     "font": "body",
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "left",
+     "valign": "center"
+    },
+    {
+     "id": "perk_3",
+     "kind": "text",
+     "rect": [
+      411,
+      177,
+      98,
+      28
+     ],
+     "size": 21,
+     "sample": "+25 bag slots",
+     "font": "body",
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "left",
+     "valign": "center"
+    },
+    {
+     "id": "perks_hit",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      508,
+      265
+     ],
+     "action": "perks",
+     "pass_drag": true,
+     "asset": ""
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "store/patron_buy",
+     "rect": [
+      513,
+      168,
+      222,
+      96
+     ],
+     "action": "buy",
+     "pass_drag": true,
+     "paint_rect": [
+      513,
+      183,
+      222,
+      66
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      513,
+      183,
+      222,
+      66
+     ],
+     "size": 26,
+     "sample": "US$6.99 a month",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    }
+   ]
+  },
+  {
+   "id": "sec_head",
+   "kind": "template",
+   "rect": [
+    6,
+    0,
+    766,
+    46
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/diamonds_head",
+     "rect": [
+      0,
+      0,
+      766,
+      46
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sec_packs",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    786,
+    584
+   ],
+   "places": [
+    [
+     7,
+     0
+    ],
+    [
+     265,
+     0
+    ],
+    [
+     520,
+     0
+    ],
+    [
+     7,
+     294
+    ],
+    [
+     265,
+     294
+    ],
+    [
+     520,
+     294
+    ]
+   ],
+   "pack_art_rows": {
+    "store/pack_1": [
+     "a",
+     0
+    ],
+    "store/pack_2": [
+     "a",
+     0
+    ],
+    "store/pack_3": [
+     "a",
+     2
+    ],
+    "store/pack_4": [
+     "b",
+     0
+    ],
+    "store/pack_5": [
+     "b",
+     0
+    ],
+    "store/pack_6": [
+     "b",
+     2
+    ]
+   },
+   "pack_arts": {
+    "plain": [
+     "store/pack_1",
+     "store/pack_2",
+     "store/pack_4",
+     "store/pack_5"
+    ],
+    "most_popular": "store/pack_3",
+    "best_value": "store/pack_6"
+   },
+   "parts": []
+  },
+  {
+   "id": "pack_a",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    251,
+    287
+   ],
+   "parts": [
+    {
+     "id": "art",
+     "kind": "image",
+     "asset": "store/pack_1",
+     "rect": [
+      0,
+      0,
+      251,
+      287
+     ]
+    },
+    {
+     "id": "amount",
+     "kind": "text",
+     "rect": [
+      25,
+      174,
+      199,
+      41
+     ],
+     "size": 28,
+     "sample": "1,400",
+     "font": "body",
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "store/pack_buy",
+     "rect": [
+      25,
+      199,
+      199,
+      95
+     ],
+     "action": "buy",
+     "pass_drag": true,
+     "paint_rect": [
+      25,
+      222,
+      199,
+      49
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      25,
+      222,
+      199,
+      49
+     ],
+     "size": 28,
+     "sample": "US$0.99",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "seal",
+     "kind": "image",
+     "asset": "store/seal",
+     "rect": [
+      156,
+      -5,
+      98,
+      106
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pack_b",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    251,
+    291
+   ],
+   "parts": [
+    {
+     "id": "art",
+     "kind": "image",
+     "asset": "store/pack_1",
+     "rect": [
+      0,
+      0,
+      251,
+      287
+     ]
+    },
+    {
+     "id": "amount",
+     "kind": "text",
+     "rect": [
+      25,
+      180,
+      199,
+      41
+     ],
+     "size": 28,
+     "sample": "1,400",
+     "font": "body",
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "store/pack_buy_b",
+     "rect": [
+      25,
+      205,
+      199,
+      95
+     ],
+     "action": "buy",
+     "pass_drag": true,
+     "paint_rect": [
+      25,
+      229,
+      199,
+      47
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      25,
+      229,
+      199,
+      47
+     ],
+     "size": 28,
+     "sample": "US$0.99",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "seal",
+     "kind": "image",
+     "asset": "store/seal",
+     "rect": [
+      156,
+      -5,
+      98,
+      106
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sec_stipend",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    774,
+    270
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/stipend",
+     "rect": [
+      0,
+      0,
+      774,
+      270
+     ]
+    },
+    {
+     "id": "line_1",
+     "kind": "text",
+     "rect": [
+      412,
+      59,
+      333,
+      59
+     ],
+     "size": 21,
+     "sample": "300 diamonds now,\nthen 60 a day for 30 days",
+     "font": "body",
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "wrap": true
+    },
+    {
+     "id": "line_2",
+     "kind": "text",
+     "rect": [
+      412,
+      131,
+      333,
+      38
+     ],
+     "size": 20,
+     "sample": "18 days left  ·  today's 60 wait",
+     "font": "body",
+     "weight": 600,
+     "color": "#B8AE9C",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "claim",
+     "kind": "button",
+     "asset": "store/claim_today",
+     "rect": [
+      404,
+      167,
+      200,
+      96
+     ],
+     "action": "claim",
+     "pass_drag": true,
+     "paint_rect": [
+      404,
+      182,
+      200,
+      66
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "store/stipend_buy",
+     "rect": [
+      618,
+      167,
+      134,
+      96
+     ],
+     "action": "buy",
+     "pass_drag": true,
+     "paint_rect": [
+      618,
+      182,
+      134,
+      66
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      618,
+      182,
+      134,
+      66
+     ],
+     "size": 24,
+     "sample": "US$4.99",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    }
+   ]
+  },
+  {
+   "id": "sec_deals",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    774,
+    311
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/deals",
+     "rect": [
+      0,
+      0,
+      774,
+      311
+     ]
+    },
+    {
+     "id": "timer",
+     "kind": "text",
+     "rect": [
+      549,
+      15,
+      201,
+      36
+     ],
+     "size": 22,
+     "sample": "5h 12m",
+     "font": "body",
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "card_0",
+     "kind": "image",
+     "asset": "store/deal_card_0",
+     "rect": [
+      13,
+      63,
+      182,
+      237
+     ]
+    },
+    {
+     "id": "card_1",
+     "kind": "image",
+     "asset": "store/deal_card_1",
+     "rect": [
+      203,
+      63,
+      181,
+      237
+     ]
+    },
+    {
+     "id": "card_2",
+     "kind": "image",
+     "asset": "store/deal_card_2",
+     "rect": [
+      392,
+      63,
+      181,
+      237
+     ]
+    },
+    {
+     "id": "card_3",
+     "kind": "image",
+     "asset": "store/deal_card_3",
+     "rect": [
+      580,
+      63,
+      180,
+      237
+     ]
+    },
+    {
+     "id": "cosmetic_box",
+     "kind": "image",
+     "asset": "icons/reward_crown",
+     "rect": [
+      603,
+      70,
+      130,
+      166
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "cosmetic_name",
+     "kind": "text",
+     "rect": [
+      590,
+      205,
+      160,
+      26
+     ],
+     "size": 20,
+     "sample": "EMERALD",
+     "font": "title",
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "count_1",
+     "kind": "text",
+     "rect": [
+      318,
+      72,
+      56,
+      30
+     ],
+     "size": 26,
+     "sample": "×3",
+     "font": "body",
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "count_2",
+     "kind": "text",
+     "rect": [
+      507,
+      72,
+      56,
+      30
+     ],
+     "size": 26,
+     "sample": "×2",
+     "font": "body",
+     "weight": 800,
+     "color": "#F4F1EA",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "free",
+     "kind": "button",
+     "asset": "store/deal_free",
+     "rect": [
+      22,
+      216,
+      164,
+      95
+     ],
+     "action": "claim_0",
+     "pass_drag": true,
+     "paint_rect": [
+      22,
+      238,
+      164,
+      51
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price_1",
+     "kind": "text",
+     "rect": [
+      255,
+      238,
+      114,
+      51
+     ],
+     "size": 28,
+     "sample": "20",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "left",
+     "valign": "center"
+    },
+    {
+     "id": "price_2",
+     "kind": "text",
+     "rect": [
+      443,
+      238,
+      115,
+      51
+     ],
+     "size": 28,
+     "sample": "30",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "left",
+     "valign": "center"
+    },
+    {
+     "id": "price_3",
+     "kind": "text",
+     "rect": [
+      632,
+      238,
+      114,
+      51
+     ],
+     "size": 28,
+     "sample": "105",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "left",
+     "valign": "center"
+    },
+    {
+     "id": "was_1",
+     "kind": "text",
+     "rect": [
+      255,
+      238,
+      114,
+      51
+     ],
+     "size": 20,
+     "sample": "30",
+     "font": "body",
+     "weight": 500,
+     "color": "#8E8474",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "was_2",
+     "kind": "text",
+     "rect": [
+      443,
+      238,
+      115,
+      51
+     ],
+     "size": 20,
+     "sample": "45",
+     "font": "body",
+     "weight": 500,
+     "color": "#8E8474",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "was_3",
+     "kind": "text",
+     "rect": [
+      632,
+      238,
+      114,
+      51
+     ],
+     "size": 20,
+     "sample": "150",
+     "font": "body",
+     "weight": 500,
+     "color": "#8E8474",
+     "align": "right",
+     "valign": "center"
+    },
+    {
+     "id": "hit_1",
+     "kind": "button",
+     "rect": [
+      203,
+      63,
+      181,
+      237
+     ],
+     "action": "claim_1",
+     "pass_drag": true,
+     "asset": ""
+    },
+    {
+     "id": "hit_2",
+     "kind": "button",
+     "rect": [
+      392,
+      63,
+      181,
+      237
+     ],
+     "action": "claim_2",
+     "pass_drag": true,
+     "asset": ""
+    },
+    {
+     "id": "hit_3",
+     "kind": "button",
+     "rect": [
+      580,
+      63,
+      180,
+      237
+     ],
+     "action": "claim_3",
+     "pass_drag": true,
+     "asset": ""
+    }
+   ]
+  },
+  {
+   "id": "sec_comforts",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    774,
+    358
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/comforts",
+     "rect": [
+      0,
+      0,
+      774,
+      358
+     ]
+    },
+    {
+     "id": "steward_hit",
+     "kind": "button",
+     "rect": [
+      16,
+      54,
+      361,
+      204
+     ],
+     "action": "steward_info",
+     "pass_drag": true,
+     "asset": ""
+    },
+    {
+     "id": "qm_hit",
+     "kind": "button",
+     "rect": [
+      391,
+      54,
+      366,
+      204
+     ],
+     "action": "qm_info",
+     "pass_drag": true,
+     "asset": ""
+    },
+    {
+     "id": "steward_buy",
+     "kind": "button",
+     "asset": "store/steward_buy",
+     "rect": [
+      77,
+      258,
+      236,
+      96
+     ],
+     "action": "buy_steward",
+     "pass_drag": true,
+     "paint_rect": [
+      77,
+      277,
+      236,
+      58
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "steward_price",
+     "kind": "text",
+     "rect": [
+      77,
+      277,
+      236,
+      58
+     ],
+     "size": 28,
+     "sample": "US$4.99",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "qm_buy",
+     "kind": "button",
+     "asset": "store/qm_buy",
+     "rect": [
+      457,
+      258,
+      235,
+      96
+     ],
+     "action": "buy_qm",
+     "pass_drag": true,
+     "paint_rect": [
+      457,
+      277,
+      235,
+      58
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "qm_price",
+     "kind": "text",
+     "rect": [
+      457,
+      277,
+      235,
+      58
+     ],
+     "size": 28,
+     "sample": "US$4.99",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    }
+   ]
+  },
+  {
+   "id": "sec_herald",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    774,
+    216
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/herald",
+     "rect": [
+      0,
+      0,
+      774,
+      216
+     ]
+    },
+    {
+     "id": "line_1",
+     "kind": "text",
+     "rect": [
+      392,
+      57,
+      205,
+      57
+     ],
+     "size": 20,
+     "sample": "3 diamonds",
+     "font": "body",
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "line_2",
+     "kind": "text",
+     "rect": [
+      613,
+      57,
+      138,
+      57
+     ],
+     "size": 20,
+     "sample": "5 left",
+     "font": "body",
+     "weight": 600,
+     "color": "#B8AE9C",
+     "align": "center",
+     "valign": "center"
+    },
+    {
+     "id": "watch",
+     "kind": "button",
+     "asset": "store/herald_watch",
+     "rect": [
+      518,
+      112,
+      234,
+      96
+     ],
+     "action": "watch",
+     "pass_drag": true,
+     "paint_rect": [
+      518,
+      126,
+      234,
+      68
+     ],
+     "keep_texture_size": true
+    }
+   ]
+  },
+  {
+   "id": "sec_largesse",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    774,
+    224
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/largesse",
+     "rect": [
+      0,
+      0,
+      774,
+      224
+     ]
+    },
+    {
+     "id": "line_1",
+     "kind": "text",
+     "rect": [
+      486,
+      57,
+      262,
+      63
+     ],
+     "size": 20,
+     "sample": "600 diamonds\nand 20 diamonds to every lord of your kingdom",
+     "font": "body",
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "wrap": true
+    },
+    {
+     "id": "art_hit",
+     "kind": "button",
+     "asset": "",
+     "rect": [
+      12,
+      52,
+      460,
+      165
+     ],
+     "action": "lines",
+     "pass_drag": true
+    },
+    {
+     "id": "buy",
+     "kind": "button",
+     "asset": "store/largesse_buy",
+     "rect": [
+      481,
+      119,
+      272,
+      96
+     ],
+     "action": "buy",
+     "pass_drag": true,
+     "paint_rect": [
+      481,
+      132,
+      272,
+      70
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "price",
+     "kind": "text",
+     "rect": [
+      481,
+      132,
+      272,
+      70
+     ],
+     "size": 30,
+     "sample": "US$9.99",
+     "font": "body",
+     "weight": 700,
+     "color": "#F6F3EE",
+     "align": "center",
+     "valign": "center"
+    }
+   ]
+  },
+  {
+   "id": "sec_footer",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    786,
+    170
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "store/footer",
+     "rect": [
+      0,
+      0,
+      786,
+      170
+     ]
+    },
+    {
+     "id": "restore",
+     "kind": "button",
+     "asset": "store/restore",
+     "rect": [
+      5,
+      -8,
+      291,
+      96
+     ],
+     "action": "restore",
+     "pass_drag": true,
+     "paint_rect": [
+      5,
+      11,
+      291,
+      58
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "terms",
+     "kind": "button",
+     "asset": "store/terms",
+     "rect": [
+      308,
+      -8,
+      228,
+      96
+     ],
+     "action": "terms",
+     "pass_drag": true,
+     "paint_rect": [
+      308,
+      11,
+      228,
+      58
+     ],
+     "keep_texture_size": true
+    },
+    {
+     "id": "privacy",
+     "kind": "button",
+     "asset": "store/privacy",
+     "rect": [
+      548,
+      -8,
+      223,
+      96
+     ],
+     "action": "privacy",
+     "pass_drag": true,
+     "paint_rect": [
+      548,
+      11,
+      223,
+      58
+     ],
+     "keep_texture_size": true
+    }
+   ]
+  }
+ ]
+}

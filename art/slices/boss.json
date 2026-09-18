@@ -1,0 +1,464 @@
+{
+  "source": "boss.png",
+  "note": "KRALLIK BOSS (Wave 8). The Kingdom tab's BOSS section: the beast's panel, the three chests and the damage list. The kingdom's own header, its stats and the two tab rows are kingdom.json's and are not cut again here.\n\nThe PANEL is cut with its window knocked out (hole), because the beast changes: six paintings (bosses_<id>.png, 771x482) are drawn down into the same 728x300 window, and the frame, the health bar and the foot are the panel's own. The name plate and the griffin that flank it sit ON the window in the painting, so they are cut on their own and drawn back over whichever beast stands -- the griffin once, keyed off its dark sky, and mirrored for the right-hand one, which the painting has as the same ornament turned round.",
+  "crops": [
+    {
+      "name": "boss/panel",
+      "rect": [
+        177,
+        719,
+        749,
+        450
+      ],
+      "hole": {
+        "type": "polygon",
+        "points": [
+          [
+            10,
+            18
+          ],
+          [
+            738,
+            18
+          ],
+          [
+            738,
+            318
+          ],
+          [
+            10,
+            318
+          ]
+        ]
+      },
+      "erase": [
+        {
+          "rect": [
+            213,
+            1042,
+            675,
+            34
+          ],
+          "sample_x": [
+            820,
+            870
+          ]
+        },
+        {
+          "rect": [
+            415,
+            1094,
+            220,
+            54
+          ],
+          "sample_x": [
+            636,
+            654
+          ]
+        },
+        {
+          "rect": [
+            652,
+            1084,
+            244,
+            76
+          ],
+          "sample_x": [
+            636,
+            650
+          ]
+        },
+        {
+          "rect": [
+            896,
+            1084,
+            10,
+            62
+          ],
+          "sample_x": [
+            636,
+            650
+          ]
+        }
+      ],
+      "note": "the frame, the bar's empty track, the hourglass and the timer plate. The red fill and the figure's plate come off the bar, the six blows come off the foot and the ATTACK plate comes off its corner: all four are live and are drawn back over this. The plate's erase stops short of the frame's corner scroll, which reaches up beside it."
+    },
+    {
+      "name": "boss/name_plate",
+      "rect": [
+        342,
+        742,
+        400,
+        40
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 7
+      }
+    },
+    {
+      "name": "boss/griffin",
+      "rect": [
+        294,
+        737,
+        49,
+        48
+      ],
+      "mode": "darkkey",
+      "k": 55,
+      "floor": 26,
+      "note": "the ornament the painting flanks the name plate with, keyed off its own sky: the right-hand one is this turned round, as the painting has it."
+    },
+    {
+      "name": "boss/hp_fill",
+      "rect": [
+        213,
+        1043,
+        60,
+        27
+      ],
+      "patch": [
+        {
+          "from": [
+            688,
+            1043,
+            30,
+            27
+          ],
+          "to": [
+            243,
+            1043
+          ],
+          "feather": 8
+        }
+      ],
+      "note": "the fill's two rounded caps, laid side by side: a nine-patch stretched across the track from them closes the bar properly at every fraction. The painted fill is 505 long and the bar 674, so a crop of the whole thing would be SQUASHED at any figure under three quarters, and the squash showed as a seam where the patch's cap met it."
+    },
+    {
+      "name": "boss/hp_plate",
+      "rect": [
+        468,
+        1041,
+        164,
+        31
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 6
+      }
+    },
+    {
+      "name": "boss/blow_on",
+      "rect": [
+        419,
+        1098,
+        39,
+        45
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "boss/blow_off",
+      "rect": [
+        557,
+        1098,
+        39,
+        45
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "boss/attack",
+      "rect": [
+        659,
+        1088,
+        240,
+        62
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 10
+      }
+    },
+    {
+      "name": "boss/chest_struck",
+      "rect": [
+        181,
+        1179,
+        236,
+        151
+      ]
+    },
+    {
+      "name": "boss/chest_valour",
+      "rect": [
+        421,
+        1179,
+        240,
+        151
+      ]
+    },
+    {
+      "name": "boss/chest_slain",
+      "rect": [
+        665,
+        1179,
+        255,
+        151
+      ]
+    },
+    {
+      "name": "boss/damage_head",
+      "rect": [
+        177,
+        1336,
+        746,
+        43
+      ],
+      "note": "the damage panel's top: its frame corners and the DAMAGE heading, at the painting's own size"
+    },
+    {
+      "name": "boss/damage_body",
+      "rect": [
+        177,
+        1379,
+        746,
+        225
+      ],
+      "refill": [
+        {
+          "rect": [
+            188,
+            1379,
+            724,
+            221
+          ],
+          "band": [
+            1371,
+            1378
+          ],
+          "samples": [
+            {
+              "rows": [
+                1379,
+                1600
+              ],
+              "x": [
+                [
+                  191,
+                  203
+                ],
+                [
+                  905,
+                  918
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "and its sides and foot, cleared of the four painted rows and drawn as a nine-patch: a kingdom has more lords than the painting had room for"
+    },
+    {
+      "name": "boss/place_1",
+      "rect": [
+        205,
+        1381,
+        48,
+        50
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "boss/place_2",
+      "rect": [
+        205,
+        1434,
+        48,
+        50
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "boss/place_3",
+      "rect": [
+        205,
+        1488,
+        48,
+        50
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "boss/place_plain",
+      "rect": [
+        205,
+        1542,
+        48,
+        50
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "boss/damage_name",
+      "rect": [
+        346,
+        1392,
+        198,
+        33
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 6
+      }
+    },
+    {
+      "name": "boss/damage_track",
+      "rect": [
+        556,
+        1557,
+        216,
+        19
+      ],
+      "erase": [
+        {
+          "rect": [
+            558,
+            1559,
+            130,
+            15
+          ],
+          "sample_x": [
+            740,
+            765
+          ]
+        }
+      ],
+      "note": "the last row's bar, whose fill is the shortest, cleared back to an empty track"
+    },
+    {
+      "name": "boss/damage_fill",
+      "rect": [
+        558,
+        1400,
+        212,
+        15
+      ]
+    },
+    {
+      "name": "boss/damage_value",
+      "rect": [
+        786,
+        1389,
+        114,
+        38
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 6
+      }
+    },
+    {
+      "name": "boss/scene_ashfall_wyrm",
+      "src": "bosses_ashfall_wyrm.png",
+      "rect": [
+        0,
+        55,
+        771,
+        318
+      ],
+      "scale": [
+        728,
+        300
+      ],
+      "note": "the band of the beast's own painting that frames it: cut at its aspect and drawn down into the panel's window, which is what the briefs' 'paint big, draw down' is for"
+    },
+    {
+      "name": "boss/scene_garrow",
+      "src": "bosses_garrow.png",
+      "rect": [
+        0,
+        60,
+        771,
+        318
+      ],
+      "scale": [
+        728,
+        300
+      ],
+      "note": "the band of the beast's own painting that frames it: cut at its aspect and drawn down into the panel's window, which is what the briefs' 'paint big, draw down' is for"
+    },
+    {
+      "name": "boss/scene_iron_colossus",
+      "src": "bosses_iron_colossus.png",
+      "rect": [
+        0,
+        45,
+        771,
+        318
+      ],
+      "scale": [
+        728,
+        300
+      ],
+      "note": "the band of the beast's own painting that frames it: cut at its aspect and drawn down into the panel's window, which is what the briefs' 'paint big, draw down' is for"
+    },
+    {
+      "name": "boss/scene_fen_witch",
+      "src": "bosses_fen_witch.png",
+      "rect": [
+        0,
+        60,
+        771,
+        318
+      ],
+      "scale": [
+        728,
+        300
+      ],
+      "note": "the band of the beast's own painting that frames it: cut at its aspect and drawn down into the panel's window, which is what the briefs' 'paint big, draw down' is for"
+    },
+    {
+      "name": "boss/scene_ulgrim",
+      "src": "bosses_ulgrim.png",
+      "rect": [
+        0,
+        2,
+        771,
+        318
+      ],
+      "scale": [
+        728,
+        300
+      ],
+      "note": "the band of the beast's own painting that frames it: cut at its aspect and drawn down into the panel's window, which is what the briefs' 'paint big, draw down' is for"
+    },
+    {
+      "name": "boss/scene_black_knight",
+      "src": "bosses_black_knight.png",
+      "rect": [
+        0,
+        55,
+        771,
+        318
+      ],
+      "scale": [
+        728,
+        300
+      ],
+      "note": "the band of the beast's own painting that frames it: cut at its aspect and drawn down into the panel's window, which is what the briefs' 'paint big, draw down' is for"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+.page { display: grid; gap: var(--s6); max-width: 1100px; }
+.form { display: grid; gap: var(--s6); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: var(--s7); }
+.col { display: grid; gap: var(--s5); align-content: start; }
+.inline { display: flex; gap: var(--s4); align-items: flex-end; flex-wrap: wrap; }
+.inline input[type="number"] { width: 110px; }
+/* A row of fields lines up by its labels: a hint under one field must not push
+   its neighbours' labels down. */
+.fields { display: flex; gap: var(--s4); align-items: flex-start; flex-wrap: wrap; }
+.fields input[type="number"] { width: 110px; }
+.search { display: flex; gap: var(--s4); align-items: center; width: 100%; }
+.search input { flex: 1; min-width: 0; }
+.grow { flex: 1; min-width: 160px; }
+.wide { width: 100%; }
+.section {
+  font-family: var(--f-display); font-variant: small-caps; letter-spacing: 0.04em;
+  color: var(--text-2); font-size: var(--t-lead);
+  padding-bottom: var(--s2); border-bottom: 1px solid var(--hair);
+}
+
+/* The letter is prose, not code: the panel's textarea default is monospace. */
+.body textarea { font-family: var(--f-ui); font-size: var(--t-body); line-height: 1.5; min-height: 132px; }
+
+.help {
+  font-size: var(--t-small); color: var(--text-3);
+  border-left: 2px solid var(--hair-strong); padding-left: var(--s5);
+}
+.help strong { color: var(--text-2); font-weight: 600; }
+.warn { color: var(--warn); font-size: var(--t-small); }
+.bad { color: var(--down); font-size: var(--t-small); }
+.readout { font-family: var(--f-num); color: var(--gold-3); }
+
+/* Who it goes to: three choices as one segmented control. */
+.seg { display: inline-flex; border: 1px solid var(--hair); border-radius: var(--r2); overflow: hidden; }
+.segBtn {
+  height: 30px; padding: 0 var(--s5);
+  background: transparent; color: var(--text-3);
+  border-right: 1px solid var(--hair);
+  font-size: var(--t-body); font-weight: 600;
+}
+.segBtn:last-child { border-right: 0; }
+.segBtn:hover { color: var(--text); background: var(--ink-3); }
+.segBtn[data-on="true"] {
+  color: var(--text);
+  background: linear-gradient(180deg, var(--ink-5) 0%, var(--ink-3) 100%);
+  box-shadow: 0 -2px 0 var(--gold-4) inset;
+}
+
+.matches { display: grid; gap: var(--s2); }
+.match {
+  display: flex; align-items: center; gap: var(--s4);
+  height: 30px; padding: 0 var(--s4);
+  border: 1px solid var(--hair); border-radius: var(--r2);
+  background: var(--ink-2); color: var(--text-2); text-align: left;
+}
+.match:hover { color: var(--text); border-color: var(--hair-strong); background: var(--ink-3); }
+.chosen {
+  display: inline-flex; align-items: center; gap: var(--s4);
+  padding: var(--s2) var(--s2) var(--s2) var(--s5);
+  border: 1px solid color-mix(in oklab, var(--gold-3) 35%, transparent);
+  border-radius: var(--r-full);
+  color: var(--text);
+}
+.sub { color: var(--text-3); font-size: var(--t-micro); }
+
+/* A repeated row of the attachments (an item, a timed bonus). */
+.rows { display: grid; gap: var(--s3); }
+.rowLine { display: flex; gap: var(--s4); align-items: flex-end; flex-wrap: wrap; }
+.rowLine select { min-width: 130px; }
+
+.checks { display: flex; flex-wrap: wrap; gap: var(--s3) var(--s6); }
+.check { display: inline-flex; align-items: center; gap: var(--s3); color: var(--text-2); }
+.check input { width: auto; padding: 0; box-shadow: none; }
+
+.foot {
+  display: flex; gap: var(--s6); align-items: flex-end; flex-wrap: wrap;
+  padding-top: var(--s5); border-top: 1px solid var(--hair);
+}
+.top { align-items: flex-start; }
+.needs { display: grid; gap: var(--s2); flex: 1; min-width: 260px; }
+
+.table { width: 100%; font-size: var(--t-body); }
+.table th {
+  text-align: left; font-size: var(--t-micro); letter-spacing: .09em; text-transform: uppercase;
+  color: var(--text-3); padding: var(--s3) var(--s5); border-bottom: 1px solid var(--hair-strong);
+  white-space: nowrap;
+}
+.table td { padding: var(--s3) var(--s5); border-bottom: 1px solid var(--hair); vertical-align: top; }
+.table tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.title { color: var(--text); }
+.letter { min-width: 220px; }
+.carries { color: var(--text-2); max-width: 280px; }
+/* One thing a letter carries never breaks across lines; the list breaks at its
+   separators. */
+.item { white-space: nowrap; }
+.dot { color: var(--text-3); }

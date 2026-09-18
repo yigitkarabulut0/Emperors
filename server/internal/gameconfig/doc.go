@@ -21,6 +21,19 @@ type Doc struct {
 	Soldiers    SoldiersConfig    `json:"soldiers"`
 	Estates     EstatesConfig     `json:"estates"`
 	Kingdoms    KingdomsConfig    `json:"kingdoms"`
+	Rewards     RewardsConfig     `json:"rewards"`
+	Cosmetics   CosmeticsConfig   `json:"cosmetics"`
+	Commerce    CommerceConfig    `json:"commerce"`
+	Retention   RetentionConfig   `json:"retention"`
+	LiveOps     LiveOpsConfig     `json:"liveops"`
+	PvP         PvPConfig         `json:"pvp"`
+	Social      SocialConfig      `json:"social"`
+	Campaign    CampaignConfig    `json:"campaign"`
+	Hunt        HuntConfig        `json:"hunt"`
+	Talents     TalentsConfig     `json:"talents"`
+	Forge       ForgeConfig       `json:"forge"`
+	Boss        BossConfig        `json:"boss"`
+	War         WarConfig         `json:"war"`
 }
 
 // Doc returns this bundle's configuration.
@@ -28,6 +41,10 @@ func (b *Bundle) Doc() Doc {
 	return Doc{
 		Jobs: b.Jobs, Progression: b.Progression, Tiers: b.Tiers,
 		Items: b.Items, Soldiers: b.Soldiers, Estates: b.Estates, Kingdoms: b.Kingdoms,
+		Rewards: b.Rewards, Cosmetics: b.Cosmetics, Commerce: b.Commerce, Retention: b.Retention,
+		LiveOps: b.LiveOps, PvP: b.PvP, Social: b.Social,
+		Campaign: b.Campaign, Hunt: b.Hunt, Talents: b.Talents, Forge: b.Forge,
+		Boss: b.Boss, War: b.War,
 	}
 }
 
@@ -41,6 +58,10 @@ func FromDoc(version int, d Doc) (*Bundle, error) {
 		Version: version,
 		Jobs:    d.Jobs, Progression: d.Progression, Tiers: d.Tiers,
 		Items: d.Items, Soldiers: d.Soldiers, Estates: d.Estates, Kingdoms: d.Kingdoms,
+		Rewards: d.Rewards, Cosmetics: d.Cosmetics, Commerce: d.Commerce, Retention: d.Retention,
+		LiveOps: d.LiveOps, PvP: d.PvP, Social: d.Social,
+		Campaign: d.Campaign, Hunt: d.Hunt, Talents: d.Talents, Forge: d.Forge,
+		Boss: d.Boss, War: d.War,
 	}
 	if err := b.build(); err != nil {
 		return nil, err

@@ -106,8 +106,11 @@ func _subtitle() -> String:
 	return ""
 
 
+## A generic button in the section: one of the dialogs' painted plates
+## (Dialog.CONFIRM_PLATE, QUIET_PLATE, DANGER_PLATE, from plates_sheet.png) at
+## their own edge; the Kingdom painting's own buttons are its crops instead.
 func _plate_button(word: String, plate: String, col: Color) -> Button:
-	var b := UI.plate_face(plate, 16)
+	var b := UI.plate_face(plate, Dialog.PLATE_EDGE)
 	b.text = word
 	b.add_theme_font_override("font", UI.font("title", 700))
 	b.add_theme_font_size_override("font_size", 28)
@@ -153,8 +156,9 @@ func _row(height: float) -> Control:
 
 
 ## A picture on the left of a row, centred in its height, drawn at its own
-## proportions. The portraits are near square and the works are 86x69, and a
-## work forced into a square box came out a squashed building.
+## proportions: a portrait's painted ring is not quite round, and forced into
+## another box it came out squashed. Works have their own, framed
+## (_work_picture).
 func _picture(row: Control, asset: String, box: Vector2, row_h: float) -> TextureRect:
 	var t := UI.image(asset, Rect2(PAD, (row_h - box.y) / 2.0, box.x, box.y))
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -253,8 +257,7 @@ func _fill_lords() -> void:
 		# The portraits carry their own gold ring, painted. An item tier frame
 		# was drawn over them as well, so every lord wore a rarity around his
 		# face -- two rings, and the wrong vocabulary for a person.
-		_picture(row, face_for(str(m.get("player_id", "")),
-			str(m.get("role", ""))), Vector2(FACE, FACE), ROW_H)
+		paint_lord_face(_picture(row, MEDALLION, Vector2(FACE, FACE), ROW_H), m)
 
 		var them := str(m.get("player_id", ""))
 		var role := str(m.get("role", "member"))
@@ -270,23 +273,27 @@ func _fill_lords() -> void:
 		var text_x := PAD + FACE + GUTTER
 		var text_w := _text_span(text_x, button_w if action != "" else 0.0)
 
-		var name_label := _text(row, str(m.get("name", "")), Rect2(text_x, 24, text_w, 44), 34,
-			UI.INK, "title", 700)
-		UI.fit_label(name_label, 34, 22)
+		# The lord as everyone sees them: their colour, their seal, and the
+		# title they wear on the rank's line, after the rank.
+		var name_label := _text(row, "", Rect2(text_x, 24, text_w, 44), 34, UI.INK, "title", 700)
+		Look.paint_name(name_label, m, str(m.get("name", "")), Rect2(text_x, 24, text_w, 44), 34, 22)
 		row.add_child(UI.image(str(ROLE_ICON.get(role, ROLE_ICON["member"])),
 			Rect2(text_x, 74, 32, 32)))
-		_text(row, str(ROLE_WORD.get(role, "LORD")), Rect2(text_x + 42, 76, text_w - 42, 30), 25,
-			UI.GOLD_DIM, "title", 600)
+		var word := str(ROLE_WORD.get(role, "LORD"))
+		var rank := _text(row, word, Rect2(text_x + 42, 76, text_w - 42, 30), 25, UI.GOLD_DIM, "title", 600)
+		var after := text_x + 42 + rank.label_settings.font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, 25).x + 16
+		var worn_title := _text(row, "", Rect2(after, 76, text_x + text_w - after, 30), 23, UI.DIM, "body", 600)
+		Look.paint_title(worn_title, m, Rect2(after, 76, text_x + text_w - after, 30), 23, 14)
 		_text(row, "Level %d  ·  %s given" % [int(m.get("level", 1)),
 			UI.short_number(int(str(m.get("donated", "0"))))],
 			Rect2(text_x, 112, text_w, 30), 24, UI.DIM)
 
 		match action:
 			"MANAGE":
-				_action(row, "MANAGE", "inventory/btn_sell_plate", UI.INK, button_w, ROW_H) \
+				_action(row, "MANAGE", Dialog.QUIET_PLATE, UI.INK, button_w, ROW_H) \
 					.pressed.connect(_manage.bind(them, str(m.get("name", "")), role))
 			"REMOVE":
-				_action(row, "REMOVE", "shop/danger_plate", Color("#FBEDED"), button_w, ROW_H) \
+				_action(row, "REMOVE", Dialog.DANGER_PLATE, Color("#FBEDED"), button_w, ROW_H) \
 					.pressed.connect(_remove.bind(them, str(m.get("name", ""))))
 
 	if king:
@@ -295,12 +302,12 @@ func _fill_lords() -> void:
 	# Only a king or captain can invite, so only they are offered the button.
 	# Everyone saw it, and a lord who pressed it was told his rank forbade it.
 	if leads:
-		var invite := _plate_button("INVITE A PLAYER", "shop/buy_plate", Color("#F3FBF3"))
+		var invite := _plate_button("INVITE A PLAYER", Dialog.CONFIRM_PLATE, Color("#F3FBF3"))
 		invite.custom_minimum_size = Vector2(WIDTH, BUTTON_H)
 		invite.pressed.connect(_invite)
 		_list.add_child(invite)
 
-	var leave := _plate_button("LEAVE THE KINGDOM", "shop/danger_plate", Color("#FBEDED"))
+	var leave := _plate_button("LEAVE THE KINGDOM", Dialog.DANGER_PLATE, Color("#FBEDED"))
 	leave.custom_minimum_size = Vector2(WIDTH, BUTTON_H)
 	leave.pressed.connect(_leave)
 	_list.add_child(leave)
@@ -310,23 +317,26 @@ func _fill_lords() -> void:
 func _request_row(r: Dictionary) -> void:
 	var row := _row(ROW_H)
 	var who := str(r.get("player_id", ""))
-	_picture(row, face_for(who, "member"), Vector2(ASK_FACE, ASK_FACE), ROW_H)
+	# Drawn as a lord of the kingdom is: their own face in the medallion, the
+	# frame they wear, their colour and seal, and their title under the rest.
+	paint_lord_face(_picture(row, MEDALLION, Vector2(ASK_FACE, ASK_FACE), ROW_H), r)
 	var buttons_w := ACCEPT_W + BUTTON_GAP + REFUSE_W
 	var text_x := PAD + ASK_FACE + GUTTER
 	var text_w := WIDTH - PAD - buttons_w - GUTTER - text_x
-	var name_label := _text(row, str(r.get("name", "")), Rect2(text_x, 34, text_w, 44), 32,
-		UI.INK, "title", 700)
-	UI.fit_label(name_label, 32, 20)
+	var name_label := _text(row, "", Rect2(text_x, 26, text_w, 44), 32, UI.INK, "title", 700)
+	Look.paint_name(name_label, r, str(r.get("name", "")), Rect2(text_x, 26, text_w, 44), 32, 20)
 	_text(row, "Level %d  ·  asked %s" % [int(r.get("level", 1)), UI.ago(int(r.get("waiting", 0)))],
-		Rect2(text_x, 84, text_w, 32), 23, UI.DIM)
+		Rect2(text_x, 74, text_w, 32), 23, UI.DIM)
+	var worn_title := _text(row, "", Rect2(text_x, 108, text_w, 30), 22, UI.DIM, "body", 600)
+	Look.paint_title(worn_title, r, Rect2(text_x, 108, text_w, 30), 22, 14)
 	var y := (ROW_H - BUTTON_H) / 2.0
-	var yes := _plate_button("ACCEPT", "shop/buy_plate", Color("#F3FBF3"))
+	var yes := _plate_button("ACCEPT", Dialog.CONFIRM_PLATE, Color("#F3FBF3"))
 	yes.add_theme_font_size_override("font_size", 24)
 	UI.place(yes, Rect2(WIDTH - PAD - buttons_w, y, ACCEPT_W, BUTTON_H))
 	yes.pressed.connect(func() -> void:
 		_act("/v1/kingdom/requests/answer", {"player_id": who, "accept": true}))
 	row.add_child(yes)
-	var no := _plate_button("REFUSE", "inventory/btn_sell_plate", UI.DIM)
+	var no := _plate_button("REFUSE", Dialog.QUIET_PLATE, UI.DIM)
 	no.add_theme_font_size_override("font_size", 24)
 	UI.place(no, Rect2(WIDTH - PAD - REFUSE_W, y, REFUSE_W, BUTTON_H))
 	no.pressed.connect(func() -> void:
@@ -364,11 +374,55 @@ func _policy_row() -> void:
 
 ## Static so the Realm tab's painted ROYAL LORDS panel picks the same face for
 ## the same lord. Two rules for one roster put a crown on a different man in
-## each of the two places he appears.
+## each of the two places he appears. The stand-in for a lord whose view does
+## not say their face (a server from before MemberView carried `avatar`).
 static func face_for(player_id: String, role: String) -> String:
 	if role == "king":
 		return KING_PORTRAIT
 	return LORD_PORTRAITS[absi(player_id.hash()) % LORD_PORTRAITS.size()]
+
+
+## A lord's own face in the painted gold medallion -- the crowned one for the
+## king -- and the frame they wear over it (scripts/ui/look.gd). The medallion
+## is the painting's, its painted face covered by the lord's own portrait
+## (Art.avatar_ring) in its window: centre in the crop, the face's size, and
+## the rim's outer size, measured.
+const MEDALLION := "portraits/lord_aldric"
+const MEDALLION_WINDOW := {"portraits/lord_aldric": Vector2(35.5, 33.5),
+	"portraits/lord_yigit": Vector2(35.5, 41.5)}
+const MEDALLION_FACE := 60.0
+const MEDALLION_RIM := 66.0
+
+
+## Paints `m` into `medallion`, a TextureRect laid out for the medallion crop
+## (scaled, or kept to aspect and centred): the crop, the face over its window
+## and the worn ring over that, both kept on the medallion for the next paint.
+static func paint_lord_face(medallion: TextureRect, m: Dictionary) -> void:
+	var role := str(m.get("role", "member"))
+	var avatar := str(m.get("avatar", ""))
+	var key := KING_PORTRAIT if role == "king" else MEDALLION
+	medallion.texture = Art.tex(key if avatar != "" else face_for(str(m.get("player_id", "")), role))
+	var face: TextureRect = medallion.get_meta("lord_face") if medallion.has_meta("lord_face") else null
+	if face == null or not is_instance_valid(face):
+		face = UI.image("", Rect2())
+		medallion.get_parent().add_child(face)
+		medallion.get_parent().move_child(face, medallion.get_index() + 1)
+		medallion.set_meta("lord_face", face)
+	face.visible = avatar != "" and medallion.visible
+	var tex := medallion.texture.get_size()
+	var s := medallion.size.x / tex.x
+	var origin := medallion.position
+	if medallion.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED:
+		s = minf(medallion.size.x / tex.x, medallion.size.y / tex.y)
+		origin += (medallion.size - tex * s) / 2.0
+	if avatar == "":
+		Look.paint_frame(face, {}, "ring", 0.0)
+		return
+	face.texture = Art.tex(Art.avatar_ring(avatar))
+	var c: Vector2 = origin + (MEDALLION_WINDOW[key] as Vector2) * s
+	var d := MEDALLION_FACE * s
+	UI.place(face, Rect2(c - Vector2(d, d) / 2.0, Vector2(d, d)))
+	Look.paint_frame(face, m, "ring", MEDALLION_RIM * s)
 
 
 ## The king's choices for one lord, in one list. Their current rank is left
@@ -437,11 +491,37 @@ func _leave() -> void:
 ## its level, what it gives now and what the next level costs; the Favour goods
 ## follow under their own heading. In the popup these were sixteen lines of text
 ## in one list, and a building looked exactly like a potion.
-const WORK_ART := ["kingdom/work_banner_hall", "kingdom/work_training_grounds",
-	"kingdom/work_granary_law", "kingdom/work_royal_archives"]
 const WORK_H := 176.0
-## The work paintings are 86x69, so the box they are drawn in is too.
+## Each work's scene is 152x122 (art/slices/works_sheet.json), the box it is
+## drawn in; the Realm panel draws the same scene at 86x69.
 const WORK_PIC := Vector2(152, 122)
+## The painted thin gold frame round a work's scene, a nine-patch: its corners
+## keep their brackets whatever the box, and only the straight bars stretch.
+const WORK_FRAME := "kingdom/work_frame"
+const WORK_FRAME_MARGIN := 8
+## Where the scene sits inside the frame: under the frame's inner edge.
+const WORK_INSET := 2.0
+
+
+## A Kingdom Work's own scene, by its id. Until the works were painted there
+## were four pictures for eight works, handed out by position.
+static func work_art(id: String) -> String:
+	return "kingdom/work_" + id
+
+
+## A work's scene in its frame, centred in the row's height.
+func _work_picture(row: Control, id: String) -> void:
+	var box := Rect2(PAD, (WORK_H - WORK_PIC.y) / 2.0, WORK_PIC.x, WORK_PIC.y)
+	var scene := UI.image(work_art(id), box.grow(-WORK_INSET))
+	row.add_child(scene)
+	var frame := NinePatchRect.new()
+	frame.texture = Art.tex(WORK_FRAME)
+	for m in ["left", "top", "right", "bottom"]:
+		frame.set("patch_margin_" + m, WORK_FRAME_MARGIN)
+	frame.draw_center = false
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UI.place(frame, box)
+	row.add_child(frame)
 
 
 func _fill_works() -> void:
@@ -449,7 +529,7 @@ func _fill_works() -> void:
 	for i in ups.size():
 		var u: Dictionary = ups[i]
 		var row := _row(WORK_H)
-		_picture(row, WORK_ART[i % WORK_ART.size()], WORK_PIC, WORK_H)
+		_work_picture(row, str(u.get("id", "")))
 
 		var button_w := 216.0
 		var text_x := PAD + WORK_PIC.x + GUTTER
@@ -468,12 +548,12 @@ func _fill_works() -> void:
 		if bool(u.get("maxed", false)):
 			# A maxed work keeps the column: the same plate, spent, rather than
 			# a word floating where every other row has a button.
-			var done := _action(row, "MAX LEVEL", "inventory/btn_sell_plate", UI.GOLD_DIM,
+			var done := _action(row, "MAX LEVEL", Dialog.QUIET_PLATE, UI.GOLD_DIM,
 				button_w, WORK_H - 34.0)
 			done.disabled = true
 			done.modulate = Color(0.62, 0.62, 0.62)
 			continue
-		_action(row, "UPGRADE", "shop/buy_plate", Color("#F3FBF3"), button_w, WORK_H - 34.0) \
+		_action(row, "UPGRADE", Dialog.CONFIRM_PLATE, Color("#F3FBF3"), button_w, WORK_H - 34.0) \
 			.pressed.connect(_upgrade.bind(str(u.get("id", "")), str(u.get("name", "")),
 				int(u.get("next_cost", 0))))
 		_text(row, "%s gold" % UI.short_number(int(u.get("next_cost", 0))),
@@ -543,7 +623,7 @@ func _favour_cards(goods: Array) -> void:
 			UI.GOLD_DIM, "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
 
 		var cost := int(g.get("cost", 0))
-		var b := _plate_button("%d" % cost, "inventory/btn_sell_plate", UI.GOLD)
+		var b := _plate_button("%d" % cost, Dialog.QUIET_PLATE, UI.GOLD)
 		UI.place(b, Rect2(14, 286, wide - 28, BUTTON_H))
 		b.disabled = cost > purse
 		if b.disabled:
@@ -579,11 +659,14 @@ func _upgrade(id: String, name: String, cost: int) -> void:
 ## is the shape a log has, not a table.
 const BOARDS := [["might", "MIGHT"], ["level", "LEVEL"], ["wealth", "WEALTH"]]
 const RANK_H := 84.0
+## The Throne's own line is a tap, so it is a thumb tall (95 units is 44 pt).
+const THRONE_H := 96.0
 const PLACE_W := 92.0
 const VALUE_W := 240.0
 
 
 func _fill_ranks() -> void:
+	_throne_row()
 	var top: Array = data.get("leaderboard", [])
 	var mine := str((data.get("kingdom", {}) as Dictionary).get("id", ""))
 	if not top.is_empty():
@@ -639,3 +722,61 @@ func _heading(text: String) -> void:
 	l.custom_minimum_size = Vector2(WIDTH, 64)
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_list.add_child(l)
+
+
+## THE THRONE, the first line of WHERE THE REALM STANDS.
+##
+## Realm news, and the only standing in the game that is not a board: the
+## kingdom that gained the most renown last week wears the crown, and its
+## emperor's decree is felt by every lord in the realm -- a lord with no
+## kingdom included. Its words come from snapshot.live.throne, so it costs no
+## request of its own.
+##
+## It is here rather than on the kingdom's own page because kingdom.png is
+## full: the largest gap anywhere on it is ten units, and a banner laid along
+## the page's foot fell below the fold on a 1672 screen. Standings are what a
+## lord opens RANKS for.
+func _throne_row() -> void:
+	_heading("THE THRONE")
+	# Taller than a rank row: the whole line is one tap, and a tap area is 95
+	# units (44 pt) or it is not a thumb's.
+	var row := _row(THRONE_H)
+	var crown := UI.image("throne/crown_small", Rect2(PAD, (THRONE_H - 42.0) / 2.0, 56, 42))
+	crown.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(crown)
+	var l := UI.label(throne_line(GameState.live(), GameState.live_age_s()), 25, UI.INK, "body", 500)
+	UI.place(l, Rect2(PAD + 74, 0, WIDTH - PAD * 2 - 74 - 32, THRONE_H))
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(l)
+	UI.fit_label(l, 25, 16)
+	row.add_child(UI.image("icons/chevron_gold", Rect2(WIDTH - PAD - 26, (THRONE_H - 30.0) / 2.0, 24, 30)))
+	var hit := UI.hotspot(Rect2(0, 0, WIDTH, THRONE_H))
+	hit.pressed.connect(func() -> void:
+		var shell := get_tree().get_first_node_in_group("shell")
+		if shell != null:
+			shell.call("open_view", "throne"))
+	row.add_child(hit)
+
+
+## What the Throne's line says, in every state. Pure, so a test can ask it.
+##
+## Nobody reigning says so in as many words: it is the one state a line like
+## this must never leave blank.
+static func throne_line(live: Dictionary, age: int) -> String:
+	var th: Variant = live.get("throne")
+	if not (th is Dictionary):
+		return "The throne stands empty"
+	var t: Dictionary = th
+	var name := str(t.get("kingdom_name", ""))
+	if name == "":
+		var crowns := maxi(0, int(t.get("crowns_in", 0)) - age)
+		if crowns <= 0:
+			return "The throne stands empty"
+		return "The throne stands empty  ·  crowned in " + UI.time_left(crowns)
+	var dec: Variant = t.get("decree")
+	if dec is Dictionary:
+		var d: Dictionary = dec
+		return "%s reigns  ·  %s, %s left" % [name, str(d.get("name", "")),
+			UI.time_left(maxi(0, int(d.get("ends_in", 0)) - age))]
+	return "%s reigns  ·  %s left" % [name,
+		UI.time_left(maxi(0, int(t.get("reign_ends_in", 0)) - age))]

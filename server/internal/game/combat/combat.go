@@ -77,11 +77,46 @@ type Replay struct {
 
 	// Carried in the replay so it stays self-contained: a replay re-watched a
 	// week later must show what the armies were worth at the time, not now.
-	AttackerMight int64   `json:"attacker_might"`
-	DefenderMight int64   `json:"defender_might"`
-	Events        []Event `json:"events"`
+	AttackerMight int64 `json:"attacker_might"`
+	DefenderMight int64 `json:"defender_might"`
+
+	// What each side had left of its health when it ended, in basis points.
+	//
+	// The campaign's stars are read off the attacker's: a win is one, half the
+	// health left is two, more is three. It is recorded rather than recomputed
+	// from the event log, because the log is what the CLIENT animates and the
+	// stars are a number the server owes the player before the animation runs.
+	AttackerHPLeftBP int64 `json:"attacker_hp_left_bp"`
+	DefenderHPLeftBP int64 `json:"defender_hp_left_bp"`
+
+	// What each side actually DEALT, in hit points, summed as the blows landed.
+	//
+	// The kingdom's boss is why this is a number and not a fraction. A beast
+	// with fifty million health takes a few thousand from one lord's blow, and
+	// that is 4 basis points of its bar: a damage read off a fraction would
+	// round a lord's whole afternoon to nothing. The pool a blow digs out of the
+	// beast is this figure, exactly, and the damage list is built from it.
+	AttackerDamage int64 `json:"attacker_damage"`
+	DefenderDamage int64 `json:"defender_damage"`
+
+	Events []Event `json:"events"`
 }
 
+// Options are the knobs a fight that is not an ordinary raid may turn.
+//
+// The zero value IS an ordinary raid: Simulate is SimulateWith with no options
+// at all, and options_test.go holds the two byte-identical over two thousand
+// seeds. Anything that wants a different fight turns a knob here rather than
+// growing a second simulator -- there is one battle in this game, and every
+// screen that shows one is showing this function's work.
+type Options struct {
+	// What the defender's own ground is worth, in basis points added to their
+	// defence. Nil is the balance's Home Ground.
+	HomeGroundBP *int64
+	// The most rounds the fight may run before the timeout rule decides it.
+	// Nil is the balance's.
+	MaxRounds *int
+}
 
 // Champion is a side as it fights: one figure carrying the whole army.
 //
@@ -128,7 +163,20 @@ func (c *Champion) alive() bool { return c.hp > 0 }
 // carried over intact (see Champion); what changed is that a side's whole
 // strength lands in one readable blow.
 func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, defender Army) *Replay {
+	return SimulateWith(cfg, rng, seed, attacker, defender, Options{})
+}
+
+// SimulateWith is Simulate with the knobs turned. See Options.
+func SimulateWith(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, defender Army, opts Options) *Replay {
 	c := cfg.Soldiers.Combat
+	homeGroundBP := c.HomeGroundBP
+	if opts.HomeGroundBP != nil {
+		homeGroundBP = *opts.HomeGroundBP
+	}
+	maxRounds := c.MaxRounds
+	if opts.MaxRounds != nil {
+		maxRounds = *opts.MaxRounds
+	}
 
 	rep := &Replay{
 		Version: 2, Seed: seed, ConfigVersion: cfg.Version,
@@ -139,11 +187,14 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 	// Home Ground: the defender fights with +8% defence. A small, legible thumb
 	// on the scale that makes attacking a genuine decision rather than free.
 	a := buildChampion(cfg, attacker, SideAttacker, 10000)
-	d := buildChampion(cfg, defender, SideDefender, 10000+c.HomeGroundBP)
+	d := buildChampion(cfg, defender, SideDefender, 10000+homeGroundBP)
 	if a == nil || d == nil {
 		rep.Winner = SideDefender
 		if d == nil {
 			rep.Winner = SideAttacker
+			rep.AttackerHPLeftBP = 10000
+		} else {
+			rep.DefenderHPLeftBP = 10000
 		}
 		return rep
 	}
@@ -165,7 +216,7 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 		fastSide = SideDefender
 	}
 
-	for round := 1; round <= c.MaxRounds; round++ {
+	for round := 1; round <= maxRounds; round++ {
 		rep.Rounds = round
 		rageBP := 10000 + c.RageStepBP*int64(round-1)
 		rep.Events = append(rep.Events, Event{Round: round, Kind: "round"})
@@ -192,6 +243,14 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 				Round: round, Kind: "hit", Side: turn.side, Src: turn.ID, Dst: foe.ID,
 				Damage: dmg, Crit: crit,
 			})
+			// What the blow was worth, before the foe's own floor takes it: a
+			// beast with more health than the blow can reach still loses
+			// exactly this much of it.
+			if turn.side == SideAttacker {
+				rep.AttackerDamage += dmg
+			} else {
+				rep.DefenderDamage += dmg
+			}
 			foe.hp -= dmg
 			if foe.hp < 0 {
 				foe.hp = 0
@@ -202,6 +261,7 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 				rep.Events = append(rep.Events, Event{
 					Round: round, Kind: "death", Side: foe.side, Dst: foe.ID})
 				rep.Winner = turn.side
+				recordHealth(rep, a, d)
 				return rep
 			}
 		}
@@ -210,11 +270,18 @@ func Simulate(cfg *gameconfig.Bundle, rng *rand.Rand, seed uint64, attacker, def
 	// Timeout: whoever kept the larger fraction of their health. An exact tie
 	// goes to the defender, so a stalemate never rewards the aggressor.
 	rep.TimedOut = true
+	recordHealth(rep, a, d)
 	rep.Winner = SideDefender
-	if a.hp*10000/max64(a.maxHP, 1) > d.hp*10000/max64(d.maxHP, 1) {
+	if rep.AttackerHPLeftBP > rep.DefenderHPLeftBP {
 		rep.Winner = SideAttacker
 	}
 	return rep
+}
+
+// recordHealth writes down what each side had left when the fight ended.
+func recordHealth(rep *Replay, a, d *Champion) {
+	rep.AttackerHPLeftBP = a.hp * 10000 / max64(a.maxHP, 1)
+	rep.DefenderHPLeftBP = d.hp * 10000 / max64(d.maxHP, 1)
 }
 
 // buildChampion folds a roster into the one figure that fights for it.
@@ -263,11 +330,6 @@ func max64(a, b int64) int64 {
 	}
 	return b
 }
-
-
-
-
-
 
 func other(s Side) Side {
 	if s == SideAttacker {

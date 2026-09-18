@@ -23,12 +23,18 @@ import (
 //  1. a king's crown passes to the longest-serving captain, or else the
 //     longest-serving lord, so the kingdom is never left without one;
 //  2. the player leaves their kingdom, and a kingdom left empty is disbanded;
-//  3. the player row is deleted, and every foreign key cascades -- sessions and
+//  3. the account is written to app.deleted_accounts and its analytics events
+//     are removed;
+//  4. the player row is deleted, and every foreign key cascades -- sessions and
 //     identities with it, so the next refresh is refused and the phone signs out.
 //
 // Their battles go too, from the other side's history as well: the lord who
 // fought them no longer exists to be named, and a revenge token against them
 // has nobody to strike.
+//
+// What has no foreign key stays, on purpose: the diamond ledger (purged 90 days
+// on) and the days they played. A refund Apple sends after the deletion finds
+// the deleted_accounts row and is settled as "nothing left to take back".
 func (d Deps) DeleteAccount(ctx context.Context, playerID uuid.UUID, password string) error {
 	q := sqlcdb.New(d.Pool)
 	ident, err := q.GetPasswordIdentity(ctx, playerID)
@@ -81,6 +87,15 @@ func (d Deps) DeleteAccount(ctx context.Context, playerID uuid.UUID, password st
 			if _, err := q.DeleteKingdomIfEmpty(ctx, kid); err != nil {
 				return fmt.Errorf("disband: %w", err)
 			}
+		}
+		if err := q.RecordDeletedAccount(ctx, sqlcdb.RecordDeletedAccountParams{
+			PlayerID: playerID, JoinedAt: p.CreatedAt, DeletedAt: d.Now(),
+			Level: p.Level, Diamonds: p.Diamonds, DiamondDebt: p.DiamondDebt,
+		}); err != nil {
+			return fmt.Errorf("record the deletion: %w", err)
+		}
+		if err := q.DeletePlayerEvents(ctx, playerID); err != nil {
+			return fmt.Errorf("delete events: %w", err)
 		}
 		n, err := q.DeletePlayer(ctx, playerID)
 		if err != nil {

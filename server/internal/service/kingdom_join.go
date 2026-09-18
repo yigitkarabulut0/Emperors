@@ -92,6 +92,13 @@ func (d Deps) joinKingdom(ctx context.Context, q *sqlcdb.Queries, joiner sqlcdb.
 		}
 		return fmt.Errorf("seat player: %w", err)
 	}
+	// The hall is told, in the same transaction that seated them: a lord who
+	// appears in the roll with nothing said about it reads as a stranger.
+	if _, err := d.systemLine(ctx, q, kingdomID, SysJoined,
+		fmt.Sprintf("%s has joined the kingdom.", joiner.DisplayName),
+		map[string]any{"player_id": joiner.ID.String()}); err != nil {
+		return err
+	}
 	// Every other invitation and request goes: holding them would let a player
 	// appear to be on their way into several kingdoms at once.
 	return q.DeleteInvitesForPlayer(ctx, joiner.ID)
@@ -383,7 +390,9 @@ func (d Deps) fillHall(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPlaye
 	view.RejoinIn = int64((wait + time.Second - 1) / time.Second)
 	view.CanFound = int(p.Level) >= d.Config.Kingdoms.FoundLevel
 	if !view.CanFound {
-		view.FoundReason = fmt.Sprintf("Reach level %d to found a kingdom.", d.Config.Kingdoms.FoundLevel)
+		// Said on the founding card's plate, under RAISE YOUR OWN BANNER: short
+		// enough to read at the plate's own size.
+		view.FoundReason = fmt.Sprintf("Reach level %d", d.Config.Kingdoms.FoundLevel)
 	}
 
 	look, err := d.viewerState(ctx, q, p)

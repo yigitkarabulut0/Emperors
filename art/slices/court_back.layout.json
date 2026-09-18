@@ -1,0 +1,59 @@
+{
+ "screen": "court_back",
+ "source": "mail.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "notes": [
+  "The way back out of every Court view (client/scripts/ui/court_back.gd): the shared quiet plate with its chevron (chrome/court_back, art/slices/court.json) where the mail has always drawn it -- 14 units under its painted place, clear of the band under the pills where the shield's time is written -- and the word in type where the painting set its own: COURT's box x 222..304, caps 18 tall (Cinzel 25), ivory #F2F0EA. The word is CourtBack.WORD.",
+  "back_hit is the thumb's: 210 x 96 round the plate, from under the pills' own tap areas (which end at y 100)."
+ ],
+ "elements": [
+  {
+   "id": "back_plate",
+   "kind": "image",
+   "asset": "chrome/court_back",
+   "rect": [
+    165,
+    106,
+    163,
+    50
+   ]
+  },
+  {
+   "id": "back_word",
+   "kind": "text",
+   "rect": [
+    222,
+    114,
+    82,
+    36
+   ],
+   "font": "title",
+   "size": 25,
+   "weight": 600,
+   "color": "#F2F0EA",
+   "align": "center",
+   "valign": "center",
+   "sample": "BACK"
+  },
+  {
+   "id": "back_hit",
+   "kind": "hotspot",
+   "rect": [
+    150,
+    100,
+    210,
+    96
+   ],
+   "action": "back",
+   "paint_rect": [
+    165,
+    106,
+    163,
+    50
+   ]
+  }
+ ]
+}

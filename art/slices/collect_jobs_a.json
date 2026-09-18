@@ -1,0 +1,90 @@
+{
+ "source": "collect_jobs_a.png",
+ "crops": [
+  {
+   "name": "collect/job_orchard",
+   "rect": [
+    213,
+    322,
+    178,
+    152
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "orchard: interior of sheet a row 1, fitted to the window's 1.1702"
+  },
+  {
+   "name": "collect/job_fish",
+   "rect": [
+    213,
+    512,
+    178,
+    152
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "fish: interior of sheet a row 2, fitted to the window's 1.1702"
+  },
+  {
+   "name": "collect/job_iron",
+   "rect": [
+    213,
+    703,
+    178,
+    152
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "iron: interior of sheet a row 3, fitted to the window's 1.1702"
+  },
+  {
+   "name": "collect/job_hunt",
+   "rect": [
+    213,
+    893,
+    178,
+    152
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "hunt: interior of sheet a row 4, fitted to the window's 1.1702"
+  },
+  {
+   "name": "collect/job_caravan",
+   "rect": [
+    213,
+    1084,
+    178,
+    152
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "caravan: interior of sheet a row 5, fitted to the window's 1.1702"
+  },
+  {
+   "name": "collect/job_silver",
+   "rect": [
+    213,
+    1274,
+    178,
+    152
+   ],
+   "scale": [
+    165,
+    141
+   ],
+   "note": "silver: interior of sheet a row 6, fitted to the window's 1.1702"
+  }
+ ],
+ "_comment": "Jobs orchard, fish, iron, hunt, caravan, silver. Each interior (x 184..419, rows from y 319 at a 190.4 pitch, 158 tall, rounded corners) is fitted to the Collect window's 165:141 and drawn down to it: this painting is used as an object sheet, so its crops scale down, never up (SLICING_GUIDE, paint big, draw down). Sheet b repeats orchard, fish and iron; these are the ones kept -- object-led like the other twelve and unlike the deep mine's miners."
+}

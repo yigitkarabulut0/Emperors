@@ -1,0 +1,546 @@
+{
+ "screen": "pass",
+ "source": "pass.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#09151E",
+ "notes": [
+  "THE ROYAL CHARTER (client/scenes/court/pass_view.gd), from pass.png (art/slices/pass.json), every band where it was painted: the header 0..400, the progress strip 400..540, the FREE / ROYAL headings 540..592, the tiers from 592 in a list that grows to the foot, and the foot (the pedestal and CLAIM ALL) pinned to the screen's foot from 1226.",
+  "timer: the season's time left in the EMPTY plate beside the hourglass (inside x 694..846, y 288..328); season: its name and day in the plate under it (inside x 694..914, y 343..379). Garamond as the Court's lines, ivory.",
+  "tier: the tier reached, in the big medallion's dark centre (x 206..287, y 433..515; centre 246.5, 474), Cinzel 40 in the painting's gold. bar_fill: the painted gold along the channel's inside (x 322..683, y 447..466) to the tier's points; points: those points against the tier's, in the plate under the bar (inside x 413..588, y 480..521).",
+  "info_coin / info: the Tax Cart's painted (i) coin (chests/info), drawn down to 50 beside the points plate, under a 104 x 72 tap area: HOW THE CHARTER FILLS. progress: the medallion and the bar are a tap for it too.",
+  "unlock_word / unlock_price: the UNLOCK plate's word, lifted and set in type where it was painted (caps x 760..870, y 441..461: Cinzel 29, ivory) -- UNLOCK while the royal lane is shut, ROYAL once it is open -- and the EMPTY price plate under it (inside x 730..889, y 482..516): the diamonds and the App Store's price, or the lane's state. unlock: the whole plate is the tap.",
+  "tier_row: row 3 repeated at the painting's pitch (127): the plate, the medallion and the chain; the free tile at x 253 and the royal at x 647 (their own crops), each with its reward's picture in the tile's middle (pic_*), what it pays in its lower right corner (amount_*, and gem_* when a crowned tier also pays diamonds), the tier in the medallion's dark centre (medal: centre 385.5, 64 in the row; Cinzel 30), the ROYAL heading's crown on the medallion of a crowned tier, CLAIM where the painting set it on row 2 (13 in, 71 down the tile, hanging 10 under it), the tick seal on a claimed tile's top right corner as row 1 has it (drawn down to the painting's 56), and the padlock in a shut royal tile's lower right as rows 3-5 have it (drawn down to the painting's 30).",
+  "pedestal: the Charter's frame (frames/charter_square, 175 x 202 at its own scale) round the lord's face, standing on the pedestal's slab (its foot at y 1448) where the painting stood its trophy; pedestal_seal its tick once tier 50's royal reward is claimed. claim_all: CLAIM ALL drawn over its own painted place, dimmed when nothing waits.",
+  "A tile's CLAIM is the painting's own plate, drawn on the tile, not a button: the tile itself is the tap (hit_free / hit_royal, 190x116), so the plate is never a second, smaller target for the same claim."
+ ],
+ "elements": [
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "pass/header",
+   "rect": [
+    155,
+    0,
+    786,
+    400
+   ]
+  },
+  {
+   "id": "timer",
+   "kind": "text",
+   "rect": [
+    702,
+    289,
+    136,
+    38
+   ],
+   "font": "body",
+   "size": 28,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "26d 14h"
+  },
+  {
+   "id": "season",
+   "kind": "text",
+   "rect": [
+    702,
+    343,
+    204,
+    35
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#E7E0D2",
+   "align": "center",
+   "valign": "center",
+   "sample": "Season 1 \u00b7 Day 2 of 28"
+  },
+  {
+   "id": "strip",
+   "kind": "image",
+   "asset": "pass/strip",
+   "rect": [
+    155,
+    400,
+    786,
+    140
+   ]
+  },
+  {
+   "id": "tier",
+   "kind": "text",
+   "rect": [
+    210,
+    446,
+    73,
+    56
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 800,
+   "color": "#F2D38A",
+   "align": "center",
+   "valign": "center",
+   "sample": "50"
+  },
+  {
+   "id": "bar_fill",
+   "kind": "image",
+   "asset": "pass/bar_fill",
+   "rect": [
+    322,
+    447,
+    192,
+    20
+   ],
+   "fill": "left",
+   "track": [
+    322,
+    447,
+    362,
+    20
+   ],
+   "caps": [
+    8,
+    2
+   ]
+  },
+  {
+   "id": "points",
+   "kind": "text",
+   "rect": [
+    417,
+    482,
+    168,
+    36
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "120 / 120"
+  },
+  {
+   "id": "info_coin",
+   "kind": "image",
+   "asset": "chests/info",
+   "rect": [
+    612,
+    476,
+    50,
+    49
+   ]
+  },
+  {
+   "id": "progress",
+   "kind": "hotspot",
+   "rect": [
+    168,
+    402,
+    425,
+    128
+   ],
+   "action": "earn"
+  },
+  {
+   "id": "info",
+   "kind": "hotspot",
+   "rect": [
+    594,
+    454,
+    104,
+    95
+   ],
+   "action": "earn",
+   "paint_rect": [
+    612,
+    476,
+    50,
+    49
+   ]
+  },
+  {
+   "id": "unlock_word",
+   "kind": "text",
+   "rect": [
+    722,
+    431,
+    174,
+    40
+   ],
+   "font": "title",
+   "size": 29,
+   "weight": 700,
+   "color": "#F4EEE2",
+   "align": "center",
+   "valign": "center",
+   "sample": "UNLOCK"
+  },
+  {
+   "id": "unlock_price",
+   "kind": "text",
+   "rect": [
+    736,
+    483,
+    148,
+    32
+   ],
+   "font": "body",
+   "size": 22,
+   "weight": 600,
+   "color": "#F4EEE2",
+   "align": "center",
+   "valign": "center",
+   "sample": "900 \u00b7 $7.99"
+  },
+  {
+   "id": "unlock_gem",
+   "kind": "image",
+   "asset": "icons/diamond",
+   "rect": [
+    738,
+    489,
+    24,
+    20
+   ]
+  },
+  {
+   "id": "unlock",
+   "kind": "hotspot",
+   "rect": [
+    704,
+    410,
+    216,
+    120
+   ],
+   "action": "unlock"
+  },
+  {
+   "id": "headings",
+   "kind": "image",
+   "asset": "pass/headings",
+   "rect": [
+    155,
+    540,
+    786,
+    52
+   ]
+  },
+  {
+   "id": "list",
+   "kind": "scroll",
+   "rect": [
+    155,
+    592,
+    786,
+    634
+   ],
+   "grow": "bottom",
+   "content": [
+    "tier_row"
+   ]
+  },
+  {
+   "id": "tier_row",
+   "kind": "template",
+   "rect": [
+    155,
+    592,
+    786,
+    127
+   ],
+   "pitch": 127,
+   "parts": [
+    {
+     "id": "row",
+     "kind": "image",
+     "asset": "pass/row",
+     "rect": [
+      0,
+      0,
+      786,
+      127
+     ]
+    },
+    {
+     "id": "crown",
+     "kind": "image",
+     "asset": "pass/crown",
+     "rect": [
+      365,
+      -5,
+      42,
+      32
+     ]
+    },
+    {
+     "id": "medal",
+     "kind": "text",
+     "rect": [
+      355,
+      43,
+      61,
+      42
+     ],
+     "font": "title",
+     "size": 30,
+     "weight": 800,
+     "color": "#F2D38A",
+     "align": "center",
+     "valign": "center",
+     "sample": "50"
+    },
+    {
+     "id": "tile_free",
+     "kind": "image",
+     "asset": "pass/tile_free",
+     "rect": [
+      98,
+      7,
+      183,
+      109
+     ]
+    },
+    {
+     "id": "pic_free",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      134,
+      20,
+      110,
+      80
+     ]
+    },
+    {
+     "id": "amount_free",
+     "kind": "text",
+     "rect": [
+      176,
+      82,
+      96,
+      31
+     ],
+     "font": "title",
+     "size": 22,
+     "weight": 800,
+     "color": "#F7EDCF",
+     "align": "right",
+     "valign": "center",
+     "sample": "588"
+    },
+    {
+     "id": "gem_free",
+     "kind": "image",
+     "asset": "icons/diamond",
+     "rect": [
+      249,
+      88,
+      24,
+      20
+     ]
+    },
+    {
+     "id": "tile_royal",
+     "kind": "image",
+     "asset": "pass/tile_royal",
+     "rect": [
+      492,
+      6,
+      194,
+      111
+     ]
+    },
+    {
+     "id": "pic_royal",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      534,
+      20,
+      110,
+      80
+     ]
+    },
+    {
+     "id": "amount_royal",
+     "kind": "text",
+     "rect": [
+      562,
+      82,
+      96,
+      31
+     ],
+     "font": "title",
+     "size": 22,
+     "weight": 800,
+     "color": "#F7EDCF",
+     "align": "right",
+     "valign": "center",
+     "sample": "+60"
+    },
+    {
+     "id": "gem_royal",
+     "kind": "image",
+     "asset": "icons/diamond",
+     "rect": [
+      635,
+      88,
+      24,
+      20
+     ]
+    },
+    {
+     "id": "seal_free",
+     "kind": "image",
+     "asset": "icons/tick_seal",
+     "rect": [
+      235,
+      9,
+      56,
+      57
+     ]
+    },
+    {
+     "id": "seal_royal",
+     "kind": "image",
+     "asset": "icons/tick_seal",
+     "rect": [
+      635,
+      10,
+      56,
+      57
+     ]
+    },
+    {
+     "id": "lock_royal",
+     "kind": "image",
+     "asset": "icons/padlock",
+     "rect": [
+      647,
+      68,
+      30,
+      38
+     ]
+    },
+    {
+     "id": "hit_free",
+     "kind": "button",
+     "asset": "",
+     "rect": [
+      98,
+      4,
+      190,
+      116
+     ],
+     "pass_drag": true,
+     "action": "free"
+    },
+    {
+     "id": "hit_royal",
+     "kind": "button",
+     "asset": "",
+     "rect": [
+      492,
+      4,
+      199,
+      116
+     ],
+     "pass_drag": true,
+     "action": "royal"
+    },
+    {
+     "id": "claim_free",
+     "kind": "image",
+     "asset": "pass/claim",
+     "rect": [
+      111,
+      78,
+      159,
+      48
+     ]
+    },
+    {
+     "id": "claim_royal",
+     "kind": "image",
+     "asset": "pass/claim",
+     "rect": [
+      510,
+      78,
+      159,
+      48
+     ]
+    }
+   ]
+  },
+  {
+   "id": "foot",
+   "kind": "image",
+   "asset": "pass/foot",
+   "rect": [
+    155,
+    1226,
+    786,
+    446
+   ],
+   "anchor": "bottom"
+  },
+  {
+   "id": "pedestal",
+   "kind": "group",
+   "rect": [
+    459,
+    1246,
+    175,
+    202
+   ],
+   "anchor": "bottom"
+  },
+  {
+   "id": "pedestal_seal",
+   "kind": "image",
+   "asset": "icons/tick_seal",
+   "rect": [
+    606,
+    1250,
+    56,
+    57
+   ],
+   "anchor": "bottom"
+  },
+  {
+   "id": "pedestal_hit",
+   "kind": "hotspot",
+   "rect": [
+    446,
+    1236,
+    200,
+    222
+   ],
+   "anchor": "bottom",
+   "action": "final"
+  },
+  {
+   "id": "claim_all",
+   "kind": "button",
+   "asset": "pass/claim_all",
+   "rect": [
+    365,
+    1492,
+    344,
+    97
+   ],
+   "anchor": "bottom",
+   "action": "claim_all"
+  }
+ ]
+}

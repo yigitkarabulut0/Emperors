@@ -1,0 +1,373 @@
+{
+ "source": "events_kit.png",
+ "notes": [
+  "events_kit.png is the owner's kit for the realm's hours (Design Pack 1): the Golden Hour's sunburst gauge in three states, a sheen, the NEXT plate, a sparkle, and the eight hourly icons, all on the sheet's flat navy (8, 21, 30), keyed off it (darkkey, floor 3 for its grain).",
+  "hourly/<id> are the icons the server names (liveops.json hourly.table icon: hourly/<id>). Every disc is cut in a square centred on its fitted rim, so the asset's centre is the disc's centre, and every one is one size: rim radius 137 in 290x290 (row five, painted at 161, drawn down). The disc's navy body stays opaque (solid, the rim's radius less one); what breaks the rim (the quill, the pendant's loop, the flag, the rake) keys off the ground by itself.",
+  "The gauges are cut round their hourglass, which a template match puts at (166, 212), (467, 212) and (773, 212): dark and half-lit 300x300 centred on it, blazing 318x360 (x 614..932: the half-lit gauge's right spike reaches x 613), its flames reaching 177 below and 165 above the centre. Their body is solid to radius 120, inside the outer rim, so the dark cells stay opaque on any ground."
+ ],
+ "crops": [
+  {
+   "name": "hourly/gold_rush",
+   "rect": [
+    21,
+    587,
+    290,
+    290
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     9.3,
+     8.7,
+     281.1,
+     280.5
+    ]
+   },
+   "note": "the burlap sack of crowned coins: its disc's gold rim fitted at centre (166.2, 731.6), radius 136.9 on the painting."
+  },
+  {
+   "name": "hourly/scholars_hour",
+   "rect": [
+    324,
+    587,
+    290,
+    290
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     8.8,
+     8.4,
+     281.8,
+     281.4
+    ]
+   },
+   "note": "the open book under its glowing quill: its disc's gold rim fitted at centre (469.3, 731.9), radius 137.5 on the painting."
+  },
+  {
+   "name": "hourly/fortunes_favour",
+   "rect": [
+    628,
+    587,
+    290,
+    290
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     8.6,
+     8.4,
+     281.4,
+     281.2
+    ]
+   },
+   "note": "the four-leaf clover amulet: its disc's gold rim fitted at centre (773.0, 731.8), radius 137.4 on the painting."
+  },
+  {
+   "name": "hourly/quartermasters_sale",
+   "rect": [
+    21,
+    909,
+    290,
+    290
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     8.8,
+     8.9,
+     281.0,
+     281.1
+    ]
+   },
+   "note": "the blue potion with its price tag: its disc's gold rim fitted at centre (165.9, 1054.0), radius 137.1 on the painting."
+  },
+  {
+   "name": "hourly/fresh_wares",
+   "rect": [
+    324,
+    908,
+    290,
+    290
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     8.2,
+     7.6,
+     282.4,
+     281.8
+    ]
+   },
+   "note": "the striped market tent in its sparkles: its disc's gold rim fitted at centre (469.3, 1052.7), radius 138.1 on the painting."
+  },
+  {
+   "name": "hourly/busy_hands",
+   "rect": [
+    628,
+    909,
+    290,
+    290
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     7.6,
+     7.7,
+     281.6,
+     281.7
+    ]
+   },
+   "note": "the hammer and the rake crossed: its disc's gold rim fitted at centre (772.6, 1053.7), radius 138.0 on the painting."
+  },
+  {
+   "name": "hourly/royal_courier",
+   "rect": [
+    101,
+    1216,
+    340,
+    340
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     9.8,
+     9.5,
+     330.4,
+     330.1
+    ]
+   },
+   "note": "the courier cart with its sealed letter and trumpet: its disc's gold rim fitted at centre (271.1, 1385.8), radius 161.3 on the painting. Row five's discs are painted larger (radius 161); drawn down to row three's so every hour's disc is one size (rim radius 137 in a 290 square).",
+   "scale": [
+    290,
+    290
+   ]
+  },
+  {
+   "name": "hourly/honor_hour",
+   "rect": [
+    495,
+    1215,
+    340,
+    340
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     10.2,
+     10.7,
+     329.2,
+     329.7
+    ]
+   },
+   "note": "the crossed swords over a laurel (Wave 5's Honor Hour): its disc's gold rim fitted at centre (664.7, 1385.2), radius 160.5 on the painting. Row five's discs are painted larger (radius 161); drawn down to row three's so every hour's disc is one size (rim radius 137 in a 290 square).",
+   "scale": [
+    290,
+    290
+   ]
+  },
+  {
+   "name": "events_kit/gauge_dark",
+   "rect": [
+    16,
+    62,
+    300,
+    300
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     30,
+     30,
+     270,
+     270
+    ]
+   },
+   "note": "The sunburst gauge, all twelve cells dark (ink x 21..312, y 64..360), centred on its hourglass at (166, 212)."
+  },
+  {
+   "name": "events_kit/gauge_half",
+   "rect": [
+    317,
+    62,
+    300,
+    300
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     30,
+     30,
+     270,
+     270
+    ]
+   },
+   "note": "The gauge with seven cells lit amber on its right (ink x 321..613), centred on its hourglass at (467, 212)."
+  },
+  {
+   "name": "events_kit/gauge_blazing",
+   "rect": [
+    614,
+    32,
+    318,
+    360
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     39,
+     60,
+     279,
+     300
+    ]
+   },
+   "note": "The gauge ablaze, every cell lit and flames round its rim (ink x 619..929, y 47..389), its hourglass at (773, 212) -> (159, 180) in the crop."
+  },
+  {
+   "name": "events_kit/next_plate",
+   "rect": [
+    317,
+    412,
+    307,
+    114
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "solid": {
+    "type": "chamfer",
+    "size": 16
+   },
+   "note": "The quiet navy plate painted with NEXT (ink x 321..619, y 416..521): drawn as painted, its word included."
+  },
+  {
+   "name": "events_kit/sheen",
+   "rect": [
+    18,
+    400,
+    282,
+    172
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "note": "The band of diagonal golden light with its sparks (ink x 25..291, y 406..566): an overlay swept across what is lit."
+  },
+  {
+   "name": "events_kit/sparkle",
+   "rect": [
+    686,
+    382,
+    188,
+    184
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    21,
+    30
+   ],
+   "note": "The single star of golden light (ink x 693..867, y 388..559)."
+  }
+ ]
+}

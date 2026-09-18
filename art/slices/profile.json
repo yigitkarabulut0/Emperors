@@ -1,0 +1,1762 @@
+{
+  "source": "profile.png",
+  "notes": [
+    "art/reference/profile.png is YOUR LORDSHIP, the owner's painting of the profile. It gives the two pages opened from its REDEEM A CODE and INVITE A FRIEND rows their page, their icons, a friend's row, the empty box and CLOSE.",
+    "Measured by flood-filling each box from its middle: the friend row's name box x 223..508 y 1251..1306, its figure box x 532..639 y 1253..1305, its GIFT face x 667..836 y 1247..1308; CLOSE's face x 552..792 y 1497..1544; the panel inside the frame x 49..891 (gold at 41..48 and 892..898); the portrait ring's gold from r 43 to 48 about (147.5, 1279.3) (its own mirror axis, fitted on its gold), its online light about (191, 1248)."
+  ],
+  "crops": [
+    {
+      "name": "profile/page",
+      "rect": [
+        0,
+        0,
+        941,
+        1672
+      ],
+      "refill": [
+        {
+          "rect": [
+            84,
+            184,
+            774,
+            31
+          ],
+          "band": [
+            1456,
+            1466
+          ],
+          "samples": [
+            {
+              "rows": [
+                184,
+                214
+              ],
+              "x": [
+                [
+                  712,
+                  720
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "rect": [
+            49,
+            215,
+            843,
+            1241
+          ],
+          "band": [
+            1456,
+            1466
+          ],
+          "samples": [
+            {
+              "rows": [
+                215,
+                234
+              ],
+              "x": [
+                [
+                  712,
+                  720
+                ]
+              ]
+            },
+            {
+              "rows": [
+                500,
+                1455
+              ],
+              "x": [
+                [
+                  52,
+                  66
+                ],
+                [
+                  874,
+                  888
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "The frame, the scenic header and the foot of YOUR LORDSHIP, with everything inside the frame cleared back to its panel (refill: each row at the panel's own level -- sampled right of the title in the title band and at the frame's margins below the lord's block, interpolated through the block -- shaded and grained like the clean band under the friends): the title and its rule, the portrait ring, the name plates, the shield, the three figures, the seven rows and the friends; the foot's toggles and CLOSE erased row by row, each row ramped between the clean panel at its two ends. The refill stops short of the frame's two top corner ornaments (x 49..80 and 861..891, rows 182..214); the title's rule is its own keyed piece (profile/title_rule), laid back over the page, since the panel round it carried the title's shadow.",
+      "erase": [
+        {
+          "rect": [
+            140,
+            1476,
+            300,
+            86
+          ],
+          "sample_x": [
+            128,
+            137
+          ],
+          "sample_x2": [
+            508,
+            530
+          ]
+        },
+        {
+          "rect": [
+            440,
+            1476,
+            66,
+            78
+          ],
+          "sample_x": [
+            508,
+            530
+          ]
+        },
+        {
+          "rect": [
+            506,
+            1476,
+            306,
+            86
+          ],
+          "sample_x": [
+            508,
+            530
+          ],
+          "sample_x2": [
+            810,
+            816
+          ]
+        }
+      ]
+    },
+    {
+      "name": "profile/title_rule",
+      "rect": [
+        278,
+        238,
+        382,
+        26
+      ],
+      "mode": "darkkey",
+      "bg": [
+        12,
+        27,
+        38
+      ],
+      "k": 45,
+      "floor": 10,
+      "note": "The gold rule and diamond under the page title, keyed off the panel (the title's shadow round it stays behind)."
+    },
+    {
+      "name": "profile/icon_redeem",
+      "rect": [
+        100,
+        980,
+        128,
+        76
+      ],
+      "mode": "darkkey",
+      "bg": [
+        15,
+        33,
+        45
+      ],
+      "k": 45,
+      "floor": 12,
+      "note": "REDEEM A CODE's sealed envelope, lifted off its row plate (the crop stops inside the plate's steel rims)."
+    },
+    {
+      "name": "profile/icon_invite",
+      "rect": [
+        95,
+        1076,
+        138,
+        73
+      ],
+      "mode": "darkkey",
+      "bg": [
+        14,
+        32,
+        43
+      ],
+      "k": 45,
+      "floor": 12,
+      "solid": {
+        "type": "polygon",
+        "points": [
+          [
+            43,
+            25
+          ],
+          [
+            107,
+            25
+          ],
+          [
+            107,
+            73
+          ],
+          [
+            43,
+            73
+          ]
+        ]
+      },
+      "note": "INVITE A FRIEND's trumpet and its lion banner, lifted off its row plate. The banner is held solid: its folds are as dark as the plate."
+    },
+    {
+      "name": "profile/friends_heading",
+      "rect": [
+        100,
+        1168,
+        741,
+        55
+      ],
+      "mode": "darkkey",
+      "bg": [
+        8,
+        25,
+        36
+      ],
+      "k": 40,
+      "floor": 8,
+      "note": "The painted FRIENDS and its two gold rules, keyed off the panel so it sits on any stretch of it."
+    },
+    {
+      "name": "profile/friend_row",
+      "rect": [
+        71,
+        1222,
+        799,
+        113
+      ],
+      "patch": [
+        {
+          "from": [
+            93,
+            1236,
+            22,
+            24
+          ],
+          "to": [
+            181,
+            1236
+          ],
+          "flip": "h"
+        }
+      ],
+      "erase": [
+        {
+          "rect": [
+            657,
+            1238,
+            190,
+            80
+          ],
+          "sample_x": [
+            848,
+            856
+          ]
+        },
+        {
+          "rect": [
+            142,
+            1236,
+            11,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            137,
+            1237,
+            21,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            133,
+            1238,
+            29,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            131,
+            1239,
+            33,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            129,
+            1240,
+            37,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            127,
+            1241,
+            41,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            125,
+            1242,
+            45,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            123,
+            1243,
+            49,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            122,
+            1244,
+            51,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            121,
+            1245,
+            53,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            119,
+            1246,
+            57,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            118,
+            1247,
+            59,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            117,
+            1248,
+            61,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            116,
+            1249,
+            63,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            115,
+            1250,
+            65,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            114,
+            1251,
+            67,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            114,
+            1252,
+            67,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            113,
+            1253,
+            69,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            112,
+            1254,
+            71,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            111,
+            1255,
+            73,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            111,
+            1256,
+            73,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            110,
+            1257,
+            75,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            110,
+            1258,
+            75,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            109,
+            1259,
+            77,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            109,
+            1260,
+            77,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            108,
+            1261,
+            79,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            108,
+            1262,
+            79,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            107,
+            1263,
+            81,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            107,
+            1264,
+            81,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            107,
+            1265,
+            81,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            106,
+            1266,
+            83,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            106,
+            1267,
+            83,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            106,
+            1268,
+            83,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1269,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1270,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1271,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1272,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1273,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1274,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1275,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1276,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1277,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1278,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1279,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1280,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1281,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            104,
+            1282,
+            87,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1283,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1284,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1285,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1286,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1287,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            105,
+            1288,
+            85,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            106,
+            1289,
+            83,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            106,
+            1290,
+            83,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            106,
+            1291,
+            83,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            106,
+            1292,
+            83,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            107,
+            1293,
+            81,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            107,
+            1294,
+            81,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            107,
+            1295,
+            81,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            108,
+            1296,
+            79,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            108,
+            1297,
+            79,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            109,
+            1298,
+            77,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            109,
+            1299,
+            77,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            110,
+            1300,
+            75,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            110,
+            1301,
+            75,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            111,
+            1302,
+            73,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            112,
+            1303,
+            71,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            112,
+            1304,
+            71,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            113,
+            1305,
+            69,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            114,
+            1306,
+            67,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            115,
+            1307,
+            65,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            116,
+            1308,
+            63,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            117,
+            1309,
+            61,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            118,
+            1310,
+            59,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            119,
+            1311,
+            57,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            120,
+            1312,
+            55,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            121,
+            1313,
+            53,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            122,
+            1314,
+            51,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            124,
+            1315,
+            47,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            126,
+            1316,
+            43,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            127,
+            1317,
+            41,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            129,
+            1318,
+            37,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            132,
+            1319,
+            31,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            135,
+            1320,
+            25,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        },
+        {
+          "rect": [
+            138,
+            1321,
+            19,
+            1
+          ],
+          "sample_x": [
+            204,
+            212
+          ]
+        }
+      ],
+      "note": "A friend's row: the painting's row plate with its empty name and figure boxes. The face is erased from the gold ring (row by row inside the ring, from the plate's navy beside it), the online light is the ring's own arc mirrored from its other side, and GIFT is erased from the plate: a friend brought is shown, not gifted to."
+    },
+    {
+      "name": "profile/box",
+      "rect": [
+        218,
+        1246,
+        296,
+        66
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 9,
+        "feather": 1
+      },
+      "note": "The empty name box of a friend's row, cut to its steel rim: nine-patched, it is every box a code is typed or shown in."
+    },
+    {
+      "name": "profile/close",
+      "rect": [
+        541,
+        1486,
+        262,
+        70
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 12,
+        "feather": 1
+      },
+      "note": "The painted CLOSE, cut to its rim; the page's own copy is cleared, and this is laid in the middle of the foot."
+    },
+    {
+      "name": "profile/page_hub",
+      "rect": [
+        0,
+        0,
+        941,
+        1672
+      ],
+      "refill": [
+        {
+          "rect": [
+            706,
+            210,
+            185,
+            290
+          ],
+          "band": [
+            1456,
+            1466
+          ],
+          "samples": [
+            {
+              "rows": [
+                210,
+                499
+              ],
+              "x": [
+                [
+                  882,
+                  888
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "rect": [
+            668,
+            246,
+            38,
+            179
+          ],
+          "band": [
+            1456,
+            1466
+          ],
+          "samples": [
+            {
+              "rows": [
+                246,
+                424
+              ],
+              "x": [
+                [
+                  882,
+                  888
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "rect": [
+            692,
+            425,
+            14,
+            75
+          ],
+          "band": [
+            1456,
+            1466
+          ],
+          "samples": [
+            {
+              "rows": [
+                425,
+                499
+              ],
+              "x": [
+                [
+                  882,
+                  888
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "rect": [
+            49,
+            500,
+            843,
+            956
+          ],
+          "band": [
+            1456,
+            1466
+          ],
+          "samples": [
+            {
+              "rows": [
+                500,
+                1455
+              ],
+              "x": [
+                [
+                  52,
+                  66
+                ],
+                [
+                  874,
+                  888
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "erase": [
+        {
+          "rect": [
+            140,
+            1476,
+            300,
+            86
+          ],
+          "sample_x": [
+            128,
+            137
+          ],
+          "sample_x2": [
+            508,
+            530
+          ]
+        },
+        {
+          "rect": [
+            440,
+            1476,
+            66,
+            78
+          ],
+          "sample_x": [
+            508,
+            530
+          ]
+        },
+        {
+          "rect": [
+            506,
+            1476,
+            306,
+            86
+          ],
+          "sample_x": [
+            508,
+            530
+          ],
+          "sample_x2": [
+            810,
+            816
+          ]
+        }
+      ],
+      "note": "YOUR LORDSHIP as the profile's own page: its title, the portrait ring, the name plate, the red ribbon and the three figure plates (crown, swords, castle) as painted; the lion shield cleared (the lord's worn crest, or the one their id picks, is drawn there), and everything under the lord's block -- the seven rows, the friends and the foot's toggles and CLOSE -- cleared back to the panel, as profile/page does. The rows are drawn from profile/row with their icons."
+    },
+    {
+      "name": "profile/row",
+      "rect": [
+        71,
+        879,
+        798,
+        89
+      ],
+      "patch": [
+        {
+          "from": [
+            500,
+            879,
+            46,
+            7
+          ],
+          "to": [
+            170,
+            879
+          ]
+        }
+      ],
+      "erase": [
+        {
+          "rect": [
+            86,
+            886,
+            767,
+            75
+          ],
+          "sample_x": [
+            86,
+            90
+          ],
+          "sample_x2": [
+            846,
+            851
+          ]
+        }
+      ],
+      "note": "A row's plate: the ACCOUNT row with its key, its word and its chevron erased (each row of the plate ramped between its clean ends; the plate's top rim under the key's bow carried on from its clean run). The rows draw their icon, word and chevron on it."
+    },
+    {
+      "name": "profile/icon_wardrobe",
+      "rect": [
+        100,
+        594,
+        126,
+        86
+      ],
+      "mode": "darkkey",
+      "bg": [
+        15,
+        32,
+        44
+      ],
+      "k": 45,
+      "floor": 12,
+      "mask": {
+        "type": "polygon",
+        "points": [
+          [
+            47,
+            0
+          ],
+          [
+            66,
+            0
+          ],
+          [
+            66,
+            8
+          ],
+          [
+            126,
+            8
+          ],
+          [
+            126,
+            86
+          ],
+          [
+            0,
+            86
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            47,
+            8
+          ]
+        ]
+      },
+      "note": "The WARDROBE row's robe on its stand (SPLENDOUR's icon), off its plate; only its finial rises through the plate's top rim."
+    },
+    {
+      "name": "profile/icon_rankings",
+      "rect": [
+        104,
+        689,
+        112,
+        86
+      ],
+      "mode": "darkkey",
+      "bg": [
+        17,
+        34,
+        45
+      ],
+      "k": 45,
+      "floor": 12,
+      "mask": {
+        "type": "polygon",
+        "points": [
+          [
+            46,
+            0
+          ],
+          [
+            59,
+            0
+          ],
+          [
+            59,
+            6
+          ],
+          [
+            112,
+            6
+          ],
+          [
+            112,
+            86
+          ],
+          [
+            0,
+            86
+          ],
+          [
+            0,
+            6
+          ],
+          [
+            46,
+            6
+          ]
+        ]
+      },
+      "note": "The RANKINGS row's trophy in its laurel, off its plate."
+    },
+    {
+      "name": "profile/icon_account",
+      "rect": [
+        95,
+        882,
+        130,
+        80
+      ],
+      "mode": "darkkey",
+      "bg": [
+        15,
+        33,
+        45
+      ],
+      "k": 45,
+      "floor": 12,
+      "mask": {
+        "type": "polygon",
+        "points": [
+          [
+            0,
+            4
+          ],
+          [
+            90,
+            4
+          ],
+          [
+            90,
+            0
+          ],
+          [
+            115,
+            0
+          ],
+          [
+            115,
+            4
+          ],
+          [
+            130,
+            4
+          ],
+          [
+            130,
+            80
+          ],
+          [
+            0,
+            80
+          ]
+        ]
+      },
+      "note": "The ACCOUNT row's key with the lion in its bow, off its plate."
+    },
+    {
+      "name": "profile/icon_friends",
+      "rect": [
+        90,
+        513,
+        138,
+        73
+      ],
+      "note": "The clasped gauntlets the painting puts on the FRIENDS row, the first of the seven."
+    },
+    {
+      "name": "profile/icon_settings",
+      "rect": [
+        92,
+        789,
+        138,
+        80
+      ],
+      "note": "The astrolabe and its scrolls, on the SETTINGS row."
+    },
+    {
+      "name": "profile/toggle_on",
+      "rect": [
+        190,
+        1486,
+        97,
+        60
+      ],
+      "note": "The painting's own switch, thrown: a gold track and a green stone. Every yes-or-no in the realm is this object (the settings' notifications, its privacy), never a checkbox."
+    },
+    {
+      "name": "profile/toggle_off",
+      "rect": [
+        385,
+        1486,
+        95,
+        60
+      ],
+      "note": "The same switch at rest: a steel track and a silver knob."
+    },
+    {
+      "name": "profile/gift",
+      "rect": [
+        664,
+        1239,
+        177,
+        75
+      ],
+      "note": "The green GIFT plate of a friend's row, the word baked. It is erased from profile/friend_row, so a row that may not be gifted to simply does not wear it."
+    },
+    {
+      "name": "profile/online",
+      "rect": [
+        150,
+        1238,
+        20,
+        20
+      ],
+      "note": "The green light on a friend's ring: they are here now. Cut on its own because the ring under it was mirrored clean, so the light is laid back only for a lord who is there."
+    }
+  ]
+}

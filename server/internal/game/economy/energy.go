@@ -118,6 +118,18 @@ func Spend(s EnergyState, points int64) (EnergyState, bool) {
 // Whole returns the usable (floored) energy points.
 func Whole(s EnergyState) int64 { return s.Milli / MilliPerEnergy }
 
+// Restore adds whole energy points, never past the pool: a flask. A pool it
+// fills stops accruing from now, as any full pool does; one it leaves short
+// keeps its anchor, so the part of a point already regenerated is kept.
+func Restore(s EnergyState, points, maxEnergy int64, now time.Time) EnergyState {
+	maxMilli := maxEnergy * MilliPerEnergy
+	next := s.Milli + points*MilliPerEnergy
+	if next >= maxMilli {
+		return EnergyState{Milli: maxMilli, UpdatedAt: now}
+	}
+	return EnergyState{Milli: next, UpdatedAt: s.UpdatedAt}
+}
+
 // Refill sets energy to full — used on level-up.
 func Refill(maxEnergy int64, now time.Time) EnergyState {
 	return EnergyState{Milli: maxEnergy * MilliPerEnergy, UpdatedAt: now}

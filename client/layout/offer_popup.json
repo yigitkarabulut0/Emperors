@@ -1,0 +1,217 @@
+{
+ "screen": "offer_popup",
+ "source": "offers_popup.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#09151E",
+ "notes": [
+  "The offer that appears once a session at a calm moment (client/scenes/court/offer_popup.gd), cut from art/reference/offers_popup.png (art/slices/offers_popup.json). Rects are the painting's; on a taller canvas the whole popup is moved down by half the extra height, and the game shows dimmed behind it where the painting has its castle.",
+  "The banner, the three tiles, the timer plate and the green button are painted empty: the offer's title (Cinzel, ivory on the crimson), up to three of what it holds (each tile: the reward's picture and its words), how long it lasts, and its App Store price are set live. LATER and the close button keep their paint.",
+  "Text rects are their lines' own boxes (a line at 40 is 56 tall; two at 21 are 60), centred where the painting centres the plate, so the words sit on the plate's middle (tests/text_sits_where_painted.gd).",
+  "Tiles (x 107..331, 358..584, 612..835, y 908..1112): the picture in a 204x120 box at the top, the words (two lines at 21) in the 60 under it. The picture is RewardArt's (client/scripts/ui/reward_art.gd), the same the Royal Delivery draws: large paintings drawn down, never up -- a diamonds line's pack vessel, the store's large potions and charter, a frame round the lord's own face, a name colour's tinted chip, a title's scroll."
+ ],
+ "elements": [
+  {
+   "id": "plate",
+   "kind": "image",
+   "asset": "store/offer_popup",
+   "rect": [
+    48,
+    188,
+    860,
+    1362
+   ]
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "rect": [
+    204,
+    258,
+    532,
+    56
+   ],
+   "size": 40,
+   "sample": "THE FOUNDER'S CRATE",
+   "font": "title",
+   "weight": 700,
+   "color": "#F7E9C9",
+   "align": "center",
+   "valign": "center",
+   "uppercase": true
+  },
+  {
+   "id": "icon_1",
+   "kind": "image",
+   "asset": "icons/reward_crown",
+   "rect": [
+    117,
+    914,
+    204,
+    120
+   ]
+  },
+  {
+   "id": "icon_2",
+   "kind": "image",
+   "asset": "icons/reward_crown",
+   "rect": [
+    369,
+    914,
+    204,
+    120
+   ]
+  },
+  {
+   "id": "icon_3",
+   "kind": "image",
+   "asset": "icons/reward_crown",
+   "rect": [
+    622,
+    914,
+    203,
+    120
+   ]
+  },
+  {
+   "id": "words_1",
+   "kind": "text",
+   "rect": [
+    117,
+    1040,
+    204,
+    60
+   ],
+   "size": 21,
+   "sample": "650 diamonds for the\nSquire's purse",
+   "font": "body",
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "wrap": true
+  },
+  {
+   "id": "words_2",
+   "kind": "text",
+   "rect": [
+    369,
+    1040,
+    204,
+    60
+   ],
+   "size": 21,
+   "sample": "3 Energy Potions,\nfull refills",
+   "font": "body",
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "wrap": true
+  },
+  {
+   "id": "words_3",
+   "kind": "text",
+   "rect": [
+    622,
+    1040,
+    203,
+    60
+   ],
+   "size": 21,
+   "sample": "Oak Wreath\n(frame)",
+   "font": "body",
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "wrap": true
+  },
+  {
+   "id": "timer",
+   "kind": "text",
+   "rect": [
+    332,
+    1157,
+    348,
+    40
+   ],
+   "size": 30,
+   "sample": "47h 59m",
+   "font": "body",
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center"
+  },
+  {
+   "id": "buy",
+   "kind": "button",
+   "asset": "store/offer_popup_buy",
+   "rect": [
+    195,
+    1244,
+    550,
+    117
+   ],
+   "action": "buy"
+  },
+  {
+   "id": "price",
+   "kind": "text",
+   "rect": [
+    195,
+    1272,
+    550,
+    61
+   ],
+   "size": 46,
+   "sample": "US$2.99",
+   "font": "body",
+   "weight": 700,
+   "color": "#F6F3EE",
+   "align": "center",
+   "valign": "center"
+  },
+  {
+   "id": "later",
+   "kind": "button",
+   "asset": "store/offer_popup_later",
+   "rect": [
+    261,
+    1384,
+    420,
+    96
+   ],
+   "action": "later",
+   "paint_rect": [
+    261,
+    1387,
+    420,
+    90
+   ],
+   "keep_texture_size": true
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "store/offer_popup_close",
+   "rect": [
+    800,
+    254,
+    130,
+    130
+   ],
+   "action": "close",
+   "paint_rect": [
+    823,
+    277,
+    84,
+    84
+   ],
+   "keep_texture_size": true
+  }
+ ]
+}

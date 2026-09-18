@@ -1,0 +1,476 @@
+{
+  "screen": "profile",
+  "source": "profile.png",
+  "canvas": [
+    941,
+    1672
+  ],
+  "fonts": {
+    "title": "Cinzel-Variable.ttf",
+    "body": "EBGaramond[wght].ttf"
+  },
+  "ground": "#09151e",
+  "notes": [
+    "YOUR LORDSHIP (client/scenes/pages/profile_page.gd) on the painted pages' host: art/reference/profile.png, its title, portrait ring, name plate, red ribbon and three figure plates as painted (profile/page_hub).",
+    "The header: the lord's round face in the ring's window (a tap opens the face picker); the name on the plate in the colour worn, with Royal Favour's seal (Look.paint_name), and the kit's quill with the rename price at the plate's end; the title worn on the ribbon, or the level; the level, might and kingdom in the crown, swords and castle plates; the crest worn -- or the one the id picks -- where the painting has its lion shield.",
+    "Seven rows, the painting's seven: the row plate (profile/row) with its icon at the left, the word, and the painting's gold chevron; the mail's count in the red badge's place. FRIENDS and SETTINGS, the friends and the toggles are the painting's and are not drawn (Wave 6; the game has no sound). The rows keep the painting's order of plate and icon but take its whole frame: pitch 124 from y 512, so no hole is left under them.",
+    "Every row's tap target is its plate grown to a thumb (97 tall).",
+    "Stretch bands: the gaps between rows and under the last one.",
+    "The three plates' figures start right of their icons' ink (crown to x 308, swords to 453, castle to 616) and end at the plates' insides (385, 540, 686). The kingdom's name takes two lines of 16 at most, no smaller than 15; a name that will not go is its tag."
+  ],
+  "stretch": [
+    [
+      610,
+      18,
+      1
+    ],
+    [
+      734,
+      18,
+      1
+    ],
+    [
+      858,
+      18,
+      1
+    ],
+    [
+      982,
+      18,
+      1
+    ],
+    [
+      1106,
+      18,
+      1
+    ],
+    [
+      1230,
+      18,
+      1
+    ],
+    [
+      1352,
+      30,
+      2
+    ],
+    [
+      1425,
+      34,
+      1
+    ]
+  ],
+  "elements": [
+    {
+      "id": "page",
+      "kind": "image",
+      "asset": "profile/page_hub",
+      "rect": [
+        0,
+        0,
+        941,
+        1672
+      ]
+    },
+    {
+      "id": "ring_window",
+      "kind": "rect",
+      "rect": [
+        79,
+        250,
+        180,
+        182
+      ],
+      "note": "The painted ring's round window (flood-filled): centre (169, 341), 181 across. The face fills it, or a worn frame's window inside it."
+    },
+    {
+      "id": "face_hit",
+      "kind": "hotspot",
+      "rect": [
+        60,
+        186,
+        230,
+        320
+      ],
+      "action": "face"
+    },
+    {
+      "id": "name",
+      "kind": "text",
+      "rect": [
+        313,
+        286.5,
+        234,
+        39
+      ],
+      "font": "title",
+      "size": 28,
+      "weight": 700,
+      "color": "#F1E9DA",
+      "align": "center",
+      "valign": "center",
+      "sample": "Wwwwwwwwwwwwwwww"
+    },
+    {
+      "id": "quill",
+      "kind": "image",
+      "asset": "kingdom/edit_quill",
+      "rect": [
+        550,
+        288,
+        36,
+        35
+      ],
+      "fit": "contain"
+    },
+    {
+      "id": "price",
+      "kind": "text",
+      "rect": [
+        586,
+        290.5,
+        38,
+        27
+      ],
+      "font": "body",
+      "size": 20,
+      "weight": 700,
+      "color": "#E9C46A",
+      "align": "right",
+      "valign": "center",
+      "sample": "100"
+    },
+    {
+      "id": "price_gem",
+      "kind": "image",
+      "asset": "icons/diamond",
+      "rect": [
+        626,
+        295,
+        17,
+        17
+      ],
+      "fit": "contain"
+    },
+    {
+      "id": "rename",
+      "kind": "hotspot",
+      "rect": [
+        540,
+        262,
+        108,
+        96
+      ],
+      "action": "rename"
+    },
+    {
+      "id": "ribbon",
+      "kind": "text",
+      "rect": [
+        330,
+        356,
+        284,
+        33
+      ],
+      "font": "title",
+      "size": 24,
+      "weight": 700,
+      "color": "#E9C46A",
+      "align": "center",
+      "valign": "center",
+      "sample": "Level 999"
+    },
+    {
+      "id": "level",
+      "kind": "text",
+      "rect": [
+        314,
+        440.5,
+        66,
+        33
+      ],
+      "font": "body",
+      "size": 24,
+      "weight": 700,
+      "color": "#F1E9DA",
+      "align": "center",
+      "valign": "center",
+      "sample": "999"
+    },
+    {
+      "id": "might",
+      "kind": "text",
+      "rect": [
+        459,
+        440.5,
+        77,
+        33
+      ],
+      "font": "body",
+      "size": 24,
+      "weight": 700,
+      "color": "#F1E9DA",
+      "align": "center",
+      "valign": "center",
+      "sample": "9.99B"
+    },
+    {
+      "id": "kingdom",
+      "kind": "text",
+      "rect": [
+        620,
+        436,
+        66,
+        44
+      ],
+      "font": "body",
+      "size": 16,
+      "weight": 700,
+      "color": "#F1E9DA",
+      "align": "center",
+      "valign": "center",
+      "sample": "No kingdom",
+      "wrap": true
+    },
+    {
+      "id": "crest",
+      "kind": "image",
+      "asset": "",
+      "rect": [
+        676,
+        221,
+        200,
+        264
+      ],
+      "fit": "contain"
+    },
+    {
+      "id": "row",
+      "kind": "template",
+      "rect": [
+        72,
+        512,
+        797,
+        89
+      ],
+      "instances": [
+        [
+          72,
+          512
+        ],
+        [
+          72,
+          636
+        ],
+        [
+          72,
+          760
+        ],
+        [
+          72,
+          884
+        ],
+        [
+          72,
+          1008
+        ],
+        [
+          72,
+          1132
+        ],
+        [
+          72,
+          1256
+        ]
+      ],
+      "parts": [
+        {
+          "id": "plate",
+          "kind": "image",
+          "asset": "profile/row",
+          "rect": [
+            0,
+            0,
+            797,
+            89
+          ]
+        },
+        {
+          "id": "icon",
+          "kind": "image",
+          "asset": "",
+          "rect": [
+            20,
+            2,
+            152,
+            85
+          ],
+          "fit": "contain"
+        },
+        {
+          "id": "label",
+          "kind": "text",
+          "rect": [
+            182,
+            24.5,
+            480,
+            39
+          ],
+          "font": "title",
+          "size": 28,
+          "weight": 700,
+          "color": "#F1E9DA",
+          "align": "left",
+          "valign": "center",
+          "sample": "THE CROWN'S FAVOUR"
+        },
+        {
+          "id": "badge",
+          "kind": "image",
+          "asset": "icons/count_bubble",
+          "rect": [
+            670,
+            22,
+            44,
+            44
+          ]
+        },
+        {
+          "id": "badge_text",
+          "kind": "text",
+          "rect": [
+            670,
+            28.5,
+            44,
+            31
+          ],
+          "font": "title",
+          "size": 22,
+          "weight": 800,
+          "color": "#FFF4EC",
+          "align": "center",
+          "valign": "center",
+          "sample": "9+"
+        },
+        {
+          "id": "chevron",
+          "kind": "image",
+          "asset": "icons/chevron_gold",
+          "rect": [
+            752,
+            29.5,
+            24,
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "id": "row_friends",
+      "kind": "hotspot",
+      "rect": [
+        72,
+        508,
+        797,
+        97
+      ],
+      "action": "friends"
+    },
+    {
+      "id": "row_splendour",
+      "kind": "hotspot",
+      "rect": [
+        72,
+        632,
+        797,
+        97
+      ],
+      "action": "splendour"
+    },
+    {
+      "id": "row_rankings",
+      "kind": "hotspot",
+      "rect": [
+        72,
+        756,
+        797,
+        97
+      ],
+      "action": "rankings"
+    },
+    {
+      "id": "row_settings",
+      "kind": "hotspot",
+      "rect": [
+        72,
+        880,
+        797,
+        97
+      ],
+      "action": "settings"
+    },
+    {
+      "id": "row_account",
+      "kind": "hotspot",
+      "rect": [
+        72,
+        1004,
+        797,
+        97
+      ],
+      "action": "account"
+    },
+    {
+      "id": "row_redeem",
+      "kind": "hotspot",
+      "rect": [
+        72,
+        1128,
+        797,
+        97
+      ],
+      "action": "redeem"
+    },
+    {
+      "id": "row_invite",
+      "kind": "hotspot",
+      "rect": [
+        72,
+        1252,
+        797,
+        97
+      ],
+      "action": "invite"
+    },
+    {
+      "id": "build",
+      "kind": "text",
+      "rect": [
+        100,
+        1391,
+        741,
+        27
+      ],
+      "font": "body",
+      "size": 20,
+      "weight": 500,
+      "color": "#B8AE9C",
+      "align": "center",
+      "valign": "center",
+      "sample": "Emperors build 1.0.0 (123)  ·  signed in as Wwwwwwwwwwwwwwww"
+    },
+    {
+      "id": "close",
+      "kind": "button",
+      "asset": "profile/close",
+      "rect": [
+        340,
+        1474,
+        262,
+        96
+      ],
+      "keep_texture_size": true,
+      "action": "close"
+    }
+  ]
+}

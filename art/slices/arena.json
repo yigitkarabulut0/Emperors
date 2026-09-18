@@ -1,0 +1,163 @@
+{
+ "source": "arena.png",
+ "notes": [
+  "THE HONOUR ARENA -- the Attack tab's ARENA body (client/scenes/attack/arena_view.gd, layout client/layout/arena.json). arena.png paints its own header and its own four-tab band; attack.png's are canonical and already cut (art/slices/attack.json), so NEITHER is taken from here. Only the body is, and the layout lays it 130 units higher than painted -- arena.png's tab rule stands at 483 and attack.png's at 353. The chests.png precedent: cut at the painting's own coordinates, shift in the layout, so a shift that reads wrong is a one-line fix and never a re-cut.",
+  "The league card keeps everything whose state does not change and gives up everything whose does. Lifted with soften, never inpaint (SLICING_GUIDE: Telea smears a hole this size, which is how the shop cards shipped with diagonal streaks behind every item): the painted lion emblem, because the emblem IS the league; the bar's painted gold, because the bar is a figure; and the five painted sword pips, because three lit and two spent is one lord's evening and not every lord's. What is left -- the frame, the plates' empty channels, the hourglass, REFRESH -- is the painting.",
+  "The rival card follows attack/target_card exactly: the painted portrait STAYS (a live 152x157 face is drawn over it at the same offset), the baked crest is erased row by row out of the clean panel beside it, and the three plates were painted empty. The painting draws three cards; one is cut and the screen flows as many as the server sends, as the Attack tab already does with its targets.",
+  "The rewards panel is cut whole, four chests and all. Their state is shown by drawing an unreached one down (the COURT's own rule for a card that is not open yet), not by lifting four chests off a panel that was painted to hold them."
+ ],
+ "crops": [
+  {
+   "name": "arena/league",
+   "rect": [
+    170,
+    492,
+    761,
+    252
+   ],
+   "note": "The league card. The painted emblem STAYS: the live one is drawn over it in the same 248-wide box and covers it exactly -- the rule attack/target_card uses for its portrait, and the one that leaves no smear where a lift would. Two things cannot be covered and are erased row by row out of the plain board at x 700..712 (further from REFRESH's glow, which is bright from 720): the rating bar's GOLD (x 406..602 of a channel that runs to 710 -- a live fill shorter than the painted one would show gold past its end), and the five sword pips (three lit and two spent is one lord's evening, not every lord's). The channel's own rim survives, so the empty bar is still the painting's.",
+   "erase": [
+    {
+     "rect": [
+      402,
+      610,
+      312,
+      38
+     ],
+     "sample_x": [
+      700,
+      712
+     ]
+    },
+    {
+     "rect": [
+      396,
+      656,
+      314,
+      68
+     ],
+     "sample_x": [
+      700,
+      712
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arena/bar_fill",
+   "rect": [
+    430,
+    616,
+    60,
+    26
+   ],
+   "note": "A stretch of the bar's painted gold, drawn along the channel's inside (x 406..710) to the lord's rating."
+  },
+  {
+   "name": "arena/bar_track",
+   "rect": [
+    402,
+    610,
+    312,
+    38
+   ],
+   "erase": [
+    {
+     "rect": [
+      406,
+      614,
+      198,
+      30
+     ],
+     "sample_x": [
+      650,
+      670
+     ]
+    }
+   ],
+   "note": "The rating bar's channel with its gold emptied out of the channel's OWN dark interior (x 650..670, which the painted fill never reached), so both rims survive and an empty bar is still the painting's. Laid over the league card's erased band; arena/bar_fill is drawn along its inside."
+  },
+  {
+   "name": "arena/ticket_lit",
+   "rect": [
+    400,
+    661,
+    52,
+    59
+   ],
+   "mode": "darkkey",
+   "floor": 3,
+   "note": "One lit sword: a fight still in the lord's day. Five are drawn at a pitch of 63 from x 402."
+  },
+  {
+   "name": "arena/ticket_spent",
+   "rect": [
+    589,
+    661,
+    52,
+    59
+   ],
+   "mode": "darkkey",
+   "floor": 3,
+   "note": "One spent sword, the painting's own dark pair (the fourth of the five)."
+  },
+  {
+   "name": "arena/refresh",
+   "rect": [
+    725,
+    652,
+    202,
+    74
+   ],
+   "note": "REFRESH, its word painted. Dimmed when the day's three are used."
+  },
+  {
+   "name": "arena/rival_card",
+   "rect": [
+    169,
+    752,
+    762,
+    190
+   ],
+   "erase": [
+    {
+     "rect": [
+      347,
+      770,
+      108,
+      166
+     ],
+     "sample_x": [
+      749,
+      760
+     ]
+    }
+   ],
+   "note": "One rival's card, cut once and flowed as many times as the server sends. The baked crest (x 349..453) is erased row by row out of the board between the name plate and the FIGHT (x 749..760), which is the only stretch of plain board that runs the crest's whole height -- the strip beside the crest itself is the name plate's gold rim, and sampling it painted an olive box. The portrait is LEFT painted: a live face is drawn over it at the same offset, which is attack.json's rule and the one that never leaves a hole. The crown and the crossed swords beside the two rows are the painting's, and so are all three plates, painted empty."
+  },
+  {
+   "name": "arena/btn_fight",
+   "rect": [
+    761,
+    767,
+    172,
+    166
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "note": "The green FIGHT, its crossed swords painted."
+  },
+  {
+   "name": "arena/rewards",
+   "rect": [
+    169,
+    1328,
+    764,
+    250
+   ],
+   "note": "The four rating chests and their plates, whole. A chest the lord has not reached is drawn down; one already taken wears its plate's word."
+  }
+ ]
+}

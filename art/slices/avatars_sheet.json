@@ -1,0 +1,546 @@
+{
+ "source": "avatars_sheet.png",
+ "note": "R4. One face per avatar id, in balance order. Each bust is painted inside its own gold frame with a small gold bracket in each corner. The face is cut square inside it -- 23 in from the frame's outer left edge and 8 down, clear of the frame bar and of the top brackets -- at the painting's own 236 px, which is the battle's portrait; so the crown on the king and the crest on the knight's helmet stay whole. Every screen puts its own frame round it (the card's baked frame, a rarity ring, a battle ring). A 96 px cut of the same square serves rows drawn at 68-76, which a 236 texture would alias at without mipmaps. A round cut of the same square, 160 across, is for the round windows the rankings paint (the podium's three rings, 111 to 132 across, and the rows' 66): the portrait's own disc, drawn down.",
+ "crops": [
+  {
+   "name": "portraits/avatar_knight",
+   "rect": [
+    38,
+    90,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_knight_small",
+   "rect": [
+    38,
+    90,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_king",
+   "rect": [
+    351,
+    90,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_king_small",
+   "rect": [
+    351,
+    90,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_queen",
+   "rect": [
+    665,
+    90,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_queen_small",
+   "rect": [
+    665,
+    90,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_archer",
+   "rect": [
+    38,
+    460,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_archer_small",
+   "rect": [
+    38,
+    460,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_monk",
+   "rect": [
+    351,
+    460,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_monk_small",
+   "rect": [
+    351,
+    460,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_berserk",
+   "rect": [
+    665,
+    459,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_berserk_small",
+   "rect": [
+    665,
+    459,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_knave",
+   "rect": [
+    38,
+    830,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_knave_small",
+   "rect": [
+    38,
+    830,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_herald",
+   "rect": [
+    351,
+    830,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_herald_small",
+   "rect": [
+    351,
+    830,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_templar",
+   "rect": [
+    665,
+    830,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_templar_small",
+   "rect": [
+    665,
+    830,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_witch",
+   "rect": [
+    38,
+    1195,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_witch_small",
+   "rect": [
+    38,
+    1195,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_captain",
+   "rect": [
+    351,
+    1196,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_captain_small",
+   "rect": [
+    351,
+    1196,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_princess",
+   "rect": [
+    665,
+    1196,
+    236,
+    236
+   ]
+  },
+  {
+   "name": "portraits/avatar_princess_small",
+   "rect": [
+    665,
+    1196,
+    236,
+    236
+   ],
+   "scale": [
+    96,
+    96
+   ]
+  },
+  {
+   "name": "portraits/avatar_knight_ring",
+   "rect": [
+    38,
+    90,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_king_ring",
+   "rect": [
+    351,
+    90,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_queen_ring",
+   "rect": [
+    665,
+    90,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_archer_ring",
+   "rect": [
+    38,
+    460,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_monk_ring",
+   "rect": [
+    351,
+    460,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_berserk_ring",
+   "rect": [
+    665,
+    459,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_knave_ring",
+   "rect": [
+    38,
+    830,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_herald_ring",
+   "rect": [
+    351,
+    830,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_templar_ring",
+   "rect": [
+    665,
+    830,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_witch_ring",
+   "rect": [
+    38,
+    1195,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_captain_ring",
+   "rect": [
+    351,
+    1196,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  },
+  {
+   "name": "portraits/avatar_princess_ring",
+   "rect": [
+    665,
+    1196,
+    236,
+    236
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     235,
+     235
+    ],
+    "feather": 0.6
+   },
+   "scale": [
+    160,
+    160
+   ]
+  }
+ ]
+}

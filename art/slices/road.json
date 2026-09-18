@@ -1,0 +1,941 @@
+{
+ "source": "road.png",
+ "note": "VICTORY ROAD (art/reference/road.png) on the painted pages' host, with the road itself from the three node-less maps (road_map_1..3.png, PAINTING_BRIEFS_2 corrections 5) and the markers from campaign_nodes_sheet.png's bottom row. The painting's own map window was 855 wide; the maps are a `map` kind, 776 wide (normalize-reference.py), and are drawn 1:1, never up: the page's window is narrowed to them and framed with the painting's own reward-box frame (road/window_frame).",
+ "crops": [
+  {
+   "name": "road/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "refill": [
+    {
+     "rect": [
+      35,
+      122,
+      872,
+      1379
+     ],
+     "band": [
+      1500,
+      1512
+     ],
+     "samples": [
+      {
+       "rows": [
+        122,
+        208
+       ],
+       "x": [
+        [
+         42,
+         58
+        ],
+        [
+         884,
+         900
+        ]
+       ]
+      },
+      {
+       "rows": [
+        1500,
+        1511
+       ],
+       "x": [
+        [
+         42,
+         900
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "rect": [
+      72,
+      1506,
+      398,
+      104
+     ],
+     "band": [
+      1500,
+      1511
+     ],
+     "samples": [
+      {
+       "rows": [
+        1506,
+        1600
+       ],
+       "x": [
+        [
+         44,
+         66
+        ],
+        [
+         470,
+         488
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "note": "The page: its frame, DEEDS and its rules, and CLOSE, baked. CLAIM and its shadow are lifted (x 72-469, y 1506-1609, refilled from the panel beside it above the frame's corner ornament) so its own crop can be dimmed. The painted tabs and the whole map window -- its frame, its five-node map, the level plate on it -- are cleared back to the page's own panel (x 35-906 inside the frame's inner shadow, y 122-1500): TabStrip draws the tabs, the road scrolls in the window, road/window_frame frames it and road/level_plate floats on it. Refilled from the panel's clean sides beside the tabs (x 42-58, 884-900) and the clean band under the window (y 1500-1511), which also gives each column its shading."
+  },
+  {
+   "name": "road/claim",
+   "rect": [
+    74,
+    1508,
+    394,
+    102
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 14,
+    "feather": 2.5
+   },
+   "note": "CLAIM, baked (gold rim x 83-462, y 1516-1604) with the few units of shadow round it, feathered out at the crop's edge: the page's own copy is lifted, so this one can be dimmed when nothing waits."
+  },
+  {
+   "name": "road/close",
+   "rect": [
+    497,
+    1514,
+    358,
+    91
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 9
+   },
+   "note": "CLOSE, baked: gold rim x 499-852, y 1517-1602."
+  },
+  {
+   "name": "road/level_plate",
+   "rect": [
+    686,
+    229,
+    194,
+    86
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      8,
+      25
+     ],
+     [
+      27,
+      6
+     ],
+     [
+      29,
+      6
+     ],
+     [
+      35,
+      12
+     ],
+     [
+      159,
+      12
+     ],
+     [
+      165,
+      6
+     ],
+     [
+      167,
+      6
+     ],
+     [
+      186,
+      25
+     ],
+     [
+      187,
+      31
+     ],
+     [
+      187,
+      61
+     ],
+     [
+      185,
+      65
+     ],
+     [
+      179,
+      67
+     ],
+     [
+      168,
+      79
+     ],
+     [
+      165,
+      79
+     ],
+     [
+      158,
+      72
+     ],
+     [
+      36,
+      72
+     ],
+     [
+      29,
+      79
+     ],
+     [
+      26,
+      79
+     ],
+     [
+      15,
+      67
+     ],
+     [
+      9,
+      65
+     ],
+     [
+      7,
+      61
+     ],
+     [
+      7,
+      31
+     ]
+    ]
+   },
+   "note": "The EMPTY level plate at the map's top right, cut along its own outline off the sky: the outline traced (plate = not sky, not cloud; largest component), its left half kept and mirrored about the plate's middle (x 783) so the fleurs match. The level is set in type in its inside (x 702-864, y 246-298)."
+  },
+  {
+   "name": "road/box",
+   "rect": [
+    498,
+    601,
+    115,
+    85
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   },
+   "refill": [
+    {
+     "rect": [
+      503,
+      605,
+      105,
+      76
+     ],
+     "band": [
+      606,
+      614
+     ],
+     "samples": [
+      {
+       "rows": [
+        606,
+        614
+       ],
+       "x": [
+        [
+         508,
+         602
+        ]
+       ]
+      },
+      {
+       "rows": [
+        615,
+        679
+       ],
+       "x": [
+        [
+         504,
+         511
+        ],
+        [
+         599,
+         606
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "note": "A milestone's reward box: the painting's closed-chest box (gold rim x 498-612, y 601-685) with its chest lifted -- the inside (x 503-607, y 605-680, inside its dark inner line) refilled from its clean top rows (606-614) and the strips beside the chest. A nine-patch, 14 in from each side; the rewards are drawn in it."
+  },
+  {
+   "name": "road/window_frame",
+   "rect": [
+    498,
+    601,
+    115,
+    85
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 6
+   },
+   "hole": {
+    "type": "polygon",
+    "points": [
+     [
+      10,
+      4
+     ],
+     [
+      105,
+      4
+     ],
+     [
+      111,
+      10
+     ],
+     [
+      111,
+      75
+     ],
+     [
+      105,
+      81
+     ],
+     [
+      10,
+      81
+     ],
+     [
+      4,
+      75
+     ],
+     [
+      4,
+      10
+     ]
+    ]
+   },
+   "note": "The same box's rim alone (the inside cleared 4 in, chamfer and all): the map window's frame, drawn as a nine-patch 14 in from each side round the 776-wide road."
+  },
+  {
+   "name": "road/map_1",
+   "src": "road_map_1.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "The foot of the road: fields, a village, the windmill, the stone bridge. Opaque; the others lie over it."
+  },
+  {
+   "name": "road/map_2",
+   "src": "road_map_2.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      -80,
+      -80
+     ],
+     [
+      856,
+      -80
+     ],
+     [
+      856,
+      1000
+     ],
+     [
+      -80,
+      1000
+     ]
+    ],
+    "feather": 12
+   },
+   "note": "The forest and its river. Drawn with its last 60 rows over map_1's first 60: its foot fades out (alpha 1 at row 970, a half at 1000, none at 1030) so the two mists become one."
+  },
+  {
+   "name": "road/map_3",
+   "src": "road_map_3.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      -80,
+      -80
+     ],
+     [
+      856,
+      -80
+     ],
+     [
+      856,
+      1000
+     ],
+     [
+      -80,
+      1000
+     ]
+    ],
+    "feather": 12
+   },
+   "note": "The mountains, the gate and the castle: the top of the road. Its foot fades over map_2's top 60 rows."
+  },
+  {
+   "name": "road/shield_reached",
+   "src": "campaign_nodes_sheet.png",
+   "rect": [
+    244,
+    1181,
+    214,
+    270
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      16,
+      24,
+      196,
+      204
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       22,
+       202
+      ],
+      [
+       190,
+       202
+      ],
+      [
+       190,
+       256
+      ],
+      [
+       22,
+       256
+      ]
+     ]
+    }
+   ],
+   "scale": [
+    107,
+    135
+   ],
+   "note": "A milestone reached and claimed: the gold shield (disc centre 350,1295 on the sheet). Drawn down to half."
+  },
+  {
+   "name": "road/shield_current",
+   "src": "campaign_nodes_sheet.png",
+   "rect": [
+    462,
+    1164,
+    240,
+    304
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      27,
+      41,
+      207,
+      221
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       33,
+       219
+      ],
+      [
+       201,
+       219
+      ],
+      [
+       201,
+       273
+      ],
+      [
+       33,
+       273
+      ]
+     ]
+    }
+   ],
+   "scale": [
+    120,
+    152
+   ],
+   "note": "A milestone reached and waiting to be claimed: the gold shield in its halo (centre 579,1295)."
+  },
+  {
+   "name": "road/shield_ahead",
+   "src": "campaign_nodes_sheet.png",
+   "rect": [
+    707,
+    1183,
+    212,
+    268
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      16,
+      23,
+      196,
+      203
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       22,
+       201
+      ],
+      [
+       190,
+       201
+      ],
+      [
+       190,
+       255
+      ],
+      [
+       22,
+       255
+      ]
+     ]
+    }
+   ],
+   "scale": [
+    106,
+    134
+   ],
+   "note": "A milestone still ahead: the steel shield (centre 813,1296)."
+  },
+  {
+   "name": "road/lord",
+   "src": "campaign_nodes_sheet.png",
+   "rect": [
+    8,
+    1116,
+    226,
+    342
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      153,
+      11
+     ],
+     [
+      150,
+      16
+     ],
+     [
+      146,
+      16
+     ],
+     [
+      149,
+      18
+     ],
+     [
+      150,
+      26
+     ],
+     [
+      149,
+      105
+     ],
+     [
+      147,
+      107
+     ],
+     [
+      148,
+      120
+     ],
+     [
+      136,
+      121
+     ],
+     [
+      132,
+      120
+     ],
+     [
+      130,
+      117
+     ],
+     [
+      123,
+      117
+     ],
+     [
+      119,
+      114
+     ],
+     [
+      119,
+      106
+     ],
+     [
+      121,
+      103
+     ],
+     [
+      120,
+      92
+     ],
+     [
+      118,
+      88
+     ],
+     [
+      111,
+      83
+     ],
+     [
+      109,
+      78
+     ],
+     [
+      108,
+      82
+     ],
+     [
+      101,
+      86
+     ],
+     [
+      98,
+      91
+     ],
+     [
+      96,
+      102
+     ],
+     [
+      99,
+      103
+     ],
+     [
+      99,
+      111
+     ],
+     [
+      95,
+      114
+     ],
+     [
+      82,
+      117
+     ],
+     [
+      81,
+      120
+     ],
+     [
+      72,
+      124
+     ],
+     [
+      67,
+      132
+     ],
+     [
+      64,
+      148
+     ],
+     [
+      57,
+      155
+     ],
+     [
+      57,
+      161
+     ],
+     [
+      60,
+      169
+     ],
+     [
+      60,
+      180
+     ],
+     [
+      37,
+      212
+     ],
+     [
+      9,
+      242
+     ],
+     [
+      20,
+      243
+     ],
+     [
+      27,
+      246
+     ],
+     [
+      36,
+      253
+     ],
+     [
+      36,
+      262
+     ],
+     [
+      39,
+      265
+     ],
+     [
+      45,
+      266
+     ],
+     [
+      45,
+      275
+     ],
+     [
+      33,
+      286
+     ],
+     [
+      29,
+      300
+     ],
+     [
+      30,
+      307
+     ],
+     [
+      36,
+      316
+     ],
+     [
+      43,
+      322
+     ],
+     [
+      55,
+      328
+     ],
+     [
+      82,
+      335
+     ],
+     [
+      100,
+      336
+     ],
+     [
+      101,
+      341
+     ],
+     [
+      117,
+      341
+     ],
+     [
+      118,
+      336
+     ],
+     [
+      132,
+      335
+     ],
+     [
+      163,
+      327
+     ],
+     [
+      172,
+      322
+     ],
+     [
+      182,
+      312
+     ],
+     [
+      185,
+      305
+     ],
+     [
+      184,
+      291
+     ],
+     [
+      180,
+      283
+     ],
+     [
+      163,
+      266
+     ],
+     [
+      156,
+      262
+     ],
+     [
+      148,
+      261
+     ],
+     [
+      150,
+      167
+     ],
+     [
+      155,
+      161
+     ],
+     [
+      157,
+      150
+     ],
+     [
+      156,
+      144
+     ],
+     [
+      151,
+      141
+     ],
+     [
+      151,
+      111
+     ],
+     [
+      161,
+      110
+     ],
+     [
+      169,
+      113
+     ],
+     [
+      174,
+      117
+     ],
+     [
+      181,
+      129
+     ],
+     [
+      188,
+      129
+     ],
+     [
+      195,
+      136
+     ],
+     [
+      197,
+      142
+     ],
+     [
+      203,
+      143
+     ],
+     [
+      207,
+      148
+     ],
+     [
+      204,
+      130
+     ],
+     [
+      205,
+      100
+     ],
+     [
+      213,
+      42
+     ],
+     [
+      217,
+      40
+     ],
+     [
+      204,
+      39
+     ],
+     [
+      193,
+      36
+     ],
+     [
+      184,
+      31
+     ],
+     [
+      177,
+      31
+     ],
+     [
+      165,
+      27
+     ],
+     [
+      155,
+      20
+     ]
+    ]
+   },
+   "scale": [
+    95,
+    144
+   ],
+   "note": "The marching lord on his gold base (base centre 115,1421 on the sheet): stands on the highest milestone reached. His silhouette (traced, 2 px inside its rim) is solid so the dark armour and boots stay opaque. Drawn down to 0.42."
+  }
+ ]
+}

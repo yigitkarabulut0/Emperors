@@ -1,0 +1,236 @@
+{
+ "source": "kingdom_hall.png",
+ "note": "JOIN A KINGDOM, the hall a lord with no kingdom is shown (art/reference/kingdom_hall.png). The painting's rail is the wider, eight-entry one Wave 2 brings, so only its content area is cut (x 183 onward) and drawn where the painting has it. Rows repeat: one invitation card, one kingdom card, each cut once and drawn per kingdom; the crests on them are the kingdoms' own (icons/crest_*, by kingdom id).",
+ "crops": [
+  {
+   "name": "hall/header",
+   "rect": [
+    190,
+    0,
+    751,
+    460
+   ],
+   "inpaint": [
+    [
+     190,
+     26,
+     236,
+     64
+    ],
+    [
+     434,
+     26,
+     222,
+     64
+    ],
+    [
+     670,
+     26,
+     238,
+     64
+    ]
+   ],
+   "note": "the vista, JOIN A KINGDOM and its line, baked; the painted HUD pills are inpainted -- the shell draws its own over them"
+  },
+  {
+   "name": "hall/search_field",
+   "rect": [
+    187,
+    462,
+    543,
+    68
+   ],
+   "note": "the search box with its magnifier; the LineEdit draws no plate of its own over it"
+  },
+  {
+   "name": "hall/heading_narrow",
+   "rect": [
+    186,
+    536,
+    737,
+    56
+   ],
+   "erase": [
+    {
+     "rect": [
+      448,
+      552,
+      202,
+      34
+     ],
+     "sample_x": [
+      405,
+      440
+     ]
+    }
+   ],
+   "note": "INVITATIONS' plaque and its two rules, the word lifted: headings are set in type (INVITATIONS (3), SEARCHING...)"
+  },
+  {
+   "name": "hall/heading_wide",
+   "rect": [
+    186,
+    766,
+    737,
+    52
+   ],
+   "erase": [
+    {
+     "rect": [
+      360,
+      780,
+      362,
+      30
+     ],
+     "sample_x": [
+      337,
+      357
+     ]
+    }
+   ],
+   "note": "RECOMMENDED FOR YOU's longer plaque, the words lifted, for the long headings (RESULTS FOR ...)"
+  },
+  {
+   "name": "hall/card_invite",
+   "rect": [
+    183,
+    590,
+    740,
+    170
+   ],
+   "note": "an invitation: its two plates baked. The painted crest and ACCEPT/DECLINE are lifted, row by row from the card's ground between the plates and the buttons (x 696-710), just to their own edges: the kingdom's crest and the two buttons the card names are drawn where they were.",
+   "erase": [
+    {
+     "rect": [
+      216,
+      602,
+      132,
+      146
+     ],
+     "sample_x": [
+      696,
+      710
+     ]
+    },
+    {
+     "rect": [
+      718,
+      621,
+      180,
+      124
+     ],
+     "sample_x": [
+      696,
+      710
+     ]
+    }
+   ]
+  },
+  {
+   "name": "hall/card_kingdom",
+   "rect": [
+    183,
+    818,
+    740,
+    159
+   ],
+   "note": "a kingdom to join: the name plate, the lords and the laurel with their plates baked; the painted crest and JOIN lifted row by row from the ground left of JOIN (x 702-712), to their own edges",
+   "erase": [
+    {
+     "rect": [
+      216,
+      830,
+      132,
+      136
+     ],
+     "sample_x": [
+      702,
+      712
+     ]
+    },
+    {
+     "rect": [
+      719,
+      867,
+      179,
+      67
+     ],
+     "sample_x": [
+      702,
+      712
+     ]
+    }
+   ]
+  },
+  {
+   "name": "hall/or",
+   "rect": [
+    186,
+    1314,
+    737,
+    44
+   ],
+   "note": "OR between the kingdoms and founding, baked"
+  },
+  {
+   "name": "hall/card_found",
+   "rect": [
+    183,
+    1360,
+    740,
+    192
+   ],
+   "note": "RAISE YOUR OWN BANNER: the castle medallion, its title and the plate for the price, baked; FOUND lifted (it goes dim when the server says no)",
+   "erase": [
+    {
+     "rect": [
+      719,
+      1439,
+      178,
+      76
+     ],
+     "sample_x": [
+      900,
+      908
+     ]
+    }
+   ]
+  },
+  {
+   "name": "hall/btn_green",
+   "rect": [
+    720,
+    868,
+    177,
+    65
+   ],
+   "note": "JOIN's green plate, the word lifted: every green button in the hall (Search, Accept, Join, Request, Found), nine-patched, its word in type",
+   "inpaint": [
+    [
+     775,
+     885,
+     68,
+     34
+    ]
+   ]
+  },
+  {
+   "name": "hall/btn_dark",
+   "rect": [
+    719,
+    687,
+    178,
+    57
+   ],
+   "note": "DECLINE's dark plate, the word lifted: Decline, and the buttons that only say where things stand (Requested, Full, Wait)",
+   "inpaint": [
+    [
+     757,
+     702,
+     106,
+     26
+    ]
+   ]
+  }
+ ]
+}

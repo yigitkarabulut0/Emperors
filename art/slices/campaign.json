@@ -1,0 +1,710 @@
+{
+ "source": "campaign_nodes_sheet.png",
+ "notes": [
+  "THE CONQUEST CAMPAIGN -- the Attack tab's CAMPAIGN body (client/scenes/attack/campaign_view.gd, layout client/layout/campaign.json).",
+  "Two sources. The ten MAPS are whole paintings (campaign_map_NN.png, 776x1030 out of normalize-reference.py --kind map) and are cut whole and unscaled, so a node's place on the road is a pixel of the painting and a unit of the layout at once. The NODES are objects on a sheet, which is the one place the guide allows a scale: each is cut at its painted size and drawn DOWN to what the road has room for, never up.",
+  "The node is cut TWICE. The ring alone goes on the map, where twelve nodes share 957 units of road; the whole node, its three star sockets included, goes on the card that opens when one is tapped. A node small enough for the road would have shown its three stars 24 units wide, which is a gold speck and not a star.",
+  "Every ring's middle is dark and the sheet's ground is dark, so the key would take the inside of the ring away with the ground and the map would show through the plate a number stands on. Each crop names its own middle in `solid`, measured off the painting (the ring's dark run, row and column).",
+  "Where each node stands is measured, never placed: scripts/campaign-road.py seams the road out of each painting and samples twelve points along it into client/layout/campaign_nodes.json, and art/qa/campaign_nodes.png is that measurement drawn back onto the maps, to be looked at."
+ ],
+ "crops": [
+  {
+   "name": "campaign/map_01",
+   "src": "campaign_map_01.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_02",
+   "src": "campaign_map_02.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_03",
+   "src": "campaign_map_03.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_04",
+   "src": "campaign_map_04.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_05",
+   "src": "campaign_map_05.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_06",
+   "src": "campaign_map_06.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_07",
+   "src": "campaign_map_07.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_08",
+   "src": "campaign_map_08.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_09",
+   "src": "campaign_map_09.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/map_10",
+   "src": "campaign_map_10.png",
+   "rect": [
+    0,
+    0,
+    776,
+    1030
+   ],
+   "note": "One chapter's map, whole and unscaled: 776x1030 is what normalize-reference.py puts a `map` on, so a node's place on the road is a pixel of this painting and a unit of the layout at once."
+  },
+  {
+   "name": "campaign/node_shut",
+   "rect": [
+    24,
+    141,
+    205,
+    186
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      19,
+      35,
+      185,
+      181
+     ]
+    }
+   ],
+   "scale": [
+    96,
+    87
+   ],
+   "note": "A mile a lord may not walk yet: the iron ring and its padlock. Its three star sockets are NOT in this crop -- twelve nodes share 957 units of road, 87 between them, and a node with its sockets is 247 tall. The map wears the ring; the card that opens on a tap wears the whole thing."
+  },
+  {
+   "name": "campaign/node_open",
+   "rect": [
+    250,
+    140,
+    204,
+    186
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      27,
+      36,
+      175,
+      181
+     ]
+    }
+   ],
+   "scale": [
+    96,
+    87
+   ],
+   "note": "A mile that may be walked: the gold ring, empty, with the stage's own number drawn into it."
+  },
+  {
+   "name": "campaign/node_now",
+   "rect": [
+    458,
+    127,
+    239,
+    200
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      46,
+      49,
+      194,
+      194
+     ]
+    }
+   ],
+   "scale": [
+    112,
+    94
+   ],
+   "note": "Where the lord stands: the same ring with the painting's own glow round it, so this crop is wider and taller than its siblings by exactly that glow."
+  },
+  {
+   "name": "campaign/node_done",
+   "rect": [
+    703,
+    141,
+    218,
+    186
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      35,
+      33,
+      182,
+      181
+     ]
+    }
+   ],
+   "scale": [
+    102,
+    87
+   ],
+   "note": "A mile already walked: the ring in its laurel."
+  },
+  {
+   "name": "campaign/boss_shut",
+   "rect": [
+    16,
+    468,
+    218,
+    252
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      38,
+      110,
+      180,
+      244
+     ]
+    }
+   ],
+   "scale": [
+    102,
+    118
+   ],
+   "note": "A boss nobody has reached: the crowned skull, the banners and the locked ring."
+  },
+  {
+   "name": "campaign/boss_open",
+   "rect": [
+    243,
+    466,
+    219,
+    252
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      43,
+      112,
+      177,
+      246
+     ]
+    }
+   ],
+   "scale": [
+    103,
+    118
+   ],
+   "note": "A boss standing in the road."
+  },
+  {
+   "name": "campaign/boss_now",
+   "rect": [
+    471,
+    466,
+    222,
+    252
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      45,
+      112,
+      180,
+      246
+     ]
+    }
+   ],
+   "scale": [
+    104,
+    118
+   ],
+   "note": "The boss the lord stands in front of, with the painting's glow."
+  },
+  {
+   "name": "campaign/boss_done",
+   "rect": [
+    705,
+    466,
+    218,
+    252
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      42,
+      113,
+      176,
+      246
+     ]
+    }
+   ],
+   "scale": [
+    102,
+    118
+   ],
+   "note": "A boss that has fallen, in its laurel."
+  },
+  {
+   "name": "campaign/card_field",
+   "rect": [
+    250,
+    140,
+    204,
+    247
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      27,
+      36,
+      175,
+      181
+     ]
+    },
+    {
+     "type": "ellipse",
+     "box": [
+      27,
+      180,
+      80,
+      238
+     ]
+    },
+    {
+     "type": "ellipse",
+     "box": [
+      74,
+      176,
+      127,
+      245
+     ]
+    },
+    {
+     "type": "ellipse",
+     "box": [
+      121,
+      180,
+      175,
+      238
+     ]
+    }
+   ],
+   "note": "The whole field node, sockets and all, for the card that opens when a mile is tapped: there is room there to show what three stars look like."
+  },
+  {
+   "name": "campaign/card_boss",
+   "rect": [
+    243,
+    466,
+    219,
+    307
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      43,
+      112,
+      177,
+      246
+     ]
+    },
+    {
+     "type": "ellipse",
+     "box": [
+      40,
+      246,
+      95,
+      302
+     ]
+    },
+    {
+     "type": "ellipse",
+     "box": [
+      85,
+      250,
+      140,
+      307
+     ]
+    },
+    {
+     "type": "ellipse",
+     "box": [
+      130,
+      246,
+      185,
+      302
+     ]
+    }
+   ],
+   "note": "The whole boss node, for the same card."
+  },
+  {
+   "name": "campaign/star_on",
+   "rect": [
+    29,
+    877,
+    185,
+    174
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "scale": [
+    53,
+    50
+   ],
+   "note": "A star earned: drawn into a socket on the stage card and along the chapter's bar."
+  },
+  {
+   "name": "campaign/star_off",
+   "rect": [
+    265,
+    882,
+    170,
+    166
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "scale": [
+    53,
+    52
+   ],
+   "note": "A star not earned, at the size of the one that is. Its middle keys away with the ground on purpose: an empty star is an outline wherever it is drawn."
+  },
+  {
+   "name": "campaign/chest_shut",
+   "rect": [
+    475,
+    884,
+    211,
+    177
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "scale": [
+    127,
+    107
+   ],
+   "note": "A chapter chest whose stars are not in yet."
+  },
+  {
+   "name": "campaign/chest_open",
+   "rect": [
+    717,
+    841,
+    200,
+    225
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "scale": [
+    127,
+    143
+   ],
+   "note": "A chapter chest with its stars in, lit and waiting."
+  },
+  {
+   "name": "campaign/standard",
+   "rect": [
+    11,
+    1120,
+    220,
+    336
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "scale": [
+    98,
+    150
+   ],
+   "note": "The lord's own standard-bearer: the marker that says which mile is theirs next."
+  },
+  {
+   "name": "campaign/plate_gold",
+   "rect": [
+    247,
+    1184,
+    206,
+    264
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       53,
+       199
+      ],
+      [
+       171,
+       199
+      ],
+      [
+       183,
+       211
+      ],
+      [
+       183,
+       245
+      ],
+      [
+       171,
+       257
+      ],
+      [
+       53,
+       257
+      ],
+      [
+       41,
+       245
+      ],
+      [
+       41,
+       211
+      ]
+     ]
+    }
+   ],
+   "scale": [
+    144,
+    185
+   ],
+   "note": "The chapter's plate: a ring over a name board. The ring holds the chapter's number, the board its name. The board is a chamfered board, dark, and is held opaque by its own outline; the ring's own middle is painted gold and needs nothing."
+  },
+  {
+   "name": "campaign/plate_lit",
+   "rect": [
+    456,
+    1169,
+    242,
+    293
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       56,
+       209
+      ],
+      [
+       189,
+       209
+      ],
+      [
+       201,
+       221
+      ],
+      [
+       201,
+       256
+      ],
+      [
+       189,
+       268
+      ],
+      [
+       56,
+       268
+      ],
+      [
+       44,
+       256
+      ],
+      [
+       44,
+       221
+      ]
+     ]
+    }
+   ],
+   "scale": [
+    160,
+    194
+   ],
+   "note": "The same plate for the chapter the lord is standing in, with the painting's glow."
+  },
+  {
+   "name": "campaign/plate_shut",
+   "rect": [
+    711,
+    1186,
+    204,
+    261
+   ],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 3,
+   "solid": [
+    {
+     "type": "ellipse",
+     "box": [
+      27,
+      32,
+      173,
+      185
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       33,
+       191
+      ],
+      [
+       172,
+       191
+      ],
+      [
+       184,
+       203
+      ],
+      [
+       184,
+       239
+      ],
+      [
+       172,
+       251
+      ],
+      [
+       33,
+       251
+      ],
+      [
+       21,
+       239
+      ],
+      [
+       21,
+       203
+      ]
+     ]
+    }
+   ],
+   "scale": [
+    144,
+    184
+   ],
+   "note": "The same plate in iron, for a chapter the road has not reached."
+  }
+ ]
+}

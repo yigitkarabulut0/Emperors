@@ -8,14 +8,25 @@ extends Node
 signal changed
 signal energy_changed(current: int)
 signal action_failed(message: String)
+## An action refused because the armory is full (409 inventory_full: a shop
+## buy, a reroll, a deal). Not a toast: the shell says it with a dialog that
+## offers MORE ROOM beside its OK (Armory.refused).
+signal armory_full(message: String)
 ## Good news for the toast: "Bought ...", "Equipped 2 items". It used to go out
 ## on action_failed, which is why a success read like an error to anything
 ## that listened for errors.
 signal notice(message: String)
 signal level_up(new_level: int, levels: int, stat_points: int, diamonds: int)
 signal mastery_reached(job_id: String, collects: int, bonus_bp: int)
+signal badges_changed
+## A collect answer the Golden Hour touched: the gold it added (0 on the answer
+## that only lit it) and whether this answer lit it.
+signal golden_hour(gold: int, started: bool)
 
 var snapshot: Dictionary = {}
+## What is waiting for the player, from the heartbeat: {quests, daily, revenge,
+## requests, mail}. The rail's bubbles and the pages that clear them read this.
+var badges: Dictionary = {}
 var loading := false
 ## The sections the last level-up opened, for the ceremony to name.
 var last_unlocked: Array = []
@@ -23,16 +34,20 @@ var last_unlocked: Array = []
 var _pending: Array[Dictionary] = []
 const BATCH_MAX := 32
 var _sending := false
+## When the snapshot was adopted: every figure counted on from it (energy, the
+## shield, the storehouse, what is live) has moved since by the time from here.
 var _energy_at_ms: int = 0
-var _gold_at_ms: int = 0
 var _energy_emitted := -1
+var _refresh_after_pump := false
 
 
 func _ready() -> void:
 	Session.signed_out.connect(func() -> void:
 		snapshot = {}
+		badges = {}
 		_pending.clear()
-		changed.emit())
+		changed.emit()
+		badges_changed.emit())
 
 
 ## The single choke point for a snapshot replacement: restamps the projection
@@ -54,13 +69,33 @@ func adopt(snap: Dictionary) -> void:
 			was_open[str(sec.get("id", ""))] = true
 	snapshot = snap
 	_energy_at_ms = Time.get_ticks_msec()
-	_gold_at_ms = _energy_at_ms
 	if levelled:
 		last_unlocked = []
 		for sec in snap.get("sections", []):
 			if bool(sec.get("unlocked", false)) and not was_open.has(str(sec.get("id", ""))):
 				last_unlocked.append(str(sec.get("id", "")))
 		level_up.emit(int(after.get("level", 1)), levels, points, gems)
+
+
+## A snapshot from an endpoint that does not advance action_seq -- a letter
+## claimed, and later a purchase delivered. While a batch of collects is in
+## flight its answer may land before or after this one, and either order could
+## put an older purse on the screen; so the state is fetched again once the
+## batch has landed rather than guessed at.
+func adopt_async(snap: Dictionary) -> void:
+	if _sending:
+		_refresh_after_pump = true
+		return
+	adopt(snap)
+	changed.emit()
+
+
+## Replaces what is waiting, from a heartbeat or a page that just cleared some.
+func set_badges(b: Dictionary) -> void:
+	if b == badges:
+		return
+	badges = b
+	badges_changed.emit()
 
 
 func has_state() -> bool:
@@ -88,6 +123,65 @@ func player() -> Dictionary:
 
 func jobs() -> Array:
 	return snapshot.get("jobs", [])
+
+
+## What is running for everyone (snapshot.live; read it through LiveEvents),
+## and how many seconds ago the snapshot said so -- its times count down from
+## then.
+func live() -> Dictionary:
+	var l: Variant = snapshot.get("live", {})
+	return l if l is Dictionary else {}
+
+
+func live_age_s() -> int:
+	return (Time.get_ticks_msec() - _energy_at_ms) / 1000
+
+
+## The hour's event (live.hourly): {id ("" in a quiet hour), name, blurb,
+## icon, kind (boost | refill_discount | free_reroll | quest_multiplier |
+## gift), bucket, bp, effective_bp, x, left, lines, active, ends_in, next_in,
+## next {id, name, blurb, icon} or null}. ends_in and next_in count down from
+## live_age_s().
+func hourly() -> Dictionary:
+	var h: Variant = live().get("hourly", {})
+	return h if h is Dictionary else {}
+
+
+## The festival running, or the next one announced (live.festival): {id, name,
+## theme, blurb, bucket, bp, effective_bp, running, starts_in, ends_in,
+## points}; {} when neither.
+func festival() -> Dictionary:
+	var f: Variant = live().get("festival")
+	return f if f is Dictionary else {}
+
+
+## The season and this lord's Royal Charter (live.season): {number, ends_in,
+## tier, tiers, royal}.
+func season() -> Dictionary:
+	var s: Variant = live().get("season", {})
+	return s if s is Dictionary else {}
+
+
+## The Tax Cart as the snapshot last said: {unlocked, unlock_level, stock,
+## cap, tokens, next_in, interval}. next_in counts down from live_age_s().
+func cart() -> Dictionary:
+	var c: Variant = snapshot.get("cart", {})
+	return c if c is Dictionary else {}
+
+
+## The Golden Hour: {unlocked, meter, active, ends_in, energy_left, used,
+## per_day, ready_in, window, bp}. Confirmed state only -- it is never
+## predicted; each collect answer brings the next one.
+func frenzy() -> Dictionary:
+	var f: Variant = snapshot.get("frenzy", {})
+	return f if f is Dictionary else {}
+
+
+## The guide through the first ten minutes: {active, step, index, count,
+## ready, tab, target, min_level, title, text, tap}; {active: false} when done.
+func guide() -> Dictionary:
+	var g: Variant = snapshot.get("guide", {})
+	return g if g is Dictionary else {}
 
 
 func sections() -> Array:
@@ -119,19 +213,70 @@ func toast(message: String) -> void:
 	notice.emit(message)
 
 
+## The purse: what the server confirmed and the collects still on their way.
+## Nothing else moves it between snapshots. The estates' income used to be
+## added here by the hour; it fills the storehouse now (display_storehouse), and
+## reaches the purse only when the lord carries it in.
 func display_gold() -> int:
 	var g := int(str(player().get("gold", "0")))
 	for a in _pending:
 		g += int(a["gold"])
-	return g + accrued_tax()
+	return g
 
 
-func accrued_tax() -> int:
-	var rate := int(player().get("tax_milli_per_hour", 0))
-	if rate <= 0:
+# --- the storehouse -------------------------------------------------------------
+
+## One settlement's elapsed time at most, as game/estates.Fill bounds it.
+const STOREHOUSE_MAX_FILL_MS := 400 * 24 * 3600 * 1000
+
+
+## The storehouse as the snapshot settled it (snapshot.storehouse): {gold,
+## milli, cap, cap_milli, per_hour_milli, hours, full_in, full,
+## treasury_fee_bp, treasury_open}.
+func storehouse() -> Dictionary:
+	var s: Variant = snapshot.get("storehouse", {})
+	return s if s is Dictionary else {}
+
+
+## Whole gold waiting in the storehouse now: the snapshot's, filled since at its
+## rate up to its capacity. Computed on read and never written; the server
+## settles the same sum when the lord carries it in.
+func display_storehouse() -> int:
+	return display_storehouse_milli() / 1000
+
+
+func display_storehouse_milli() -> int:
+	return storehouse_milli(storehouse(), Time.get_ticks_msec() - _energy_at_ms)
+
+
+## Whether it is full now, and so filling no more.
+func display_storehouse_full() -> bool:
+	var cap := int(storehouse().get("cap_milli", 0))
+	return cap > 0 and display_storehouse_milli() >= cap
+
+
+## Seconds until it is full, counted down from the snapshot's; 0 once it is.
+func display_storehouse_full_in() -> int:
+	if display_storehouse_full():
 		return 0
-	var elapsed_ms := Time.get_ticks_msec() - _gold_at_ms
-	return int(rate * elapsed_ms / 3600000 / 1000)
+	var secs := int(storehouse().get("full_in", 0))
+	if secs <= 0:
+		return 0
+	# The server rounds up to the second, so the count reads 1 until the fill says full.
+	return maxi(1, secs - (Time.get_ticks_msec() - _energy_at_ms) / 1000)
+
+
+## game/estates.Fill over a snapshot's storehouse: what it holds elapsed_ms
+## after the snapshot, in milli-gold. Below the capacity the rate fills it, up
+## to the capacity and no further; what is already over it (a rate that fell
+## since it filled) stays as it is.
+static func storehouse_milli(sh: Dictionary, elapsed_ms: int) -> int:
+	var milli := int(sh.get("milli", 0))
+	var cap := int(sh.get("cap_milli", 0))
+	var rate := int(sh.get("per_hour_milli", 0))
+	if elapsed_ms <= 0 or rate <= 0 or milli >= cap:
+		return milli
+	return mini(cap, milli + rate * mini(elapsed_ms, STOREHOUSE_MAX_FILL_MS) / 3600000)
 
 
 func display_xp() -> int:
@@ -266,6 +411,9 @@ func _pump() -> void:
 			if hit > 0:
 				var job_id := str(res.data.get("milestone_job", ""))
 				mastery_reached.emit(job_id, hit, _mastery_bonus_bp(job_id))
+			var golden := int(res.data.get("frenzy_gold", 0))
+			if golden > 0 or bool(res.data.get("frenzy_started", false)):
+				golden_hour.emit(golden, bool(res.data.get("frenzy_started", false)))
 			changed.emit()
 			if applied == 0:
 				_pending.clear()
@@ -279,6 +427,9 @@ func _pump() -> void:
 		await refresh()
 		break
 	_sending = false
+	if _refresh_after_pump:
+		_refresh_after_pump = false
+		await refresh()
 
 
 func _mastery_bonus_bp(job_id: String) -> int:
@@ -289,8 +440,10 @@ func _mastery_bonus_bp(job_id: String) -> int:
 
 
 ## One authenticated action with the sequence number attached. Adopts the
-## returned snapshot when the server sends one, else refreshes.
-func act(path: String, body: Dictionary = {}) -> Api.Response:
+## returned snapshot when the server sends one, else refreshes. `refusals`
+## says a refusal in the screen's own words, {code: sentence}; a code it does
+## not name is said as the server put it.
+func act(path: String, body: Dictionary = {}, refusals: Dictionary = {}) -> Api.Response:
 	var b := body.duplicate()
 	b["action_seq"] = int(player().get("action_seq", 0)) + 1
 	var res: Api.Response = await Api.post_json(path, b)
@@ -307,6 +460,8 @@ func act(path: String, body: Dictionary = {}) -> Api.Response:
 	else:
 		if res.code == "stale_action":
 			await refresh()
+		elif res.code == "inventory_full":
+			armory_full.emit(res.error)
 		else:
-			action_failed.emit(res.error)
+			action_failed.emit(str(refusals.get(res.code, res.error)))
 	return res

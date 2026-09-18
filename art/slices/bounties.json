@@ -1,0 +1,74 @@
+{
+ "source": "bounties.png",
+ "notes": [
+  "THE BOUNTY BOARD -- the Attack tab's BOUNTIES body (client/scenes/attack/bounty_board.gd, layout client/layout/bounties.json). bounties.png paints its own header and its own four-tab band; attack.png's are canonical and already cut, so neither is taken from here. Only the body is, and the layout lays it 74 units higher than painted -- bounties.png's tab rule stands at 427 and attack.png's at 353. (arena.png's stands at 483, so the two bodies shift by different amounts; the draft manifest in the design pack had copied arena's tab rects into bounties', and they are fifty units out.)",
+  "Almost nothing is lifted, because the painting already paints the empty state: four WANTED posters with an empty portrait window and empty name and reward plates, and two bands each with one empty row. A poster with no price on it is DRAWN DOWN and deaf, as the COURT draws a card that is not open yet -- which is truer than lifting four posters off a board that was painted to hold them, and leaves no smear to find later.",
+  "Nothing is drawn over the board or the panel. An empty WANTED poster at the brightness it was painted IS the empty state, and which price is chosen is said by the number's own colour -- gold for the one chosen, dim ink for the others. A crop of poster 1 laid over poster 3 is a different sheet of parchment, and a crop of plate 1 over plate 3 a different piece of the panel's gradient: both read as a patch, which is what looking at the render showed."
+ ],
+ "crops": [
+  {
+   "name": "bounties/board",
+   "rect": [
+    155,
+    432,
+    786,
+    718
+   ],
+   "note": "The wooden board with its lantern, its crimson ribbon and its four WANTED posters, whole. BOUNTY BOARD and WANTED are the painting's own words."
+  },
+  {
+   "name": "bounties/on_your_head",
+   "rect": [
+    161,
+    1155,
+    772,
+    116
+   ],
+   "note": "The band that names what stands on this lord's own head, its heading painted and its one row empty -- which IS the empty state."
+  },
+  {
+   "name": "bounties/your_bounties",
+   "rect": [
+    161,
+    1269,
+    772,
+    116
+   ],
+   "note": "The band that names what this lord has set, likewise."
+  },
+  {
+   "name": "bounties/row",
+   "rect": [
+    194,
+    1207,
+    721,
+    48
+   ],
+   "note": "One band's empty row alone, so a second and a third can be drawn under the first."
+  },
+  {
+   "name": "bounties/place_panel",
+   "rect": [
+    161,
+    1383,
+    772,
+    203
+   ],
+   "note": "PLACE BOUNTY: its heading, its three amount plates, its fee plate and its crimson button, with the coin sack the painting spills beside them."
+  },
+  {
+   "name": "bounties/place_bounty",
+   "rect": [
+    497,
+    1495,
+    241,
+    66
+   ],
+   "note": "The crimson PLACE BOUNTY, drawn back over its own place so it can be dimmed until a price and a head are both chosen.",
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   }
+  }
+ ]
+}

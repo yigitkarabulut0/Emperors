@@ -11,6 +11,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/auth"
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/ledger"
 )
 
 var (
@@ -115,10 +116,11 @@ func (d Deps) Rename(ctx context.Context, playerID uuid.UUID, name string, wantS
 		if p.Username == canonical && p.DisplayName == display {
 			return ErrSameName
 		}
-		if _, err := q.RenamePlayer(ctx, sqlcdb.RenamePlayerParams{
+		after, err := q.RenamePlayer(ctx, sqlcdb.RenamePlayerParams{
 			ID: playerID, Username: canonical, DisplayName: display,
 			Diamonds: price, ActionSeq: wantSeq,
-		}); err != nil {
+		})
+		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return ErrNotEnoughDiamonds
 			}
@@ -126,6 +128,9 @@ func (d Deps) Rename(ctx context.Context, playerID uuid.UUID, name string, wantS
 				return ErrUsernameTaken
 			}
 			return fmt.Errorf("rename player: %w", err)
+		}
+		if err := ledger.Diamonds(ctx, q, p, after, -price, ledger.Rename, canonical); err != nil {
+			return err
 		}
 		if err := q.RenameIdentitySubject(ctx, sqlcdb.RenameIdentitySubjectParams{
 			PlayerID: playerID, Kind: "password", Subject: canonical,

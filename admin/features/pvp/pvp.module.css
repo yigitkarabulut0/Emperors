@@ -1,0 +1,9 @@
+.page { display: grid; gap: var(--s6); max-width: 1100px; }
+.lede { font-size: var(--t-small); color: var(--text-3); padding: var(--s5) var(--s5) var(--s3); max-width: 78ch; }
+.bands { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); padding: 0 var(--s5) var(--s4); font-size: var(--t-small); }
+.band { color: var(--text-3); }
+.band b { color: var(--gold-3); font-family: var(--f-num); }
+.num { text-align: right; font-family: var(--f-num); }
+.mono { font-family: var(--f-num); color: var(--text-3); }
+.warn { color: var(--warn); font-size: var(--t-small); }
+.actions { display: flex; gap: var(--s4); align-items: center; }

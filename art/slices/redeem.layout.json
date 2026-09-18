@@ -1,0 +1,312 @@
+{
+ "screen": "redeem",
+ "source": "profile.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "ground": "#09151e",
+ "notes": [
+  "REDEEM A CODE, drawn on YOUR LORDSHIP's page (profile/page: the frame and header with everything inside cleared) -- the profile painting's own row has the page's envelope.",
+  "The title is set where the painting's YOUR LORDSHIP stands, in its type at its size: Cinzel 700 at 56 is the painted title's width (458) and small capitals' height (35) to a unit.",
+  "The code is typed into the painting's empty box (profile/box, nine-patched to the page's width); REDEEM and OPEN THE ROYAL MAIL are the kit's green plate, CLOSE the painting's own, in the middle of the foot.",
+  "After a code is taken: the letter's title and what it carries (Art.reward_icon, as the mail rows draw it), five lines at most and a count of the rest, and the way to the mail.",
+  "Stretch bands: plain panel between the blocks, most of the extra height above CLOSE.",
+  "Every text rect is its line (or its sample's lines) centred on the plate or space it was set in: a label cannot be shorter than its lines, so a taller rect set the words' top where the rect's is and dropped them."
+ ],
+ "stretch": [
+  [
+   452,
+   8,
+   1
+  ],
+  [
+   852,
+   12,
+   1
+  ],
+  [
+   1422,
+   40,
+   3
+  ]
+ ],
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "profile/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "title_rule",
+   "kind": "image",
+   "asset": "profile/title_rule",
+   "rect": [
+    278,
+    238,
+    382,
+    26
+   ]
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "rect": [
+    100,
+    171,
+    741,
+    76
+   ],
+   "font": "title",
+   "size": 56,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "Redeem a Code",
+   "static": true
+  },
+  {
+   "id": "subtitle",
+   "kind": "text",
+   "rect": [
+    110,
+    270.5,
+    721,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 500,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "Codes come from the Crown's heralds: at an event, in a stream, in a letter.",
+   "static": true
+  },
+  {
+   "id": "icon",
+   "kind": "image",
+   "asset": "profile/icon_redeem",
+   "rect": [
+    384,
+    332,
+    173,
+    103
+   ]
+  },
+  {
+   "id": "prompt",
+   "kind": "text",
+   "rect": [
+    110,
+    463.5,
+    721,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Type the code as it was given to you.",
+   "static": true
+  },
+  {
+   "id": "box",
+   "kind": "ninepatch",
+   "asset": "profile/box",
+   "rect": [
+    110,
+    516,
+    721,
+    96
+   ],
+   "margin": [
+    16,
+    16,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "code",
+   "kind": "text",
+   "rect": [
+    130,
+    536.5,
+    681,
+    55
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "ABCDEFGHJKMNPQRSTUVW"
+  },
+  {
+   "id": "redeem",
+   "kind": "button",
+   "asset": "shop/buy_plate",
+   "label": "REDEEM",
+   "size": 32,
+   "weight": 700,
+   "color": "#F3FBF3",
+   "rect": [
+    270,
+    640,
+    401,
+    100
+   ],
+   "action": "redeem"
+  },
+  {
+   "id": "status",
+   "kind": "text",
+   "rect": [
+    100,
+    767.5,
+    741,
+    69
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Each code is taken once on an account and once on a phone, and its reward comes as a letter in the Royal Mail.",
+   "wrap": true
+  },
+  {
+   "id": "result_title",
+   "kind": "text",
+   "rect": [
+    100,
+    874.5,
+    741,
+    39
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "A letter is waiting for you",
+   "static": true
+  },
+  {
+   "id": "result_note",
+   "kind": "text",
+   "rect": [
+    100,
+    920,
+    741,
+    30
+   ],
+   "font": "body",
+   "size": 22,
+   "weight": 600,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "A gift from the Crown, in your Royal Mail."
+  },
+  {
+   "id": "reward_line",
+   "kind": "template",
+   "rect": [
+    210,
+    964,
+    521,
+    58
+   ],
+   "pitch": 62,
+   "parts": [
+    {
+     "id": "icon",
+     "kind": "image",
+     "asset": "",
+     "rect": [
+      0,
+      1,
+      56,
+      56
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "text",
+     "kind": "text",
+     "rect": [
+      72,
+      0,
+      449,
+      58
+     ],
+     "font": "body",
+     "size": 26,
+     "weight": 600,
+     "color": "#F1E9DA",
+     "align": "left",
+     "valign": "center",
+     "sample": "+50% experience for 24 hours"
+    }
+   ]
+  },
+  {
+   "id": "lines_area",
+   "kind": "rect",
+   "rect": [
+    210,
+    964,
+    521,
+    310
+   ],
+   "note": "Up to five reward lines at pitch 62 from y 964, and under them (y 1274) how many more; OPEN THE ROYAL MAIL below that."
+  },
+  {
+   "id": "open_mail",
+   "kind": "button",
+   "asset": "shop/buy_plate",
+   "label": "OPEN THE ROYAL MAIL",
+   "size": 28,
+   "weight": 700,
+   "color": "#F3FBF3",
+   "rect": [
+    220,
+    1318,
+    501,
+    100
+   ],
+   "action": "open_mail"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "profile/close",
+   "rect": [
+    340,
+    1474,
+    262,
+    96
+   ],
+   "keep_texture_size": true,
+   "action": "close"
+  }
+ ]
+}

@@ -1,0 +1,260 @@
+{
+ "screen": "rankings",
+ "canvas": [
+  941,
+  1672
+ ],
+ "note": "RANKINGS (art/reference/rankings.png) on the painted pages' host. The page is the painting with its tabs and its six rows lifted; scenes/pages/leaderboard_page.gd lays a TabStrip over each painted tab row, the top three on the podium and the rest of the hundred as rows in the list panel, and the asker's own in YOUR RANK.",
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "rankings/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "boards",
+   "kind": "template",
+   "rect": [
+    81,
+    312,
+    777,
+    60
+   ],
+   "tabs": [
+    "might",
+    "level",
+    "wealth"
+   ],
+   "note": "MIGHT / LEVEL / WEALTH: a TabStrip over the painted row, x 81-858, standing on y 372"
+  },
+  {
+   "id": "periods",
+   "kind": "template",
+   "rect": [
+    150,
+    389,
+    641,
+    46
+   ],
+   "tabs": [
+    "this_week",
+    "season",
+    "all_time"
+   ],
+   "note": "THIS WEEK / SEASON / ALL TIME: a TabStrip over the painted row, x 150-791; its plates come out 206x46 with the painting's 12-unit gaps"
+  },
+  {
+   "id": "p1_name",
+   "kind": "text",
+   "rect": [
+    380,
+    628,
+    181,
+    38
+   ],
+   "font": "title",
+   "size": 24,
+   "weight": 700,
+   "color": "#F4EFE6",
+   "align": "center",
+   "valign": "center",
+   "sample": "Wwwwwwwwwwwwwwww"
+  },
+  {
+   "id": "p1_value",
+   "kind": "text",
+   "rect": [
+    401,
+    679,
+    139,
+    32
+   ],
+   "font": "title",
+   "size": 24,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "9,999,999"
+  },
+  {
+   "id": "p2_name",
+   "kind": "text",
+   "rect": [
+    140,
+    656,
+    158,
+    34
+   ],
+   "font": "title",
+   "size": 22,
+   "weight": 700,
+   "color": "#F4EFE6",
+   "align": "center",
+   "valign": "center",
+   "sample": "Wwwwwwwwwwwwwwww"
+  },
+  {
+   "id": "p2_value",
+   "kind": "text",
+   "rect": [
+    160,
+    704,
+    118,
+    30
+   ],
+   "font": "title",
+   "size": 22,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "9,999,999"
+  },
+  {
+   "id": "p3_name",
+   "kind": "text",
+   "rect": [
+    646,
+    668,
+    154,
+    34
+   ],
+   "font": "title",
+   "size": 22,
+   "weight": 700,
+   "color": "#F4EFE6",
+   "align": "center",
+   "valign": "center",
+   "sample": "Wwwwwwwwwwwwwwww"
+  },
+  {
+   "id": "p3_value",
+   "kind": "text",
+   "rect": [
+    666,
+    712,
+    115,
+    30
+   ],
+   "font": "title",
+   "size": 22,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "9,999,999"
+  },
+  {
+   "id": "list",
+   "kind": "scroll",
+   "rect": [
+    44,
+    780,
+    856,
+    574
+   ],
+   "content": [],
+   "note": "the list panel's inside: rows of rankings/row at a 95 pitch from its top, x 2 into it"
+  },
+  {
+   "id": "you_rank",
+   "kind": "text",
+   "rect": [
+    85,
+    1424,
+    83,
+    38
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "#100"
+  },
+  {
+   "id": "you_name",
+   "kind": "text",
+   "rect": [
+    313,
+    1391,
+    248,
+    37
+   ],
+   "font": "title",
+   "size": 24,
+   "weight": 700,
+   "color": "#F4EFE6",
+   "align": "left",
+   "valign": "center",
+   "sample": "Wwwwwwwwwwwwwwww"
+  },
+  {
+   "id": "you_sub",
+   "kind": "text",
+   "rect": [
+    313,
+    1439,
+    153,
+    26
+   ],
+   "font": "body",
+   "size": 19,
+   "weight": 600,
+   "color": "#C9B98A",
+   "align": "left",
+   "valign": "center",
+   "sample": "Level 30"
+  },
+  {
+   "id": "you_value",
+   "kind": "text",
+   "rect": [
+    646,
+    1404,
+    216,
+    38
+   ],
+   "font": "title",
+   "size": 28,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "9,999,999"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "rankings/close",
+   "rect": [
+    323,
+    1502,
+    294,
+    96
+   ],
+   "keep_texture_size": true,
+   "action": "close",
+   "paint_rect": [
+    323,
+    1516,
+    294,
+    68
+   ]
+  }
+ ],
+ "stretch": [
+  [
+   900,
+   300
+  ]
+ ]
+}

@@ -1,0 +1,141 @@
+{
+ "source": "diamond_packs_large.png",
+ "notes": [
+  "Brief S3, the large diamond vessels, made for the offer popup's tiles: the six packs' containers (the bag, the small chest, the brass-bound chest, the iron chest, the great chest, the royal chest) painted large on the flat navy ground (7,19,28) and keyed off it. Each is cut 8 px round its ink (distance > 40 from the ground) and drawn down to 120 tall, the popup tile's picture height -- never drawn up.",
+  "Named by the pack each is painted for (store/vessel_<diamonds>): a diamonds line in an offer wears the vessel of the largest pack it holds at least as many diamonds as (client/layout/offer_popup.json diamond_vessels)."
+ ],
+ "crops": [
+  {
+   "name": "store/vessel_60",
+   "rect": [
+    42,
+    108,
+    380,
+    378
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 8,
+   "bg": [
+    7,
+    19,
+    28
+   ],
+   "scale": [
+    121,
+    120
+   ],
+   "note": "The vessel painted for the 60-diamond pack, drawn down to the popup tile's 120."
+  },
+  {
+   "name": "store/vessel_330",
+   "rect": [
+    502,
+    82,
+    410,
+    389
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 8,
+   "bg": [
+    7,
+    19,
+    28
+   ],
+   "scale": [
+    126,
+    120
+   ],
+   "note": "The vessel painted for the 330-diamond pack, drawn down to the popup tile's 120."
+  },
+  {
+   "name": "store/vessel_700",
+   "rect": [
+    33,
+    554,
+    431,
+    451
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 8,
+   "bg": [
+    7,
+    19,
+    28
+   ],
+   "scale": [
+    115,
+    120
+   ],
+   "note": "The vessel painted for the 700-diamond pack, drawn down to the popup tile's 120."
+  },
+  {
+   "name": "store/vessel_1500",
+   "rect": [
+    494,
+    540,
+    423,
+    487
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 8,
+   "bg": [
+    7,
+    19,
+    28
+   ],
+   "scale": [
+    104,
+    120
+   ],
+   "note": "The vessel painted for the 1500-diamond pack, drawn down to the popup tile's 120."
+  },
+  {
+   "name": "store/vessel_4000",
+   "rect": [
+    18,
+    1045,
+    457,
+    506
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 8,
+   "bg": [
+    7,
+    19,
+    28
+   ],
+   "scale": [
+    108,
+    120
+   ],
+   "note": "The vessel painted for the 4000-diamond pack, drawn down to the popup tile's 120."
+  },
+  {
+   "name": "store/vessel_8500",
+   "rect": [
+    488,
+    1040,
+    442,
+    515
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 8,
+   "bg": [
+    7,
+    19,
+    28
+   ],
+   "scale": [
+    103,
+    120
+   ],
+   "note": "The vessel painted for the 8500-diamond pack, drawn down to the popup tile's 120."
+  }
+ ]
+}

@@ -1,0 +1,361 @@
+{
+  "screen": "friends",
+  "source": "profile.png",
+  "canvas": [
+    941,
+    1672
+  ],
+  "ground": "#0B151F",
+  "stretch": [
+    [
+      800,
+      300,
+      3
+    ],
+    [
+      1406,
+      60,
+      1
+    ]
+  ],
+  "fonts": {
+    "title": "Cinzel-Variable.ttf",
+    "body": "EBGaramond[wght].ttf"
+  },
+  "notes": [
+    "THE ROLL OF FRIENDS (client/scenes/pages/friends_page.gd), built on YOUR LORDSHIP's own page (profile/page, the panel with everything inside the frame cleared) from the pieces the painting already has: its title and rule, its box, its friend row, its GIFT plate and its CLOSE. There is no painting of a friends page; there is a painting of friends, at the foot of profile.png, and this is that object given the whole page.",
+    "A row is one lord: the ring with their face in it (the painted ring's window, 88 across), the green light only when they are here, their name in the steel box, what a gift would be worth to them in the gold one, and GIFT -- which is erased from the painted row, so a lord who has already had today's draught simply does not wear it.",
+    "A lord who has asked to be a friend wears the same row with YES and NO in GIFT's place: the answer is where the gift would be, because it is the same question -- will you have this lord on your roll.",
+    "Both lists live in one scroll: the asks first, because they are the thing waiting on you.",
+    "The page stretches where the panel is the same all the way down (the list's own middle, and the gap above CLOSE): a taller phone shows more rows rather than the same page floating in the middle of its screen. The scroll across the first band grows with it."
+  ],
+  "elements": [
+    {
+      "id": "page",
+      "kind": "image",
+      "asset": "profile/page",
+      "rect": [
+        0,
+        0,
+        941,
+        1672
+      ]
+    },
+    {
+      "id": "title",
+      "kind": "text",
+      "rect": [
+        100,
+        171,
+        741,
+        76
+      ],
+      "font": "title",
+      "size": 52,
+      "weight": 700,
+      "color": "#E9C46A",
+      "align": "center",
+      "valign": "center",
+      "sample": "FRIENDS",
+      "static": true
+    },
+    {
+      "id": "title_rule",
+      "kind": "image",
+      "asset": "profile/title_rule",
+      "rect": [
+        278,
+        238,
+        382,
+        26
+      ]
+    },
+    {
+      "id": "subtitle",
+      "kind": "text",
+      "rect": [
+        110,
+        272,
+        721,
+        34
+      ],
+      "font": "body",
+      "size": 25,
+      "weight": 500,
+      "color": "#B8AE9C",
+      "align": "center",
+      "valign": "center",
+      "sample": "48 of 50 lords  ·  3 draughts left today"
+    },
+    {
+      "id": "ask_box",
+      "kind": "ninepatch",
+      "asset": "profile/box",
+      "rect": [
+        110,
+        330,
+        500,
+        100
+      ],
+      "margin": [
+        26,
+        22,
+        26,
+        22
+      ]
+    },
+    {
+      "id": "ask_name",
+      "kind": "text",
+      "rect": [
+        134,
+        348,
+        452,
+        64
+      ],
+      "font": "body",
+      "size": 30,
+      "weight": 500,
+      "color": "#E7E7E7",
+      "align": "left",
+      "valign": "center",
+      "sample": "a lord's name"
+    },
+    {
+      "id": "ask",
+      "kind": "button",
+      "asset": "shop/buy_plate",
+      "label": "ASK",
+      "size": 28,
+      "margin": 18,
+      "rect": [
+        628,
+        332,
+        203,
+        96
+      ],
+      "action": "ask"
+    },
+    {
+      "id": "notice",
+      "kind": "text",
+      "rect": [
+        110,
+        436,
+        721,
+        32
+      ],
+      "font": "body",
+      "size": 23,
+      "weight": 600,
+      "color": "#C9564E",
+      "align": "center",
+      "valign": "center",
+      "sample": "There is no lord by that name."
+    },
+    {
+      "id": "heading",
+      "kind": "image",
+      "asset": "profile/friends_heading",
+      "rect": [
+        100,
+        478,
+        741,
+        55
+      ]
+    },
+    {
+      "id": "list",
+      "kind": "scroll",
+      "rect": [
+        71,
+        552,
+        799,
+        890
+      ],
+      "content": [
+        "row"
+      ]
+    },
+    {
+      "id": "empty",
+      "kind": "text",
+      "rect": [
+        110,
+        700,
+        721,
+        120
+      ],
+      "font": "body",
+      "size": 25,
+      "weight": 500,
+      "color": "#B8AE9C",
+      "align": "center",
+      "valign": "center",
+      "wrap": true,
+      "sample": "Nobody yet. Ask for a lord by name above, or send them your own code from INVITE A FRIEND."
+    },
+    {
+      "id": "row",
+      "kind": "template",
+      "rect": [
+        0,
+        0,
+        799,
+        113
+      ],
+      "pitch": 121,
+      "parts": [
+        {
+          "id": "plate",
+          "kind": "image",
+          "asset": "profile/friend_row",
+          "rect": [
+            0,
+            0,
+            799,
+            113
+          ]
+        },
+        {
+          "id": "face",
+          "kind": "image",
+          "rect": [
+            33,
+            14,
+            88,
+            87
+          ],
+          "note": "The painted ring's window, measured on the cut row: the face is drawn in it and the ring keeps its own gold."
+        },
+        {
+          "id": "online",
+          "kind": "image",
+          "asset": "profile/online",
+          "rect": [
+            79,
+            16,
+            20,
+            20
+          ]
+        },
+        {
+          "id": "name",
+          "kind": "text",
+          "rect": [
+            146,
+            25,
+            286,
+            62
+          ],
+          "font": "body",
+          "size": 28,
+          "weight": 600,
+          "color": "#EDE6D6",
+          "align": "left",
+          "valign": "center",
+          "sample": "Wwwwwwwwwwwwwwww"
+        },
+        {
+          "id": "small",
+          "kind": "text",
+          "rect": [
+            466,
+            25,
+            98,
+            62
+          ],
+          "font": "body",
+          "size": 24,
+          "weight": 600,
+          "color": "#E9C46A",
+          "align": "center",
+          "valign": "center",
+          "sample": "Lv 60"
+        },
+        {
+          "id": "gift",
+          "kind": "button",
+          "asset": "profile/gift",
+          "rect": [
+            593,
+            4,
+            177,
+            105
+          ],
+          "action": "gift",
+          "keep_texture_size": true,
+          "paint_rect": [
+            593,
+            19,
+            177,
+            75
+          ],
+          "note": "The painted plate is 75 tall, which is 31 points: the tap target is the row's own height and the plate keeps its size in the middle of it."
+        },
+        {
+          "id": "yes",
+          "kind": "button",
+          "asset": "shop/buy_plate",
+          "label": "YES",
+          "size": 24,
+          "margin": 14,
+          "rect": [
+            450,
+            4,
+            148,
+            105
+          ],
+          "action": "yes",
+          "note": "An ask is answered where the gift would be, and wider: two plates of a thumb's width need the gold box's room, so the row hides it while it is asking."
+        },
+        {
+          "id": "no",
+          "kind": "button",
+          "asset": "inventory/btn_sell_plate",
+          "label": "NO",
+          "size": 24,
+          "margin": 14,
+          "rect": [
+            615,
+            4,
+            155,
+            105
+          ],
+          "action": "no"
+        },
+        {
+          "id": "hit",
+          "kind": "hotspot",
+          "rect": [
+            0,
+            0,
+            580,
+            113
+          ],
+          "action": "open",
+          "pass_drag": true
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "kind": "button",
+      "asset": "profile/close",
+      "rect": [
+        340,
+        1474,
+        262,
+        96
+      ],
+      "action": "close",
+      "keep_texture_size": true,
+      "paint_rect": [
+        340,
+        1487,
+        262,
+        70
+      ]
+    }
+  ]
+}

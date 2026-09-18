@@ -1,0 +1,445 @@
+{
+ "source": "favour.png",
+ "notes": [
+  "THE CROWN'S FAVOUR is a whole painted page -- its own gold frame, fleurs at the corners, no rail and no pills -- hosted by PaintedPage like the treasury's: `page` is the whole painting, its dark blurred surround included, with the plates for live text erased. The plate under SUBSCRIBE and MANAGE carries App Review 3.1.2's disclosure, which must read at 22 units or more: it is drawn 40 rows taller than painted by repeating its own plain middle (old rows 1090..1129), the painting above row 1110 lifted 20 rows into the dark surround over the frame and the painting below it lowered 20 into the surround under it (`patch`, from the untouched painting). The page's own erase rects are in the recomposed page's rows (20 up above the plate, 20 down below it); every other crop is cut from the painting as painted, and the layout (client/layout/favour.json) places them in the recomposed rows.",
+  "Lifted off the page and drawn live: the five perk rows (y 594..868, erased from the clean columns between a row's crown and its plate, x 162..180, and between the plates' ends and the box, x 833..845 -- the box's corner ornaments sit in the columns outside those), placed as one row cut (crown and plate: the third row, y 702, whose ground is clean -- the first row's carries the haze of the box's corner ornament, and repeated it drew a brown tile behind every crown) as many times as Crown Patronage has lines, at the painting's pitch of 56; and the Royal Favour bar with its ten shields (y 1288..1410, erased from the box's own ground at x 853..858, under the box's chamfered top line).",
+  "subscribe_plate is SUBSCRIBE with its word erased (rows filled from the plain green at x 120..168): its word is set in type because it changes -- SUBSCRIBE, or how long a patronage has left. MANAGE and CLOSE keep their painted words.",
+  "bar_track is the empty tube: the lit fill and the four lit pins are covered by the tube's own empty part five pins to the right (the pins' pitch is 78, so 390 lines every pin up), and the left cap is the right cap mirrored. bar_fill is the gold fill with the lit pins' tops patched out of it, a nine-patch whose ends keep their size. pin_lit is one lit pin, round-masked, drawn over the pins at or under the lord's level; shield_lit / shield_dim hang from them. The track and the shields are keyed against the box's ground ([9,22,30], floor 12) so they sit on the erased band without a seam; the tube's glass, darker than that ground, is held solid.",
+  "icons/vip_seal is the wax seal, round-masked: the one seal of Royal Favour, for every screen that marks a lord who has it (a list draws it down beside the name). Here it is drawn over the painted one, and in black at part strength it dims the seal for a lord who has none yet.",
+  "Measured with art/tools/probe.py and grid.py: perk plates x 184..829, rows at y 594 + 56k (plates 45 tall); red plate 314..627 x 883..947; SUBSCRIBE 86..519 x 976..1064 (word ink 191..413 x 1006..1034, #FEFDDE); MANAGE 537..855; disclosure plate 83..858 x 1076..1144; tube tips at x 96 and 844 on row 1303, fill y 1293..1312; pins at x 118 + 78k, centre y 1317; shields 60 wide from y 1325; level plate 101..848 x 1426..1486; CLOSE 305..636 x 1512..1599.",
+  "perk_row_bare is the perk row with its crown lifted (filled from the ground either side of it): the row for a perk that brings its own picture -- the Patron's Frame -- drawn in the crown's place."
+ ],
+ "crops": [
+  {
+   "name": "favour/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "patch": [
+    {
+     "from": [
+      0,
+      20,
+      941,
+      1090
+     ],
+     "to": [
+      0,
+      0
+     ]
+    },
+    {
+     "from": [
+      0,
+      1110,
+      941,
+      542
+     ],
+     "to": [
+      0,
+      1130
+     ]
+    },
+    {
+     "from": [
+      0,
+      1090,
+      941,
+      40
+     ],
+     "to": [
+      0,
+      1090
+     ]
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      100,
+      574,
+      400,
+      275
+     ],
+     "sample_x": [
+      162,
+      180
+     ]
+    },
+    {
+     "rect": [
+      500,
+      574,
+      352,
+      275
+     ],
+     "sample_x": [
+      833,
+      845
+     ]
+    },
+    {
+     "rect": [
+      92,
+      1308,
+      760,
+      122
+     ],
+     "sample_x": [
+      853,
+      858
+     ]
+    }
+   ]
+  },
+  {
+   "name": "favour/perk_row",
+   "rect": [
+    104,
+    702,
+    730,
+    54
+   ]
+  },
+  {
+   "name": "favour/perk_row_bare",
+   "rect": [
+    104,
+    702,
+    730,
+    54
+   ],
+   "erase": [
+    {
+     "rect": [
+      104,
+      702,
+      66,
+      54
+     ],
+     "sample_x": [
+      170,
+      178
+     ]
+    }
+   ]
+  },
+  {
+   "name": "favour/subscribe_plate",
+   "rect": [
+    86,
+    976,
+    433,
+    88
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   },
+   "inpaint": [
+    {
+     "text": [
+      180,
+      996,
+      246,
+      50
+     ],
+     "d": 18,
+     "dilate": 9,
+     "radius": 9
+    }
+   ]
+  },
+  {
+   "name": "favour/manage",
+   "rect": [
+    537,
+    976,
+    318,
+    88
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   }
+  },
+  {
+   "name": "favour/close",
+   "rect": [
+    305,
+    1512,
+    331,
+    87
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 12
+   }
+  },
+  {
+   "name": "favour/bar_track",
+   "rect": [
+    90,
+    1284,
+    764,
+    42
+   ],
+   "patch": [
+    {
+     "from": [
+      486,
+      1284,
+      344,
+      42
+     ],
+     "to": [
+      96,
+      1284
+     ]
+    },
+    {
+     "from": [
+      831,
+      1284,
+      18,
+      42
+     ],
+     "to": [
+      92,
+      1284
+     ],
+     "flip": "h"
+    }
+   ],
+   "mode": "darkkey",
+   "bg": [
+    9,
+    22,
+    30
+   ],
+   "floor": 12,
+   "k": 40,
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      6,
+      19
+     ],
+     [
+      16,
+      6
+     ],
+     [
+      744,
+      6
+     ],
+     [
+      754,
+      19
+     ],
+     [
+      744,
+      34
+     ],
+     [
+      16,
+      34
+     ]
+    ]
+   }
+  },
+  {
+   "name": "favour/bar_fill",
+   "rect": [
+    98,
+    1291,
+    272,
+    24
+   ],
+   "patch": [
+    {
+     "from": [
+      150,
+      1305,
+      22,
+      11
+     ],
+     "to": [
+      107,
+      1305
+     ]
+    },
+    {
+     "from": [
+      150,
+      1305,
+      22,
+      11
+     ],
+     "to": [
+      185,
+      1305
+     ]
+    },
+    {
+     "from": [
+      150,
+      1305,
+      22,
+      11
+     ],
+     "to": [
+      263,
+      1305
+     ]
+    },
+    {
+     "from": [
+      150,
+      1305,
+      22,
+      11
+     ],
+     "to": [
+      341,
+      1305
+     ]
+    }
+   ]
+  },
+  {
+   "name": "favour/pin_lit",
+   "rect": [
+    341,
+    1306,
+    23,
+    23
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     22,
+     22
+    ],
+    "feather": 0.6
+   }
+  },
+  {
+   "name": "favour/shield_lit",
+   "rect": [
+    322,
+    1325,
+    60,
+    83
+   ],
+   "mode": "darkkey",
+   "k": 40,
+   "floor": 12,
+   "bg": [
+    9,
+    22,
+    30
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      6,
+      23
+     ],
+     [
+      30,
+      13
+     ],
+     [
+      54,
+      23
+     ],
+     [
+      53,
+      59
+     ],
+     [
+      30,
+      76
+     ],
+     [
+      7,
+      59
+     ]
+    ]
+   }
+  },
+  {
+   "name": "favour/shield_dim",
+   "rect": [
+    400,
+    1325,
+    60,
+    83
+   ],
+   "mode": "darkkey",
+   "k": 40,
+   "floor": 12,
+   "bg": [
+    9,
+    22,
+    30
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      6,
+      23
+     ],
+     [
+      30,
+      13
+     ],
+     [
+      54,
+      23
+     ],
+     [
+      53,
+      59
+     ],
+     [
+      30,
+      76
+     ],
+     [
+      7,
+      59
+     ]
+    ]
+   }
+  },
+  {
+   "name": "icons/vip_seal",
+   "rect": [
+    724,
+    1164,
+    120,
+    116
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     2,
+     2,
+     118,
+     114
+    ],
+    "feather": 1.0
+   }
+  }
+ ]
+}

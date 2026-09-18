@@ -14,20 +14,20 @@ import (
 
 const applyCollect = `-- name: ApplyCollect :one
 UPDATE app.players
-SET energy_milli      = $2,
-    energy_updated_at = $3,
-    gold              = gold + $4,
-    xp                = $5,
-    level             = $6,
-    stat_points_unspent = stat_points_unspent + $7,
-    diamonds          = diamonds + $8,
-    action_seq        = $9
-WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+SET energy_milli        = $1,
+    energy_updated_at   = $2,
+    gold                = gold + $3::bigint,
+    xp                  = $4,
+    level               = $5,
+    stat_points_unspent = stat_points_unspent + $6::int,
+    diamonds            = diamonds + GREATEST(0, $7::bigint - diamond_debt),
+    diamond_debt        = GREATEST(0, diamond_debt - $7::bigint),
+    action_seq          = $8
+WHERE id = $9
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
 type ApplyCollectParams struct {
-	ID                uuid.UUID
 	EnergyMilli       int64
 	EnergyUpdatedAt   time.Time
 	Gold              int64
@@ -36,13 +36,16 @@ type ApplyCollectParams struct {
 	StatPointsUnspent int32
 	Diamonds          int64
 	ActionSeq         int64
+	ID                uuid.UUID
 }
 
 // Applies one collect: spends energy, credits gold and XP, and advances the
 // action sequence. Energy is written back already settled by the caller.
+//
+// The level-up diamonds repay any refund debt before they reach the purse (see
+// CreditDiamonds); with nothing owed the two lines reduce to "+ diamonds".
 func (q *Queries) ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error) {
 	row := q.db.QueryRow(ctx, applyCollect,
-		arg.ID,
 		arg.EnergyMilli,
 		arg.EnergyUpdatedAt,
 		arg.Gold,
@@ -51,6 +54,7 @@ func (q *Queries) ApplyCollect(ctx context.Context, arg ApplyCollectParams) (App
 		arg.StatPointsUnspent,
 		arg.Diamonds,
 		arg.ActionSeq,
+		arg.ID,
 	)
 	var i AppPlayer
 	err := row.Scan(
@@ -100,6 +104,77 @@ func (q *Queries) ApplyCollect(ctx context.Context, arg ApplyCollectParams) (App
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }

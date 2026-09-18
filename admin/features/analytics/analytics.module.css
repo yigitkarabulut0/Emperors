@@ -1,0 +1,36 @@
+.page { display: grid; gap: var(--s6); max-width: 1100px; }
+.filters { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: var(--s6); }
+.note {
+  font-size: var(--t-small);
+  color: var(--text-3);
+  border-left: 2px solid var(--hair-strong);
+  padding-left: var(--s5);
+}
+.refetching { opacity: 0.55; transition: opacity var(--d2) var(--ease); }
+
+/* ---------------------------------------------------------------- bars --- */
+.bar { display: block; height: 8px; border-radius: 0 4px 4px 0; background: var(--gold-4); }
+.barTrack { display: block; width: 100%; }
+
+/* ----------------------------------------------------------- retention --- */
+.cohorts { width: 100%; font-size: var(--t-body); }
+.cohorts th {
+  text-align: right; font-size: var(--t-micro); letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--text-3); font-weight: 600;
+  padding: var(--s3) var(--s5); border-bottom: 1px solid var(--hair-strong);
+}
+.cohorts th:first-child { text-align: left; }
+.cohorts td {
+  padding: 0 var(--s5); height: var(--row-h);
+  border-bottom: 1px solid var(--hair);
+  text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums slashed-zero;
+}
+.cohorts td:first-child { text-align: left; color: var(--text-2); }
+.cohorts tr:last-child td { border-bottom: 0; }
+/* A heat cell: the gold's strength is the share that came back. The number is
+   always printed in text ink, so the colour never carries the value alone. */
+.heat { border-left: 2px solid var(--ink-2); }
+.heatPct { color: var(--text); }
+.heatN { color: var(--text-3); font-size: var(--t-micro); margin-left: var(--s3); }
+.pending { color: var(--text-off); }

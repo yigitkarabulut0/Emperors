@@ -1,0 +1,385 @@
+{
+  "source": "war.png",
+  "note": "KRALLIK SAVASLARI (Wave 8). The Kingdom tab's WAR section: the week's banner, the enemy's lords and the war log. The kingdom's own header and the two tab rows are kingdom.json's; war.png's own header painting is not cut, because the Kingdom tab already has one above every section.\n\nThe BANNER is one crop -- its scene, both shields, the crossed swords and the plates are the same every week -- with only what moves taken off it: the points bar's two fills, the knob that stands where they meet, and the three banners this lord still holds.\n\nThe ENEMY LORDS panel and the WAR LOG are cut as a head and a stretched body, because a kingdom has more lords than the painting had room for.",
+  "crops": [
+    {
+      "name": "war/panel",
+      "rect": [
+        163,
+        517,
+        769,
+        415
+      ],
+      "erase": [
+        {
+          "rect": [
+            280,
+            797,
+            523,
+            29
+          ],
+          "sample_x": [
+            830,
+            890
+          ]
+        },
+        {
+          "rect": [
+            518,
+            786,
+            30,
+            56
+          ],
+          "sample_x": [
+            570,
+            600
+          ]
+        },
+        {
+          "rect": [
+            700,
+            845,
+            190,
+            75
+          ],
+          "sample_x": [
+            676,
+            700
+          ]
+        }
+      ],
+      "note": "the week's banner with the points bar cleared, the knob lifted and the three banners taken off: all three are what the week moves"
+    },
+    {
+      "name": "war/points_ours",
+      "rect": [
+        300,
+        797,
+        150,
+        29
+      ]
+    },
+    {
+      "name": "war/points_theirs",
+      "rect": [
+        650,
+        797,
+        150,
+        29
+      ]
+    },
+    {
+      "name": "war/points_knob",
+      "rect": [
+        521,
+        788,
+        26,
+        53
+      ],
+      "mask": {
+        "type": "polygon",
+        "points": [
+          [
+            13,
+            0
+          ],
+          [
+            20,
+            14
+          ],
+          [
+            26,
+            26
+          ],
+          [
+            20,
+            39
+          ],
+          [
+            13,
+            53
+          ],
+          [
+            6,
+            39
+          ],
+          [
+            0,
+            26
+          ],
+          [
+            6,
+            14
+          ]
+        ]
+      }
+    },
+    {
+      "name": "war/banner_big",
+      "rect": [
+        705,
+        850,
+        56,
+        66
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "war/lords_head",
+      "rect": [
+        163,
+        943,
+        769,
+        51
+      ]
+    },
+    {
+      "name": "war/lords_body",
+      "rect": [
+        163,
+        1288,
+        769,
+        80
+      ],
+      "refill": [
+        {
+          "rect": [
+            166,
+            1288,
+            763,
+            79
+          ],
+          "band": [
+            1083,
+            1088
+          ],
+          "samples": [
+            {
+              "rows": [
+                1288,
+                1366
+              ],
+              "x": [
+                [
+                  168,
+                  178
+                ],
+                [
+                  914,
+                  926
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "the panel's own sides and foot, cleared of the last painted row and drawn as a nine-patch to whatever height the roster needs"
+    },
+    {
+      "name": "war/row",
+      "rect": [
+        168,
+        994,
+        758,
+        88
+      ],
+      "refill": [
+        {
+          "rect": [
+            172,
+            995,
+            750,
+            87
+          ],
+          "band": [
+            1083,
+            1088
+          ],
+          "samples": [
+            {
+              "rows": [
+                995,
+                1081
+              ],
+              "x": [
+                [
+                  170,
+                  179
+                ],
+                [
+                  914,
+                  924
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "one row's plate, cleared: the face, the plates, the banners, the swords and the FIGHT plate are each their own piece"
+    },
+    {
+      "name": "war/name_plate",
+      "rect": [
+        278,
+        1019,
+        139,
+        40
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 6
+      }
+    },
+    {
+      "name": "war/might_plate",
+      "rect": [
+        432,
+        1019,
+        80,
+        39
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 6
+      }
+    },
+    {
+      "name": "war/worth_plate",
+      "rect": [
+        682,
+        1019,
+        95,
+        40
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 6
+      }
+    },
+    {
+      "name": "war/banner",
+      "rect": [
+        527,
+        1020,
+        29,
+        46
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "war/banner_lost",
+      "rect": [
+        527,
+        1207,
+        29,
+        47
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "war/swords",
+      "rect": [
+        627,
+        1019,
+        44,
+        46
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "war/swords_dim",
+      "rect": [
+        627,
+        1206,
+        44,
+        46
+      ],
+      "mode": "darkkey",
+      "k": 70,
+      "floor": 6
+    },
+    {
+      "name": "war/fight",
+      "rect": [
+        787,
+        1013,
+        123,
+        54
+      ],
+      "mask": {
+        "type": "chamfer",
+        "size": 8
+      }
+    },
+    {
+      "name": "war/routed",
+      "rect": [
+        297,
+        1199,
+        168,
+        68
+      ],
+      "mode": "darkkey",
+      "k": 80,
+      "floor": 8
+    },
+    {
+      "name": "war/log_head",
+      "rect": [
+        163,
+        1387,
+        769,
+        55
+      ]
+    },
+    {
+      "name": "war/log_body",
+      "rect": [
+        163,
+        1490,
+        769,
+        77
+      ],
+      "refill": [
+        {
+          "rect": [
+            166,
+            1490,
+            763,
+            73
+          ],
+          "band": [
+            1443,
+            1448
+          ],
+          "samples": [
+            {
+              "rows": [
+                1490,
+                1562
+              ],
+              "x": [
+                [
+                  166,
+                  176
+                ],
+                [
+                  916,
+                  928
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -143,6 +143,15 @@ static func instantiate(template: Dictionary, inst: Variant = null) -> Dictionar
 	return {"node": root, "parts": parts, "data": inst.get("data", {}) if inst is Dictionary else {}}
 
 
+## Builds ONE recorded part on its own, for a screen that draws a piece the
+## manifest wrote down but `build` does not reach -- an element's `alt`, say.
+## `origin` is added to the part's rect, so a part going INSIDE another node
+## passes the negative of that node's own position and lands where the painting
+## has it.
+static func part(spec: Dictionary, origin: Vector2 = Vector2.ZERO) -> Control:
+	return _build_part(spec, origin)
+
+
 static func _build_part(p: Dictionary, origin: Vector2) -> Control:
 	var kind := str(p.get("kind", "image"))
 	# The measured layouts write a bar as an image with a "fill" side ("left"),
@@ -266,6 +275,14 @@ static func _build_kind(p: Dictionary, kind: String, r: Rect2) -> Control:
 				l.position.y = r.position.y - (block - r.size.y) / 2.0
 			if not bool(p.get("static", false)):
 				l.text = ""
+				# Built around its sample, a Label grows to it and keeps the grown
+				# width when emptied (it is not in the tree yet, so it cannot be
+				# shrunk back here): every fit measured the words against the
+				# sample's width, not the box's -- the Stat Points' NO POINTS TO
+				# PLACE ran off its plate. The box is the layout's; fitters read
+				# it from "box_w" before the label's own width.
+				if r.size.x > 0.0:
+					l.set_meta("box_w", r.size.x)
 			return l
 		"button":
 			var asset := str(p.get("asset", ""))
@@ -388,7 +405,9 @@ static func set_fill(wrap: Control, frac: float) -> void:
 	wrap.size = Vector2(maxf(w, 1.0), full.y)
 	# A nine-patch fill is drawn at the bar's length so its painted tip ends the
 	# bar; shorter than its two caps it is drawn at their width and clipped.
-	var img: Variant = wrap.get_meta("img", null)
+	# (get_meta with a null default still reports a missing key as an error: the
+	# battle's bars, built by hand, carry no "img".)
+	var img: Variant = wrap.get_meta("img") if wrap.has_meta("img") else null
 	if img is NinePatchRect:
 		var np := img as NinePatchRect
 		np.size = Vector2(maxf(w, float(np.patch_margin_left + np.patch_margin_right)), full.y)

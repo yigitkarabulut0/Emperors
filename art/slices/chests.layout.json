@@ -1,0 +1,147 @@
+{
+ "screen": "chests",
+ "source": "chests.png",
+ "canvas": [941, 1672],
+ "ground": "#09151E",
+ "notes": [
+  "THE TAX CART (client/scenes/court/chests_view.gd), from chests.png (art/slices/chests.json). The painting sits 16 units below the chrome (its pills at y 37, the chrome's at 21), so every band is drawn 16 higher than painted -- every rect here is the painting's y less 16 -- except the foot, pinned to the screen's foot where it was painted.",
+  "subtitle: the header's line, set from the cart's interval where the painting set 'The crown's cart returns every four hours.' -- ivory #E7E7E7 ink x 181..690, y 294..327 on the painting (278..311 here), which Garamond 30 matches: 28 set the painted line 474 wide against its 509.",
+  "cart: one place in the yard, a painted cart lit (waiting) or grey (empty), centred where the painting has its three -- x 214.5, 285.5, 356.5, y 1115.5 -- inside the stock panel (x 168..398, y 1069..1159). A yard of another size spreads its places evenly over the panel (ChestsView.cart_places).",
+  "timer: the time to the next cart in the hourglass panel's empty plate (inside x 495..620, y 1087..1137), Garamond 30 as the Court's lines; 'Full' when the yard is.",
+  "open, info: OPEN where it was painted; the (i) coin drawn where it was painted (info_coin) under a tap area 95 x 97 units -- 44 pt -- from OPEN's edge to the screen's (info).",
+  "caption_*: each card's line in its empty plate (inside x 175..397, 430..645, 677..912; y 1469..1509), 12 units in from each side, Garamond 26 as the COURT's card lines."
+ ],
+ "elements": [
+  {
+   "id": "footer",
+   "kind": "image",
+   "asset": "chests/footer",
+   "rect": [155, 1499, 786, 173],
+   "anchor": "bottom"
+  },
+  {
+   "id": "header",
+   "kind": "image",
+   "asset": "chests/header",
+   "rect": [155, 0, 786, 388]
+  },
+  {
+   "id": "subtitle",
+   "kind": "text",
+   "rect": [181, 268, 560, 41],
+   "font": "body",
+   "size": 30,
+   "weight": 500,
+   "color": "#E7E7E7",
+   "align": "left",
+   "valign": "center",
+   "sample": "The crown's cart returns every four hours."
+  },
+  {
+   "id": "scene",
+   "kind": "image",
+   "asset": "chests/scene",
+   "rect": [155, 388, 786, 642]
+  },
+  {
+   "id": "controls",
+   "kind": "image",
+   "asset": "chests/controls",
+   "rect": [155, 1030, 786, 131]
+  },
+  {
+   "id": "cart",
+   "kind": "template",
+   "rect": [180, 1071, 69, 57],
+   "instances": [[180, 1071], [251, 1071], [322, 1071]],
+   "parts": [
+    {
+     "id": "lit",
+     "kind": "image",
+     "asset": "chests/cart_lit",
+     "rect": [0, 0, 68, 56]
+    },
+    {
+     "id": "dim",
+     "kind": "image",
+     "asset": "chests/cart_dim",
+     "rect": [1, 2, 65, 52]
+    }
+   ]
+  },
+  {
+   "id": "timer",
+   "kind": "text",
+   "rect": [499, 1075, 118, 41],
+   "font": "body",
+   "size": 30,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "23h 59m"
+  },
+  {
+   "id": "open",
+   "kind": "button",
+   "asset": "chests/open",
+   "rect": [647, 1049, 200, 96],
+   "action": "open"
+  },
+  {
+   "id": "info_coin",
+   "kind": "image",
+   "asset": "chests/info",
+   "rect": [851, 1055, 77, 76]
+  },
+  {
+   "id": "info",
+   "kind": "hotspot",
+   "rect": [846, 1045, 95, 97],
+   "action": "odds",
+   "paint_rect": [851, 1055, 77, 76]
+  },
+  {
+   "id": "cards",
+   "kind": "image",
+   "asset": "chests/cards",
+   "rect": [155, 1161, 786, 339]
+  },
+  {
+   "id": "caption_waiting",
+   "kind": "text",
+   "rect": [187, 1455, 198, 35],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "2 waiting · 1 writ"
+  },
+  {
+   "id": "caption_road",
+   "kind": "text",
+   "rect": [442, 1455, 191, 35],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "Next in 3h 59m"
+  },
+  {
+   "id": "caption_opened",
+   "kind": "text",
+   "rect": [689, 1455, 211, 35],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "1,234 opened"
+  }
+ ]
+}

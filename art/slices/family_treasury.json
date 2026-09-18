@@ -1,0 +1,105 @@
+{
+ "source": "family_treasury.png",
+ "_note": "The Family's ROYAL TREASURY card, cut from the card the owner painted under the STOREHOUSE (x 158..918, y 989..1240) and the three vault states in the small gold frames at the foot of the screen (shut and barred, half open, wide open). As the STOREHOUSE's were, the states came smaller than the card's own scene (241x139 against 360x236), so the card is laid round a state at its own size, never drawn up: the card's frame is a nine-patch of the painted card with its window and column cleared to the panel, and the column's plates stretch into the width the smaller window leaves. DEPOSIT and WITHDRAW are the card's own plates with their words lifted and set in type at the painted size, as COLLECT and TO VAULT are, so the fee can go under DEPOSIT and both can stretch.",
+ "crops": [
+  {
+   "name": "family/treasury_card",
+   "rect": [158, 989, 761, 252],
+   "_note": "The card's frame. Inside the hairlines everything -- the painted scene's window and the whole column -- is cleared back to the panel (refill, its level from the clean rows above the column, the strip between the window and the column, and the rows above the bottom hairline). The painted window runs into the left corner ornaments, so the card's left side is its right side turned over (patch: hairline, both corner ornaments, the panel between; below WITHDRAW's row from two columns further out, clear of its shadow), and what the window left between that and the refill is a ramp from the one panel to the other (erase); WITHDRAW's right edge, which the refill stops short of so as not to run over the right-hand ornaments, likewise. Drawn as a nine-patch 24 in from each side.",
+   "refill": [
+    {
+     "rect": [186, 995, 708, 238],
+     "band": [1234, 1239],
+     "samples": [
+      {"rows": [995, 1003], "x": [[526, 540], [862, 893]]},
+      {"rows": [1004, 1230], "x": [[525, 530]]},
+      {"rows": [1231, 1232], "x": [[530, 893]]}
+     ]
+    }
+   ],
+   "patch": [
+    {"from": [901, 989, 18, 111], "to": [158, 989], "flip": "h"},
+    {"from": [903, 1100, 16, 141], "to": [158, 1100], "flip": "h"}
+   ],
+   "erase": [
+    {"rect": [176, 995, 12, 18], "sample_x": [190, 200]},
+    {"rect": [176, 1013, 12, 87], "sample_x": [171, 175], "sample_x2": [190, 200]},
+    {"rect": [174, 1100, 14, 120], "sample_x": [169, 173], "sample_x2": [190, 200]},
+    {"rect": [174, 1220, 14, 18], "sample_x": [190, 200]},
+    {"rect": [894, 1158, 9, 66], "sample_x": [880, 890]},
+    {"rect": [894, 1224, 6, 15], "sample_x": [885, 892]}
+   ]
+  },
+  {
+   "name": "family/treasury_title",
+   "rect": [544, 1002, 322, 33],
+   "mode": "darkkey",
+   "k": 90,
+   "floor": 12,
+   "_note": "ROYAL TREASURY, baked, as STOREHOUSE's is: the painted title (ink x 550..859, y 1007..1030) keyed off the panel. It stops a row above the keyhole shield's tip."
+  },
+  {
+   "name": "family/treasury_icon_vault",
+   "rect": [543, 1032, 71, 79],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 12,
+   "mask": {
+    "type": "polygon",
+    "points": [[35.5, 0.5], [66, 10.5], [66, 50], [64.2, 57], [62.5, 62.5], [57.5, 70.5], [47.5, 76], [35.5, 78.5], [23.5, 76], [13.5, 70.5], [8.5, 62.5], [6.8, 57], [5, 50], [5, 10.5]],
+    "feather": 1
+   },
+   "_note": "The keyhole shield beside the vault's plate, keyed off the panel and held to its own rim (x 548..609, y 1035..1108): the painting stands it on a small hexagonal plate whose left end shows beside it, and that is left behind."
+  },
+  {
+   "name": "family/treasury_icon_coins",
+   "rect": [531, 1109, 90, 52],
+   "mode": "darkkey",
+   "k": 70,
+   "floor": 12,
+   "_note": "The heap of gold beside the purse's plate (x 532..619, y 1110..1158), keyed off the panel, clear of the shield's tip above and DEPOSIT's rim below."
+  },
+  {
+   "name": "family/treasury_deposit",
+   "rect": [533, 1162, 178, 66],
+   "inpaint": [
+    {"text": [561, 1181, 128, 30], "d": 14, "dilate": 5, "radius": 6}
+   ],
+   "mask": {"type": "chamfer", "size": 11},
+   "_note": "The card's green DEPOSIT plate with its word lifted by its ink (reference x 567..683, y 1186..1206): the word is set in type at the painted size and raised for the fee under it; the plate is nine-patched to the column's width."
+  },
+  {
+   "name": "family/treasury_withdraw",
+   "rect": [720, 1162, 180, 65],
+   "inpaint": [
+    {"text": [738, 1180, 146, 28], "d": 14, "dilate": 5, "radius": 6}
+   ],
+   "mask": {"type": "chamfer", "size": 11},
+   "_note": "The card's navy WITHDRAW plate, its word lifted (reference x 743..880, y 1184..1203): the word, and that taking out is free, are set in type."
+  },
+  {
+   "name": "family/treasury_window",
+   "rect": [159, 1471, 241, 139],
+   "hole": {
+    "type": "polygon",
+    "points": [[13, 7], [227, 7], [234, 14], [234, 125], [227, 132], [13, 132], [6, 125], [6, 14]]
+   },
+   "_note": "The shut vault's frame with its opening cleared: one frame for the three states, whose own frames differ (the wide-open one was painted 13 wider). The opening is the picture's, inside the frame's inner bevel, its corners under the ornaments."
+  },
+  {
+   "name": "family/treasury_empty",
+   "rect": [164, 1477, 230, 127],
+   "_note": "Shut and barred: nothing in the vault."
+  },
+  {
+   "name": "family/treasury_half",
+   "rect": [414, 1477, 230, 127],
+   "_note": "The door half open on a modest pile: some gold in the vault."
+  },
+  {
+   "name": "family/treasury_full",
+   "rect": [673, 1477, 230, 127],
+   "_note": "Wide open, gold spilling out: a lot in the vault. Its opening is 245 wide; the 230 the frame takes are the middle, 9 off the left and 6 off the right."
+  }
+ ]
+}

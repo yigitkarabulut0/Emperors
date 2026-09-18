@@ -1,0 +1,641 @@
+{
+ "source": "frames_cosmetic_a.png",
+ "notes": [
+  "S4a: the six portrait frames the cosmetics catalogue names (balance/cosmetics.json `art`: frames/<id>), each painted twice -- a square frame (left) and a ring (right) -- on the flat navy ground, keyed off it (darkkey against the sheet's own ground, [9,19,29]); the EMPTY windows key clear with the ground, so a portrait drawn under a frame shows through.",
+  "frames/<id>_square and frames/<id>_ring are the brief's sizes, 'paint big, draw down': one scale per kind, so every plain band comes out the same size -- a square's band 160 outer (253 painted), a ring's 96 (232 painted) -- and a frame's ornaments (the patron's crown, the aureole's rays) stand outside it. Each crop is centred on the frame's own window, so the asset's centre is the portrait's centre on every frame; its neighbours' ink is masked off (the aureole's rays reach up into the patron's cell).",
+  "frames/<id>_tile is the ring whole, fitted into the wardrobe tile's 224x190 art box (above its name plate), as wardrobe.png draws them: every frame at one outer size, ornaments included.",
+  "Measured with scratchpad scans of the sheet: ink bboxes against the ground (distance > 40) and each window's centre from its inner edges along the centre lines."
+ ],
+ "crops": [
+  {
+   "name": "frames/oak_square",
+   "rect": [
+    171,
+    20,
+    272,
+    252
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      1
+     ],
+     [
+      272,
+      1
+     ],
+     [
+      272,
+      252
+     ],
+     [
+      0,
+      252
+     ]
+    ]
+   },
+   "scale": [
+    172,
+    160
+   ]
+  },
+  {
+   "name": "frames/oak_ring",
+   "rect": [
+    508,
+    34,
+    244,
+    234
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      244,
+      0
+     ],
+     [
+      244,
+      233
+     ],
+     [
+      0,
+      233
+     ]
+    ]
+   },
+   "scale": [
+    102,
+    98
+   ]
+  },
+  {
+   "name": "frames/oak_tile",
+   "rect": [
+    508,
+    34,
+    244,
+    233
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "scale": [
+    199,
+    190
+   ]
+  },
+  {
+   "name": "frames/laurel_square",
+   "rect": [
+    177,
+    286,
+    262,
+    254
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      262,
+      0
+     ],
+     [
+      262,
+      252
+     ],
+     [
+      0,
+      252
+     ]
+    ]
+   },
+   "scale": [
+    166,
+    162
+   ]
+  },
+  {
+   "name": "frames/laurel_ring",
+   "rect": [
+    505,
+    294,
+    248,
+    242
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      1
+     ],
+     [
+      248,
+      1
+     ],
+     [
+      248,
+      242
+     ],
+     [
+      0,
+      242
+     ]
+    ]
+   },
+   "scale": [
+    104,
+    100
+   ]
+  },
+  {
+   "name": "frames/laurel_tile",
+   "rect": [
+    505,
+    295,
+    248,
+    242
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "scale": [
+    195,
+    190
+   ]
+  },
+  {
+   "name": "frames/laurel_gilded_square",
+   "rect": [
+    176,
+    546,
+    262,
+    246
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1,
+      0
+     ],
+     [
+      262,
+      0
+     ],
+     [
+      262,
+      245
+     ],
+     [
+      1,
+      245
+     ]
+    ]
+   },
+   "scale": [
+    166,
+    156
+   ]
+  },
+  {
+   "name": "frames/laurel_gilded_ring",
+   "rect": [
+    506,
+    550,
+    244,
+    242
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1,
+      1
+     ],
+     [
+      244,
+      1
+     ],
+     [
+      244,
+      242
+     ],
+     [
+      1,
+      242
+     ]
+    ]
+   },
+   "scale": [
+    102,
+    100
+   ]
+  },
+  {
+   "name": "frames/laurel_gilded_tile",
+   "rect": [
+    507,
+    551,
+    244,
+    241
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "scale": [
+    192,
+    190
+   ]
+  },
+  {
+   "name": "frames/founder_square",
+   "rect": [
+    168,
+    793,
+    278,
+    284
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1,
+      0
+     ],
+     [
+      278,
+      0
+     ],
+     [
+      278,
+      253
+     ],
+     [
+      1,
+      253
+     ]
+    ]
+   },
+   "scale": [
+    176,
+    180
+   ]
+  },
+  {
+   "name": "frames/founder_ring",
+   "rect": [
+    500,
+    794,
+    256,
+    286
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1,
+      0
+     ],
+     [
+      256,
+      0
+     ],
+     [
+      256,
+      258
+     ],
+     [
+      1,
+      258
+     ]
+    ]
+   },
+   "scale": [
+    106,
+    118
+   ]
+  },
+  {
+   "name": "frames/founder_tile",
+   "rect": [
+    501,
+    794,
+    255,
+    258
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "scale": [
+    188,
+    190
+   ]
+  },
+  {
+   "name": "frames/patron_square",
+   "rect": [
+    176,
+    1046,
+    264,
+    306
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1,
+      0
+     ],
+     [
+      264,
+      0
+     ],
+     [
+      264,
+      280
+     ],
+     [
+      1,
+      280
+     ]
+    ]
+   },
+   "scale": [
+    168,
+    194
+   ]
+  },
+  {
+   "name": "frames/patron_ring",
+   "rect": [
+    502,
+    1053,
+    252,
+    296
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1,
+      0
+     ],
+     [
+      252,
+      0
+     ],
+     [
+      252,
+      273
+     ],
+     [
+      1,
+      273
+     ]
+    ]
+   },
+   "scale": [
+    104,
+    122
+   ]
+  },
+  {
+   "name": "frames/patron_tile",
+   "rect": [
+    503,
+    1053,
+    252,
+    273
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "scale": [
+    175,
+    190
+   ]
+  },
+  {
+   "name": "frames/aureole_square",
+   "rect": [
+    157,
+    1325,
+    302,
+    288
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      1,
+      3
+     ],
+     [
+      302,
+      3
+     ],
+     [
+      302,
+      288
+     ],
+     [
+      1,
+      288
+     ]
+    ]
+   },
+   "scale": [
+    192,
+    182
+   ]
+  },
+  {
+   "name": "frames/aureole_ring",
+   "rect": [
+    487,
+    1329,
+    280,
+    280
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      2
+     ],
+     [
+      280,
+      2
+     ],
+     [
+      280,
+      280
+     ],
+     [
+      0,
+      280
+     ]
+    ]
+   },
+   "scale": [
+    116,
+    116
+   ]
+  },
+  {
+   "name": "frames/aureole_tile",
+   "rect": [
+    487,
+    1331,
+    280,
+    279
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    9,
+    19,
+    29
+   ],
+   "scale": [
+    191,
+    190
+   ]
+  }
+ ]
+}

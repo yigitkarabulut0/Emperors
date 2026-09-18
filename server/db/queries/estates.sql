@@ -22,60 +22,44 @@ SET level = app.player_holdings.level + 1
 WHERE app.player_holdings.level = $3
 RETURNING *;
 
--- name: SettleTax :exec
+-- The storehouse (migration 00040, game/estates.Fill).
+--
+-- Settles the storehouse at the rate and capacity it has been filling at, then
+-- stores the new pair: a holding bought, a level reached or a Tithe Barn level
+-- never pays for the hours before it at the new rate. The sum is Fill's, in SQL,
+-- so a settle racing a collect is one row update, never two views of the row:
+-- what is over the capacity stays and grows no more; below it, it grows to it.
+-- Elapsed time is in milliseconds, so a settle on every request loses nothing.
+-- name: RefreshStorehouse :exec
 UPDATE app.players
-SET tax_milli_accrued = $2, tax_updated_at = $3
-WHERE id = $1;
+SET storehouse_milli = LEAST(GREATEST(storehouse_milli, storehouse_cap_milli),
+                             storehouse_milli + tax_milli_per_hour
+                               * LEAST(34560000000::bigint,
+                                       GREATEST(0, floor(EXTRACT(EPOCH FROM (sqlc.arg(now)::timestamptz - storehouse_at)) * 1000)::bigint))
+                               / 3600000),
+    storehouse_at        = GREATEST(storehouse_at, sqlc.arg(now)::timestamptz),
+    tax_milli_per_hour   = sqlc.arg(rate),
+    storehouse_cap_milli = sqlc.arg(cap_milli)
+WHERE id = sqlc.arg(id);
 
--- name: ClaimTax :one
+-- Carries the storehouse's whole gold into the purse. The caller settled it on
+-- the locked row; the sub-gold remainder stays behind.
+-- name: CarryStorehouseToPurse :one
 UPDATE app.players
-SET gold = gold + $2,
-    tax_milli_accrued = 0,
-    tax_updated_at = $3,
-    action_seq = $4
-WHERE id = $1
+SET gold             = gold + sqlc.arg(gold)::bigint,
+    storehouse_milli = sqlc.arg(left_milli),
+    storehouse_at    = sqlc.arg(now),
+    action_seq       = sqlc.arg(action_seq)
+WHERE id = sqlc.arg(id)
 RETURNING *;
 
--- Credits whatever the estates have earned since the last settle.
---
--- Whole gold moves into the purse; the sub-gold remainder stays in the
--- accumulator so nothing is lost to rounding on a fast poll.
---
--- Two details that decide whether this is correct:
---
---   * elapsed is measured in MILLISECONDS. Truncating it to whole seconds meant
---     that a client polling four times a second earned exactly nothing, because
---     every individual call saw zero seconds elapsed and moved the anchor
---     anyway. Polling faster must never earn less.
---   * the anchor only moves when something was actually earned. Integer division
---     always rounds down, so a call that earns nothing must leave the clock
---     alone or the remainder is thrown away on every single request.
--- name: CreditTax :one
-WITH calc AS (
-    SELECT app.players.id AS pid,
-           tax_milli_accrued + tax_milli_per_hour
-               * GREATEST(0, (EXTRACT(EPOCH FROM (sqlc.arg(now)::timestamptz - tax_updated_at)) * 1000)::bigint)
-               / 3600000 AS total
-    FROM app.players
-    WHERE app.players.id = sqlc.arg(player_id)
-)
-UPDATE app.players p
-SET gold              = p.gold + calc.total / 1000,
-    tax_milli_accrued = calc.total % 1000,
-    -- Banked for the ledger. Flushed as one row when it is worth a row, rather
-    -- than a row per request for a few milli each.
-    tax_unlogged      = p.tax_unlogged + calc.total / 1000,
-    tax_updated_at    = sqlc.arg(now)::timestamptz
-FROM calc
-WHERE p.id = calc.pid
-  AND calc.total > p.tax_milli_accrued
-RETURNING p.*;
-
--- Clears the unlogged counter once its total has been written to the ledger.
--- name: ClearTaxUnlogged :exec
-UPDATE app.players SET tax_unlogged = 0 WHERE id = $1;
-
--- Rewrites the cached hourly rate. Must be called only after CreditTax, so the
--- time already earned is paid at the OLD rate.
--- name: SetTaxRate :exec
-UPDATE app.players SET tax_milli_per_hour = $2 WHERE id = $1;
+-- Carries it into the vault instead, less the deposit fee (burned), the purse
+-- untouched: gold that goes straight to the vault never passes a raider.
+-- name: CarryStorehouseToTreasury :one
+UPDATE app.players
+SET treasury_gold    = treasury_gold + sqlc.arg(banked)::bigint,
+    storehouse_milli = sqlc.arg(left_milli),
+    storehouse_at    = sqlc.arg(now),
+    action_seq       = sqlc.arg(action_seq)
+WHERE id = sqlc.arg(id)
+RETURNING *;

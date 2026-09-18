@@ -69,7 +69,13 @@ func _check_screen(screen: String) -> void:
 		var want := float(r[1]) + float(r[3]) / 2.0
 		# The block, not one line: a two-line description is given a rect that
 		# holds two lines, and its centre is the centre of both.
-		var got := l.position.y + l.get_minimum_size().y / 2.0
+		#
+		# Whichever is taller, the control or its words: a rect tighter than the
+		# leading makes the words overflow the control, and Layout lifts the
+		# control so they stay centred; a rect looser than it leaves the words
+		# centred inside the control by their own alignment. The ink's centre is
+		# the same either way, and the ink is what the painting placed.
+		var got := l.position.y + maxf(l.get_minimum_size().y, l.size.y) / 2.0
 		_checked += 1
 		if absf(got - want) > SLACK:
 			_fails += 1

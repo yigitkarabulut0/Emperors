@@ -21,8 +21,17 @@ import (
 // otherwise pay a TLS handshake per resource, and the pieces must be mutually
 // consistent — energy and gold read a second apart can disagree.
 type Snapshot struct {
-	Player   PlayerView    `json:"player"`
-	Energy   EnergyView    `json:"energy"`
+	Player PlayerView `json:"player"`
+	Energy EnergyView `json:"energy"`
+	// The estates' income, waiting to be carried in (storehouse.go).
+	Storehouse StorehouseView `json:"storehouse"`
+	// What is running for everyone, and what it is worth to this lord (live.go).
+	Live LiveView `json:"live"`
+	// The daily loop: the Tax Cart at the gate (cart.go), the Golden Hour
+	// (frenzy.go) and the steward's guide (guide.go).
+	Cart     CartSnap      `json:"cart"`
+	Frenzy   FrenzyView    `json:"frenzy"`
+	Guide    GuideView     `json:"guide"`
 	Sections []SectionView `json:"sections"`
 	Jobs     []JobView     `json:"jobs"`
 	Prices   PricesView    `json:"prices"`
@@ -71,14 +80,25 @@ type PlayerView struct {
 	StatDefense       int    `json:"stat_defense"`
 	StatPointsUnspent int    `json:"stat_points_unspent"`
 	ActionSeq         int64  `json:"action_seq"`
-	// The estates' hourly rate, so the client can tick the purse up between
-	// requests the way it already animates the energy bar. Income is continuous
-	// now, so a gold counter that only moved when the server was asked would sit
-	// still while the number it displays is quietly wrong.
+	// Always 0 now. Estate income fills the storehouse (Snapshot.Storehouse)
+	// rather than the purse, and a build from before the storehouse ticks its
+	// gold counter up by this rate: sent as 0, its purse sits still, as it is.
 	TaxMilliPerHour int64 `json:"tax_milli_per_hour"`
 	// Seconds of protection left, 0 for none. The pills count it down; a
 	// shield was bought and then never seen again.
 	ShieldSeconds int64 `json:"shield_seconds"`
+	// Royal Favour: the seal every lord sees (vip_seal) and the level only the
+	// lord sees. Crown Patronage's time left, 0 for none.
+	VIPSeal       bool  `json:"vip_seal"`
+	VIPLevel      int   `json:"vip_level"`
+	PatronSeconds int64 `json:"patron_seconds"`
+	Steward       bool  `json:"steward"`
+	// Diamonds a refund took back that had been spent; paid first out of the
+	// next diamonds earned.
+	DiamondDebt int64 `json:"diamond_debt"`
+	// What the lord wears, resolved for drawing: under the same key as every
+	// other lord's look (Look.Worn), so one reader draws them all.
+	Worn Worn `json:"worn"`
 }
 
 // EnergyView carries the rate as well as the value, so the client can animate a
@@ -166,28 +186,16 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 		return nil, err
 	}
 
-	// Keep the cached estate rate honest.
-	//
-	// CreditTax pays at a rate stored on the player row, which is what lets it be
-	// one UPDATE with no reads on every request. The rate depends on holdings,
-	// upgrades, kingdom nodes and level, and here is the one place that has all
-	// of that loaded already -- and every mutating endpoint ends by calling
-	// GetState, so the rate can never stay stale for longer than one request.
-	//
-	// Ordering is what makes it correct: the middleware has already credited the
-	// elapsed time at the OLD rate before the handler ran, so a holding bought
-	// this request never retroactively pays for the hours before it existed.
-	if p.TaxMilliPerHour != eff.TaxMilliPerHour {
-		_ = q.SetTaxRate(ctx, sqlcdb.SetTaxRateParams{
-			ID: p.ID, TaxMilliPerHour: eff.TaxMilliPerHour,
-		})
-		// The row in hand was read before that write, and the snapshot below is
-		// built from it. Without this the client is told last request's rate and
-		// its ticking counter drifts for one round trip after every purchase.
-		p.TaxMilliPerHour = eff.TaxMilliPerHour
-	}
-
 	now := d.Now()
+
+	// Keep the storehouse's cached rate and capacity honest: every mutating
+	// endpoint ends here, with everything they depend on loaded, and a change
+	// is settled at the old pair first (refreshStorehouse). A failure costs the
+	// snapshot nothing: the old pair is still true up to now, and the next
+	// request stores the new one.
+	if err := d.refreshStorehouse(ctx, q, &p, eff, now); err != nil && d.Log != nil {
+		d.Log.Warn("storehouse refresh", "player", p.ID, "err", err)
+	}
 	settled, maxEnergy, period := settleEnergy(d.Config, p, eff, now)
 
 	// Persist the settled value opportunistically. If this fails the request
@@ -209,11 +217,26 @@ func (d Deps) GetState(ctx context.Context, playerID uuid.UUID) (*Snapshot, erro
 		collects[row.JobID] = row.Collects
 	}
 
+	pv := playerView(d.Config, p, now)
+	pv.Steward = d.stewardActive(p, now)
+	if own, err := d.owned(ctx, q, p.ID, now); err == nil {
+		pv.Worn = d.wornOf(p, own)
+	}
+	held, err := tokenCounts(ctx, q, p.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Snapshot{
-		Player:   playerView(d.Config, p, now),
-		Energy:   energyView(settled, maxEnergy, period),
-		Sections: sectionViews(d.Config, int(p.Level), p.KingdomID != nil),
-		Jobs:     jobViews(d.Config, p, collects, eff.Bonuses),
+		Player:     pv,
+		Energy:     energyView(settled, maxEnergy, period),
+		Storehouse: d.storehouseView(p, eff, now),
+		Live:       d.liveView(ctx, q, p, eff, now),
+		Cart:       d.cartSnap(p, held["cart"], now),
+		Frenzy:     d.frenzyView(p, maxEnergy, now),
+		Guide:      d.guideView(ctx, q, p),
+		Sections:   sectionViews(d.Config, int(p.Level), p.KingdomID != nil),
+		Jobs:       jobViews(d.Config, p, collects, eff.Bonuses),
 		Prices: PricesView{
 			RenameDiamonds: d.Config.Progression.Store.RenameDiamonds,
 			StatGains: StatGains{
@@ -282,8 +305,19 @@ func playerView(cfg *gameconfig.Bundle, p sqlcdb.AppPlayer, now time.Time) Playe
 		StatDefense:       int(p.StatDefense),
 		StatPointsUnspent: int(p.StatPointsUnspent),
 		ActionSeq:         p.ActionSeq,
-		TaxMilliPerHour:   p.TaxMilliPerHour,
+		TaxMilliPerHour:   0,
+		VIPSeal:           p.VipPoints > 0 && cfg.VIPLevel(p.VipPoints) > 0,
+		VIPLevel:          cfg.VIPLevel(p.VipPoints),
+		PatronSeconds:     patronSeconds(p, now),
+		DiamondDebt:       p.DiamondDebt,
 	}
+}
+
+func patronSeconds(p sqlcdb.AppPlayer, now time.Time) int64 {
+	if !patronActive(p, now) {
+		return 0
+	}
+	return int64(p.PatronUntil.Sub(now) / time.Second)
 }
 
 func energyView(s economy.EnergyState, maxEnergy, period int64) EnergyView {

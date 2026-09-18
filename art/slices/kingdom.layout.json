@@ -208,105 +208,34 @@
       "kind": "template",
       "rect": [
         151,
-        556,
+        520,
         780,
-        68
+        95
       ],
-      "instances": [
-        [
-          151,
-          556
-        ],
-        [
-          356,
-          556
-        ],
-        [
-          543,
-          556
-        ],
-        [
-          739,
-          556
-        ]
+      "tabs": [
+        "realm",
+        "lords",
+        "works",
+        "ranks"
       ],
-      "note": "per-tab: chip is the painted plate nine-patched to that tab's own width -- active kingdom/tab_active_empty (206x68, margins 14/10/14/10) drawn at [0,0,w,68], otherwise kingdom/tab_inactive_empty (186x63, 12/8/12/8) at [0,2,w,63], which is where the painting has each. The widths were four to twenty units under the crops and every plate was squeezed into them, so the gold rule under the strip stepped between tabs. Label image centred in the 68.",
-      "parts": [
-        {
-          "id": "chip",
-          "kind": "ninepatch",
-          "asset": "kingdom/tab_inactive_empty",
-          "asset_selected": "kingdom/tab_active_empty",
-          "rect": [
-            0,
-            2,
-            186,
-            63
-          ],
-          "margin": [
-            12,
-            8,
-            12,
-            8
-          ]
-        },
-        {
-          "id": "label",
-          "kind": "image",
-          "asset": "kingdom/tab_label_<name>",
-          "rect": [
-            50,
-            20,
-            86,
-            24
-          ],
-          "align": "center"
-        }
+      "note": "REALM / LORDS / WORKS / RANKS, built by kingdom.gd as a TabStrip (scripts/ui/tab_strip.gd) from tabs_sheet_c.png's short plates (tabs/short_<id>, the words painted on them): four abreast the long plates of tabs_sheet_a shrank to 0.54 and their words went thinner than the painting's. The rect is the painted strip's: its outer edges are the painted plates' (151 and 931) and its floor is the gold rule under them, y 615. It reaches up to 520, over the stat cards' foot, so each plate's tap area is 95 tall; four short plates fill its 780 at 0.75 of their painting, 190x60 with 6.7 between, the ink 187x56 where the painting's open tabs are 190x54 and their words the painting's 16. The rule's baked pieces of the old plates are erased from realm_card and realm_bonuses (kingdom.json)."
+    },
+    {
+      "id": "tabs2",
+      "kind": "template",
+      "rect": [
+        151,
+        621,
+        780,
+        63
       ],
-      "widths": [
-        206,
-        186,
-        197,
-        192
+      "tabs": [
+        "chat",
+        "boss",
+        "war",
+        "help"
       ],
-      "labels": {
-        "realm": {
-          "asset": "kingdom/tab_label_realm",
-          "rect": [
-            210,
-            578,
-            86,
-            24
-          ]
-        },
-        "lords": {
-          "asset": "kingdom/tab_label_lords",
-          "rect": [
-            410,
-            578,
-            78,
-            24
-          ]
-        },
-        "works": {
-          "asset": "kingdom/tab_label_works",
-          "rect": [
-            597,
-            578,
-            84,
-            24
-          ]
-        },
-        "ranks": {
-          "asset": "kingdom/tab_label_ranks",
-          "rect": [
-            792,
-            578,
-            82,
-            24
-          ]
-        }
-      }
+      "note": "CHAT / BOSS / WAR / HELP, the Kingdom's second row, built by kingdom.gd as a second TabStrip from the same short plates as the first, at the same size, directly under it (its plates stand on this rect's floor, 684, six under the first row's rule). chat.png and help.png each paint the two rows higher than this, because each was painted without what stands above it -- the hall with a shorter vista and no stats, the help page with no header at all. Both rows stand HERE on every sub-tab instead: this game's chrome does not move when it is tapped, and a strip that jumps 130 units between two taps reads as two different screens. What the paintings asked for -- room for the body -- the sections take below, where they scroll. BOSS and WAR are off until their waves: a plate that swallows a finger reads as a broken screen, so each says when it opens."
     },
     {
       "id": "realm_card",
@@ -502,7 +431,7 @@
           1028
         ]
       ],
-      "note": "only tier II exists in the lit state (gold glow, gold label); tiers I/III/IV exist unlit only. To light another tier there is no source art \u2014 reuse rep_hex_2_lit's glow is not possible without redraw; report says so.",
+      "note": "The card's baked hexagons and words are lifted out (kingdom.json erase). kingdom.gd draws each rank's own hexagon from numerals_rep.json at the painting's centres -- rep_hex_<n> unlit, rep_hex_<n>_lit for the rank held -- and sets the four words in type (Cinzel 12, #E2E9EE, gold #F5DB61 for the rank held), measured off the painted words.",
       "tiers": [
         {
           "name": "neutral",
@@ -513,30 +442,30 @@
             47,
             59
           ],
-          "label": "kingdom/rep_label_neutral",
           "label_rect": [
             562,
             1090,
             68,
             22
-          ]
+          ],
+          "hex_lit": "kingdom/rep_hex_1_lit"
         },
         {
           "name": "respected",
-          "hex": "kingdom/rep_hex_2_lit",
+          "hex": "kingdom/rep_hex_2",
           "hex_rect": [
             656,
             1024,
             56,
             66
           ],
-          "label": "kingdom/rep_label_respected",
           "label_rect": [
             644,
             1090,
             78,
             22
-          ]
+          ],
+          "hex_lit": "kingdom/rep_hex_2_lit"
         },
         {
           "name": "honored",
@@ -547,13 +476,13 @@
             49,
             60
           ],
-          "label": "kingdom/rep_label_honored",
           "label_rect": [
             744,
             1090,
             68,
             22
-          ]
+          ],
+          "hex_lit": "kingdom/rep_hex_3_lit"
         },
         {
           "name": "legendary",
@@ -564,13 +493,13 @@
             49,
             60
           ],
-          "label": "kingdom/rep_label_legendary",
           "label_rect": [
             830,
             1090,
             82,
             22
-          ]
+          ],
+          "hex_lit": "kingdom/rep_hex_4_lit"
         }
       ]
     },
@@ -809,13 +738,33 @@
         {
           "id": "painting",
           "kind": "image",
-          "asset": "kingdom/work_<slug>",
+          "asset": "kingdom/work_royal_granaries",
+          "rect": [
+            1,
+            1,
+            84,
+            67
+          ],
+          "note": "each work's own scene, kingdom/work_<id> (works_sheet.json), set by id; under the frame's inner edge"
+        },
+        {
+          "id": "frame",
+          "kind": "ninepatch",
+          "asset": "kingdom/work_frame",
           "rect": [
             0,
             0,
             86,
             69
-          ]
+          ],
+          "margin": [
+            8,
+            8,
+            8,
+            8
+          ],
+          "draw_center": false,
+          "note": "the works sheet's thin gold frame (works_sheet.json), the same nine-patch the Works page draws at 152x122, so it is one frame at both sizes"
         },
         {
           "id": "name",

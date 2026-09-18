@@ -9,32 +9,55 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	// The lord agreed to the rules as they stand.
+	AcceptChatRules(ctx context.Context, arg AcceptChatRulesParams) (int16, error)
 	ActivateBalanceVersion(ctx context.Context, arg ActivateBalanceVersionParams) (AdminBalanceActivation, error)
 	// The newest activation is the live configuration. Joining rather than storing
 	// an "active" flag means a rollback is another append, and the history of what
 	// was live when survives — the only way to explain an old battle after a
 	// rebalance.
 	ActiveBalance(ctx context.Context) (ActiveBalanceRow, error)
-	// Every boost in force at this instant. Read on a poll, never per request.
+	// Every boost in force at this instant, per bucket, with when the first of
+	// them ends. Read on a poll, never per request.
 	ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoostsRow, error)
-	// Players seen on each day. "Active" is last_seen_at, and the presence registry
-	// is now its only writer.
+	// Players who played on each day: everyone who sent an authenticated request
+	// that UTC day, from app.player_days.
 	//
-	// This comment used to claim that "every authenticated request already touches
-	// it", and that was simply false: the column was written only as a side effect
-	// of the ~18 queries that MUTATE something, so this series counted the players
-	// who ACTED and silently missed everyone who merely looked around. Every active
-	// number in this file was an undercount of exactly the browsing players. The
-	// registry observes every authenticated request -- reads included -- and
-	// flushes in a batch, so the name and the number finally agree.
+	// This used to count last_seen_at, which is one timestamp per player: each
+	// player was counted only on the day they were LAST seen, so a player who came
+	// every day showed up once, on today, and every past day of the series was an
+	// undercount that grew the further back it went. player_days keeps every day.
+	// Days before migration 00033 hold only each player's joining day and last day.
 	ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]ActiveDailyRow, error)
+	// The reign in force, with only what the boost poll needs.
+	ActiveDecree(ctx context.Context, now time.Time) (ActiveDecreeRow, error)
+	// Who played in the window: distinct lords, and lord-days (the sum of each
+	// day's active count), for conversion and revenue per daily active lord.
+	ActiveInWindow(ctx context.Context, since pgtype.Date) (ActiveInWindowRow, error)
+	// Points for one action, under the festival day's cap. Only what the day still
+	// has room for is added; a cap lowered mid-day never takes points back.
+	AddEventPoints(ctx context.Context, arg AddEventPointsParams) error
+	// A lord's share of the work, and the goal's own bar, in one statement: the
+	// kingdom's progress and the lord's part can never disagree about a tick.
+	AddGoalProgress(ctx context.Context, arg AddGoalProgressParams) (AddGoalProgressRow, error)
 	// Reputation from a raid, honouring the per-member daily cap.
 	AddKingdomReputation(ctx context.Context, arg AddKingdomReputationParams) error
 	AddKingdomTreasury(ctx context.Context, arg AddKingdomTreasuryParams) (AppKingdom, error)
-	AdminAdjustCurrency(ctx context.Context, arg AdminAdjustCurrencyParams) (AppPlayer, error)
+	// ---------------------------------------------------------------------------
+	// The season
+	// ---------------------------------------------------------------------------
+	// Charter points for one action, under the season day's cap (as AddEventPoints).
+	// The row's might_start is the lord's Might when the row is first written,
+	// and never moves after.
+	AddSeasonPoints(ctx context.Context, arg AddSeasonPointsParams) error
+	// Royal Favour moves with money in and refunds out; never below zero.
+	AddVIPPoints(ctx context.Context, arg AddVIPPointsParams) (AppPlayer, error)
+	// The points, added where the attack was made.
+	AddWarPoints(ctx context.Context, arg AddWarPointsParams) (AppWar, error)
 	// Adjusts the four stock quantities in one statement, so a grant of several at
 	// once is a single row change and a single audit entry rather than four that
 	// could half-apply.
@@ -43,9 +66,18 @@ type Querier interface {
 	// anyone up: crossing a boundary grants stat points, diamonds and an energy
 	// refill, and a panel that silently did all that would be a very surprising
 	// "+500 xp". Levels are their own control.
+	//
+	// The guards are in the WHERE: no row comes back when the grant would leave a
+	// negative purse, so the panel reports "out of range" instead of the CHECK
+	// constraint surfacing as a 500. A positive diamond grant repays refund debt
+	// first, exactly as every other credit does; a removal only ever takes what is
+	// there.
 	AdminAdjustPlayer(ctx context.Context, arg AdminAdjustPlayerParams) (AppPlayer, error)
 	// Everything the detail page shows about one player.
 	AdminGetPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, error)
+	// Transactions newest first, filtered; before_id pages back.
+	AdminListIAP(ctx context.Context, arg AdminListIAPParams) ([]AdminListIAPRow, error)
+	AdminListIAPNotifications(ctx context.Context, arg AdminListIAPNotificationsParams) ([]AdminListIAPNotificationsRow, error)
 	// Energy is (value, anchor): writing the value without moving the anchor would
 	// have the next settle immediately undo it, so both move together.
 	AdminSetEnergy(ctx context.Context, arg AdminSetEnergyParams) (AppPlayer, error)
@@ -55,15 +87,47 @@ type Querier interface {
 	AdminSetLevel(ctx context.Context, arg AdminSetLevelParams) (AppPlayer, error)
 	AdminSetLuck(ctx context.Context, arg AdminSetLuckParams) (AppPlayer, error)
 	AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerStateParams) (AppPlayer, error)
+	// Answering, once per lord per call: the primary key is the rule.
+	AnswerAid(ctx context.Context, arg AnswerAidParams) (AppKingdomAidAnswer, error)
+	// The result of one fight.
+	ApplyArenaResult(ctx context.Context, arg ApplyArenaResultParams) (AppArena, error)
 	// Diamonds are the level-up grant, the same one a collect pays: a level reached
 	// in a raid is a level reached.
+	//
+	// The attacker's shield is written every time, never left alone: raiding ends
+	// your own protection (a revenge strike keeps it), so the caller passes NULL for
+	// an ordinary raid and the current value for a revenge one.
 	ApplyBattleAttacker(ctx context.Context, arg ApplyBattleAttackerParams) (AppPlayer, error)
 	ApplyBattleDefender(ctx context.Context, arg ApplyBattleDefenderParams) (AppPlayer, error)
 	// Applies one collect: spends energy, credits gold and XP, and advances the
 	// action sequence. Energy is written back already settled by the caller.
+	//
+	// The level-up diamonds repay any refund debt before they reach the purse (see
+	// CreditDiamonds); with nothing owed the two lines reduce to "+ diamonds".
 	ApplyCollect(ctx context.Context, arg ApplyCollectParams) (AppPlayer, error)
+	AreFriends(ctx context.Context, arg AreFriendsParams) (bool, error)
+	// The ladder, for the panel.
+	ArenaLadder(ctx context.Context, arg ArenaLadderParams) ([]ArenaLadderRow, error)
+	// The rivals a lord may be shown: inside the rating band, in the season, not
+	// themselves, not a kingdom ally, not a bot, above the level raiding opens at,
+	// and not one of their last few arena opponents.
+	ArenaOpponents(ctx context.Context, arg ArenaOpponentsParams) ([]ArenaOpponentsRow, error)
+	// A lord's place on the ladder. Ties are broken by who reached the rating
+	// first, which is how the top league's "and the top fifty" stays decidable.
+	ArenaRank(ctx context.Context, arg ArenaRankParams) (int32, error)
+	// A closed season's arena places, as far as the board pays.
+	ArenaStandings(ctx context.Context, arg ArenaStandingsParams) ([]ArenaStandingsRow, error)
+	// ---------------------------------------------------------------------------
+	// The kingdom's aid
+	// ---------------------------------------------------------------------------
+	AskForAid(ctx context.Context, arg AskForAidParams) (AppKingdomAid, error)
 	// That player's own history, newest first, rather than the whole trail.
 	AuditForSubject(ctx context.Context, arg AuditForSubjectParams) ([]AdminAuditLog, error)
+	// The lifetime counters, raised to what the records kept before the counters
+	// began (Wave 0) show. GREATEST, never a sum: a record since then is already
+	// counted, and the backfill may run again safely. (Energy is priced by the
+	// balance's jobs, so it is summed in Go: JobCollects, RaiseLifeDeeds.)
+	BackfillLifeDeeds(ctx context.Context) (int64, error)
 	BattleStats(ctx context.Context, dollar_1 int32) (BattleStatsRow, error)
 	// Begins a new Legacy run.
 	//
@@ -72,12 +136,46 @@ type Querier interface {
 	// lands at the cap and below the stack limit, so a double tap cannot burn two
 	// runs and a client cannot ask for one it has not earned.
 	BeginLegacy(ctx context.Context, arg BeginLegacyParams) (AppPlayer, error)
+	BillingByProduct(ctx context.Context, since time.Time) ([]BillingByProductRow, error)
+	// One row per UTC day of the window, days without a sale included.
+	BillingDaily(ctx context.Context, arg BillingDailyParams) ([]BillingDailyRow, error)
+	// Refunds Apple made, and purchases taken back by hand, apart: a revocation
+	// returns no money, so it is not a refund.
+	BillingRefunds(ctx context.Context, since time.Time) (BillingRefundsRow, error)
+	// The panel's billing desk. See internal/admin/billing.go.
+	//
+	// Revenue is the App Store's Production transactions alone. Sandbox purchases
+	// (App Review, TestFlight, our own tests) are counted beside them and never
+	// added in. A purchase counts on the day it was bought, a refund on the day it
+	// was refunded; usd_cents is the price tier in US cents.
+	BillingTotals(ctx context.Context, since time.Time) (BillingTotalsRow, error)
+	// ---------------------------------------------------------------------------
+	// Blocks
+	// ---------------------------------------------------------------------------
+	BlockLord(ctx context.Context, arg BlockLordParams) error
+	// Either way round: a block stops everything between the two lords, whoever
+	// set it. Every social answer asks this one question.
+	BlockedBetween(ctx context.Context, arg BlockedBetweenParams) (bool, error)
+	// Placers and claimers who keep meeting: the shape collusion takes.
+	BountyPairs(ctx context.Context, arg BountyPairsParams) ([]BountyPairsRow, error)
+	// What the board has burned and holds, for the panel.
+	BountyTotals(ctx context.Context, since time.Time) (BountyTotalsRow, error)
 	// The browsable list: filterable, sortable, paged.
 	//
 	// One query with switched ORDER BY rather than six near-identical ones. The
 	// sort keys are a fixed set from the handler, never anything a caller types.
 	BrowsePlayers(ctx context.Context, arg BrowsePlayersParams) ([]BrowsePlayersRow, error)
 	BumpActionSeq(ctx context.Context, arg BumpActionSeqParams) (AppPlayer, error)
+	BumpAidAnswers(ctx context.Context, id uuid.UUID) (AppKingdomAid, error)
+	// Counts the report onto the line and hides it once enough lords have said so.
+	// One statement: a line cannot be counted without being judged against the
+	// threshold in the same breath.
+	BumpChatReports(ctx context.Context, arg BumpChatReportsParams) (AppChatMessage, error)
+	// Deeds. See migration 00032.
+	// Adds one action's counts to every scope it belongs to, in one statement: the
+	// four arrays are parallel, one element per (scope, period, deed), and unnest
+	// in a select list walks equal-length arrays together.
+	BumpDeeds(ctx context.Context, arg BumpDeedsParams) error
 	BumpJobProgress(ctx context.Context, arg BumpJobProgressParams) (AppPlayerJobProgress, error)
 	// Advances a job's lifetime count by several collects at once.
 	//
@@ -87,7 +185,15 @@ type Querier interface {
 	// -- it depends on the count BEFORE each one -- but that is arithmetic the
 	// caller can do in a loop from the returned total.
 	BumpJobProgressBy(ctx context.Context, arg BumpJobProgressByParams) (AppPlayerJobProgress, error)
+	// ---------------------------------------------------------------------------
+	// The Throne
+	// ---------------------------------------------------------------------------
+	// Renown gained in a UTC week, by kingdom. Written by awardReputation, the one
+	// place kingdom renown is minted.
+	BumpKingdomWeek(ctx context.Context, arg BumpKingdomWeekParams) error
 	BumpMemberReputation(ctx context.Context, arg BumpMemberReputationParams) (AppPlayer, error)
+	// Counts one more purchase of a product; the count after it (1 = the first).
+	BumpPurchase(ctx context.Context, arg BumpPurchaseParams) (int32, error)
 	// Bumps today's quest counters, creating the row on first action of the day.
 	//
 	// One statement so the hot paths (collect, attack, buy) pay a single round trip
@@ -102,23 +208,56 @@ type Querier interface {
 	// and the shop insists they already own it. The mask still resets on a new
 	// window, which UpsertShopWindow does.
 	BumpReroll(ctx context.Context, arg BumpRerollParams) (AppShopState, error)
-	// Spends diamonds and refills the energy pool in one statement. The WHERE is the
-	// guard: no row comes back if the player cannot afford it.
+	BumpTalentRespecs(ctx context.Context, playerID uuid.UUID) (int32, error)
+	// Spends diamonds and refills the energy pool in one statement, and counts the
+	// refill against the day's limit. The WHERE is the guard: no row comes back if
+	// the player cannot afford it. The caller works out which refill of the day this
+	// is (and so its price) from the locked row, so the count and the price cannot
+	// disagree.
 	BuyEnergyRefill(ctx context.Context, arg BuyEnergyRefillParams) (AppPlayer, error)
 	BuyHoldingLevel(ctx context.Context, arg BuyHoldingLevelParams) (AppPlayerHolding, error)
 	BuyKingdomUpgradeLevel(ctx context.Context, arg BuyKingdomUpgradeLevelParams) (AppKingdomUpgrade, error)
 	BuyShield(ctx context.Context, arg BuyShieldParams) (AppPlayer, error)
 	BuySoldierSlot(ctx context.Context, arg BuySoldierSlotParams) (AppPlayer, error)
+	// One more rank.
+	BuyTalentRank(ctx context.Context, arg BuyTalentRankParams) (AppPlayerTalent, error)
 	// Buys one level. The current level is in the WHERE clause, so two concurrent
 	// taps cannot both see the same level and both succeed.
 	BuyUpgradeLevel(ctx context.Context, arg BuyUpgradeLevelParams) (AppPlayerUpgrade, error)
-	// Claims today's calendar square.
-	//
-	// The whole rule lives in the WHERE: it only lands when the player has not
-	// already claimed on this local date. Two taps, two devices, a retried request —
-	// the second one gets zero rows and grants nothing. There is no read-then-write
-	// window to lose.
-	ClaimDailyLogin(ctx context.Context, arg ClaimDailyLoginParams) (AppPlayer, error)
+	// ---------------------------------------------------------------------------
+	// The desk (admin): what the wave's four features are doing across the realm
+	// ---------------------------------------------------------------------------
+	// How far the realm has walked: one row per chapter, the lords standing in it
+	// and the stars they hold there.
+	CampaignByChapter(ctx context.Context) ([]CampaignByChapterRow, error)
+	// The miles walked since a moment, and how many of them were first clears.
+	CampaignSince(ctx context.Context, since time.Time) (CampaignSinceRow, error)
+	// Carries the storehouse's whole gold into the purse. The caller settled it on
+	// the locked row; the sub-gold remainder stays behind.
+	CarryStorehouseToPurse(ctx context.Context, arg CarryStorehouseToPurseParams) (AppPlayer, error)
+	// Carries it into the vault instead, less the deposit fee (burned), the purse
+	// untouched: gold that goes straight to the vault never passes a raider.
+	CarryStorehouseToTreasury(ctx context.Context, arg CarryStorehouseToTreasuryParams) (AppPlayer, error)
+	// The lines around a reported one, so a moderator reads the room and not a
+	// sentence on its own.
+	ChatContext(ctx context.Context, arg ChatContextParams) ([]ChatContextRow, error)
+	// The room's clock, for a lord who has just arrived.
+	ChatHeadSeq(ctx context.Context, kingdomID uuid.UUID) (int64, error)
+	// What the desk shows of the hall at a glance.
+	ChatStats(ctx context.Context, since time.Time) (ChatStatsRow, error)
+	// How much a lord has not read: the tab's dot.
+	ChatUnread(ctx context.Context, arg ChatUnreadParams) (int64, error)
+	// Moves a deed's claimed tiers from what the caller read to what it pays.
+	ClaimAchievement(ctx context.Context, arg ClaimAchievementParams) (int16, error)
+	// Takes today's square. The rule lives in the WHERE: it lands only when the
+	// lord has not claimed on this local date, so two taps or two devices cannot
+	// both take it. The square's reward is paid by the caller through grantBundle.
+	ClaimCalendarDay(ctx context.Context, arg ClaimCalendarDayParams) (AppPlayer, error)
+	// One chest taken. Nothing comes back when it was already taken, so the caller
+	// learns it was a second tap rather than paying twice.
+	ClaimCampaignChest(ctx context.Context, arg ClaimCampaignChestParams) (AppPlayerCampaignChest, error)
+	// Marks one slot claimed, once, on its own day. No row: stale or already taken.
+	ClaimDealSlot(ctx context.Context, arg ClaimDealSlotParams) (AppPlayerDeal, error)
 	// Claims one calendar day's reputation decay, atomically.
 	//
 	// The whole point is the WHERE: two API replicas, or one that restarted twice in
@@ -126,26 +265,125 @@ type Querier interface {
 	// stored marker is behind the day being claimed, so whoever gets there first
 	// does the work and everyone else gets zero rows back.
 	ClaimDecayDay(ctx context.Context, day string) (string, error)
+	// The notifications due another try, locked for this worker.
+	ClaimDueNotifications(ctx context.Context, arg ClaimDueNotificationsParams) ([]AppIapNotification, error)
+	// Setting the bits is the claim; zero rows means one was already set.
+	ClaimEventRewards(ctx context.Context, arg ClaimEventRewardsParams) (AppPlayerEvent, error)
 	ClaimFreeRecruit(ctx context.Context, arg ClaimFreeRecruitParams) (AppPlayer, error)
 	ClaimFreeSlot(ctx context.Context, arg ClaimFreeSlotParams) (AppPlayer, error)
+	// Takes one chest, once. The bit is the guard and the WHERE is where it is
+	// checked, so a second tap on the same chest returns no row and pays nothing.
+	ClaimGoalTier(ctx context.Context, arg ClaimGoalTierParams) (AppKingdomGoalPart, error)
+	// The scheduled-job claim table. See migration 00029.
+	// Claims a job for a period. A row comes back only to the one caller that should
+	// run it: when the stored period is a different one, or when a claim on this
+	// period was never finished and its lease has run out (the process that took it
+	// died). Zero rows means "not yours, not now".
+	ClaimJob(ctx context.Context, arg ClaimJobParams) (AppJobRun, error)
+	// Claims a letter. The whole rule is in the WHERE -- theirs, unclaimed, not
+	// deleted, not expired -- so two taps or two devices get one claim.
+	ClaimMailRow(ctx context.Context, arg ClaimMailRowParams) (AppMail, error)
 	// Claims one quest slot. The bit test is inside the WHERE, so a double tap gets
 	// zero rows and is paid once.
 	ClaimQuest(ctx context.Context, arg ClaimQuestParams) (AppPlayerQuest, error)
-	ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, error)
+	// Claims Victory Road milestones: every bit must still be clear, so a claim
+	// raced by another pays once.
+	ClaimRoad(ctx context.Context, arg ClaimRoadParams) (AppPlayer, error)
+	// Setting the bits is the claim; zero rows means one was already set.
+	ClaimSeasonTiers(ctx context.Context, arg ClaimSeasonTiersParams) (AppPlayerSeason, error)
+	// Claims today's stipend share, once, while the stipend runs. No row: nothing to claim.
+	ClaimStipendDay(ctx context.Context, arg ClaimStipendDayParams) (AppPlayer, error)
+	// Claims Royal Favour's gift for today, once.
+	ClaimVIPGift(ctx context.Context, arg ClaimVIPGiftParams) (AppPlayer, error)
+	// A chest opens once, and only on points already earned.
+	ClaimWeeklyChest(ctx context.Context, arg ClaimWeeklyChestParams) (AppPlayerWeekly, error)
+	// Setting the slot's bit is the claim; zero rows means it was already set.
+	ClaimWeeklyTask(ctx context.Context, arg ClaimWeeklyTaskParams) (AppPlayerWeekly, error)
 	// Rebuilds one board. Called inside a transaction with the delete below, so
 	// readers never see a half-filled board.
 	ClearBoard(ctx context.Context, board string) error
-	// Clears the unlogged counter once its total has been written to the ledger.
-	ClearTaxUnlogged(ctx context.Context, id uuid.UUID) error
+	// A stage cleared. stars keeps the BEST a lord has ever done, never the last: a
+	// lord who three-starred a mile and later walked it with a chipped sword has
+	// not lost the chapter's chest.
+	ClearCampaignStage(ctx context.Context, arg ClearCampaignStageParams) (AppPlayerCampaign, error)
+	ClearChatReportCount(ctx context.Context, id uuid.UUID) (AppChatMessage, error)
+	// Gives a future hour back to the roll.
+	ClearHourly(ctx context.Context, hour int64) (int64, error)
+	// Every rank taken back. The gold and the count of respecs are the player row's.
+	ClearTalents(ctx context.Context, playerID uuid.UUID) error
+	CloseBounty(ctx context.Context, arg CloseBountyParams) (AppBounty, error)
+	ClosePeriod(ctx context.Context, arg ClosePeriodParams) error
+	CountActivePlayers(ctx context.Context) (int32, error)
+	// What the lord has actually been PAID for since a moment: the day's allowance
+	// is counted from watches that came back, never from taps. A watch started and
+	// abandoned cost the lord nothing and must cost them nothing.
+	CountAdWatchesPaidSince(ctx context.Context, arg CountAdWatchesPaidSinceParams) (int64, error)
 	CountAdmins(ctx context.Context) (int64, error)
+	// How many stacks this lord is holding: the live aid rows in app.player_boosts,
+	// counted as PAIRS (a stack is one gold row and one experience row).
+	CountAidStacks(ctx context.Context, playerID uuid.UUID) (int64, error)
+	// ---------------------------------------------------------------------------
+	// The desk (service/pvp_desk.go)
+	// ---------------------------------------------------------------------------
+	CountArenaSince(ctx context.Context, since time.Time) (CountArenaSinceRow, error)
 	CountBalanceVersions(ctx context.Context) (int64, error)
+	// How many banners a defender has lost in this war.
+	CountBannersLost(ctx context.Context, arg CountBannersLostParams) (int64, error)
+	CountBlocked(ctx context.Context, playerID uuid.UUID) (int64, error)
+	// How many lords have struck this beast, and what they have done to it between
+	// them. The damage list is drawn with a LIMIT and the valour share is a share of
+	// what the WHOLE kingdom managed, so it is counted here rather than added up
+	// from the rows the screen happens to show.
+	CountBossFighters(ctx context.Context, cycleID uuid.UUID) (CountBossFightersRow, error)
+	// How many times this kingdom has put one down: what the next beast's level is.
+	CountBossKills(ctx context.Context, kingdomID uuid.UUID) (int64, error)
 	CountBots(ctx context.Context) (int64, error)
+	// Every star this lord holds, which is what the chapter chests are asked for.
+	CountCampaignStars(ctx context.Context, arg CountCampaignStarsParams) (int64, error)
+	// What this lord has said in the window, which is the leash the balance calls
+	// window_max. Counted from the rows themselves rather than from a counter, so
+	// a restart never hands anybody a fresh bucket.
+	CountChatSince(ctx context.Context, arg CountChatSinceParams) (int64, error)
+	CountCollection(ctx context.Context, playerID uuid.UUID) (int32, error)
+	CountEventLords(ctx context.Context, eventID int64) (int32, error)
+	// How many of this lord's soldiers are out, for the slot count.
+	CountExpeditions(ctx context.Context, playerID uuid.UUID) (int64, error)
+	CountFriendRequestsTo(ctx context.Context, me uuid.UUID) (int64, error)
+	CountFriends(ctx context.Context, me uuid.UUID) (int64, error)
+	CountHeroEquipped(ctx context.Context, playerID uuid.UUID) (int64, error)
+	// How many lords used an hour's event: the panel's schedule.
+	CountHourlyUses(ctx context.Context, arg CountHourlyUsesParams) ([]CountHourlyUsesRow, error)
 	CountKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) (int64, error)
+	// Largesse letters a member received in a window, for the daily cap.
+	CountLargesseReceived(ctx context.Context, arg CountLargesseReceivedParams) (int32, error)
+	// What the heartbeat flags: letters not yet read, or read with something still
+	// to claim.
+	CountMailWaiting(ctx context.Context, arg CountMailWaitingParams) (int32, error)
+	// Jobs a lord has worked to their last mastery milestone.
+	CountMastered(ctx context.Context, arg CountMasteredParams) (int32, error)
+	CountOpenBountiesOn(ctx context.Context, targetID uuid.UUID) (int32, error)
+	CountOpenBountiesOnMe(ctx context.Context, me uuid.UUID) (int32, error)
+	// Festivals that would share any moment with a window.
+	CountOverlappingEvents(ctx context.Context, arg CountOverlappingEventsParams) (int32, error)
+	// The pair's cap: the same placer and claimer at most so many times a week.
+	CountPairClaimsThisWeek(ctx context.Context, arg CountPairClaimsThisWeekParams) (int32, error)
 	CountPlayerItems(ctx context.Context, playerID uuid.UUID) (int64, error)
+	CountPromoFailures(ctx context.Context, arg CountPromoFailuresParams) (int32, error)
 	// How many raids landed on this player since a given moment, for the
 	// "while you were away" summary. Counts only fights they did not start.
 	CountRaidsSince(ctx context.Context, arg CountRaidsSinceParams) (CountRaidsSinceRow, error)
+	// Refunds in a window, for the panel's flag.
+	CountRecentRefunds(ctx context.Context, arg CountRecentRefundsParams) (int32, error)
+	CountReferralLinks(ctx context.Context, arg CountReferralLinksParams) (CountReferralLinksRow, error)
+	CountReportedLords(ctx context.Context) (int64, error)
 	CountRequestsForPlayer(ctx context.Context, playerID uuid.UUID) (int64, error)
+	// How many lords have looked at me today: what the raid page tells a lord, so
+	// being scouted is always felt.
+	CountScoutedSince(ctx context.Context, arg CountScoutedSinceParams) (int64, error)
+	// How many a segment send would reach, for the composer's preview.
+	CountSegment(ctx context.Context, arg CountSegmentParams) (int32, error)
+	// How many attacks this lord has made since a moment: their day's three.
+	CountWarAttacksSince(ctx context.Context, arg CountWarAttacksSinceParams) (int64, error)
 	CreateAdminSession(ctx context.Context, arg CreateAdminSessionParams) (AdminSession, error)
 	CreateAdminUser(ctx context.Context, arg CreateAdminUserParams) (AdminUser, error)
 	CreateBalanceVersion(ctx context.Context, arg CreateBalanceVersionParams) (AdminBalanceVersion, error)
@@ -159,44 +397,97 @@ type Querier interface {
 	CreateJoinRequest(ctx context.Context, arg CreateJoinRequestParams) (int64, error)
 	CreateKingdom(ctx context.Context, arg CreateKingdomParams) (AppKingdom, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (AppPlayer, error)
+	CreatePromoCode(ctx context.Context, arg CreatePromoCodeParams) (AdminPromoCode, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (AppSession, error)
+	// Credits diamonds, repaying any refund debt first.
+	//
+	// Both right-hand sides read the row as it was, so the pair is exact in one
+	// statement: a player owing 50 who is granted 30 keeps 0 and owes 20; granted
+	// 80, they keep 30 and owe nothing. players_debt_means_empty holds either way.
+	CreditDiamonds(ctx context.Context, arg CreditDiamondsParams) (AppPlayer, error)
+	CreditFavour(ctx context.Context, arg CreditFavourParams) (AppPlayer, error)
 	CreditGold(ctx context.Context, arg CreditGoldParams) (AppPlayer, error)
-	// Credits whatever the estates have earned since the last settle.
-	//
-	// Whole gold moves into the purse; the sub-gold remainder stays in the
-	// accumulator so nothing is lost to rounding on a fast poll.
-	//
-	// Two details that decide whether this is correct:
-	//
-	//   * elapsed is measured in MILLISECONDS. Truncating it to whole seconds meant
-	//     that a client polling four times a second earned exactly nothing, because
-	//     every individual call saw zero seconds elapsed and moved the anchor
-	//     anyway. Polling faster must never earn less.
-	//   * the anchor only moves when something was actually earned. Integer division
-	//     always rounds down, so a call that earns nothing must leave the clock
-	//     alone or the remainder is thrown away on every single request.
-	CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer, error)
+	// Crowns a week's emperor. Nothing back means the week was already settled --
+	// the primary key IS the idempotence, so no job has to remember it ran.
+	CrownEmperor(ctx context.Context, arg CrownEmperorParams) (AppThrone, error)
+	// What is running or announced: the poll's read.
+	CurrentEvents(ctx context.Context, arg CurrentEventsParams) ([]AdminLiveEvent, error)
+	CurrentThrone(ctx context.Context, now time.Time) (CurrentThroneRow, error)
 	// Nightly decay. 2% a day is what stops a kingdom that quit in month one from
 	// squatting at rank 1 forever.
 	DecayReputation(ctx context.Context, dollar_1 interface{}) error
+	// The reign's one edict. Once, by the emperor, inside the reign: all four
+	// guards are the WHERE, so no read-then-write race can declare twice.
+	DeclareDecree(ctx context.Context, arg DeclareDecreeParams) (AppThrone, error)
+	// A closed period's places on a deed's board, as far as its rewards reach.
+	DeedStandings(ctx context.Context, arg DeedStandingsParams) ([]DeedStandingsRow, error)
+	DeleteFriendRequest(ctx context.Context, arg DeleteFriendRequestParams) (int64, error)
+	// Both ways at once, which is what accepting does: if they asked me and I asked
+	// them, one accept settles both.
+	DeleteFriendRequestsBetween(ctx context.Context, arg DeleteFriendRequestsBetweenParams) (int64, error)
 	DeleteInvite(ctx context.Context, arg DeleteInviteParams) (int64, error)
 	DeleteInvitesForPlayer(ctx context.Context, playerID uuid.UUID) error
 	// A kingdom is deleted when its last lord leaves -- and only then. The guard is
 	// not a courtesy: players_kingdom_role_consistent would abort a delete that
 	// nulled a member's kingdom_id under a role that is still 'member'.
 	DeleteKingdomIfEmpty(ctx context.Context, id uuid.UUID) (int64, error)
+	// A letter can be thrown away once there is nothing left in it to claim.
+	DeleteMail(ctx context.Context, arg DeleteMailParams) (int64, error)
 	// Removes a player and, through every foreign key's ON DELETE CASCADE, all that
 	// was theirs: identities and sessions, items, soldiers, estates, battles, the
-	// ledger, revenge, quests, the collection, device tokens.
+	// gold ledger, revenge, quests, deeds, mail, the collection, device tokens.
+	// What has no foreign key outlives them on purpose: the diamond ledger and
+	// app.player_days (see 00027 and 00033).
 	DeletePlayer(ctx context.Context, id uuid.UUID) (int64, error)
+	// A deleted account's events go with it. Its days stay: they happened, and a
+	// cohort that forgets the players who left reports its retention too high.
+	DeletePlayerEvents(ctx context.Context, playerID uuid.UUID) error
 	DeletePlayerItem(ctx context.Context, arg DeletePlayerItemParams) error
 	DeleteSoldier(ctx context.Context, arg DeleteSoldierParams) error
+	DeleteUnclaimedBroadcastMail(ctx context.Context, broadcastID pgtype.Int8) (int64, error)
+	// What the desk reads: what the herald paid in a window, and to how many lords.
+	DeskAds(ctx context.Context, since time.Time) (DeskAdsRow, error)
+	// What the realm swung in the window.
+	DeskBossBlows(ctx context.Context, since time.Time) (DeskBossBlowsRow, error)
+	// The calibration in the wild: how many cycles closed in the window, and how
+	// many of them the kingdom actually put down. boss.json's share is set so this
+	// sits between 65 and 80 per cent.
+	DeskBossSettled(ctx context.Context, since *time.Time) (DeskBossSettledRow, error)
+	// ---------------------------------------------------------------------------
+	// What the desk reads (admin)
+	// ---------------------------------------------------------------------------
+	// Every beast standing right now, with the kingdom it stands against.
+	DeskBossStanding(ctx context.Context, lim int32) ([]DeskBossStandingRow, error)
+	// And what the realm has done in them.
+	DeskWarAttacks(ctx context.Context, since time.Time) (DeskWarAttacksRow, error)
+	// The week's wars, the busiest first.
+	DeskWars(ctx context.Context, arg DeskWarsParams) ([]DeskWarsRow, error)
+	// Diamonds created and destroyed by reason over a window: the premium half of
+	// the economy dashboard. Opening balances are left out -- they are not a flow.
+	DiamondFlows(ctx context.Context, days int32) ([]DiamondFlowsRow, error)
+	// Everything a transaction credited in diamonds, whatever went to a debt.
+	DiamondsGrantedFor(ctx context.Context, arg DiamondsGrantedForParams) (int64, error)
+	DisablePromoCode(ctx context.Context, arg DisablePromoCodeParams) (AdminPromoCode, error)
 	// Donating: take the gold, credit the treasury, and record the daily total in
 	// one place so the cap cannot be bypassed by racing two requests.
 	DonateGold(ctx context.Context, arg DonateGoldParams) (AppPlayer, error)
 	// Records a donation. Zero rows means they already had that one, which the
 	// caller turns into a refusal BEFORE the item is destroyed.
 	DonateToCollection(ctx context.Context, arg DonateToCollectionParams) (string, error)
+	// Draws a claim out of the escrow, and closes the bounty when it is empty.
+	// Zero rows back is the race lost -- somebody else drew it, or it expired
+	// between the read and the write -- and the caller answers ErrBountyGone. The
+	// guard cannot be raced because it IS the WHERE.
+	DrawBounty(ctx context.Context, arg DrawBountyParams) (AppBounty, error)
+	// A pair is drawn. Nothing comes back when the week already has this kingdom in
+	// it, so the draw may run as often as it likes.
+	DrawWar(ctx context.Context, arg DrawWarParams) (AppWar, error)
+	// A flask drunk: the lord's own sequenced action, so it moves action_seq like
+	// any other the client predicts.
+	DrinkFlask(ctx context.Context, arg DrinkFlaskParams) (AppPlayer, error)
+	EndHeldCosmetics(ctx context.Context, arg EndHeldCosmeticsParams) error
+	EnsurePlayerEvent(ctx context.Context, arg EnsurePlayerEventParams) (AppPlayerEvent, error)
+	EnsurePlayerSeason(ctx context.Context, arg EnsurePlayerSeasonParams) (AppPlayerSeason, error)
 	// Creates the day's row with its three quests if it is not there yet, and
 	// returns whatever the row holds either way.
 	//
@@ -204,6 +495,39 @@ type Querier interface {
 	// the quest_ids of an existing day are never rewritten, which is the whole
 	// point — the board is frozen once it exists.
 	EnsureQuestDay(ctx context.Context, arg EnsureQuestDayParams) (AppPlayerQuest, error)
+	// The week's board, drawn on its first look and frozen for the week.
+	EnsureWeekly(ctx context.Context, arg EnsureWeeklyParams) (AppPlayerWeekly, error)
+	// A festival's board: first by points, then by who reached them first.
+	EventBoard(ctx context.Context, arg EventBoardParams) ([]EventBoardRow, error)
+	// Each event name over a window: how often, and by how many players.
+	EventCounts(ctx context.Context, since time.Time) ([]EventCountsRow, error)
+	// Every lord's deeds in a festival, for its close.
+	EventDeeds(ctx context.Context, eventID int64) ([]EventDeedsRow, error)
+	// A lord's place: one more than those ahead of them.
+	EventPlace(ctx context.Context, arg EventPlaceParams) (int32, error)
+	// Everyone in a closing festival, in board order: the close pays places and
+	// sends what each left unclaimed.
+	EventStandings(ctx context.Context, eventID int64) ([]EventStandingsRow, error)
+	// Festivals over and not yet closed.
+	EventsToSettle(ctx context.Context, now time.Time) ([]AdminLiveEvent, error)
+	// The roads, as they stand: one row per field, who is out and who is at the
+	// gate waiting to be let in.
+	ExpeditionsByField(ctx context.Context) ([]ExpeditionsByFieldRow, error)
+	// What the roads paid since a moment, and what was thrown away by a recall.
+	ExpeditionsSince(ctx context.Context, since *time.Time) (ExpeditionsSinceRow, error)
+	// Each arm: how many lords were shown it, how many of them bought its product
+	// afterwards, and what they paid. Production purchases only, as revenue is.
+	ExperimentResults(ctx context.Context, experiment string) ([]ExperimentResultsRow, error)
+	ExpireBounties(ctx context.Context, arg ExpireBountiesParams) ([]AppBounty, error)
+	// Keeps the player row's "a boost is live until" marker at the latest expiry, so
+	// loadEffects reads the boost table only while one can still be live.
+	ExtendBoostUntil(ctx context.Context, arg ExtendBoostUntilParams) error
+	// A failed attempt waits longer each time: 1, 2, 4 ... minutes, at most an hour.
+	FailIAPNotification(ctx context.Context, arg FailIAPNotificationParams) error
+	// The season's arena board, filled beside the others by RefreshLeaderboards.
+	// The PEAK, not the wins: the ladder is what the arena measures, and wins alone
+	// would pay whoever spent the most tickets.
+	FillArenaBoard(ctx context.Context, arg FillArenaBoardParams) error
 	FillBoardLevel(ctx context.Context, lim int32) error
 	// The ranking itself, done in the database rather than in Go: sorting every
 	// player in application memory is the thing this table exists to avoid.
@@ -212,6 +536,17 @@ type Querier interface {
 	// Net worth: what they are carrying plus what they have banked. Treasury alone
 	// would reward hoarding and purse alone would reward being about to be robbed.
 	FillBoardWealth(ctx context.Context, lim int32) error
+	// ---------------------------------------------------------------------------
+	// Boards and their closes
+	// ---------------------------------------------------------------------------
+	// A board of one deed over one period (a week, a season): lords level with
+	// each other share a place, and the order among them is fixed by id.
+	FillDeedBoard(ctx context.Context, arg FillDeedBoardParams) error
+	// The Might a season's lords have gained since their first deed in it (the
+	// army's cached Might, as the Might board reads it); level lords share a place.
+	FillMightGainBoard(ctx context.Context, arg FillMightGainBoardParams) error
+	// The season's renown, a place each: whoever reached their points first.
+	FillRenownBoard(ctx context.Context, arg FillRenownBoardParams) error
 	// Finds someone to invite. Prefix match rather than substring, so a search is
 	// index-friendly and a player cannot enumerate the roster by typing one letter.
 	//
@@ -221,12 +556,50 @@ type Querier interface {
 	// flag, the shielded, and anyone banned. Ordered by a stable pseudo-random key
 	// so the list changes between refreshes without a table scan.
 	FindTargets(ctx context.Context, arg FindTargetsParams) ([]FindTargetsRow, error)
+	FinishIAPNotification(ctx context.Context, arg FinishIAPNotificationParams) error
+	// A run that failed. With retry the period is cleared, so the next tick claims
+	// it again; without, the period stays claimed and the failure is final.
+	FinishJobFailed(ctx context.Context, arg FinishJobFailedParams) error
+	// A run that succeeded.
+	FinishJobOK(ctx context.Context, jobName string) error
+	// Fires an offer, once per account. A row back means it fired now.
+	FireOffer(ctx context.Context, arg FireOfferParams) (AppPlayerOffer, error)
+	// And what it burnt for them: the fee is a gold ledger row of its own.
+	ForgeGoldSince(ctx context.Context, since time.Time) (int64, error)
+	// The anvil: what it has made since a moment, by the rank that came out.
+	ForgedSince(ctx context.Context, since time.Time) ([]ForgedSinceRow, error)
+	// An hour's roll, written the first time it is made. A row already there (the
+	// panel's, or another server's roll) stands.
+	FreezeHourly(ctx context.Context, arg FreezeHourlyParams) error
+	FriendSince(ctx context.Context, arg FriendSinceParams) (time.Time, error)
+	// The ticket a callback names.
+	GetAdWatch(ctx context.Context, id uuid.UUID) (AppAdWatch, error)
 	GetAdminByID(ctx context.Context, id uuid.UUID) (AdminUser, error)
 	GetAdminByUsername(ctx context.Context, lower string) (AdminUser, error)
 	GetAdminSession(ctx context.Context, tokenHash []byte) (GetAdminSessionRow, error)
+	GetAidCall(ctx context.Context, id uuid.UUID) (AppKingdomAid, error)
+	// Rekabet (migration 00044): the Honour Arena's ladder, the Bounty Board's
+	// escrow and the Throne a week of war crowns.
+	// ---------------------------------------------------------------------------
+	// The Honour Arena
+	// ---------------------------------------------------------------------------
+	GetArena(ctx context.Context, playerID uuid.UUID) (AppArena, error)
 	GetBalanceVersion(ctx context.Context, id int64) (AdminBalanceVersion, error)
 	GetBattle(ctx context.Context, id uuid.UUID) (AppBattle, error)
+	// What one lord has done to this beast, for the blows they have left.
+	GetBossHit(ctx context.Context, arg GetBossHitParams) (AppBossHit, error)
+	GetBounty(ctx context.Context, id uuid.UUID) (AppBounty, error)
+	// One stage, for the fight that is about to happen.
+	GetCampaignStage(ctx context.Context, arg GetCampaignStageParams) (AppPlayerCampaign, error)
+	GetChatMessage(ctx context.Context, id uuid.UUID) (AppChatMessage, error)
 	GetCooldown(ctx context.Context, arg GetCooldownParams) (AppAttackCooldown, error)
+	// The Royal Store's daily deals. See migration 00035 and service/deals.go.
+	GetDeals(ctx context.Context, playerID uuid.UUID) (AppPlayerDeal, error)
+	GetDeletedAccount(ctx context.Context, playerID uuid.UUID) (AppDeletedAccount, error)
+	GetGoalPart(ctx context.Context, arg GetGoalPartParams) (AppKingdomGoalPart, error)
+	GetHourlyUse(ctx context.Context, arg GetHourlyUseParams) (int16, error)
+	GetIAPNotification(ctx context.Context, id int64) (AppIapNotification, error)
+	GetIAPTransaction(ctx context.Context, transactionID string) (AppIapTransaction, error)
 	GetIdentityBySubject(ctx context.Context, arg GetIdentityBySubjectParams) (AppIdentity, error)
 	// Only an invitation. Unscoped, /accept would seat a player in a kingdom they
 	// had merely asked to join.
@@ -234,19 +607,52 @@ type Querier interface {
 	GetJobProgress(ctx context.Context, arg GetJobProgressParams) (AppPlayerJobProgress, error)
 	GetJoinRequest(ctx context.Context, arg GetJoinRequestParams) (AppKingdomInvite, error)
 	GetKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error)
+	// Dalga 8 (migration 00048): the kingdom's boss and its wars.
+	// ---------------------------------------------------------------------------
+	// The boss
+	// ---------------------------------------------------------------------------
+	// The beast standing against this kingdom, if one is.
+	GetKingdomBoss(ctx context.Context, kingdomID uuid.UUID) (AppKingdomBoss, error)
+	GetKingdomGoal(ctx context.Context, arg GetKingdomGoalParams) (AppKingdomGoal, error)
+	GetLiveEvent(ctx context.Context, id int64) (AdminLiveEvent, error)
+	GetMail(ctx context.Context, arg GetMailParams) (AppMail, error)
 	// The password a player signed up with, to confirm a deletion with.
 	GetPasswordIdentity(ctx context.Context, playerID uuid.UUID) (AppIdentity, error)
 	GetPlayerByID(ctx context.Context, id uuid.UUID) (AppPlayer, error)
 	GetPlayerByUsername(ctx context.Context, lower string) (AppPlayer, error)
+	GetPlayerEvent(ctx context.Context, arg GetPlayerEventParams) (AppPlayerEvent, error)
 	GetPlayerItem(ctx context.Context, arg GetPlayerItemParams) (AppPlayerItem, error)
+	GetPlayerSeason(ctx context.Context, arg GetPlayerSeasonParams) (AppPlayerSeason, error)
+	GetPromoCode(ctx context.Context, code string) (AdminPromoCode, error)
 	GetQuestProgress(ctx context.Context, arg GetQuestProgressParams) (AppPlayerQuest, error)
+	GetReferral(ctx context.Context, inviteeID uuid.UUID) (AppReferral, error)
+	GetReferralCode(ctx context.Context, playerID uuid.UUID) (AppReferralCode, error)
 	GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (AppSession, error)
 	GetShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
 	GetSoldier(ctx context.Context, arg GetSoldierParams) (AppSoldier, error)
+	GetSubscription(ctx context.Context, originalTransactionID string) (AppSubscription, error)
+	GetWar(ctx context.Context, id uuid.UUID) (AppWar, error)
+	// ---------------------------------------------------------------------------
+	// The wars
+	// ---------------------------------------------------------------------------
+	// This kingdom's war for the week, either side of the pair.
+	GetWarFor(ctx context.Context, arg GetWarForParams) (AppWar, error)
+	// The week's board as it stands, if it has been drawn: read first, so the
+	// heartbeat's badge stays a read.
+	GetWeekly(ctx context.Context, arg GetWeeklyParams) (AppPlayerWeekly, error)
 	// Economy health: what created gold and what destroyed it, by reason.
 	GoldFlows(ctx context.Context, dollar_1 int32) ([]GoldFlowsRow, error)
+	// Grants a lasting right. A row back means it was granted now; none means it
+	// was already held.
+	GrantEntitlement(ctx context.Context, arg GrantEntitlementParams) (AppPlayerEntitlement, error)
 	GrantRevenge(ctx context.Context, arg GrantRevengeParams) error
 	GrantXPBoost(ctx context.Context, arg GrantXPBoostParams) error
+	// The bulk half of the season roll. A row already rolled (lazily, by
+	// UpsertArena) has the new season and is skipped.
+	HalfResetArena(ctx context.Context, arg HalfResetArenaParams) (int64, error)
+	HasFriendRequest(ctx context.Context, arg HasFriendRequestParams) (bool, error)
+	// Grants a cosmetic held for a time (a patron's frame), or extends it.
+	HoldCosmeticUntil(ctx context.Context, arg HoldCosmeticUntilParams) error
 	// The id is supplied, not defaulted.
 	//
 	// It is minted in Go before the fight because the combat seed is derived from
@@ -255,16 +661,95 @@ type Querier interface {
 	// stored row: every replay link was dead, and nothing could reference the battle
 	// afterwards.
 	InsertBattle(ctx context.Context, arg InsertBattleParams) (AppBattle, error)
+	InsertBounty(ctx context.Context, arg InsertBountyParams) (AppBounty, error)
+	InsertBountyClaim(ctx context.Context, arg InsertBountyClaimParams) (AppBountyClaim, error)
+	// ----------------------------------------------------------------------------
+	// Admin
+	// ----------------------------------------------------------------------------
+	InsertBroadcast(ctx context.Context, arg InsertBroadcastParams) (AdminMailBroadcast, error)
+	// One line said. The rate limit is not here: it is counted from the lord's own
+	// rows in the window (CountChatSince), inside the same transaction.
+	InsertChat(ctx context.Context, arg InsertChatParams) (AppChatMessage, error)
+	// Grants a cosmetic. Zero rows back means the player already owns it (a
+	// duplicate, which pays diamonds instead).
+	InsertCosmetic(ctx context.Context, arg InsertCosmeticParams) (AppPlayerCosmetic, error)
+	InsertFriendRequest(ctx context.Context, arg InsertFriendRequestParams) (AppFriendRequest, error)
+	// Notifications, stored before they are acted on.
+	InsertIAPNotification(ctx context.Context, arg InsertIAPNotificationParams) (int64, error)
+	// App Store purchases. See migration 00034.
+	// Records a transaction once. No row back means it was already recorded: the
+	// purchase was delivered before, and this call must not deliver it again.
+	InsertIAPTransaction(ctx context.Context, arg InsertIAPTransactionParams) (AppIapTransaction, error)
+	// ---------------------------------------------------------------------------
+	// Festivals
+	// ---------------------------------------------------------------------------
+	InsertLiveEvent(ctx context.Context, arg InsertLiveEventParams) (AdminLiveEvent, error)
+	// The Royal Mail. See migration 00031.
+	// Sends one letter. The idempotency key makes a repeat of the same send a no-op:
+	// zero rows back means the letter was already delivered.
+	InsertMail(ctx context.Context, arg InsertMailParams) (AppMail, error)
+	InsertPlayerBoost(ctx context.Context, arg InsertPlayerBoostParams) (AppPlayerBoost, error)
 	InsertPlayerItem(ctx context.Context, arg InsertPlayerItemParams) (AppPlayerItem, error)
+	InsertPromoRedemption(ctx context.Context, arg InsertPromoRedemptionParams) error
+	InsertReferral(ctx context.Context, arg InsertReferralParams) (AppReferral, error)
+	// A code is made once; no row back means the code was taken (try another) or
+	// the lord already has one.
+	InsertReferralCode(ctx context.Context, arg InsertReferralCodeParams) (AppReferralCode, error)
+	InsertSpyReport(ctx context.Context, arg InsertSpyReportParams) (AppSpyReport, error)
+	// Every lord's collects per job, for the energy they spent (the job's cost is
+	// in the balance).
+	JobCollects(ctx context.Context) ([]AppPlayerJobProgress, error)
 	// Removal by a king or captain. Guarded by the kingdom, so a removal that races
 	// the lord's own leave-and-join cannot take them out of the kingdom they moved to.
 	KickFromKingdom(ctx context.Context, arg KickFromKingdomParams) (AppPlayer, error)
+	// The members a Largesse reaches: everyone else in the kingdom who has been in
+	// it long enough.
+	LargesseRecipients(ctx context.Context, arg LargesseRecipientsParams) ([]uuid.UUID, error)
+	// When this lord was last paid for one, for the cooldown between adverts.
+	LastAdWatchPaidAt(ctx context.Context, playerID uuid.UUID) (time.Time, error)
+	// The last line this lord said, for the bucket's refill.
+	LastChatAt(ctx context.Context, playerID *uuid.UUID) (time.Time, error)
+	// The last cycle a kingdom saw, standing or not: what the screen shows between
+	// beasts, so a lord who looks the morning after is told what fell and when the
+	// next one rises rather than shown an empty room.
+	LastKingdomBoss(ctx context.Context, kingdomID uuid.UUID) (AppKingdomBoss, error)
+	// When this lord last reported anybody, line or lord: one cooldown covers
+	// both, so a flood is a flood whichever button it comes through. No rows means
+	// they have never reported -- read as such, not as a NULL time.
+	LastLordReportAt(ctx context.Context, reporterID uuid.UUID) (time.Time, error)
+	// When this lord last reported anything, for the report cooldown.
+	LastReportAt(ctx context.Context, reporterID uuid.UUID) (time.Time, error)
+	// The newest live 'all' letter, so a heartbeat can tell in one indexed read
+	// whether this player has a copy still to make.
+	LatestAllBroadcast(ctx context.Context, now time.Time) (int64, error)
+	// The goal a lord may still claim from: today's, or yesterday's while its claim
+	// window is open.
+	LatestClaimableGoal(ctx context.Context, kingdomID uuid.UUID) (AppKingdomGoal, error)
 	// Leaving stamps the time, which is what the rejoin cooldown is measured from.
 	LeaveKingdom(ctx context.Context, arg LeaveKingdomParams) (AppPlayer, error)
 	// How the population is spread across the level ladder, in bands of ten.
 	LevelBands(ctx context.Context) ([]LevelBandsRow, error)
+	// A lord's lifetime count of one deed, for the guide's steps.
+	LifeDeed(ctx context.Context, arg LifeDeedParams) (int64, error)
+	// ---------------------------------------------------------------------------
+	// The deeds (achievements)
+	// ---------------------------------------------------------------------------
+	ListAchievementClaims(ctx context.Context, playerID uuid.UUID) ([]ListAchievementClaimsRow, error)
+	// The calls still standing in this kingdom, with who asked and whether I have
+	// answered this one already.
+	ListAidCalls(ctx context.Context, arg ListAidCallsParams) ([]ListAidCallsRow, error)
+	// Every chest this lord has taken, anywhere on the road. The badges ask once,
+	// rather than once a chapter: the rail's heartbeat is polled, and ten questions
+	// where one will do is how a heartbeat becomes a load.
+	ListAllCampaignChests(ctx context.Context, playerID uuid.UUID) ([]ListAllCampaignChestsRow, error)
+	// The lists' own recent fights. Kept apart from the raid log on purpose: an
+	// arena defeat costs nothing but a rating, and reading it in the same column as
+	// "you were robbed" is how a screen starts to lie.
+	ListArenaLog(ctx context.Context, arg ListArenaLogParams) ([]ListArenaLogRow, error)
 	ListAudit(ctx context.Context, limit int32) ([]AdminAuditLog, error)
 	ListBalanceVersions(ctx context.Context, limit int32) ([]ListBalanceVersionsRow, error)
+	// The banners lost by every defender on one side, for the enemy list.
+	ListBannersLost(ctx context.Context, warID uuid.UUID) ([]ListBannersLostRow, error)
 	// Battle history with the OTHER party's identity resolved in the same round
 	// trip. A log that says "you lost 4,120 gold" without saying to whom is not a
 	// log, and fetching the names separately would be one query per row.
@@ -273,21 +758,138 @@ type Querier interface {
 	// defender when they attacked, and the attacker when they were raided.
 	ListBattleLog(ctx context.Context, arg ListBattleLogParams) ([]ListBattleLogRow, error)
 	ListBattles(ctx context.Context, arg ListBattlesParams) ([]AppBattle, error)
+	ListBlocked(ctx context.Context, playerID uuid.UUID) ([]ListBlockedRow, error)
 	ListBoosts(ctx context.Context, limit int32) ([]AdminServerBoost, error)
+	// The damage list: who has hurt it most, with the names the screen draws.
+	ListBossDamage(ctx context.Context, arg ListBossDamageParams) ([]ListBossDamageRow, error)
+	ListBountiesDesk(ctx context.Context, lim int32) ([]ListBountiesDeskRow, error)
+	// What stands on this lord's own head, and what they have placed.
+	ListBountiesOnMe(ctx context.Context, arg ListBountiesOnMeParams) ([]ListBountiesOnMeRow, error)
+	// delivered is every copy ever written; withdrawn, the unclaimed ones a revoke
+	// took back (the revoke stamps them in its own transaction, so at its instant);
+	// recipient names the lord a single-player letter went to.
+	ListBroadcasts(ctx context.Context, lim int32) ([]ListBroadcastsRow, error)
+	// Dalga 7 (migration 00047): the Conquest Campaign, the expeditions and the
+	// talent tree.
+	// ---------------------------------------------------------------------------
+	// The campaign
+	// ---------------------------------------------------------------------------
+	// Every mile this lord has walked. The map reads it whole: 120 rows at the very
+	// most, and the screen needs all of them to draw the road behind you.
+	ListCampaign(ctx context.Context, playerID uuid.UUID) ([]AppPlayerCampaign, error)
+	// The chests already taken in a chapter.
+	ListCampaignChests(ctx context.Context, arg ListCampaignChestsParams) ([]int32, error)
+	// Sosyal (migration 00045): the kingdom's hall, the friends' roll and their
+	// gift, the spyglass, the kingdom's aid and its shared goal.
+	// ---------------------------------------------------------------------------
+	// The hall
+	// ---------------------------------------------------------------------------
+	// The room as a lord arriving sees it: the newest lines first, a blocked lord's
+	// lines left out, and a hidden line left out unless it was this lord's own (so
+	// a lord whose line was hidden is not left wondering where it went).
+	ListChat(ctx context.Context, arg ListChatParams) ([]ListChatRow, error)
+	// The letters CLAIM ALL opens: live, unclaimed, and carrying something.
+	ListClaimableMail(ctx context.Context, arg ListClaimableMailParams) ([]int64, error)
 	ListCollection(ctx context.Context, playerID uuid.UUID) ([]string, error)
+	ListCosmetics(ctx context.Context, playerID uuid.UUID) ([]ListCosmeticsRow, error)
+	// The emperor's court, ordered, so a crowning that resumes letters the same
+	// lords in the same order.
+	ListCourt(ctx context.Context, kingdomID uuid.UUID) ([]ListCourtRow, error)
+	// One scope's counters for a player.
+	ListDeeds(ctx context.Context, arg ListDeedsParams) ([]ListDeedsRow, error)
 	ListDevices(ctx context.Context, playerID uuid.UUID) ([]ListDevicesRow, error)
+	// A player's diamond history, newest first, for the admin panel.
+	ListDiamondLedger(ctx context.Context, arg ListDiamondLedgerParams) ([]ListDiamondLedgerRow, error)
+	// Every cycle whose window has shut and which nobody has paid out yet.
+	ListDueBossCycles(ctx context.Context, arg ListDueBossCyclesParams) ([]AppKingdomBoss, error)
+	// Friends who have reached the reward level and are not yet paid for.
+	ListDueReferrals(ctx context.Context, level int32) ([]uuid.UUID, error)
+	// Every war whose days are over and which nobody has paid out yet.
+	ListDueWars(ctx context.Context, arg ListDueWarsParams) ([]AppWar, error)
+	ListEntitlements(ctx context.Context, playerID uuid.UUID) ([]ListEntitlementsRow, error)
+	// ---------------------------------------------------------------------------
+	// The expeditions
+	// ---------------------------------------------------------------------------
+	// Who of mine is away. The row is the soldier's absence, so this is also what
+	// the Army tab asks before it lets anybody fight, reroll, dismiss or re-gear.
+	ListExpeditions(ctx context.Context, playerID uuid.UUID) ([]AppExpedition, error)
+	ListFriendRequests(ctx context.Context, arg ListFriendRequestsParams) ([]ListFriendRequestsRow, error)
+	// ---------------------------------------------------------------------------
+	// Friends
+	// ---------------------------------------------------------------------------
+	// The roll, with everything a row on the strip draws and the day's gift beside
+	// it: whether I have sent to them today, and whether one of theirs is waiting.
+	ListFriends(ctx context.Context, arg ListFriendsParams) ([]ListFriendsRow, error)
+	// Who has done what, for the hall's list.
+	ListGoalParts(ctx context.Context, arg ListGoalPartsParams) ([]ListGoalPartsRow, error)
 	ListHeroEquipped(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListHoldings(ctx context.Context, playerID uuid.UUID) ([]AppPlayerHolding, error)
+	// Live ops (migration 00042): the hourly event, the calendar's festivals, the
+	// season and its Royal Charter, the boards' closes and the deeds.
+	// ---------------------------------------------------------------------------
+	// The hourly event
+	// ---------------------------------------------------------------------------
+	// Every hour written down in a window: the rolled, the forced and the skipped.
+	ListHourlyEvents(ctx context.Context, arg ListHourlyEventsParams) ([]AdminHourlyEvent, error)
 	// The invitations a kingdomless player holds, as cards: everything the hall
 	// shows about a kingdom, so an invitation reads like any other kingdom.
 	ListInvitesForPlayer(ctx context.Context, arg ListInvitesForPlayerParams) ([]ListInvitesForPlayerRow, error)
 	ListItemsForSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
 	ListJobProgress(ctx context.Context, playerID uuid.UUID) ([]AppPlayerJobProgress, error)
+	// Every job and its last run, for the admin panel.
+	ListJobRuns(ctx context.Context) ([]AppJobRun, error)
+	// The rolled-up days of a window, oldest first.
+	ListKPIDays(ctx context.Context, since pgtype.Date) ([]AppDailyKpi, error)
 	// Ordered by rank then contribution, which is the order the roster should read:
 	// who leads, then who has actually carried the kingdom.
 	ListKingdomMembers(ctx context.Context, kingdomID *uuid.UUID) ([]ListKingdomMembersRow, error)
+	// The kingdoms that may be drawn: their id, their members and what their best
+	// lords are worth together. The Might is the top N by the cached figure the
+	// Army tab keeps, which is the same number the raid band and the leaderboards
+	// read.
+	ListKingdomMusters(ctx context.Context, top int32) ([]ListKingdomMustersRow, error)
 	ListKingdomUpgrades(ctx context.Context, kingdomID uuid.UUID) ([]AppKingdomUpgrade, error)
+	// ---------------------------------------------------------------------------
+	// What the two jobs ask for
+	// ---------------------------------------------------------------------------
+	// The kingdoms a beast may rise against: nobody has one standing, and the last
+	// one's window has shut. The WHERE is the cycle -- a kingdom that put its beast
+	// down in an hour waits for the window all the same, or the forty-eight hours
+	// would be forty-eight hours only for the kingdoms that could not kill it.
+	//
+	// The wall is cut from the WHOLE muster (there is no LIMIT here, unlike the
+	// war's draw): every member's blows are counted in it, so every member's Might
+	// belongs in it. `cycles` is how many beasts this kingdom has seen, which is
+	// which of the six comes round; `kills` is how many it has put down, which is
+	// the next one's level.
+	ListKingdomsDueBoss(ctx context.Context, arg ListKingdomsDueBossParams) ([]ListKingdomsDueBossRow, error)
+	ListLiveBoosts(ctx context.Context, arg ListLiveBoostsParams) ([]ListLiveBoostsRow, error)
+	ListLiveEvents(ctx context.Context, lim int32) ([]ListLiveEventsRow, error)
+	// A player's inbox: every letter not deleted that can still be read -- claimable,
+	// or already claimed and kept. An unclaimed letter past its expiry is gone.
+	ListMail(ctx context.Context, arg ListMailParams) ([]AppMail, error)
+	ListMutes(ctx context.Context, lim int32) ([]ListMutesRow, error)
+	ListMyBounties(ctx context.Context, arg ListMyBountiesParams) ([]ListMyBountiesRow, error)
+	ListOffers(ctx context.Context, playerID uuid.UUID) ([]AppPlayerOffer, error)
+	// The board this lord may hunt. Every leash that can be a filter IS one, so a
+	// card the server would refuse is never drawn.
+	ListOpenBounties(ctx context.Context, arg ListOpenBountiesParams) ([]ListOpenBountiesRow, error)
+	ListPeriodCloses(ctx context.Context, lim int32) ([]AdminPeriodClose, error)
 	ListPlayerItems(ctx context.Context, playerID uuid.UUID) ([]AppPlayerItem, error)
+	ListPlayerSubscriptions(ctx context.Context, playerID uuid.UUID) ([]AppSubscription, error)
+	ListPromoCodes(ctx context.Context, lim int32) ([]AdminPromoCode, error)
+	ListPromoRedemptions(ctx context.Context, arg ListPromoRedemptionsParams) ([]ListPromoRedemptionsRow, error)
+	ListPurchaseCounts(ctx context.Context, playerID uuid.UUID) ([]ListPurchaseCountsRow, error)
+	ListReferralsByInviter(ctx context.Context, inviterID uuid.UUID) ([]ListReferralsByInviterRow, error)
+	// ---------------------------------------------------------------------------
+	// The desk (admin)
+	// ---------------------------------------------------------------------------
+	// The moderation queue: every reported line not yet judged, oldest first,
+	// because the SLA is measured from when it was said.
+	ListReportedChat(ctx context.Context, lim int32) ([]ListReportedChatRow, error)
+	// The desk's second queue: every lord with an open report, the oldest first,
+	// with what is known of them and what they were reported for.
+	ListReportedLords(ctx context.Context, lim int32) ([]ListReportedLordsRow, error)
 	// Who has asked to join, oldest first: the Lords tab answers them in order.
 	ListRequestsForKingdom(ctx context.Context, kingdomID uuid.UUID) ([]ListRequestsForKingdomRow, error)
 	ListRequestsForPlayer(ctx context.Context, playerID uuid.UUID) ([]uuid.UUID, error)
@@ -295,8 +897,55 @@ type Querier interface {
 	// round trip.
 	ListRevenge(ctx context.Context, playerID uuid.UUID) ([]ListRevengeRow, error)
 	ListSoldiers(ctx context.Context, playerID uuid.UUID) ([]AppSoldier, error)
+	// ---------------------------------------------------------------------------
+	// The talent tree
+	// ---------------------------------------------------------------------------
+	// What this lord has bought. Read on every action that loads effects, so it is
+	// one small query and never a join.
+	ListTalents(ctx context.Context, playerID uuid.UUID) ([]ListTalentsRow, error)
+	ListThrones(ctx context.Context, lim int32) ([]ListThronesRow, error)
+	ListTokens(ctx context.Context, playerID uuid.UUID) ([]ListTokensRow, error)
+	// Everyone who struck, for the paying out. Unpaid only: a settle that fell over
+	// halfway through pays the rest and nobody twice.
+	ListUnpaidBossHits(ctx context.Context, cycleID uuid.UUID) ([]AppBossHit, error)
 	ListUpgrades(ctx context.Context, playerID uuid.UUID) ([]AppPlayerUpgrade, error)
+	// What is waiting for me, with who sent it.
+	ListWaitingGifts(ctx context.Context, arg ListWaitingGiftsParams) ([]ListWaitingGiftsRow, error)
+	// The war log, newest first, with both names.
+	ListWarLog(ctx context.Context, arg ListWarLogParams) ([]ListWarLogRow, error)
+	// The lords of one kingdom as a war lists them: the strongest first, with what
+	// the screen needs to draw a row.
+	ListWarMembers(ctx context.Context, arg ListWarMembersParams) ([]ListWarMembersRow, error)
+	// The lords of a kingdom in one war, with what each of them did in it: the
+	// points they took for the side and how many banners they have lost. One query,
+	// because a war's roster is drawn a row at a time and a query per lord would be
+	// a query per row.
+	ListWarRoster(ctx context.Context, arg ListWarRosterParams) ([]ListWarRosterRow, error)
+	// What each lord did for their side, biggest first: the Warlord is the top row.
+	ListWarScorers(ctx context.Context, arg ListWarScorersParams) ([]ListWarScorersRow, error)
+	// Who each kingdom fought last week, so the draw does not repeat itself.
+	ListWarsInWeek(ctx context.Context, week pgtype.Date) ([]AppWar, error)
+	// Lords away long enough for a welcome back, whose last one did not answer
+	// this absence (sent before they were last seen) and is past its cooldown --
+	// or who were welcomed for this absence and have now been away long enough
+	// for the second letter.
+	ListWinbackDue(ctx context.Context, arg ListWinbackDueParams) ([]ListWinbackDueRow, error)
+	// This lord's watch in flight, if there is one: unpaid and not yet expired.
+	// One at a time is what keeps a tap from minting tickets by the thousand.
+	LiveAdWatch(ctx context.Context, arg LiveAdWatchParams) (AppAdWatch, error)
+	// The live report this lord holds on that one, if any.
+	LiveSpyReport(ctx context.Context, arg LiveSpyReportParams) (AppSpyReport, error)
+	// The same, locked, for the payment about to be made against it.
+	LockAdWatch(ctx context.Context, id uuid.UUID) (AppAdWatch, error)
+	// Locked in ascending player_id, the order LockTwoPlayers uses, so two lords
+	// meeting each other at the same instant cannot deadlock.
+	LockArenaRows(ctx context.Context, ids []uuid.UUID) ([]AppArena, error)
+	LockBounty(ctx context.Context, id uuid.UUID) (AppBounty, error)
+	// One of mine, locked, for the tap that settles it.
+	LockExpedition(ctx context.Context, arg LockExpeditionParams) (AppExpedition, error)
 	LockKingdom(ctx context.Context, id uuid.UUID) (AppKingdom, error)
+	// The same, locked, for the blow that is about to land on it.
+	LockKingdomBoss(ctx context.Context, id uuid.UUID) (AppKingdomBoss, error)
 	// Locks the row for the duration of the transaction. Every mutating action
 	// takes this first, so two concurrent collects cannot both read the same energy
 	// and both spend it.
@@ -305,34 +954,128 @@ type Querier interface {
 	LockShopState(ctx context.Context, playerID uuid.UUID) (AppShopState, error)
 	LockSoldier(ctx context.Context, arg LockSoldierParams) (AppSoldier, error)
 	LockTwoPlayers(ctx context.Context, dollar_1 []uuid.UUID) ([]AppPlayer, error)
+	LockWar(ctx context.Context, id uuid.UUID) (AppWar, error)
+	// The pair is stored in id order, once. ON CONFLICT DO NOTHING makes accepting
+	// twice cost nothing.
+	MakeFriends(ctx context.Context, arg MakeFriendsParams) (int64, error)
+	// The lord asked; the cooldown is the column, written in the same statement
+	// that reads it.
+	MarkAidAsked(ctx context.Context, arg MarkAidAskedParams) (*time.Time, error)
+	// Marks the day's first win. Zero rows back means it was already marked, so two
+	// wins in one day cannot both be first -- the guard is the WHERE.
+	MarkArenaFirstWin(ctx context.Context, arg MarkArenaFirstWinParams) (AppPlayer, error)
+	MarkBossHitPaid(ctx context.Context, arg MarkBossHitPaidParams) error
+	MarkChatSeen(ctx context.Context, arg MarkChatSeenParams) error
+	MarkEventSettled(ctx context.Context, arg MarkEventSettledParams) error
+	// A refund Apple reversed: the transaction stands again.
+	MarkIAPReinstated(ctx context.Context, transactionID string) (AppIapTransaction, error)
+	// Marks a delivered transaction refunded or revoked, once.
+	MarkIAPUndone(ctx context.Context, arg MarkIAPUndoneParams) (AppIapTransaction, error)
 	MarkIdentityUsed(ctx context.Context, id uuid.UUID) error
+	MarkMailRead(ctx context.Context, arg MarkMailReadParams) error
+	MarkOffersSeen(ctx context.Context, arg MarkOffersSeenParams) error
+	// Marks a friend paid for, once. No row: already paid, or no friend link.
+	MarkReferralRewarded(ctx context.Context, arg MarkReferralRewardedParams) (AppReferral, error)
 	MarkSessionUsed(ctx context.Context, id uuid.UUID) error
 	MarkShopSlotPurchased(ctx context.Context, arg MarkShopSlotPurchasedParams) (AppShopState, error)
+	// Records the letter sent, pinned to what the job read, so two runs send one.
+	MarkWinback(ctx context.Context, arg MarkWinbackParams) (uuid.UUID, error)
+	// Gives this player their copy of every live 'all' letter newer than the last
+	// they received. The key 'bc:<id>' makes it safe to run twice.
+	MaterializeBroadcasts(ctx context.Context, arg MaterializeBroadcastsParams) (int64, error)
+	// A closed season's places on the Might gained, as far as its rewards reach.
+	MightGainStandings(ctx context.Context, arg MightGainStandingsParams) ([]MightGainStandingsRow, error)
 	MoveFromTreasury(ctx context.Context, arg MoveFromTreasuryParams) (AppPlayer, error)
+	// Moves the guide from one step to the next, or ends it. The WHERE pins the
+	// step it moves from, so a double tap moves it once.
+	MoveGuide(ctx context.Context, arg MoveGuideParams) (AppPlayer, error)
 	// Moves gold between the purse and the vault in one statement, so the pair can
 	// never be seen half-applied. The guards are in the WHERE: no row comes back if
 	// the player cannot cover it, and the CHECK constraints refuse a negative side.
 	MoveToTreasury(ctx context.Context, arg MoveToTreasuryParams) (AppPlayer, error)
+	// A silence, and the trail of it. Two statements, always written together:
+	// the guard the hall reads is the column, and this is what the panel shows.
+	MutePlayer(ctx context.Context, arg MutePlayerParams) (*time.Time, error)
 	MyRank(ctx context.Context, arg MyRankParams) (MyRankRow, error)
 	// Who is here right now.
 	OnlineNow(ctx context.Context, since time.Time) ([]OnlineNowRow, error)
+	// The account a purchase chain belongs to: whoever its first transaction was
+	// delivered to. A non-consumable or a subscription restored on another account
+	// is refused, so one Apple ID cannot furnish every lord on the phone.
+	OwnerOfOriginal(ctx context.Context, originalTransactionID string) (uuid.UUID, error)
+	// The latest time any of a player's subscriptions keeps them a patron; the
+	// epoch when none does.
+	PatronUntil(ctx context.Context, playerID uuid.UUID) (time.Time, error)
+	// The payment. The WHERE is the guard: a second callback for the same watch
+	// writes nothing, and the unique index on the transaction id catches a second
+	// callback that named a different ticket.
+	PayAdWatch(ctx context.Context, arg PayAdWatchParams) (AppAdWatch, error)
 	// Founding: pay, and join in the same statement so a crash cannot leave a
 	// kingdom with no king.
 	PayAndJoinKingdom(ctx context.Context, arg PayAndJoinKingdomParams) (AppPlayer, error)
+	// ---------------------------------------------------------------------------
+	// The Bounty Board
+	// ---------------------------------------------------------------------------
+	// Takes the escrow and the fee from the purse and moves the lord's sequence.
+	// Affordability is the WHERE: zero rows back is "not enough gold", and no
+	// amount of concurrency can spend the same coin twice.
+	PayForBounty(ctx context.Context, arg PayForBountyParams) (AppPlayer, error)
 	// Pays for a reroll and advances the counter in one statement. The WHERE is the
 	// guard: no row comes back if the player cannot afford it, and the window check
 	// stops a reroll bought in one window from applying to the next.
+	// The caller counts the reroll on the lord's day from the locked row, and has
+	// already refused one past the day's cap.
 	PayForReroll(ctx context.Context, arg PayForRerollParams) (AppPlayer, error)
+	// ---------------------------------------------------------------------------
+	// The spyglass
+	// ---------------------------------------------------------------------------
+	// Pays for a look. The WHERE is the guard -- a lord who cannot afford the
+	// spyglass buys nothing -- and the day's count is spent in the same statement,
+	// so two taps cannot both be the tenth.
+	PayForSpy(ctx context.Context, arg PayForSpyParams) (AppPlayer, error)
+	PeriodClosed(ctx context.Context, arg PeriodClosedParams) (bool, error)
 	// Who takes the crown when a king's account is deleted: the longest-serving
 	// captain, else the longest-serving lord.
 	PickSuccessor(ctx context.Context, arg PickSuccessorParams) (uuid.UUID, error)
+	// Whether a lord has ever played on this phone.
+	PlayedOnDevice(ctx context.Context, arg PlayedOnDeviceParams) (bool, error)
+	PlayerByReferralCode(ctx context.Context, code string) (AppPlayer, error)
 	PlayerCounts(ctx context.Context) (PlayerCountsRow, error)
+	// What a lord has paid, Production and not refunded: the panel's lifetime spend.
+	PlayerSpend(ctx context.Context, playerID uuid.UUID) (PlayerSpendRow, error)
 	// The identity behind a set of presence entries.
 	//
 	// The live board is held in memory and knows only player ids, so rendering it
 	// needs one lookup for the whole set rather than one per row.
 	PlayersByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]PlayersByIDsRow, error)
+	// Whether this lord, or anyone on this phone, has redeemed the code.
+	PromoRedeemed(ctx context.Context, arg PromoRedeemedParams) (PromoRedeemedRow, error)
+	// Tickets nobody came back for, and payments old enough to be history. The
+	// sweep keeps the table the size of what it is actually for.
+	PurgeAdWatches(ctx context.Context, arg PurgeAdWatchesParams) (int64, error)
+	// The diamond history of accounts deleted before a cutoff. A refund that comes
+	// after this finds the deleted_accounts row and nothing to take back.
+	PurgeDeletedLedger(ctx context.Context, before time.Time) (int64, error)
+	PurgeEvents(ctx context.Context, before time.Time) (int64, error)
+	PurgeHourlyUse(ctx context.Context, beforeHour int64) (int64, error)
+	// Keeps a season of weeks; older ones are only of interest to a historian.
+	PurgeKingdomWeeks(ctx context.Context, before int64) error
+	// Housekeeping: letters deleted, or expired unclaimed, longer ago than the keep
+	// window. Claimed letters are kept until the same window passes their expiry.
+	PurgeMail(ctx context.Context, before time.Time) (int64, error)
+	PurgePlayerDays(ctx context.Context, before pgtype.Date) (int64, error)
+	PurgePromoFailures(ctx context.Context, before time.Time) (int64, error)
+	// Writes a day's deals. A row for the same day is left as it is -- whoever
+	// looked first fixed it -- and the row as it now stands comes back.
+	PutDeals(ctx context.Context, arg PutDealsParams) (AppPlayerDeal, error)
+	// A beast rises. The unique index is the rule that there is only ever one:
+	// nothing comes back when a kingdom already has one standing.
+	RaiseBoss(ctx context.Context, arg RaiseBossParams) (AppKingdomBoss, error)
+	// Raises lifetime counters to at least the given values (parallel arrays).
+	RaiseLifeDeeds(ctx context.Context, arg RaiseLifeDeedsParams) error
 	ReadBoard(ctx context.Context, arg ReadBoardParams) ([]ReadBoardRow, error)
+	// Festivals a lord took part in, newest first: the Events page's past cards.
+	RecentEventsFor(ctx context.Context, arg RecentEventsForParams) ([]RecentEventsForRow, error)
 	// The players seen recently, to repopulate the presence registry after a
 	// restart. Without it a deploy shows every player leaving at once.
 	RecentlySeenPlayers(ctx context.Context, lastSeenAt time.Time) ([]RecentlySeenPlayersRow, error)
@@ -342,8 +1085,49 @@ type Querier interface {
 	// The service drops the full ones against the real cap, Royal Court included,
 	// which SQL cannot see; hence more candidates than it shows.
 	RecommendKingdoms(ctx context.Context, arg RecommendKingdomsParams) ([]RecommendKingdomsRow, error)
+	// One lord's blows in this cycle, added to.
+	RecordBossHit(ctx context.Context, arg RecordBossHitParams) (AppBossHit, error)
+	// Deleted accounts, player days and the client's events. See migration 00033.
+	// What outlives a deleted account: its id, when it came and went, and what it
+	// held. Written in the deletion's own transaction, before the player row goes.
+	RecordDeletedAccount(ctx context.Context, arg RecordDeletedAccountParams) error
+	// The diamond ledger. See migration 00027 for why it has no foreign key.
+	RecordDiamonds(ctx context.Context, arg RecordDiamondsParams) error
+	// One call's events, in one statement, unless the player has already sent their
+	// hour's allowance. The arrays are parallel; unnest in a select list walks them
+	// together. props arrive as JSON text; an at of 0 is "the phone's clock was not
+	// believable".
+	RecordEvents(ctx context.Context, arg RecordEventsParams) (int64, error)
+	// A/B tests. See migration 00037 and admin/experiments.go.
+	RecordExposure(ctx context.Context, arg RecordExposureParams) error
 	RecordGold(ctx context.Context, arg RecordGoldParams) error
+	RecordMute(ctx context.Context, arg RecordMuteParams) (AppChatMute, error)
+	RecordPromoFailure(ctx context.Context, playerID uuid.UUID) error
+	// One attack, written down: the day's three are counted from these rows.
+	RecordWarAttack(ctx context.Context, arg RecordWarAttackParams) (AppWarAttack, error)
 	RefillEnergy(ctx context.Context, arg RefillEnergyParams) error
+	// The storehouse (migration 00040, game/estates.Fill).
+	//
+	// Settles the storehouse at the rate and capacity it has been filling at, then
+	// stores the new pair: a holding bought, a level reached or a Tithe Barn level
+	// never pays for the hours before it at the new rate. The sum is Fill's, in SQL,
+	// so a settle racing a collect is one row update, never two views of the row:
+	// what is over the capacity stays and grows no more; below it, it grows to it.
+	// Elapsed time is in milliseconds, so a settle on every request loses nothing.
+	RefreshStorehouse(ctx context.Context, arg RefreshStorehouseParams) error
+	// Gives a purse back WITHOUT moving the lord's sequence.
+	//
+	// CreditGold writes action_seq, and a job must never move the number the
+	// client's queued collects are counting on. This is the ApplyBattleDefender
+	// shape, and it is the reason this query exists at all.
+	RefundBounty(ctx context.Context, arg RefundBountyParams) (AppPlayer, error)
+	// Takes diamonds back for a refund. What is not there becomes a debt, paid
+	// first out of the next diamonds earned. Both right-hand sides read the row as
+	// it was: holding 30 and refunding 100 leaves 0 and a debt of 70.
+	RefundDiamonds(ctx context.Context, arg RefundDiamondsParams) (AppPlayer, error)
+	// Lords who refund often: the same count the service's flag logs, in every
+	// environment, so the panel and the log agree.
+	RefundFlagged(ctx context.Context, arg RefundFlaggedParams) ([]RefundFlaggedRow, error)
 	// Registers a device, or re-points one that moved to another account.
 	RegisterDevice(ctx context.Context, arg RegisterDeviceParams) error
 	// Registrations per day. generate_series so a day with no signups is a zero in
@@ -366,47 +1150,184 @@ type Querier interface {
 	// Buys a new name. The WHERE carries the price, so a double tap cannot pay
 	// twice, and players_username_lower_key refuses a name somebody else holds.
 	RenamePlayer(ctx context.Context, arg RenamePlayerParams) (AppPlayer, error)
+	// A report, once per lord per line. The count on the line is what hides it, and
+	// the WHERE is the guard: a second report from the same lord does nothing.
+	ReportChat(ctx context.Context, arg ReportChatParams) (AppChatReport, error)
+	// ============================================================================
+	// A lord reported (app.lord_reports, migration 46)
+	// ============================================================================
+	// One lord saying another should not be here. Reporting the same lord for the
+	// same thing twice while the first is still open changes nothing.
+	ReportLord(ctx context.Context, arg ReportLordParams) (AppLordReport, error)
+	// Clears the reports on a line once the crown has judged it, so it leaves the
+	// queue whichever way the judgement went.
+	ResolveChatReports(ctx context.Context, messageID uuid.UUID) (int64, error)
+	// The crown has judged this lord: every open report against them is answered,
+	// whichever way it went.
+	ResolveLordReports(ctx context.Context, arg ResolveLordReportsParams) (int64, error)
+	RestartGuide(ctx context.Context, id uuid.UUID) (int64, error)
+	// Classic retention by the UTC day players joined: of those who joined on a day,
+	// how many were here exactly one, seven and thirty days later. Deleted accounts
+	// stay in the cohort they joined. Bots never send a request, so never join one.
+	RetentionCohorts(ctx context.Context, since pgtype.Date) ([]RetentionCohortsRow, error)
+	// A lasting right given by hand from the panel, taken back the same way. Only
+	// a right the panel gave: one a purchase gave is taken back with its purchase.
+	RevokeAdminEntitlement(ctx context.Context, arg RevokeAdminEntitlementParams) (int64, error)
 	RevokeAdminSession(ctx context.Context, tokenHash []byte) error
 	// Revoked, never deleted: "why was everyone earning double on the 14th" has to
 	// stay answerable long after the event.
 	RevokeBoost(ctx context.Context, arg RevokeBoostParams) (AdminServerBoost, error)
+	// Revoking stops a letter reaching anyone else and takes back the copies nobody
+	// has claimed yet. What was claimed stays claimed.
+	RevokeBroadcast(ctx context.Context, arg RevokeBroadcastParams) (AdminMailBroadcast, error)
+	RevokeCosmeticsFrom(ctx context.Context, arg RevokeCosmeticsFromParams) (int64, error)
+	RevokeEntitlementByTransaction(ctx context.Context, arg RevokeEntitlementByTransactionParams) (int64, error)
+	RevokeLiveEvent(ctx context.Context, arg RevokeLiveEventParams) (AdminLiveEvent, error)
+	// A refunded Charter closes the lane it opened, and forgets what was claimed
+	// from it (the refund takes that back): the tiers it had claimed come back, so
+	// their tokens can be counted off.
+	RevokeRoyal(ctx context.Context, arg RevokeRoyalParams) (RevokeRoyalRow, error)
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) error
 	// Revokes an entire rotation chain. Presenting an already-rotated refresh token
 	// means the token was captured, so every descendant of that family is burned.
 	RevokeSessionFamily(ctx context.Context, arg RevokeSessionFamilyParams) error
+	// The daily KPI rollup (migration 00039, the kpi_rollup job).
+	// One UTC day's figures, written again if they were written before. The day's
+	// bounds are UTC midnights whatever the session's time zone.
+	RollupKPIDay(ctx context.Context, day pgtype.Date) error
+	// The screens opened over a window, most visited first.
+	ScreenCounts(ctx context.Context, since time.Time) ([]ScreenCountsRow, error)
 	// Kingdoms by name or tag. The pattern arrives escaped and lower-cased from the
 	// service ('%', '_' and '\' are literal in a name), and an exact tag reads first:
 	// someone typing LION wants [LION], not every kingdom with a lion in its name.
 	SearchKingdoms(ctx context.Context, arg SearchKingdomsParams) ([]SearchKingdomsRow, error)
 	SearchPlayers(ctx context.Context, lower string) ([]SearchPlayersRow, error)
+	// A season's board by renown (its Charter points), first there first placed.
+	SeasonBoard(ctx context.Context, arg SeasonBoardParams) ([]SeasonBoardRow, error)
+	// Every row of a season, for what its lords left unclaimed.
+	SeasonRows(ctx context.Context, season int32) ([]AppPlayerSeason, error)
+	// Every lord with renown in a season, in place order, for its close.
+	SeasonStandings(ctx context.Context, season int32) ([]AppPlayerSeason, error)
+	// The panel's view of a season.
+	SeasonSummary(ctx context.Context, season int32) (SeasonSummaryRow, error)
+	// How the season's lords spread over its tiers, a band of ten at a time.
+	SeasonTierBands(ctx context.Context, arg SeasonTierBandsParams) ([]SeasonTierBandsRow, error)
+	// A soldier sent out. The haul is already rolled: it is written here and frozen.
+	SendExpedition(ctx context.Context, arg SendExpeditionParams) (AppExpedition, error)
+	// ---------------------------------------------------------------------------
+	// The gift
+	// ---------------------------------------------------------------------------
+	// One a day to each friend, in the SENDER's own day: the primary key is the
+	// rule, so a second gift is a conflict rather than a count.
+	SendGift(ctx context.Context, arg SendGiftParams) (AppGift, error)
+	// Writes a segment letter for everyone who matches, at once. Bots never get
+	// mail; they cannot read it.
+	SendSegmentMail(ctx context.Context, arg SendSegmentMailParams) (int64, error)
+	// How long sessions last, in bands, from the phone's own count of its time in
+	// the foreground. The bands are the panel's rows.
+	SessionLengths(ctx context.Context, since time.Time) ([]SessionLengthsRow, error)
 	SetAvatar(ctx context.Context, arg SetAvatarParams) (AppPlayer, error)
+	SetBroadcastSent(ctx context.Context, arg SetBroadcastSentParams) error
+	// The daily loop (migration 00041): the Tax Cart, the 28-day calendar, the
+	// week's quests, the Golden Hour, the Victory Road, the guide, welcome back.
+	// The Tax Cart's yard after a settle or an opening. opened is how many carts
+	// this statement opened (0 for a settle alone).
+	SetCartYard(ctx context.Context, arg SetCartYardParams) (AppPlayer, error)
+	// The crown's hand: hide a line, or put it back.
+	SetChatHidden(ctx context.Context, arg SetChatHiddenParams) (AppChatMessage, error)
+	// The Golden Hour's state after a collect (game/frenzy.Step).
+	SetFrenzy(ctx context.Context, arg SetFrenzyParams) error
 	SetHeroEquipped(ctx context.Context, arg SetHeroEquippedParams) error
+	// The panel forces or skips an hour that has not begun.
+	SetHourly(ctx context.Context, arg SetHourlyParams) (AdminHourlyEvent, error)
+	SetIAPGranted(ctx context.Context, arg SetIAPGrantedParams) error
 	SetJoinPolicy(ctx context.Context, arg SetJoinPolicyParams) error
 	SetKingdomRole(ctx context.Context, arg SetKingdomRoleParams) (AppPlayer, error)
 	SetLeader(ctx context.Context, arg SetLeaderParams) error
+	SetMailBroadcastSeen(ctx context.Context, arg SetMailBroadcastSeenParams) error
 	SetMight(ctx context.Context, arg SetMightParams) error
+	// ---------------------------------------------------------------------------
+	// The settings
+	// ---------------------------------------------------------------------------
+	SetNotifyPrefs(ctx context.Context, arg SetNotifyPrefsParams) (AppPlayer, error)
+	SetPatronUntil(ctx context.Context, arg SetPatronUntilParams) (AppPlayer, error)
 	// Seats a player. The kingdom_id IS NULL guard is the last word on "one
 	// kingdom at a time": a king answering a request seats someone other than
 	// himself, and that someone may have joined elsewhere a moment before. Zero
 	// rows means they had.
 	SetPlayerKingdom(ctx context.Context, arg SetPlayerKingdomParams) (AppPlayer, error)
+	SetPrivacyPrefs(ctx context.Context, arg SetPrivacyPrefsParams) (AppPlayer, error)
 	SetSoldierEquipped(ctx context.Context, arg SetSoldierEquippedParams) error
 	SetSoldierLevel(ctx context.Context, arg SetSoldierLevelParams) (AppSoldier, error)
 	// A reroll: the soldier keeps its id, slot, type and gear, and takes a new tier.
 	SetSoldierTier(ctx context.Context, arg SetSoldierTierParams) (AppSoldier, error)
-	// Rewrites the cached hourly rate. Must be called only after CreditTax, so the
-	// time already earned is paid at the OLD rate.
-	SetTaxRate(ctx context.Context, arg SetTaxRateParams) error
+	SetStipend(ctx context.Context, arg SetStipendParams) (AppPlayer, error)
+	SetSubscriptionStatus(ctx context.Context, arg SetSubscriptionStatusParams) (AppSubscription, error)
+	SettleBossCycle(ctx context.Context, arg SettleBossCycleParams) error
 	SettleEnergy(ctx context.Context, arg SettleEnergyParams) error
-	SettleTax(ctx context.Context, arg SettleTaxParams) error
+	// Settled: the soldier is home with the haul, or was called back with nothing.
+	// The WHERE keeps a double tap from paying twice.
+	SettleExpedition(ctx context.Context, arg SettleExpeditionParams) (AppExpedition, error)
+	SettleWar(ctx context.Context, arg SettleWarParams) error
+	// Is this soldier away? Asked before a reroll, a dismissal or a change of gear:
+	// the row IS the absence, so this is the one question.
+	SoldierIsAway(ctx context.Context, soldierID uuid.UUID) (bool, error)
+	// The day's aid given, spent on the helper's own row.
+	SpendAid(ctx context.Context, arg SpendAidParams) (int16, error)
+	SpendArenaRefresh(ctx context.Context, arg SpendArenaRefreshParams) (AppPlayer, error)
+	// Spends one of the day's fights and moves the lord's own sequence. The count
+	// comes from the row the fight already locked and is written in the same
+	// statement, so two taps cannot both be the fifth.
+	SpendArenaTicket(ctx context.Context, arg SpendArenaTicketParams) (AppPlayer, error)
+	// Spends diamonds on something the Splendour shop sells. The WHERE is the
+	// affordability check; a player who owes a debt holds none to spend.
+	SpendDiamonds(ctx context.Context, arg SpendDiamondsParams) (AppPlayer, error)
+	// Energy spent on a stage, with the lord's own sequence moved in the same
+	// statement: a campaign fight is the lord's own action, so it advances the
+	// number their queued collects are counting on.
+	SpendEnergySeq(ctx context.Context, arg SpendEnergySeqParams) (AppPlayer, error)
 	// Spends favour. Zero rows means they could not afford it, so the check and the
 	// deduction are the same statement and a double-tap cannot overdraw.
 	SpendFavour(ctx context.Context, arg SpendFavourParams) (AppPlayer, error)
+	// The day's requests, counted on the lord's own row in the same statement that
+	// spends one, so two taps cannot both be the twentieth.
+	SpendFriendRequest(ctx context.Context, arg SpendFriendRequestParams) (int16, error)
+	// The day's take, counted on the taker's own row in the same statement that
+	// spends one. Returns no row when the day is full, which is the guard.
+	SpendGiftTake(ctx context.Context, arg SpendGiftTakeParams) (int16, error)
 	SpendGold(ctx context.Context, arg SpendGoldParams) (AppPlayer, error)
 	SpendKingdomTreasury(ctx context.Context, arg SpendKingdomTreasuryParams) (AppKingdom, error)
 	// Spends level-up points. The WHERE clause carries the affordability check, so
 	// the balance cannot go negative even under a concurrent double-tap.
 	SpendStatPoints(ctx context.Context, arg SpendStatPointsParams) (AppPlayer, error)
+	// Uses tokens. Zero rows means the player does not hold that many, so the check
+	// and the spend are one statement and a double tap cannot use one twice.
+	SpendToken(ctx context.Context, arg SpendTokenParams) (AppPlayerToken, error)
+	// Herald's Tidings (migration 00049): the rewarded advert.
+	// A watch is started. The row IS the ticket the SDK carries.
+	StartAdWatch(ctx context.Context, arg StartAdWatchParams) (AppAdWatch, error)
+	// A strike, counted inside the window and reset outside it, in one statement so
+	// the count and the clock can never disagree.
+	StrikePlayer(ctx context.Context, arg StrikePlayerParams) (int16, error)
+	// The sweeper: the hall keeps what the balance says and no more.
+	SweepChat(ctx context.Context, before time.Time) (int64, error)
+	// Mirrors the lasting rights onto the player, where every read has them.
+	SyncEntitlementFlags(ctx context.Context, arg SyncEntitlementFlagsParams) (AppPlayer, error)
+	// Takes one gift. The WHERE is the guard: a gift already taken returns no row,
+	// so a double tap grants nothing.
+	TakeGift(ctx context.Context, arg TakeGiftParams) (AppGift, error)
+	// Takes back tokens a refunded purchase gave, as far as they are still held.
+	TakeTokens(ctx context.Context, arg TakeTokensParams) error
+	// And how often it changes its mind.
+	TalentRespecs(ctx context.Context) (TalentRespecsRow, error)
+	// The tree: which ranks the realm is buying.
+	TalentsPicked(ctx context.Context, lim int32) ([]TalentsPickedRow, error)
+	// The same race on the cumulative measure (total), the alternative the balance
+	// can switch to.
+	ThroneRaceByTotal(ctx context.Context, arg ThroneRaceByTotalParams) ([]ThroneRaceByTotalRow, error)
+	// The week's race, on the measure the Throne is decided by (week_gain).
+	// Kingdoms under min_members are not candidates and are not shown.
+	ThroneRaceByWeekGain(ctx context.Context, arg ThroneRaceByWeekGainParams) ([]ThroneRaceByWeekGainRow, error)
 	// The table. A kingdom whose last lord has gone is not a kingdom, so it is not
 	// ranked, however much renown it left behind.
 	TopKingdoms(ctx context.Context, arg TopKingdomsParams) ([]TopKingdomsRow, error)
@@ -414,6 +1335,9 @@ type Querier interface {
 	TotalRegistered(ctx context.Context) (int64, error)
 	TouchAdminLogin(ctx context.Context, id uuid.UUID) error
 	TouchCooldown(ctx context.Context, arg TouchCooldownParams) error
+	// Promo codes and bringing a friend. See migration 00036, service/promo.go and
+	// service/referral.go.
+	TouchDevice(ctx context.Context, arg TouchDeviceParams) error
 	TouchPlayerSeen(ctx context.Context, id uuid.UUID) error
 	// Writes back a whole batch of players the presence registry has heard from.
 	//
@@ -425,13 +1349,43 @@ type Querier interface {
 	// request in memory and flushes the set here once every thirty seconds -- one
 	// statement regardless of how many players are online, instead of one write per
 	// request.
+	//
+	// The same statement records the day in app.player_days, so "who played on the
+	// 3rd" is kept after last_seen_at has moved on: the active series and retention
+	// read that, and a flush that cannot write one cannot write the other.
 	TouchPlayersSeen(ctx context.Context, dollar_1 []uuid.UUID) error
+	UnblockLord(ctx context.Context, arg UnblockLordParams) (int64, error)
 	// Clears whatever the player is wearing in this slot, so equipping is a
 	// two-step swap that cannot transiently violate the one-item-per-slot index.
 	UnequipHeroSlot(ctx context.Context, arg UnequipHeroSlotParams) error
 	// Frees the soldier's slot before the new item goes in, so the unique index
 	// never sees two items in one slot even transiently.
 	UnequipSoldierSlot(ctx context.Context, arg UnequipSoldierSlotParams) error
+	Unfriend(ctx context.Context, arg UnfriendParams) (int64, error)
+	// Opens the royal lane for a season, once.
+	UnlockRoyal(ctx context.Context, arg UnlockRoyalParams) (AppPlayerSeason, error)
+	UnmutePlayer(ctx context.Context, playerID uuid.UUID) error
+	// Takes off whatever a lord wears but no longer holds: a patron's frame whose
+	// month ran out, a cosmetic a refund took back. Everyone's default crests have
+	// no row and are always held. The worn columns are what every list of other
+	// lords reads (raid cards, rankings, a kingdom's lords), so keeping them true
+	// here is what lets those lists skip a check per row. player_id NULL sweeps
+	// everyone (the cosmetics_lapse job); a player id tidies one lord at once.
+	UnwearLapsed(ctx context.Context, arg UnwearLapsedParams) (int64, error)
+	// Boosts an operator has scheduled to start within the window, soonest first:
+	// what the game can announce before it begins.
+	UpcomingBoosts(ctx context.Context, arg UpcomingBoostsParams) ([]UpcomingBoostsRow, error)
+	// A lord's standing, made if it is missing and rolled if it is a season stale.
+	// The half reset happens HERE as well as in the job: whichever runs first, the
+	// other is a no-op, and a lord never fights a fresh season on last season's
+	// rating.
+	UpsertArena(ctx context.Context, arg UpsertArenaParams) (AppArena, error)
+	// ---------------------------------------------------------------------------
+	// The shared goal
+	// ---------------------------------------------------------------------------
+	// The kingdom's goal for a day, made once. The unique key is the rule: two
+	// lords arriving at the same instant make one goal between them.
+	UpsertKingdomGoal(ctx context.Context, arg UpsertKingdomGoalParams) (AppKingdomGoal, error)
 	// Creates the row on first use and resets it whenever the 5-minute window rolls
 	// over, in one statement so two concurrent requests cannot both "reset" it.
 	// The luck column is written ONLY when the window turns. Holding it still for
@@ -442,9 +1396,41 @@ type Querier interface {
 	// Recruiting into an occupied slot replaces the occupant, so this is an upsert
 	// rather than an insert.
 	UpsertSoldier(ctx context.Context, arg UpsertSoldierParams) (AppSoldier, error)
+	UpsertSubscription(ctx context.Context, arg UpsertSubscriptionParams) (AppSubscription, error)
+	// What service.grantBundle writes, beyond the columns the player row already has.
+	// See migration 00030.
+	UpsertToken(ctx context.Context, arg UpsertTokenParams) (AppPlayerToken, error)
+	// One use of an hour's event, as long as fewer than max have been taken. No row
+	// back means the hour's allowance is spent.
+	UseHourly(ctx context.Context, arg UseHourlyParams) (int16, error)
+	// Counts one use, if the code is live and not used up. No row: it is not.
+	UsePromoCode(ctx context.Context, arg UsePromoCodeParams) (AdminPromoCode, error)
 	// Spends a token, and only if it is still live and still theirs. Zero rows means
 	// it was already used or has expired, so the check and the spend cannot race.
 	UseRevenge(ctx context.Context, arg UseRevengeParams) (uuid.UUID, error)
+	WarpArena(ctx context.Context, arg WarpArenaParams) error
+	WarpBounties(ctx context.Context, arg WarpBountiesParams) error
+	WarpBountyClaims(ctx context.Context, arg WarpBountyClaimsParams) error
+	WarpCooldowns(ctx context.Context, arg WarpCooldownsParams) error
+	WarpCosmetics(ctx context.Context, arg WarpCosmeticsParams) error
+	WarpDeals(ctx context.Context, arg WarpDealsParams) error
+	WarpMail(ctx context.Context, arg WarpMailParams) error
+	WarpOffers(ctx context.Context, arg WarpOffersParams) error
+	WarpPlayerBoosts(ctx context.Context, arg WarpPlayerBoostsParams) error
+	// Dev tools (service/dev.go): a server that is not production only. They move
+	// a lord's clocks, never the server's, so what they show is what a lord away for
+	// that long would come back to.
+	WarpPlayerClocks(ctx context.Context, arg WarpPlayerClocksParams) error
+	WarpRevenge(ctx context.Context, arg WarpRevengeParams) error
+	// Wears a cosmetic of one kind, or takes it off (an empty id). The EXISTS keeps
+	// a lord from wearing what they do not own; the default crests are everyone's
+	// and are passed in as owned by the service.
+	WearCosmetic(ctx context.Context, arg WearCosmeticParams) (AppPlayer, error)
+	// Takes back the letters a refunded gift sent that nobody opened.
+	WithdrawUnclaimedMail(ctx context.Context, arg WithdrawUnclaimedMailParams) (int64, error)
+	// A blow lands. The WHERE is the guard: a beast already down takes nothing more,
+	// and two lords striking at once cannot take it past zero between them.
+	WoundBoss(ctx context.Context, arg WoundBossParams) (AppKingdomBoss, error)
 	WriteAudit(ctx context.Context, arg WriteAuditParams) error
 }
 

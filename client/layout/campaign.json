@@ -1,0 +1,511 @@
+{
+ "screen": "campaign",
+ "source": "campaign_nodes_sheet.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0b1620",
+ "notes": [
+  "THE CONQUEST CAMPAIGN -- the Attack tab's CAMPAIGN body (client/scenes/attack/campaign_view.gd), cut from campaign_nodes_sheet.png and the ten maps (art/slices/campaign.json).",
+  "attack.png paints the header and the four-tab band and they are canonical: this body starts under them, at 364, exactly where the ARENA's and the BOUNTIES' do.",
+  "The MAP is the painting itself, whole and unscaled, at x 160 y 566. That is what makes the nodes' places honest: scripts/campaign-road.py seams the road out of the painting and writes twelve points per chapter into client/layout/campaign_nodes.json, in the painting's own pixels, and the view adds the map's own corner to each. Change where the map is drawn and every node follows it, because there is one number to change.",
+  "A node template carries a `centre`: the middle of its painted ring, in the crop's own units after the scale it was cut down by. A node is hung on the road by that centre and not by its corner, which is why the glowing one -- a bigger picture of the same ring -- sits exactly where the plain one did.",
+  "The chapter strip flows sideways through `strip`: ten plates, the lord's own lit, the ones behind them gold, the rest iron. A chapter is chosen by tapping its plate, which is one object doing one thing, rather than by arrows either side of a counter.",
+  "campaign_nodes.json is NOT a layout and is not mirrored here: it is a measurement (scripts/campaign-road.py) of where the road runs on each of the ten paintings, in the paintings' own pixels, and it is written straight into client/layout/ by the script that measures it."
+ ],
+ "elements": [
+  {
+   "id": "strip",
+   "kind": "scroll",
+   "axis": "horizontal",
+   "rect": [
+    160,
+    364,
+    781,
+    194
+   ],
+   "content": [
+    "chapter"
+   ],
+   "note": "Where the ten chapter plates flow, sideways. `chapter` is named as its content so Layout leaves the template to the view rather than building the painting's own copies of it."
+  },
+  {
+   "id": "chapter",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    144,
+    185
+   ],
+   "centre": [
+    72,
+    79
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "campaign/plate_gold",
+     "rect": [
+      0,
+      0,
+      144,
+      185
+     ]
+    },
+    {
+     "id": "num",
+     "kind": "text",
+     "rect": [
+      42,
+      42,
+      60,
+      60
+     ],
+     "size": 40,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "1"
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      29,
+      136,
+      99,
+      41
+     ],
+     "size": 17,
+     "font": "title",
+     "weight": 800,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "The Vale",
+     "uppercase": true,
+     "wrap": true,
+     "line_height": 19
+    },
+    {
+     "id": "tap",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      144,
+      185
+     ],
+     "action": "chapter"
+    }
+   ]
+  },
+  {
+   "id": "map",
+   "kind": "image",
+   "asset": "campaign/map_01",
+   "rect": [
+    160,
+    566,
+    776,
+    1030
+   ]
+  },
+  {
+   "id": "node_shut",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    96,
+    87
+   ],
+   "centre": [
+    47.8,
+    50.5
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/node_shut",
+     "rect": [
+      0,
+      0,
+      96,
+      87
+     ]
+    }
+   ]
+  },
+  {
+   "id": "node_open",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    96,
+    87
+   ],
+   "centre": [
+    47.5,
+    50.8
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/node_open",
+     "rect": [
+      0,
+      0,
+      96,
+      87
+     ]
+    },
+    {
+     "id": "num",
+     "kind": "text",
+     "rect": [
+      20,
+      33,
+      56,
+      36
+     ],
+     "size": 30,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "7"
+    }
+   ]
+  },
+  {
+   "id": "node_now",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    112,
+    94
+   ],
+   "centre": [
+    56.2,
+    57.1
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/node_now",
+     "rect": [
+      0,
+      0,
+      112,
+      94
+     ]
+    },
+    {
+     "id": "num",
+     "kind": "text",
+     "rect": [
+      28,
+      39,
+      56,
+      36
+     ],
+     "size": 30,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "7"
+    }
+   ]
+  },
+  {
+   "id": "node_done",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    102,
+    87
+   ],
+   "centre": [
+    50.8,
+    50.0
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/node_done",
+     "rect": [
+      0,
+      0,
+      102,
+      87
+     ]
+    },
+    {
+     "id": "num",
+     "kind": "text",
+     "rect": [
+      23,
+      33,
+      56,
+      36
+     ],
+     "size": 30,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "7"
+    }
+   ]
+  },
+  {
+   "id": "boss_shut",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    102,
+    118
+   ],
+   "centre": [
+    51.0,
+    82.9
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/boss_shut",
+     "rect": [
+      0,
+      0,
+      102,
+      118
+     ]
+    }
+   ]
+  },
+  {
+   "id": "boss_open",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    103,
+    118
+   ],
+   "centre": [
+    51.7,
+    83.8
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/boss_open",
+     "rect": [
+      0,
+      0,
+      103,
+      118
+     ]
+    },
+    {
+     "id": "num",
+     "kind": "text",
+     "rect": [
+      26,
+      66,
+      52,
+      36
+     ],
+     "size": 30,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "6"
+    }
+   ]
+  },
+  {
+   "id": "boss_now",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    104,
+    118
+   ],
+   "centre": [
+    52.7,
+    83.8
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/boss_now",
+     "rect": [
+      0,
+      0,
+      104,
+      118
+     ]
+    },
+    {
+     "id": "num",
+     "kind": "text",
+     "rect": [
+      26,
+      66,
+      52,
+      36
+     ],
+     "size": 30,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "6"
+    }
+   ]
+  },
+  {
+   "id": "boss_done",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    102,
+    118
+   ],
+   "centre": [
+    51.0,
+    84.1
+   ],
+   "parts": [
+    {
+     "id": "ring",
+     "kind": "image",
+     "asset": "campaign/boss_done",
+     "rect": [
+      0,
+      0,
+      102,
+      118
+     ]
+    },
+    {
+     "id": "num",
+     "kind": "text",
+     "rect": [
+      25,
+      66,
+      52,
+      36
+     ],
+     "size": 30,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "center",
+     "valign": "center",
+     "sample": "6"
+    }
+   ]
+  },
+  {
+   "id": "standard",
+   "kind": "image",
+   "asset": "campaign/standard",
+   "rect": [
+    0,
+    0,
+    98,
+    150
+   ]
+  },
+  {
+   "id": "chest",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    127,
+    143
+   ],
+   "parts": [
+    {
+     "id": "box",
+     "kind": "image",
+     "asset": "campaign/chest_shut",
+     "rect": [
+      0,
+      18,
+      127,
+      107
+     ]
+    },
+    {
+     "id": "star",
+     "kind": "image",
+     "asset": "campaign/star_on",
+     "rect": [
+      10,
+      125,
+      36,
+      34
+     ]
+    },
+    {
+     "id": "need",
+     "kind": "text",
+     "rect": [
+      50,
+      125,
+      70,
+      34
+     ],
+     "size": 24,
+     "font": "title",
+     "weight": 700,
+     "color": "#F4E3B4",
+     "align": "left",
+     "valign": "center",
+     "sample": "12"
+    },
+    {
+     "id": "tap",
+     "kind": "button",
+     "rect": [
+      0,
+      0,
+      127,
+      160
+     ],
+     "action": "chest"
+    }
+   ]
+  }
+ ]
+}

@@ -10,7 +10,9 @@ import (
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
+	"github.com/yigitkarabulut0/emperors/server/internal/ledger"
 )
 
 // BatchMax is the most collects one request may carry.
@@ -36,9 +38,12 @@ type CollectBatchResult struct {
 	MilestoneHit   int64 `json:"milestone_hit,omitempty"`
 	// Which job crossed it. Without this the client knows a milestone happened
 	// but not what it was for, and a batch can span more than one job.
-	MilestoneJob   string    `json:"milestone_job,omitempty"`
-	StoppedBecause string    `json:"stopped_because,omitempty"`
-	Snapshot       *Snapshot `json:"snapshot"`
+	MilestoneJob   string `json:"milestone_job,omitempty"`
+	StoppedBecause string `json:"stopped_because,omitempty"`
+	// What the Golden Hour added to GoldGained, and whether the run lit it.
+	FrenzyGold    int64     `json:"frenzy_gold"`
+	FrenzyStarted bool      `json:"frenzy_started"`
+	Snapshot      *Snapshot `json:"snapshot"`
 }
 
 // CollectBatch performs a run of collects in a single transaction.
@@ -92,7 +97,8 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 		}
 
 		now := d.Now()
-		energy, _, _ := settleEnergy(d.Config, p, eff, now)
+		energy, maxEnergy, _ := settleEnergy(d.Config, p, eff, now)
+		golden := d.newFrenzyRun(p, now)
 
 		// The lifetime count per job is read once and advanced in memory, so the
 		// mastery bonus is still computed from the count before each individual
@@ -132,7 +138,11 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 				counts[jobID] = prog.Collects
 			}
 
-			reward := economy.Collect(d.Config, job, counts[jobID], eff.Bonuses)
+			bonuses, covered := d.frenzyBonuses(golden, eff.Bonuses, job.EnergyCost, maxEnergy, level, now)
+			reward := economy.Collect(d.Config, job, counts[jobID], bonuses)
+			if covered {
+				golden.gold += reward.Gold - economy.Collect(d.Config, job, counts[jobID], eff.Bonuses).Gold
+			}
 			counts[jobID]++
 			applied[jobID]++
 
@@ -142,8 +152,8 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 			// Levelling refills, and it must happen AFTER the spend or the
 			// level-up silently refunds the collect that caused it.
 			if up.Refilled {
-				energy = economy.Refill(
-					economy.MaxEnergy(d.Config, int64(up.Level), int64(p.StatEnergy), eff.MaxEnergyFlat), now)
+				maxEnergy = levelUpMax(d.Config, p, up, eff)
+				energy = economy.Refill(maxEnergy, now)
 			}
 
 			level, xp = up.Level, up.XP
@@ -201,26 +211,36 @@ func (d Deps) CollectBatch(ctx context.Context, playerID uuid.UUID, jobIDs []str
 		// One row for the whole run rather than one per tap: the batch is the
 		// action the player took, and the ledger should read the way the game
 		// was played.
-		if goldGained > 0 {
-			if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
-				PlayerID: playerID, Delta: goldGained, BalanceAfter: after.Gold,
-				Reason: "collect", RefID: nil,
-			}); err != nil {
-				return fmt.Errorf("record collect batch: %w", err)
-			}
+		if err := recordCollectGold(ctx, q, playerID, goldGained, golden.gold, after.Gold); err != nil {
+			return err
+		}
+		if err := golden.save(ctx, q, p); err != nil {
+			return err
+		}
+		// One row for the run's level-ups too, however many the run crossed.
+		if err := ledger.Diamonds(ctx, q, p, after, diamonds, ledger.LevelUp,
+			levelRef(p.Level, level)); err != nil {
+			return err
 		}
 
 		// One bump for the whole batch rather than one per tap: the run is the
 		// action the player took. A failure here is deliberately not fatal —
-		// losing a quest tick is not worth failing the collect that earned it.
-		if err := d.bumpQuests(ctx, q, p, int64(res.Applied), 0, 0, spentEnergy); err != nil {
-			d.logQuestBump(err)
+		// losing a quest tick is not worth failing the collect that earned it —
+		// and the savepoint is what makes that true rather than just intended.
+		done := deeds.Deeds{
+			deeds.Collects: int64(res.Applied), deeds.Energy: spentEnergy, deeds.XP: xpGained,
 		}
+		if golden.started {
+			done[deeds.GoldenHours] = 1
+		}
+		d.recordDeeds(ctx, tx, p, done)
 
 		res.GoldGained = goldGained
 		res.XPGained = xpGained
 		res.LevelsGained = levelsGained
 		res.DiamondsGained = diamonds
+		res.FrenzyGold = golden.gold
+		res.FrenzyStarted = golden.started
 		return nil
 	})
 	if err != nil {

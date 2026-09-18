@@ -58,29 +58,33 @@ func (q *Queries) BuyUpgradeLevel(ctx context.Context, arg BuyUpgradeLevelParams
 	return i, err
 }
 
-const claimTax = `-- name: ClaimTax :one
+const carryStorehouseToPurse = `-- name: CarryStorehouseToPurse :one
 UPDATE app.players
-SET gold = gold + $2,
-    tax_milli_accrued = 0,
-    tax_updated_at = $3,
-    action_seq = $4
-WHERE id = $1
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+SET gold             = gold + $1::bigint,
+    storehouse_milli = $2,
+    storehouse_at    = $3,
+    action_seq       = $4
+WHERE id = $5
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
-type ClaimTaxParams struct {
-	ID           uuid.UUID
-	Gold         int64
-	TaxUpdatedAt time.Time
-	ActionSeq    int64
+type CarryStorehouseToPurseParams struct {
+	Gold      int64
+	LeftMilli int64
+	Now       time.Time
+	ActionSeq int64
+	ID        uuid.UUID
 }
 
-func (q *Queries) ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, error) {
-	row := q.db.QueryRow(ctx, claimTax,
-		arg.ID,
+// Carries the storehouse's whole gold into the purse. The caller settled it on
+// the locked row; the sub-gold remainder stays behind.
+func (q *Queries) CarryStorehouseToPurse(ctx context.Context, arg CarryStorehouseToPurseParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, carryStorehouseToPurse,
 		arg.Gold,
-		arg.TaxUpdatedAt,
+		arg.LeftMilli,
+		arg.Now,
 		arg.ActionSeq,
+		arg.ID,
 	)
 	var i AppPlayer
 	err := row.Scan(
@@ -130,63 +134,109 @@ func (q *Queries) ClaimTax(ctx context.Context, arg ClaimTaxParams) (AppPlayer, 
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
 
-const clearTaxUnlogged = `-- name: ClearTaxUnlogged :exec
-UPDATE app.players SET tax_unlogged = 0 WHERE id = $1
+const carryStorehouseToTreasury = `-- name: CarryStorehouseToTreasury :one
+UPDATE app.players
+SET treasury_gold    = treasury_gold + $1::bigint,
+    storehouse_milli = $2,
+    storehouse_at    = $3,
+    action_seq       = $4
+WHERE id = $5
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
-// Clears the unlogged counter once its total has been written to the ledger.
-func (q *Queries) ClearTaxUnlogged(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, clearTaxUnlogged, id)
-	return err
+type CarryStorehouseToTreasuryParams struct {
+	Banked    int64
+	LeftMilli int64
+	Now       time.Time
+	ActionSeq int64
+	ID        uuid.UUID
 }
 
-const creditTax = `-- name: CreditTax :one
-WITH calc AS (
-    SELECT app.players.id AS pid,
-           tax_milli_accrued + tax_milli_per_hour
-               * GREATEST(0, (EXTRACT(EPOCH FROM ($1::timestamptz - tax_updated_at)) * 1000)::bigint)
-               / 3600000 AS total
-    FROM app.players
-    WHERE app.players.id = $2
-)
-UPDATE app.players p
-SET gold              = p.gold + calc.total / 1000,
-    tax_milli_accrued = calc.total % 1000,
-    -- Banked for the ledger. Flushed as one row when it is worth a row, rather
-    -- than a row per request for a few milli each.
-    tax_unlogged      = p.tax_unlogged + calc.total / 1000,
-    tax_updated_at    = $1::timestamptz
-FROM calc
-WHERE p.id = calc.pid
-  AND calc.total > p.tax_milli_accrued
-RETURNING p.id, p.username, p.display_name, p.level, p.xp, p.gold, p.treasury_gold, p.diamonds, p.energy_milli, p.energy_updated_at, p.stat_energy, p.stat_attack, p.stat_defense, p.stat_points_unspent, p.shield_until, p.action_seq, p.state, p.reset_offset_minutes, p.created_at, p.last_seen_at, p.soldier_slots, p.free_slot_claimed, p.free_recruit_claimed, p.is_bot, p.tax_milli_accrued, p.tax_updated_at, p.kingdom_id, p.kingdom_role, p.kingdom_joined_at, p.kingdom_donated_total, p.kingdom_favour, p.kingdom_rep_today, p.kingdom_donated_today, p.kingdom_day, p.avatar, p.tax_milli_per_hour, p.tax_unlogged, p.luck_bp, p.luck_expires_at, p.xp_boost_bp, p.xp_boost_expires_at, p.daily_streak, p.daily_claimed_on, p.might, p.legacy, p.kingdom_left_at
-`
-
-type CreditTaxParams struct {
-	Now      time.Time
-	PlayerID uuid.UUID
-}
-
-// Credits whatever the estates have earned since the last settle.
-//
-// Whole gold moves into the purse; the sub-gold remainder stays in the
-// accumulator so nothing is lost to rounding on a fast poll.
-//
-// Two details that decide whether this is correct:
-//
-//   - elapsed is measured in MILLISECONDS. Truncating it to whole seconds meant
-//     that a client polling four times a second earned exactly nothing, because
-//     every individual call saw zero seconds elapsed and moved the anchor
-//     anyway. Polling faster must never earn less.
-//   - the anchor only moves when something was actually earned. Integer division
-//     always rounds down, so a call that earns nothing must leave the clock
-//     alone or the remainder is thrown away on every single request.
-func (q *Queries) CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer, error) {
-	row := q.db.QueryRow(ctx, creditTax, arg.Now, arg.PlayerID)
+// Carries it into the vault instead, less the deposit fee (burned), the purse
+// untouched: gold that goes straight to the vault never passes a raider.
+func (q *Queries) CarryStorehouseToTreasury(ctx context.Context, arg CarryStorehouseToTreasuryParams) (AppPlayer, error) {
+	row := q.db.QueryRow(ctx, carryStorehouseToTreasury,
+		arg.Banked,
+		arg.LeftMilli,
+		arg.Now,
+		arg.ActionSeq,
+		arg.ID,
+	)
 	var i AppPlayer
 	err := row.Scan(
 		&i.ID,
@@ -235,6 +285,77 @@ func (q *Queries) CreditTax(ctx context.Context, arg CreditTaxParams) (AppPlayer
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
@@ -287,35 +408,40 @@ func (q *Queries) ListUpgrades(ctx context.Context, playerID uuid.UUID) ([]AppPl
 	return items, nil
 }
 
-const setTaxRate = `-- name: SetTaxRate :exec
-UPDATE app.players SET tax_milli_per_hour = $2 WHERE id = $1
-`
-
-type SetTaxRateParams struct {
-	ID              uuid.UUID
-	TaxMilliPerHour int64
-}
-
-// Rewrites the cached hourly rate. Must be called only after CreditTax, so the
-// time already earned is paid at the OLD rate.
-func (q *Queries) SetTaxRate(ctx context.Context, arg SetTaxRateParams) error {
-	_, err := q.db.Exec(ctx, setTaxRate, arg.ID, arg.TaxMilliPerHour)
-	return err
-}
-
-const settleTax = `-- name: SettleTax :exec
+const refreshStorehouse = `-- name: RefreshStorehouse :exec
 UPDATE app.players
-SET tax_milli_accrued = $2, tax_updated_at = $3
-WHERE id = $1
+SET storehouse_milli = LEAST(GREATEST(storehouse_milli, storehouse_cap_milli),
+                             storehouse_milli + tax_milli_per_hour
+                               * LEAST(34560000000::bigint,
+                                       GREATEST(0, floor(EXTRACT(EPOCH FROM ($1::timestamptz - storehouse_at)) * 1000)::bigint))
+                               / 3600000),
+    storehouse_at        = GREATEST(storehouse_at, $1::timestamptz),
+    tax_milli_per_hour   = $2,
+    storehouse_cap_milli = $3
+WHERE id = $4
 `
 
-type SettleTaxParams struct {
-	ID              uuid.UUID
-	TaxMilliAccrued int64
-	TaxUpdatedAt    time.Time
+type RefreshStorehouseParams struct {
+	Now      time.Time
+	Rate     int64
+	CapMilli int64
+	ID       uuid.UUID
 }
 
-func (q *Queries) SettleTax(ctx context.Context, arg SettleTaxParams) error {
-	_, err := q.db.Exec(ctx, settleTax, arg.ID, arg.TaxMilliAccrued, arg.TaxUpdatedAt)
+// The storehouse (migration 00040, game/estates.Fill).
+//
+// Settles the storehouse at the rate and capacity it has been filling at, then
+// stores the new pair: a holding bought, a level reached or a Tithe Barn level
+// never pays for the hours before it at the new rate. The sum is Fill's, in SQL,
+// so a settle racing a collect is one row update, never two views of the row:
+// what is over the capacity stays and grows no more; below it, it grows to it.
+// Elapsed time is in milliseconds, so a settle on every request loses nothing.
+func (q *Queries) RefreshStorehouse(ctx context.Context, arg RefreshStorehouseParams) error {
+	_, err := q.db.Exec(ctx, refreshStorehouse,
+		arg.Now,
+		arg.Rate,
+		arg.CapMilli,
+		arg.ID,
+	)
 	return err
 }

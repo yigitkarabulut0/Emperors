@@ -12,6 +12,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/army"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
@@ -28,9 +29,15 @@ var (
 
 // ArmyView is the Barracks tab.
 type ArmyView struct {
-	Slots    []SlotView   `json:"slots"`
-	Hero     UnitView     `json:"hero"`
-	Totals   army.Totals  `json:"totals"`
+	Slots  []SlotView  `json:"slots"`
+	Hero   UnitView    `json:"hero"`
+	Totals army.Totals `json:"totals"`
+	// What is actually standing in the yard: the roster minus whoever is away
+	// on an expedition. The tables and matchmaking read Totals -- a lord cannot
+	// choose when they are raided, so sending soldiers out must not quietly
+	// lower what another lord is matched against -- and the screen's ARMY MIGHT
+	// reads this, because this is who would march today.
+	Field    army.Totals  `json:"field"`
 	NextSlot *NextSlot    `json:"next_slot"`
 	Recruits []RecruitOpt `json:"recruits"`
 }
@@ -60,6 +67,21 @@ type UnitView struct {
 	Equipped map[string]*ItemView `json:"equipped"`
 	// What one reroll of this soldier costs. Soldiers only.
 	RerollCost int64 `json:"reroll_cost,omitempty"`
+	// Where this soldier is, when they are not in the yard: the expedition they
+	// were sent on. A soldier away does not fight in their lord's own battles
+	// and cannot be rerolled, dismissed or re-geared.
+	Away *SoldierAway `json:"away,omitempty"`
+}
+
+// SoldierAway is a soldier's absence, as the card's ribbon says it.
+type SoldierAway struct {
+	ID      string `json:"id"`
+	FieldID string `json:"field_id"`
+	Field   string `json:"field"`
+	// Seconds until they are home, and whether they are already standing at
+	// the gate waiting to be let in.
+	EndsIn int64 `json:"ends_in"`
+	Back   bool  `json:"back"`
 }
 
 type NextSlot struct {
@@ -139,15 +161,33 @@ func (d Deps) GetArmy(ctx context.Context, playerID uuid.UUID) (*ArmyView, error
 	view.Hero = hero
 	units = append(units, toArmyUnit(hero))
 
+	// Who is away, so the card can say so and the yard's own Might can leave
+	// them out. A failure here costs the ribbons, never the screen.
+	away := map[uuid.UUID]*SoldierAway{}
+	if rows, err := q.ListExpeditions(ctx, playerID); err == nil {
+		now := d.Now()
+		for _, r := range rows {
+			away[r.SoldierID] = d.soldierAway(r, now)
+		}
+	} else if d.Log != nil {
+		d.Log.Warn("expeditions not read", "err", err)
+	}
+
 	bySlot := map[int]*UnitView{}
+	home := make([]army.Unit, 0, len(soldiers)+1)
+	home = append(home, toArmyUnit(hero))
 	for _, s := range soldiers {
 		gear := soldierGear[s.ID]
 		if gear == nil {
 			gear = map[string]*ItemView{"weapon": nil, "armor": nil, "horse": nil}
 		}
 		uv := d.soldierUnit(p, s, gear, eff)
+		uv.Away = away[s.ID]
 		bySlot[int(s.SlotIndex)] = &uv
 		units = append(units, toArmyUnit(uv))
+		if uv.Away == nil {
+			home = append(home, toArmyUnit(uv))
+		}
 	}
 
 	for i := 1; i <= int(p.SoldierSlots); i++ {
@@ -173,6 +213,7 @@ func (d Deps) GetArmy(ctx context.Context, playerID uuid.UUID) (*ArmyView, error
 	}
 
 	view.Totals = army.Sum(units)
+	view.Field = army.Sum(home)
 
 	// Cache Might on the player row, the same way GetState caches the tax rate.
 	//
@@ -472,6 +513,7 @@ func (d Deps) Recruit(ctx context.Context, playerID uuid.UUID, slotIndex int, ty
 			}
 		}
 
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{deeds.Recruits: 1})
 		res.Paid = cost
 		res.Soldier = d.soldierUnit(p, s, map[string]*ItemView{"weapon": nil, "armor": nil, "horse": nil}, eff)
 		return nil
@@ -493,6 +535,10 @@ func (d Deps) EquipSoldier(ctx context.Context, playerID, soldierID, itemID uuid
 				return ErrNotFound
 			}
 			return fmt.Errorf("lock soldier: %w", err)
+		}
+		// A soldier on the road cannot be handed a different sword.
+		if err := d.mustBeHome(ctx, q, soldierID); err != nil {
+			return err
 		}
 		it, err := q.LockPlayerItem(ctx, sqlcdb.LockPlayerItemParams{ID: itemID, PlayerID: playerID})
 		if err != nil {
@@ -575,6 +621,13 @@ func (d Deps) Dismiss(ctx context.Context, playerID, soldierID uuid.UUID, wantSe
 				return ErrNotFound
 			}
 			return fmt.Errorf("lock soldier: %w", err)
+		}
+
+		// A soldier on the road cannot be let go: the row that says they are away
+		// points at them, and a lord must not be able to cancel an expedition by
+		// dismissing whoever is on it.
+		if err := d.mustBeHome(ctx, q, soldierID); err != nil {
+			return err
 		}
 
 		// Gear goes back to the bag. Destroying it with the soldier would make a

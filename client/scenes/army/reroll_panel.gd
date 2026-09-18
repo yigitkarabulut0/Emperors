@@ -17,7 +17,9 @@ extends Control
 ##
 ## Built from the game's own parts: the soldier's card is the Army screen's own
 ## template, the numerals and rarity badges are the painted ones, and the plate
-## is the chamfered card frame every dialog stands on.
+## is the chamfered card frame every dialog stands on. The card's portrait is
+## the soldier's type in the look of the tier it has just rolled
+## (SoldierArt), so a roll that lands gilded is seen to.
 
 signal closed
 
@@ -27,6 +29,7 @@ const BUTTON_H := 96.0
 const GAP := 14.0
 const PLATE := "inventory/card_frame"
 const PLATE_MARGIN := 26
+const HEADER := "pages/header_reroll"
 const TIER_IDS := ["common", "uncommon", "rare", "epic", "legendary", "mystic", "special"]
 const ROMAN := ["", "I", "II", "III", "IV", "V", "VI", "VII"]
 ## A roll lands at most this often, so a result can be read before the next
@@ -44,7 +47,7 @@ var _plate: NinePatchRect
 var _soldier: Dictionary = {}
 var _odds: Array = []
 var _name := ""
-var _portrait := ""
+var _type := "peasant"
 var _tier := 1
 var _target := 2
 var _cost := 0
@@ -62,9 +65,7 @@ var _flip_t := 0.0
 var _flip_i := 0
 
 var _card: Dictionary = {}
-var _card_numeral_label: Label
 var _big: TextureRect
-var _big_label: Label
 var _badge: TextureRect
 var _price_label: Label
 var _gold_label: Label
@@ -77,7 +78,7 @@ var _once_button: Button
 var _auto_button: Button
 
 
-## Opens the panel over the game and returns it. {soldier, odds, name, portrait}.
+## Opens the panel over the game and returns it. {soldier, odds, name, type}.
 static func open(host: Node, cfg: Dictionary) -> Control:
 	var p: Control = load("res://scenes/army/reroll_panel.gd").new()
 	p._setup(host, cfg)
@@ -88,7 +89,7 @@ func _setup(host: Node, cfg: Dictionary) -> void:
 	_soldier = cfg.get("soldier", {})
 	_odds = cfg.get("odds", [])
 	_name = str(cfg.get("name", "SOLDIER"))
-	_portrait = str(cfg.get("portrait", "portraits/soldier_villager"))
+	_type = str(cfg.get("type", _soldier.get("type", "peasant")))
 	_tier = _tier_of(_soldier)
 	_best = _tier
 	_target = mini(7, _tier + 1)
@@ -121,13 +122,16 @@ func _setup(host: Node, cfg: Dictionary) -> void:
 	var h := _build()
 	_plate.size = Vector2(W, h)
 	_plate.position = ((canvas - _plate.size) / 2.0).floor()
+	# Centred, but never under the notch: the header made the plate tall.
+	_plate.position.y = maxf(_plate.position.y, UI.safe_top(canvas) + 20.0)
 	_paint()
 
 
 # --- building -----------------------------------------------------------------------
 
 func _build() -> float:
-	var y := PAD
+	# The training yard over the title, as the Sheets carry their scenes.
+	var y := Sheet.header_art(_plate, HEADER, W) - Sheet.HEADER_OVERLAP
 	var title := UI.label("REROLL  ·  %s" % _name, 36, UI.GOLD, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
 	UI.place(title, Rect2(PAD, y, W - PAD * 2, 50))
 	UI.fit_label(title, 36, 24)
@@ -145,26 +149,19 @@ func _build() -> float:
 	var cp: Dictionary = _card["parts"]
 	cp["tap"].queue_free()
 	cp["selected_frame"].visible = false
-	cp["portrait"].texture = Art.tex(_portrait)
-	_card_numeral_label = UI.label("", 22, Color("#F2E6C8"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_card_numeral_label, cp["numeral"].get_rect())
-	_card_numeral_label.set_meta("box_w", 30.0)
-	card_node.add_child(_card_numeral_label)
 
 	var col_x := PAD + 10 + 149 + 40
 	var col_w := W - PAD - col_x
 	var cap := UI.label("THE TIER", 24, UI.GOLD_DIM, "title", 600, HORIZONTAL_ALIGNMENT_CENTER)
 	UI.place(cap, Rect2(col_x, y + 4, col_w, 30))
 	_plate.add_child(cap)
-	var big_size := Vector2(126, 119)
-	_big = UI.image("army/numeral_large_blank", Rect2(col_x + (col_w - big_size.x) / 2.0, y + 44,
+	# The fleur diamond at the size it is cut at, between the caption and the
+	# rarity word under it.
+	var big_size := Vector2(80, 124)
+	_big = UI.image(SoldierArt.numeral_large(_tier), Rect2(col_x + (col_w - big_size.x) / 2.0, y + 42,
 		big_size.x, big_size.y))
 	_big.pivot_offset = big_size / 2.0
 	_plate.add_child(_big)
-	_big_label = UI.label("", 54, Color("#F2E6C8"), "title", 800, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_big_label, Rect2(Vector2.ZERO, big_size))
-	_big_label.set_meta("box_w", 76.0)
-	_big.add_child(_big_label)
 	# The rarity word, as the inventory paints it.
 	_badge = UI.image("inventory/badge_common", Rect2(col_x + (col_w - 120) / 2.0, y + 172, 120, 59))
 	_badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -236,13 +233,13 @@ func _build() -> float:
 	y += 44
 
 	var half := (W - PAD * 2 - GAP) / 2.0
-	_once_button = _button("ROLL ONCE", "inventory/btn_sell_plate", UI.GOLD, Rect2(PAD, y, half, BUTTON_H))
+	_once_button = _button("ROLL ONCE", Dialog.QUIET_PLATE, UI.GOLD, Rect2(PAD, y, half, BUTTON_H))
 	_once_button.pressed.connect(_roll_once)
-	_auto_button = _button("AUTO ROLL", "shop/buy_plate", Color("#F3FBF3"),
+	_auto_button = _button("AUTO ROLL", Dialog.CONFIRM_PLATE, Color("#F3FBF3"),
 		Rect2(PAD + half + GAP, y, half, BUTTON_H))
 	_auto_button.pressed.connect(_toggle_auto)
 	y += BUTTON_H + GAP
-	var close := _button("CLOSE", "inventory/btn_sell_plate", UI.DIM, Rect2(PAD, y, W - PAD * 2, BUTTON_H))
+	var close := _button("CLOSE", Dialog.QUIET_PLATE, UI.DIM, Rect2(PAD, y, W - PAD * 2, BUTTON_H))
 	close.pressed.connect(_close)
 	y += BUTTON_H + PAD
 	return y
@@ -264,7 +261,7 @@ func _heading(text: String, y: float) -> float:
 
 
 func _button(word: String, plate: String, col: Color, rect: Rect2) -> Button:
-	var b := UI.plate_face(plate, 16)
+	var b := UI.plate_face(plate, Dialog.PLATE_EDGE)
 	b.text = word
 	b.add_theme_font_override("font", UI.font("title", 700))
 	b.add_theme_font_size_override("font_size", 28)
@@ -277,17 +274,10 @@ func _button(word: String, plate: String, col: Color, rect: Rect2) -> Button:
 	return b
 
 
-## A tier's numeral on its diamond: painted for I to III, set in type on the
-## blank plate above that -- the same rule the soldier cards follow.
+## A tier's painted numeral on its diamond, I to VII -- the one the soldier
+## cards wear. The odds page draws its rows with this too.
 static func numeral_badge(tier: int, rect: Rect2) -> TextureRect:
-	var t := UI.image("army/numeral_%d" % tier if tier <= 3 else "army/numeral_blank", rect)
-	if tier > 3:
-		var l := UI.label(ROMAN[tier], 20, Color("#F2E6C8"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-		UI.place(l, Rect2(Vector2.ZERO, rect.size))
-		l.set_meta("box_w", rect.size.x * 0.6)
-		UI.fit_label(l, 20, 12)
-		t.add_child(l)
-	return t
+	return UI.image(SoldierArt.numeral(tier), rect)
 
 
 # --- painting -----------------------------------------------------------------------
@@ -304,15 +294,8 @@ func _paint() -> void:
 	for k in ["attack", "defence", "power"]:
 		UI.fit_label(cp[k], 22, 16)
 	UI.fit_label(cp["troop"], 20, 15)
-	var plate: TextureRect = cp["numeral"]
-	if _tier <= 3:
-		plate.texture = Art.tex("army/numeral_%d" % _tier)
-		_card_numeral_label.visible = false
-	else:
-		plate.texture = Art.tex("army/numeral_blank")
-		_card_numeral_label.text = ROMAN[_tier]
-		UI.fit_label(_card_numeral_label, 22, 14)
-		_card_numeral_label.visible = true
+	cp["portrait"].texture = Art.tex(SoldierArt.portrait(_type, _tier))
+	cp["numeral"].texture = Art.tex(SoldierArt.numeral(_tier))
 	_show_big(_tier)
 	_badge.texture = Art.tex("inventory/badge_" + TIER_IDS[_tier - 1])
 
@@ -342,10 +325,10 @@ func _paint() -> void:
 	_paint_history()
 	_once_button.disabled = _running or _rolling
 	_auto_button.text = "STOP" if _running else "AUTO ROLL"
-	var face := "shop/danger_plate" if _running else "shop/buy_plate"
+	var face := Dialog.DANGER_PLATE if _running else Dialog.CONFIRM_PLATE
 	var cur: StyleBoxTexture = _auto_button.get_theme_stylebox("normal")
 	if cur.texture != Art.tex(face):
-		var fresh := UI.plate_face(face, 16)
+		var fresh := UI.plate_face(face, Dialog.PLATE_EDGE)
 		for state in ["normal", "hover", "focus", "pressed", "disabled"]:
 			_auto_button.add_theme_stylebox_override(state, fresh.get_theme_stylebox(state))
 		fresh.free()
@@ -355,14 +338,7 @@ func _paint() -> void:
 
 
 func _show_big(tier: int) -> void:
-	if tier == 1:
-		_big.texture = Art.tex("army/numeral_large_1")
-		_big_label.visible = false
-	else:
-		_big.texture = Art.tex("army/numeral_large_blank")
-		_big_label.text = ROMAN[tier]
-		UI.fit_label(_big_label, 54, 30)
-		_big_label.visible = true
+	_big.texture = Art.tex(SoldierArt.numeral_large(tier))
 
 
 func _paint_history() -> void:
@@ -387,10 +363,7 @@ func _process(delta: float) -> void:
 	if _flip_t >= FLIP_STEP:
 		_flip_t = 0.0
 		_flip_i = (_flip_i % 7) + 1
-		_big.texture = Art.tex("army/numeral_large_blank")
-		_big_label.text = ROMAN[_flip_i]
-		UI.fit_label(_big_label, 54, 30)
-		_big_label.visible = true
+		_big.texture = Art.tex(SoldierArt.numeral_large(_flip_i))
 
 
 ## The roll has landed: the numeral settles on the result with a small jolt,
@@ -566,7 +539,7 @@ func _close() -> void:
 # --- reading the server's numbers ------------------------------------------------
 
 func _tier_of(s: Dictionary) -> int:
-	return clampi(TIER_IDS.find(str(s.get("tier", "common"))) + 1, 1, 7)
+	return SoldierArt.tier_of(str(s.get("tier", "common")))
 
 
 func _bp_of(tier: int) -> int:

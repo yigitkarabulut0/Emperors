@@ -42,9 +42,6 @@ LIMIT 50;
 -- name: AdminSetPlayerState :one
 UPDATE app.players SET state = $2 WHERE id = $1 RETURNING *;
 
--- name: AdminAdjustCurrency :one
-UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING *;
-
 -- Economy health: what created gold and what destroyed it, by reason.
 -- name: GoldFlows :many
 SELECT reason,
@@ -85,13 +82,26 @@ WHERE created_at > now() - ($1::int * interval '1 day');
 -- anyone up: crossing a boundary grants stat points, diamonds and an energy
 -- refill, and a panel that silently did all that would be a very surprising
 -- "+500 xp". Levels are their own control.
+--
+-- The guards are in the WHERE: no row comes back when the grant would leave a
+-- negative purse, so the panel reports "out of range" instead of the CHECK
+-- constraint surfacing as a 500. A positive diamond grant repays refund debt
+-- first, exactly as every other credit does; a removal only ever takes what is
+-- there.
 -- name: AdminAdjustPlayer :one
 UPDATE app.players
 SET gold                = gold + sqlc.arg(gold)::bigint,
-    diamonds            = diamonds + sqlc.arg(diamonds)::bigint,
+    diamonds            = CASE WHEN sqlc.arg(diamonds)::bigint >= 0
+                               THEN diamonds + GREATEST(0, sqlc.arg(diamonds)::bigint - diamond_debt)
+                               ELSE diamonds + sqlc.arg(diamonds)::bigint END,
+    diamond_debt        = CASE WHEN sqlc.arg(diamonds)::bigint >= 0
+                               THEN GREATEST(0, diamond_debt - sqlc.arg(diamonds)::bigint)
+                               ELSE diamond_debt END,
     xp                  = GREATEST(0, xp + sqlc.arg(xp)::bigint),
     stat_points_unspent = GREATEST(0, stat_points_unspent + sqlc.arg(stat_points)::int)
 WHERE id = sqlc.arg(id)
+  AND gold + sqlc.arg(gold)::bigint >= 0
+  AND diamonds + LEAST(sqlc.arg(diamonds)::bigint, 0) >= 0
 RETURNING *;
 
 -- Sets the level outright, and refills energy the way a real level-up does.
@@ -131,14 +141,26 @@ WHERE subject = $1
 ORDER BY created_at DESC
 LIMIT $2;
 
--- Every boost in force at this instant. Read on a poll, never per request.
+-- Every boost in force at this instant, per bucket, with when the first of
+-- them ends. Read on a poll, never per request.
 -- name: ActiveBoosts :many
-SELECT bucket, sum(amount_bp)::bigint AS amount_bp
+SELECT bucket, sum(amount_bp)::bigint AS amount_bp, min(ends_at)::timestamptz AS ends_at
 FROM admin.server_boosts
 WHERE revoked_at IS NULL
   AND starts_at <= sqlc.arg(now)::timestamptz
   AND ends_at   >  sqlc.arg(now)::timestamptz
 GROUP BY bucket;
+
+-- Boosts an operator has scheduled to start within the window, soonest first:
+-- what the game can announce before it begins.
+-- name: UpcomingBoosts :many
+SELECT bucket, amount_bp, starts_at, ends_at
+FROM admin.server_boosts
+WHERE revoked_at IS NULL
+  AND starts_at >  sqlc.arg(now)::timestamptz
+  AND starts_at <= sqlc.arg(until)::timestamptz
+ORDER BY starts_at
+LIMIT 10;
 
 -- name: CreateBoost :one
 INSERT INTO admin.server_boosts (bucket, amount_bp, starts_at, ends_at, note, created_by)
@@ -169,24 +191,21 @@ LEFT JOIN app.players p
 GROUP BY d
 ORDER BY d;
 
--- Players seen on each day. "Active" is last_seen_at, and the presence registry
--- is now its only writer.
+-- Players who played on each day: everyone who sent an authenticated request
+-- that UTC day, from app.player_days.
 --
--- This comment used to claim that "every authenticated request already touches
--- it", and that was simply false: the column was written only as a side effect
--- of the ~18 queries that MUTATE something, so this series counted the players
--- who ACTED and silently missed everyone who merely looked around. Every active
--- number in this file was an undercount of exactly the browsing players. The
--- registry observes every authenticated request -- reads included -- and
--- flushes in a batch, so the name and the number finally agree.
+-- This used to count last_seen_at, which is one timestamp per player: each
+-- player was counted only on the day they were LAST seen, so a player who came
+-- every day showed up once, on today, and every past day of the series was an
+-- undercount that grew the further back it went. player_days keeps every day.
+-- Days before migration 00033 hold only each player's joining day and last day.
 -- name: ActiveDaily :many
 SELECT d::date AS day,
-       count(p.id)::bigint AS count
+       count(pd.player_id)::bigint AS count
 FROM generate_series(
         (sqlc.arg(now)::timestamptz - make_interval(days => sqlc.arg(days)::int))::date,
         sqlc.arg(now)::timestamptz::date, '1 day') AS d
-LEFT JOIN app.players p
-       ON p.last_seen_at::date = d::date AND NOT p.is_bot
+LEFT JOIN app.player_days pd ON pd.day = d::date
 GROUP BY d
 ORDER BY d;
 

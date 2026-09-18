@@ -25,7 +25,9 @@ Nav="*res://scripts/autoload/nav.gd"
 Api="*res://scripts/autoload/api.gd"
 Session="*res://scripts/autoload/session.gd"
 GameState="*res://scripts/autoload/game_state.gd"
+Billing="*res://scripts/autoload/billing.gd"
 Art="*res://scripts/autoload/art.gd"
+Realtime="*res://scripts/autoload/realtime.gd"
 Proof="*res://scripts/dev/proof.gd"
 
 [display]
@@ -44,6 +46,10 @@ environment/defaults/default_clear_color=Color(0.043, 0.082, 0.122, 1)
 renderer/rendering_method="mobile"
 renderer/rendering_method.web="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+
+[debug]
+
+file_logging/enable_file_logging.pc=false
 
 [gui]
 

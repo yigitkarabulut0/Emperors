@@ -1,0 +1,103 @@
+{
+  "_comment": "Krallik Boss Baskini. One boss stands against a kingdom for 48 hours; every member may strike it six times, each blow costing the energy a raid costs. A blow is a real fight cut to eight rounds, and what the lord did to the beast in them is their damage -- so a stronger army digs deeper, and a lord who falls early digs less. The beast's health is the kingdom's OWN Might times the blows each member has, times a calibrated share, so twenty lords do not trivialise what five could not scratch; it hardens a tenth each time it falls. Three chests: one for striking it, one for half an equal share of the damage, one for the kingdom that put it down -- and the first three on the damage list take diamonds and the Slayer's title. Everything here is paid in WAGES, so a chest is worth the same to a lord of six and a lord of sixty.",
+  "section": "boss",
+  "cycle_hours": 48,
+  "hits_per_member": 6,
+  "rounds_per_hit": 8,
+  "energy_base": 12,
+  "energy_per_level_bp": 3500,
+  "hp_per_might_bp": 3250,
+  "hp_growth_bp": 11000,
+  "max_level": 50,
+  "valour_share_bp": 5000,
+  "top_diamonds": [
+    10,
+    6,
+    4
+  ],
+  "top_title": "title_slayer",
+  "rotation": [
+    {
+      "id": "ashfall_wyrm",
+      "name": "Ashfall Wyrm",
+      "blurb": "A dragon out of the burning hills, and the sky goes dark.",
+      "art": "boss/ashfall_wyrm",
+      "attack_bp": 5200,
+      "defense_bp": 2600
+    },
+    {
+      "id": "garrow",
+      "name": "Garrow",
+      "blurb": "The reaver who took the north road, and never gave it back.",
+      "art": "boss/garrow",
+      "attack_bp": 5800,
+      "defense_bp": 2000
+    },
+    {
+      "id": "iron_colossus",
+      "name": "Iron Colossus",
+      "blurb": "A siege engine that learned to walk. It does not hurry.",
+      "art": "boss/iron_colossus",
+      "attack_bp": 3400,
+      "defense_bp": 4200
+    },
+    {
+      "id": "fen_witch",
+      "name": "Fen Witch",
+      "blurb": "She asks for a name. Whoever answers does not come home.",
+      "art": "boss/fen_witch",
+      "attack_bp": 6000,
+      "defense_bp": 1800
+    },
+    {
+      "id": "ulgrim",
+      "name": "Ulgrim",
+      "blurb": "The mountain king's last son, and the axe that outlived him.",
+      "art": "boss/ulgrim",
+      "attack_bp": 4600,
+      "defense_bp": 3000
+    },
+    {
+      "id": "black_knight",
+      "name": "Black Knight",
+      "blurb": "No banner, no face, no word. Only the road behind him.",
+      "art": "boss/black_knight",
+      "attack_bp": 5000,
+      "defense_bp": 2600
+    }
+  ],
+  "chests": [
+    {
+      "id": "struck",
+      "name": "The Blooded",
+      "need": "hit",
+      "grant": {
+        "gold_wages": 20,
+        "xp_wages": 10
+      }
+    },
+    {
+      "id": "valour",
+      "name": "The Valiant",
+      "need": "valour",
+      "grant": {
+        "gold_wages": 45,
+        "xp_wages": 25,
+        "tokens": {
+          "flask_small": 1
+        }
+      }
+    },
+    {
+      "id": "slain",
+      "name": "The Slayers",
+      "need": "kill",
+      "grant": {
+        "gold_wages": 90,
+        "xp_wages": 50,
+        "diamonds": 5
+      }
+    }
+  ],
+  "chest_growth_bp": 11000
+}

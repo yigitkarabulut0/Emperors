@@ -30,6 +30,19 @@ type Bundle struct {
 	Soldiers    SoldiersConfig    `json:"soldiers"`
 	Estates     EstatesConfig     `json:"estates"`
 	Kingdoms    KingdomsConfig    `json:"kingdoms"`
+	Rewards     RewardsConfig     `json:"rewards"`
+	Cosmetics   CosmeticsConfig   `json:"cosmetics"`
+	Commerce    CommerceConfig    `json:"commerce"`
+	Retention   RetentionConfig   `json:"retention"`
+	LiveOps     LiveOpsConfig     `json:"liveops"`
+	PvP         PvPConfig         `json:"pvp"`
+	Social      SocialConfig      `json:"social"`
+	Campaign    CampaignConfig    `json:"campaign"`
+	Hunt        HuntConfig        `json:"hunt"`
+	Talents     TalentsConfig     `json:"talents"`
+	Forge       ForgeConfig       `json:"forge"`
+	Boss        BossConfig        `json:"boss"`
+	War         WarConfig         `json:"war"`
 
 	// Derived lookups, built once at load so hot paths never scan a slice.
 	jobByID            map[string]*Job
@@ -43,6 +56,8 @@ type Bundle struct {
 	upgradeByID        map[string]*Upgrade
 	holdingByID        map[string]*Holding
 	kingdomUpgradeByID map[string]*Upgrade
+	productByID        map[string]*Product
+	productByStore     map[string]*Product
 }
 
 type JobsConfig struct {
@@ -69,18 +84,17 @@ type Milestone struct {
 }
 
 type ProgressionConfig struct {
-	LevelCap           int              `json:"level_cap"`
-	Energy             EnergyConfig     `json:"energy"`
-	StatPointsPerLevel int              `json:"stat_points_per_level"`
-	Treasury           TreasuryConfig   `json:"treasury"`
-	LevelupDiamonds    int64            `json:"levelup_diamonds"`
-	DailyLogin         DailyLoginConfig `json:"daily_login"`
-	Quests             QuestsConfig     `json:"quests"`
-	Legacy             LegacyConfig     `json:"legacy"`
-	Sections           []SectionGate    `json:"sections"`
-	Store              StoreConfig      `json:"store"`
-	Avatars            []string         `json:"avatars"`
-	Levels             []Level          `json:"levels"`
+	LevelCap           int            `json:"level_cap"`
+	Energy             EnergyConfig   `json:"energy"`
+	StatPointsPerLevel int            `json:"stat_points_per_level"`
+	Treasury           TreasuryConfig `json:"treasury"`
+	LevelupDiamonds    int64          `json:"levelup_diamonds"`
+	Quests             QuestsConfig   `json:"quests"`
+	Legacy             LegacyConfig   `json:"legacy"`
+	Sections           []SectionGate  `json:"sections"`
+	Store              StoreConfig    `json:"store"`
+	Avatars            []string       `json:"avatars"`
+	Levels             []Level        `json:"levels"`
 }
 
 // LegacyConfig is the terminal sink: start over, keep what gold bought.
@@ -107,13 +121,14 @@ type Quest struct {
 	Name     string `json:"name"`
 	Blurb    string `json:"blurb"`
 	MinLevel int    `json:"min_level,omitempty"`
+	// What a lord must HAVE, beyond a level, to be offered this task.
+	// "kingdom" is the only one: the hall's own tasks are undoable without one,
+	// and a daily nobody can finish teaches lords to ignore dailies.
+	Needs string `json:"needs,omitempty"`
 }
 
-// DailyLoginConfig is the seven-square calendar.
-type DailyLoginConfig struct {
-	Rewards     []int64 `json:"rewards"`
-	ResetOnMiss bool    `json:"reset_on_miss"`
-}
+// QuestNeedsKingdom is the one thing a daily task may ask for beyond a level.
+const QuestNeedsKingdom = "kingdom"
 
 // SectionLevel is the level that opens a navigation section ("fight",
 // "estates"...), and 1 for a section the config does not gate.
@@ -122,6 +137,21 @@ type DailyLoginConfig struct {
 // is not a rule: the raid band read nothing but levels, so a lord still two
 // levels short of their Attack tab could be raided by players they had no way
 // to answer.
+// HasSection reports a section the balance actually NAMES.
+//
+// SectionLevel answers 1 for a section it has never heard of, which is right
+// for the game -- an ungated screen is open -- and useless for a validator: a
+// document naming a gate nobody wrote would have passed every check. Every
+// document that carries a `section` is held to this instead.
+func (b *Bundle) HasSection(id string) bool {
+	for _, s := range b.Progression.Sections {
+		if s.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (b *Bundle) SectionLevel(id string) int {
 	for _, s := range b.Progression.Sections {
 		if s.ID == id {
@@ -157,9 +187,12 @@ func (b *Bundle) DefaultAvatar() string {
 // StoreConfig is what diamonds buy. Never gold and never power -- that rule is
 // what keeps the premium currency from being a shortcut past the game.
 type StoreConfig struct {
-	EnergyRefillDiamonds int64 `json:"energy_refill_diamonds"`
-	ShieldDiamonds       int64 `json:"shield_diamonds"`
-	ShieldHours          int64 `json:"shield_hours"`
+	// The price of each full refill in a day, in order: the first costs [0],
+	// the second [1]. Its length is the daily limit, because unlimited refills
+	// once diamonds can be bought would be unlimited gold for money.
+	EnergyRefillPrices []int64 `json:"energy_refill_prices"`
+	ShieldDiamonds     int64   `json:"shield_diamonds"`
+	ShieldHours        int64   `json:"shield_hours"`
 	// A new name for the hero. Vanity, not power, so it belongs here.
 	RenameDiamonds int64 `json:"rename_diamonds"`
 }
@@ -179,9 +212,15 @@ type EnergyConfig struct {
 	PerLevel         int64 `json:"per_level"`
 	PerStatPoint     int64 `json:"per_stat_point"`
 	RegenBaseSeconds int64 `json:"regen_base_seconds"`
-	Overflow         bool  `json:"overflow"`
-	LevelupRefill    bool  `json:"levelup_refill"`
-	RegenBonusCapBP  int64 `json:"regen_bonus_cap_bp"`
+	// Overflow is read by nothing, because `economy.Settle` clamps to the pool
+	// unconditionally and every other path through energy clamps with it. It
+	// stays as the document's own statement that energy does not overflow --
+	// and `Validate` refuses it set true, so a designer who flips it is told
+	// that no code would honour it rather than shipping a change that does
+	// nothing at all.
+	Overflow        bool  `json:"overflow"`
+	LevelupRefill   bool  `json:"levelup_refill"`
+	RegenBonusCapBP int64 `json:"regen_bonus_cap_bp"`
 }
 
 type Level struct {
@@ -219,6 +258,19 @@ func LoadSeed() (*Bundle, error) {
 		{"seed/soldiers.json", &b.Soldiers},
 		{"seed/estates.json", &b.Estates},
 		{"seed/kingdoms.json", &b.Kingdoms},
+		{"seed/rewards.json", &b.Rewards},
+		{"seed/cosmetics.json", &b.Cosmetics},
+		{"seed/commerce.json", &b.Commerce},
+		{"seed/retention.json", &b.Retention},
+		{"seed/liveops.json", &b.LiveOps},
+		{"seed/pvp.json", &b.PvP},
+		{"seed/social.json", &b.Social},
+		{"seed/campaign.json", &b.Campaign},
+		{"seed/hunt.json", &b.Hunt},
+		{"seed/talents.json", &b.Talents},
+		{"seed/forge.json", &b.Forge},
+		{"seed/boss.json", &b.Boss},
+		{"seed/war.json", &b.War},
 	} {
 		raw, err := seedFS.ReadFile(f.name)
 		if err != nil {
@@ -237,6 +289,20 @@ func LoadSeed() (*Bundle, error) {
 
 // build populates the derived lookups.
 func (b *Bundle) build() error {
+	b.productByID = make(map[string]*Product, len(b.Commerce.Products))
+	b.productByStore = make(map[string]*Product, len(b.Commerce.Products))
+	for i := range b.Commerce.Products {
+		pr := &b.Commerce.Products[i]
+		if _, dup := b.productByID[pr.ID]; dup {
+			return fmt.Errorf("duplicate product id %q", pr.ID)
+		}
+		if _, dup := b.productByStore[pr.StoreID]; dup {
+			return fmt.Errorf("duplicate store id %q", pr.StoreID)
+		}
+		b.productByID[pr.ID] = pr
+		b.productByStore[pr.StoreID] = pr
+	}
+
 	b.jobByID = make(map[string]*Job, len(b.Jobs.Jobs))
 	b.jobsAsc = make([]*Job, 0, len(b.Jobs.Jobs))
 	for i := range b.Jobs.Jobs {

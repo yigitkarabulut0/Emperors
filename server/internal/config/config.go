@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/yigitkarabulut0/emperors/server/internal/ads"
 )
 
 type Config struct {
@@ -54,6 +56,40 @@ type Config struct {
 	// mid-window, and secret because anyone who knows it can predict which
 	// five-minute window will contain a legendary.
 	ShopSecret []byte
+
+	// The App Store side of purchases.
+	//   IAPBundleID      the app's bundle id; a transaction for any other is refused
+	//   IAPAppAppleID    the app's numeric App Store id, once App Store Connect has
+	//                    one (0 skips the check on notifications)
+	//   IAPAllowSandbox  accept Sandbox transactions too: App Review and
+	//                    TestFlight buy in the sandbox against production
+	//   IAPDevRoot       a PEM root to trust INSTEAD of Apple's, for minting test
+	//                    purchases locally (cmd/iapmint). Refused in prod.
+	IAPBundleID     string
+	IAPAppAppleID   int64
+	IAPAllowSandbox bool
+	IAPDevRoot      string
+
+	// Herald's Tidings, the rewarded advert.
+	//   AdMobUnitID   the rewarded unit the client plays. EMPTY KEEPS THE
+	//                 HERALD SHUT -- a WATCH plate over a placement with no
+	//                 advert to play is a button that does nothing, so the
+	//                 store hides the whole section until this is set.
+	//   AdMobKeysURL  where Google publishes the verifier keys; overridable so
+	//                 a test or a local realm can serve its own.
+	//   AdMobDevKey   a PEM public key trusted INSTEAD of Google's, for a
+	//                 hand-signed callback against a local server. Refused in
+	//                 prod, as IAPDevRoot is.
+	AdMobUnitID  string
+	AdMobKeysURL string
+	AdMobDevKey  string
+
+	// Who the Terms of Use and Privacy Policy (/legal/*) name as running the
+	// game, and the address they give for questions. Both optional: without a
+	// name the pages say "the developer of Emperors", without an address they
+	// point to the App Store listing's support link.
+	LegalName    string
+	SupportEmail string
 }
 
 func Load() (*Config, error) {
@@ -65,6 +101,21 @@ func Load() (*Config, error) {
 		DatabaseURLDirect: os.Getenv("DATABASE_URL_DIRECT"),
 		LogLevel:          env("EMPERORS_LOG_LEVEL", "info"),
 		AdminOrigins:      splitList(env("EMPERORS_ADMIN_ORIGINS", "localhost:3000,127.0.0.1:3000")),
+		IAPBundleID:       env("EMPERORS_IAP_BUNDLE_ID", "com.emperors.game"),
+		IAPAllowSandbox:   env("EMPERORS_IAP_ALLOW_SANDBOX", "true") == "true",
+		IAPDevRoot:        os.Getenv("EMPERORS_IAP_DEV_ROOT"),
+		AdMobUnitID:       os.Getenv("EMPERORS_ADMOB_UNIT"),
+		AdMobKeysURL:      env("EMPERORS_ADMOB_KEYS_URL", ads.KeysURL),
+		AdMobDevKey:       os.Getenv("EMPERORS_ADMOB_DEV_KEY"),
+		LegalName:         os.Getenv("EMPERORS_LEGAL_NAME"),
+		SupportEmail:      os.Getenv("EMPERORS_SUPPORT_EMAIL"),
+	}
+	if v := os.Getenv("EMPERORS_IAP_APP_APPLE_ID"); v != "" {
+		id, perr := strconv.ParseInt(v, 10, 64)
+		if perr != nil {
+			return nil, fmt.Errorf("EMPERORS_IAP_APP_APPLE_ID must be a number: %w", perr)
+		}
+		c.IAPAppAppleID = id
 	}
 
 	if seed := os.Getenv("EMPERORS_TOKEN_SEED"); seed != "" {
@@ -188,6 +239,13 @@ func (c *Config) validate() error {
 		c.ShopSecret = secret
 	case len(c.ShopSecret) < 16:
 		problems = append(problems, "EMPERORS_SHOP_SECRET must decode to at least 16 bytes")
+	}
+
+	if c.AdMobDevKey != "" && c.Env == "prod" {
+		problems = append(problems, "EMPERORS_ADMOB_DEV_KEY must not be set in prod: it trusts a key that is not Google's, and the advert's diamonds would be mintable by anyone holding its pair")
+	}
+	if c.IAPDevRoot != "" && c.Env == "prod" {
+		problems = append(problems, "EMPERORS_IAP_DEV_ROOT must not be set in prod: it trusts a root that is not Apple's")
 	}
 
 	if c.MinConns > c.MaxConns {

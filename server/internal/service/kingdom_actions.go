@@ -12,6 +12,8 @@ import (
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/rewards"
 )
 
 // Invite offers membership. Only a Marshal or the King may invite.
@@ -147,6 +149,13 @@ func (d Deps) Leave(ctx context.Context, playerID uuid.UUID) (*KingdomView, erro
 		if _, err := q.LeaveKingdom(ctx, sqlcdb.LeaveKingdomParams{ID: playerID, LeftAt: &now}); err != nil {
 			return fmt.Errorf("leave: %w", err)
 		}
+		// Said before the kingdom is swept, so a hall that is about to be
+		// deleted with its last lord does not fail on a line about them.
+		if _, err := d.systemLine(ctx, q, kid, SysLeft,
+			fmt.Sprintf("%s has left the kingdom.", p.DisplayName),
+			map[string]any{"player_id": playerID.String()}); err != nil {
+			return err
+		}
 		if _, err := q.DeleteKingdomIfEmpty(ctx, kid); err != nil {
 			return fmt.Errorf("disband: %w", err)
 		}
@@ -277,10 +286,21 @@ func (d Deps) Donate(ctx context.Context, playerID uuid.UUID, amount int64, want
 			return err
 		}
 
-		return q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
 			PlayerID: playerID, Delta: -amount, BalanceAfter: after.Gold,
 			Reason: "kingdom_donate", RefID: strPtr(k.ID.String()),
-		})
+		}); err != nil {
+			return err
+		}
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{deeds.DonatedGold: amount})
+		// The hall sees the treasury grow. A gift to a kingdom that nobody
+		// hears about is a gift a lord makes once.
+		if _, err := d.systemLine(ctx, q, k.ID, SysDonated,
+			fmt.Sprintf("%s gave %s gold to the treasury.", p.DisplayName, rewards.Group(amount)),
+			map[string]any{"player_id": playerID.String(), "gold": amount}); err != nil {
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -341,6 +361,17 @@ func (d Deps) BuyKingdomUpgrade(ctx context.Context, playerID uuid.UUID, upgrade
 			if errors.Is(err, pgx.ErrNoRows) {
 				return ErrStaleAction
 			}
+			return err
+		}
+		// The hall sees the Work rise: it is everybody's Work, bought with
+		// everybody's gold.
+		name := upgradeID
+		if u := d.Config.KingdomUpgrade(upgradeID); u != nil {
+			name = u.Name
+		}
+		if _, err := d.systemLine(ctx, q, *p.KingdomID, SysUpgrade,
+			fmt.Sprintf("%s raised %s to level %d.", p.DisplayName, name, level),
+			map[string]any{"player_id": playerID.String(), "upgrade": upgradeID, "level": level}); err != nil {
 			return err
 		}
 		return nil

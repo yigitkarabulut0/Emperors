@@ -1,0 +1,168 @@
+{
+ "source": "rankings.png",
+ "note": "The leaderboard (art/reference/rankings.png), on the painted pages' host.",
+ "crops": [
+  {
+   "name": "rankings/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "erase": [
+    {
+     "rect": [
+      74,
+      304,
+      794,
+      76
+     ],
+     "sample_x": [
+      866,
+      880
+     ]
+    },
+    {
+     "rect": [
+      146,
+      386,
+      650,
+      52
+     ],
+     "sample_x": [
+      357,
+      364
+     ]
+    },
+    {
+     "rect": [
+      44,
+      780,
+      856,
+      574
+     ],
+     "sample_x": [
+      33,
+      43
+     ]
+    }
+   ],
+   "note": "RANKINGS, whole: the hall of statues and its title, the podium's three rings and their plates, the list panel, YOUR RANK and CLOSE, baked. The painted board and period tabs are lifted (TabStrip draws the plates), and so are the six painted rows: a hundred lords scroll in the panel, each a copy of rankings/row. Row fills from the plain ground beside each (x 866-880, 357-364, 33-43)."
+  },
+  {
+   "name": "rankings/row",
+   "rect": [
+    46,
+    784,
+    850,
+    89
+   ],
+   "note": "one ranked lord: the rank plate, the portrait ring, the name plate and the plate under it, the value plate"
+  },
+  {
+   "name": "rankings/close",
+   "rect": [
+    323,
+    1516,
+    294,
+    68
+   ],
+   "note": "CLOSE, baked; its own crop so it darkens when pressed"
+  },
+  {
+   "name": "rankings/row_plain",
+   "rect": [
+    46,
+    784,
+    850,
+    89
+   ],
+   "refill": [
+    {
+     "rect": [
+      54,
+      791,
+      834,
+      77
+     ],
+     "band": [
+      792,
+      797
+     ],
+     "samples": [
+      {
+       "rows": [
+        791,
+        867
+       ],
+       "x": [
+        [
+         58,
+         72
+        ],
+        [
+         266,
+         280
+        ],
+        [
+         566,
+         636
+        ],
+        [
+         870,
+         886
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "patch": [
+    {
+     "from": [
+      566,
+      784,
+      100,
+      7
+     ],
+     "to": [
+      170,
+      784
+     ]
+    },
+    {
+     "from": [
+      566,
+      868,
+      100,
+      5
+     ],
+     "to": [
+      170,
+      868
+     ]
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      170,
+      791,
+      102,
+      77
+     ],
+     "sample_x": [
+      160,
+      166
+     ],
+     "sample_x2": [
+      276,
+      282
+     ]
+    }
+   ],
+   "note": "the row with its plates lifted, for a board's prize row (scenes/pages/leaderboard_page.gd): the interior refilled from the band above the plates and the clean panel between them; the ring, which reaches that band, filled across from either side, and the steel line over and under it laid in from a clean stretch of the same line"
+  }
+ ]
+}

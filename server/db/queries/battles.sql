@@ -2,7 +2,8 @@
 -- flag, the shielded, and anyone banned. Ordered by a stable pseudo-random key
 -- so the list changes between refreshes without a table scan.
 -- name: FindTargets :many
-SELECT id, username, display_name, avatar, level, gold, is_bot, shield_until, kingdom_id
+SELECT id, username, display_name, avatar, level, gold, is_bot, shield_until, kingdom_id,
+       cos_frame, cos_title, cos_color, cos_crest, vip_points
 FROM app.players
 WHERE state = 'active'
   AND id <> $1
@@ -16,13 +17,19 @@ SELECT * FROM app.players WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE;
 
 -- Diamonds are the level-up grant, the same one a collect pays: a level reached
 -- in a raid is a level reached.
+--
+-- The attacker's shield is written every time, never left alone: raiding ends
+-- your own protection (a revenge strike keeps it), so the caller passes NULL for
+-- an ordinary raid and the current value for a revenge one.
 -- name: ApplyBattleAttacker :one
 UPDATE app.players
 SET gold = gold + $2, xp = $3, level = $4,
     stat_points_unspent = stat_points_unspent + $5,
     energy_milli = $6, energy_updated_at = $7,
     action_seq = $8,
-    diamonds = diamonds + sqlc.arg(diamonds)
+    diamonds = diamonds + GREATEST(0, sqlc.arg(diamonds)::bigint - diamond_debt),
+    diamond_debt = GREATEST(0, diamond_debt - sqlc.arg(diamonds)::bigint),
+    shield_until = sqlc.narg(shield_until)
 WHERE id = $1
 RETURNING *;
 
@@ -43,8 +50,8 @@ RETURNING *;
 INSERT INTO app.battles (
     id, attacker_id, defender_id, seed, config_version, attacker_won, rounds,
     attacker_might, defender_might, gold_stolen, ransom_paid, xp_awarded,
-    energy_spent, replay
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    energy_spent, replay, kind
+) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 RETURNING *;
 
 -- name: GetBattle :one
@@ -69,12 +76,34 @@ SELECT b.id, b.attacker_id, b.defender_id, b.attacker_won, b.rounds,
        o.display_name AS opponent_name,
        o.avatar       AS opponent_avatar,
        o.level        AS opponent_level,
-       o.is_bot       AS opponent_is_bot
+       o.is_bot       AS opponent_is_bot,
+       o.cos_frame    AS opponent_cos_frame,
+       o.cos_title    AS opponent_cos_title,
+       o.cos_color    AS opponent_cos_color,
+       o.cos_crest    AS opponent_cos_crest,
+       o.vip_points   AS opponent_vip_points
 FROM app.battles b
 JOIN app.players o
   ON o.id = CASE WHEN b.attacker_id = sqlc.arg(player_id) THEN b.defender_id
                  ELSE b.attacker_id END
-WHERE b.attacker_id = sqlc.arg(player_id) OR b.defender_id = sqlc.arg(player_id)
+WHERE (b.attacker_id = sqlc.arg(player_id) OR b.defender_id = sqlc.arg(player_id))
+  AND b.kind = 'raid'
+ORDER BY b.created_at DESC
+LIMIT sqlc.arg(lim);
+
+-- The lists' own recent fights. Kept apart from the raid log on purpose: an
+-- arena defeat costs nothing but a rating, and reading it in the same column as
+-- "you were robbed" is how a screen starts to lie.
+-- name: ListArenaLog :many
+SELECT b.id, b.attacker_id, b.attacker_won, b.created_at,
+       o.display_name AS opponent_name,
+       o.avatar       AS opponent_avatar
+FROM app.battles b
+JOIN app.players o
+  ON o.id = CASE WHEN b.attacker_id = sqlc.arg(player_id) THEN b.defender_id
+                 ELSE b.attacker_id END
+WHERE (b.attacker_id = sqlc.arg(player_id) OR b.defender_id = sqlc.arg(player_id))
+  AND b.kind = 'arena'
 ORDER BY b.created_at DESC
 LIMIT sqlc.arg(lim);
 
@@ -86,6 +115,7 @@ SELECT count(*) AS raids,
        coalesce(sum(b.ransom_paid), 0)::bigint AS ransom_earned
 FROM app.battles b
 WHERE b.defender_id = sqlc.arg(player_id)
+  AND b.kind = 'raid'
   AND b.created_at > sqlc.arg(since)::timestamptz;
 
 -- name: GetCooldown :one
@@ -121,7 +151,12 @@ SELECT r.battle_id, r.target_id, r.expires_at,
        t.avatar       AS target_avatar,
        t.level        AS target_level,
        t.gold         AS target_gold,
-       t.kingdom_id   AS target_kingdom_id
+       t.kingdom_id   AS target_kingdom_id,
+       t.cos_frame    AS target_cos_frame,
+       t.cos_title    AS target_cos_title,
+       t.cos_color    AS target_cos_color,
+       t.cos_crest    AS target_cos_crest,
+       t.vip_points   AS target_vip_points
 FROM app.revenge_tokens r
 JOIN app.players t ON t.id = r.target_id
 WHERE r.player_id = sqlc.arg(player_id)

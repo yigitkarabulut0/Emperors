@@ -1,0 +1,319 @@
+{
+ "screen": "favour",
+ "source": "favour.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0E0F11",
+ "notes": [
+  "THE CROWN'S FAVOUR (client/scenes/court/favour_view.gd), on the painted pages' host (PaintedPage). `page` is the whole painting, its disclosure plate drawn 40 rows taller than painted (see art/slices/favour.json): every rect here is in the recomposed page's rows. Its stretch bands are the painting's own dark surround above and below the frame, so a taller canvas keeps the framed page whole and centred on its own ground; `ground` is that surround's colour, behind the notch.",
+  "perk_row: one of Crown Patronage's lines on the painting's plate, at pitch 56 from y 590 -- the five painted rows. Fewer lines than five are centred in the five rows' band, so the card never shows an empty plate.",
+  "subscribe: the painted plate with its word set in type at the painting's size (SUBSCRIBE's ink is 28 tall: Cinzel 40): it says SUBSCRIBE, or how long a running patronage has left. status is the red plate: the App Store's price a month, or that the lord is a patron. disclosure is App Review 3.1.2's words and links, on the plate under the buttons.",
+  "gift: Royal Favour's daily gift, on the game's green plate (shop/buy_plate) in the space the painting leaves between the title and the seal; shown while a gift waits.",
+  "bar: the empty track, the fill from x 98 running the track's 748 (a nine-patch whose ends keep their size), then for each of the ten levels a lit pin over the track's dim one and a shield hanging from it, at x 118 + 78k -- pin and shield rects below are level 1's. A shield is a tap target: it shows that level's gifts in level_text.",
+  "Elements of kind \"rect\" are measurements the view reads, not things drawn."
+ ],
+ "stretch": [
+  [
+   2,
+   26,
+   1
+  ],
+  [
+   1648,
+   22,
+   1
+  ]
+ ],
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "favour/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "perk_row",
+   "kind": "template",
+   "rect": [
+    104,
+    570,
+    730,
+    54
+   ],
+   "pitch": 56,
+   "rows": 5,
+   "parts": [
+    {
+     "id": "row",
+     "kind": "image",
+     "asset": "favour/perk_row",
+     "rect": [
+      0,
+      0,
+      730,
+      54
+     ]
+    },
+    {
+     "id": "line",
+     "kind": "text",
+     "rect": [
+      92,
+      6,
+      624,
+      42
+     ],
+     "font": "body",
+     "weight": 600,
+     "size": 25,
+     "color": "#F1E9DA",
+     "align": "left",
+     "valign": "center",
+     "sample": "60 diamonds each month"
+    }
+   ],
+   "bare": "favour/perk_row_bare",
+   "icon": [
+    9,
+    2,
+    50,
+    50
+   ]
+  },
+  {
+   "id": "status",
+   "kind": "text",
+   "rect": [
+    324,
+    879,
+    293,
+    34
+   ],
+   "font": "title",
+   "weight": 700,
+   "size": 24,
+   "color": "#F8EFD0",
+   "align": "center",
+   "valign": "center",
+   "sample": "US$6.99 A MONTH"
+  },
+  {
+   "id": "subscribe",
+   "kind": "button",
+   "asset": "favour/subscribe_plate",
+   "rect": [
+    86,
+    952,
+    433,
+    95
+   ],
+   "label": "SUBSCRIBE",
+   "size": 40,
+   "weight": 700,
+   "color": "#FEFDDE",
+   "margin": 16,
+   "action": "subscribe",
+   "paint_rect": [
+    86,
+    956,
+    433,
+    88
+   ]
+  },
+  {
+   "id": "manage",
+   "kind": "button",
+   "asset": "favour/manage",
+   "rect": [
+    537,
+    952,
+    318,
+    95
+   ],
+   "action": "manage",
+   "paint_rect": [
+    537,
+    956,
+    318,
+    88
+   ],
+   "keep_texture_size": true
+  },
+  {
+   "id": "disclosure",
+   "kind": "rect",
+   "rect": [
+    100,
+    1060,
+    742,
+    100
+   ],
+   "note": "the plate's inner field (y 1058..1162 of the recomposed page): the disclosure's words, and its two links on the last line"
+  },
+  {
+   "id": "vip_seal",
+   "kind": "image",
+   "asset": "icons/vip_seal",
+   "rect": [
+    724,
+    1184,
+    120,
+    116
+   ]
+  },
+  {
+   "id": "gift",
+   "kind": "button",
+   "asset": "plates/green_xs",
+   "rect": [
+    508,
+    1196,
+    200,
+    95
+   ],
+   "label": "CLAIM GIFT",
+   "size": 22,
+   "weight": 700,
+   "color": "#F4EFE6",
+   "margin": 24,
+   "action": "gift",
+   "paint_rect": [
+    508,
+    1210,
+    200,
+    66
+   ]
+  },
+  {
+   "id": "bar_track",
+   "kind": "image",
+   "asset": "favour/bar_track",
+   "rect": [
+    90,
+    1304,
+    764,
+    42
+   ]
+  },
+  {
+   "id": "bar_fill",
+   "kind": "image",
+   "asset": "favour/bar_fill",
+   "rect": [
+    98,
+    1311,
+    272,
+    24
+   ],
+   "fill": "left",
+   "track": [
+    98,
+    1311,
+    748,
+    24
+   ],
+   "caps": [
+    14,
+    16
+   ],
+   "ratio": 0.0
+  },
+  {
+   "id": "pin",
+   "kind": "rect",
+   "rect": [
+    107,
+    1326,
+    23,
+    23
+   ],
+   "asset": "favour/pin_lit",
+   "pitch": 78,
+   "count": 10
+  },
+  {
+   "id": "shield",
+   "kind": "rect",
+   "rect": [
+    88,
+    1345,
+    60,
+    83
+   ],
+   "lit": "favour/shield_lit",
+   "dim": "favour/shield_dim",
+   "pitch": 78
+  },
+  {
+   "id": "track_ends",
+   "kind": "rect",
+   "rect": [
+    100,
+    1311,
+    744,
+    24
+   ],
+   "note": "where the fill starts (100) and the tube ends (844)"
+  },
+  {
+   "id": "level_title",
+   "kind": "text",
+   "rect": [
+    122,
+    1452,
+    704,
+    26
+   ],
+   "font": "title",
+   "weight": 700,
+   "size": 20,
+   "color": "#E9C46A",
+   "align": "left",
+   "valign": "center",
+   "sample": "LEVEL 5  \u00b7  4,999 FAVOUR"
+  },
+  {
+   "id": "level_text",
+   "kind": "text",
+   "rect": [
+    122,
+    1476,
+    704,
+    26
+   ],
+   "font": "body",
+   "weight": 600,
+   "size": 20,
+   "color": "#F1E9DA",
+   "align": "left",
+   "valign": "center",
+   "sample": "6 diamonds a day \u00b7 +10 bag slots"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "favour/close",
+   "rect": [
+    305,
+    1528,
+    331,
+    95
+   ],
+   "action": "close",
+   "paint_rect": [
+    305,
+    1532,
+    331,
+    87
+   ],
+   "keep_texture_size": true
+  }
+ ]
+}

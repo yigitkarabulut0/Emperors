@@ -1,0 +1,433 @@
+{
+ "source": "reward_icons.png",
+ "notes": [
+  "Reward pictures that are not the kit's own icons, for the reward lines a letter, a delivery or a deal carries (Art.REWARD_ICON, Art.reward_icon). Each is cut clean on its own -- a reward tile's window shows round it -- and drawn down to the sizes a reward line uses (46 in a mail row, 52 in the Royal Delivery, 64 on the letter card).",
+  "Moved here from art/slices/mail.json: rewards/charter and rewards/energy_potion. Output unchanged.",
+  "reward_icons.png's sixteen (the brief's S8), cut for Wave 3's rewards: every one keyed off the sheet's flat navy (7,20,30, the ground varies by 5 at most) and drawn down to 120 on its long side, the size the store's lasting goods keep. The charter was already cut as rewards/charter. Token keys: flask_small, flask_large, pardon, cart (rewards/cart_token), boost:luck (rewards/fortune_charm) -- Art.REWARD_ICON."
+ ],
+ "crops": [
+  {
+   "name": "rewards/energy_potion",
+   "rect": [
+    854,
+    392,
+    42,
+    55
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 8,
+   "bg": [
+    4,
+    22,
+    32
+   ],
+   "solid": {
+    "type": "ellipse",
+    "box": [
+     6,
+     26,
+     36,
+     51
+    ]
+   },
+   "note": "The Energy Potion as a reward (key energy_potion): the blue flask the painting puts in the first row's third tile, lifted off the window's navy. Its liquid is held solid: the deepest blue is within the key of the navy and would otherwise let the ground through. The shop's icons/energy_potion is its card picture, glow and all, and reads as a lit rectangle in a reward tile.",
+   "src": "mail.png"
+  },
+  {
+   "name": "rewards/charter",
+   "src": "reward_icons.png",
+   "rect": [
+    21,
+    1169,
+    222,
+    316
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "scale": [
+    84,
+    120
+   ],
+   "note": "The Protection Charter token's icon (key city_shield): a charter with the shield seal, painted big on reward_icons.png and drawn down to the size a reward line uses."
+  },
+  {
+   "name": "rewards/gem_red",
+   "src": "family.png",
+   "rect": [
+    284,
+    1271,
+    45,
+    43
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      22.0,
+      2.0
+     ],
+     [
+      40.5,
+      21.0
+     ],
+     [
+      22.0,
+      40.0
+     ],
+     [
+      3.5,
+      21.0
+     ]
+    ],
+    "feather": 1
+   },
+   "note": "Gear not yet rolled (a reward line's icon item:<tier>): the tier's stone, the one every gear tile on the Family painting wears on its lower rim, cut round its gold setting so it sits in a reward tile on nothing -- the family crop (family/gem_red) keeps its slot's steel plate and the stubs of the rim. scripts/gen-gem-tints.py tints it to every tier (rewards/gem_<tier>, gem_empty) exactly as it tints the family stones."
+  },
+  {
+   "name": "rewards/purse_small",
+   "src": "reward_icons.png",
+   "rect": [
+    16,
+    200,
+    217,
+    222
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    117,
+    120
+   ],
+   "note": "A small purse of gold (the Tax Cart's Purse of Gold, a square of gold wages). Painted big on reward_icons.png (ink x 24..224, y 208..413) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/purse_heavy",
+   "src": "reward_icons.png",
+   "rect": [
+    238,
+    167,
+    227,
+    253
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    108,
+    120
+   ],
+   "note": "A heavy purse tied with gold cord (the Tax Cart's Heavy Purse). Painted big on reward_icons.png (ink x 246..456, y 175..411) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/flask_small",
+   "src": "reward_icons.png",
+   "rect": [
+    500,
+    186,
+    159,
+    247
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    77,
+    120
+   ],
+   "note": "The Small Flask token (key flask_small): a corked flask of glowing liquid. Painted big on reward_icons.png (ink x 508..650, y 194..424) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/flask_large",
+   "src": "reward_icons.png",
+   "rect": [
+    714,
+    130,
+    208,
+    299
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    83,
+    120
+   ],
+   "note": "The Great Flask token (key flask_large): the larger bottle of the same liquid, with its seal. Painted big on reward_icons.png (ink x 722..913, y 138..420) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/potion",
+   "src": "reward_icons.png",
+   "rect": [
+    58,
+    466,
+    127,
+    325
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    47,
+    120
+   ],
+   "note": "The tall blue potion with the lightning glint, painted big. Painted big on reward_icons.png (ink x 66..176, y 474..782) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/xp_scroll",
+   "src": "reward_icons.png",
+   "rect": [
+    239,
+    505,
+    226,
+    280
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    97,
+    120
+   ],
+   "note": "A scroll and quill: experience (a square of experience wages, the Scholar's Scroll). Painted big on reward_icons.png (ink x 247..456, y 513..776) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/fortune_charm",
+   "src": "reward_icons.png",
+   "rect": [
+    484,
+    514,
+    187,
+    266
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    84,
+    120
+   ],
+   "note": "The four-leaf clover amulet (key boost:luck, a timed luck bonus: the Lucky Charm). Painted big on reward_icons.png (ink x 492..662, y 522..771) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/cart_token",
+   "src": "reward_icons.png",
+   "rect": [
+    692,
+    530,
+    229,
+    235
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    117,
+    120
+   ],
+   "note": "The Cart Writ token (key cart): a small loaded cart, one more Tax Cart. Painted big on reward_icons.png (ink x 700..912, y 538..756) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/gear_chest",
+   "src": "reward_icons.png",
+   "rect": [
+    15,
+    835,
+    224,
+    286
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    94,
+    120
+   ],
+   "note": "A chest with a sword strapped to it: a piece of gear, not yet rolled. Painted big on reward_icons.png (ink x 23..230, y 843..1112) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/cosmetic_token",
+   "src": "reward_icons.png",
+   "rect": [
+    246,
+    834,
+    219,
+    279
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    94,
+    120
+   ],
+   "note": "An empty gilded frame: a cosmetic. Painted big on reward_icons.png (ink x 254..456, y 842..1104) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/season_star",
+   "src": "reward_icons.png",
+   "rect": [
+    498,
+    828,
+    165,
+    283
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    70,
+    120
+   ],
+   "note": "A gold star on a crimson ribbon: a season's mark. Painted big on reward_icons.png (ink x 506..654, y 836..1102) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/pardon",
+   "src": "reward_icons.png",
+   "rect": [
+    701,
+    866,
+    218,
+    229
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    114,
+    120
+   ],
+   "note": "The Royal Pardon token (key pardon): a red wax seal with an olive branch, the calendar's mend. Painted big on reward_icons.png (ink x 709..910, y 874..1086) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/key",
+   "src": "reward_icons.png",
+   "rect": [
+    283,
+    1166,
+    153,
+    305
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    60,
+    120
+   ],
+   "note": "An ornate iron key. Painted big on reward_icons.png (ink x 291..427, y 1174..1462) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/homecoming_lantern",
+   "src": "reward_icons.png",
+   "rect": [
+    489,
+    1159,
+    176,
+    323
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    65,
+    120
+   ],
+   "note": "A lit brass lantern: the welcome home. Painted big on reward_icons.png (ink x 497..656, y 1167..1473) and drawn down to 120 on its long side."
+  },
+  {
+   "name": "rewards/renown_laurel",
+   "src": "reward_icons.png",
+   "rect": [
+    695,
+    1197,
+    234,
+    260
+   ],
+   "mode": "darkkey",
+   "k": 50,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    30
+   ],
+   "scale": [
+    108,
+    120
+   ],
+   "note": "A gold laurel wreath: renown. Painted big on reward_icons.png (ink x 703..920, y 1205..1448) and drawn down to 120 on its long side."
+  }
+ ]
+}

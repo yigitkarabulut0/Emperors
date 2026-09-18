@@ -1,0 +1,34 @@
+{
+ "source": "ledger_extra_sheet.png",
+ "_note": "The Family ledger's two missing scenes (PAINTING_BRIEFS_2 round 3), painted edge to edge on the flat navy: THE ROYAL TREASURY at [27, 221, 888, 545] and THE LEGACY at [27, 872, 888, 545] (measured: every row and column of each scene off the ground). Each ledger scene is cut 2 in from every edge (the painting's antialiased rim) and to the card window's 1.6852, the height trimmed evenly top and bottom, then brought down to the ledger's 364x216 like the other ledger scenes. The Legacy wears its scene; the Treasury's is kept for wherever a treasury scene is wanted, since the ledger has no Treasury row now and the TREASURY card wears family_treasury.png's own vault states.",
+ "crops": [
+  {
+   "name": "family/ledger_treasury",
+   "rect": [
+    29,
+    231,
+    884,
+    525
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "the treasury scene, 884 wide at 1.6852, rows 231..755 of 223..763"
+  },
+  {
+   "name": "family/ledger_legacy",
+   "rect": [
+    29,
+    882,
+    884,
+    525
+   ],
+   "scale": [
+    364,
+    216
+   ],
+   "note": "the legacy scene, rows 882..1406 of 874..1414; the Legacy ledger card's own scene (it borrowed the army's)"
+  }
+ ]
+}

@@ -1,0 +1,521 @@
+{
+ "source": "battle.png",
+ "notes": [
+  "art/reference/battle.png is the whole battle screen, painted: the armies before the castle, ROUND and SKIP at the top, the two framed champions with crossed swords between them, a name plate, a power plate and an HP bar under each, FORTUNE OF WAR, the results board with three rows (gold, crown, diamond) and CONTINUE.",
+  "The screen is two pieces of it, split at y 1010 on the painting's even navy: the battlefield block (top) and the results block (foot). On a phone taller than the painting the navy between them grows; the foot stays at the foot.",
+  "Measured by flood-filling each painted window from its middle: portrait windows L x 89..300 y 464..717, R x 642..853 y 464..716; round window x 418..523 y 76..132; name plates 55..334 / 607..885, y 743..788; power plates 140..311 / 691..862, y 810..847; HP channels 42..348 / 592..900, y 873..898; fortune windows 119..263 / 676..822, y 950..998; the board's title band 136..804 y 1063..1129; its rows x 290..760 y 1156..1215, 1239..1298, 1321..1382."
+ ],
+ "crops": [
+  {
+   "name": "battle/scene_top",
+   "rect": [
+    0,
+    0,
+    941,
+    1010
+   ],
+   "patch": [
+    {
+     "from": [
+      336,
+      866,
+      14,
+      38
+     ],
+     "to": [
+      42,
+      866
+     ],
+     "flip": "h"
+    },
+    {
+     "from": [
+      886,
+      866,
+      15,
+      38
+     ],
+     "to": [
+      590,
+      866
+     ],
+     "flip": "h"
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      56,
+      870,
+      230,
+      31
+     ],
+     "sample_x": [
+      292,
+      332
+     ]
+    },
+    {
+     "rect": [
+      605,
+      870,
+      150,
+      31
+     ],
+     "sample_x": [
+      760,
+      880
+     ]
+    }
+   ],
+   "mode": "darkkey",
+   "bg": [
+    11,
+    25,
+    37
+   ],
+   "k": 24,
+   "floor": 10,
+   "solid": [
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       941,
+       0
+      ],
+      [
+       941,
+       464
+      ],
+      [
+       0,
+       464
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       718
+      ],
+      [
+       941,
+       718
+      ],
+      [
+       941,
+       1010
+      ],
+      [
+       0,
+       1010
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       0,
+       464
+      ],
+      [
+       89,
+       464
+      ],
+      [
+       89,
+       718
+      ],
+      [
+       0,
+       718
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       301,
+       464
+      ],
+      [
+       642,
+       464
+      ],
+      [
+       642,
+       718
+      ],
+      [
+       301,
+       718
+      ]
+     ]
+    },
+    {
+     "type": "polygon",
+     "points": [
+      [
+       854,
+       464
+      ],
+      [
+       941,
+       464
+      ],
+      [
+       941,
+       718
+      ],
+      [
+       854,
+       718
+      ]
+     ]
+    }
+   ],
+   "note": "The battlefield, the two portrait frames and every plate above the results, whole -- except that the two portrait windows are keyed see-through (the faces are drawn under the frames, whose lion and wolf heads and gilded leaves reach into the windows) and the HP bars are emptied (their channels filled row by row from the empty run, the left end of each channel the mirrored twin of its right end) so the live fills are drawn in them."
+  },
+  {
+   "name": "battle/scene_bottom",
+   "rect": [
+    0,
+    1010,
+    941,
+    662
+   ],
+   "note": "The results board and the ground under it, CONTINUE included. Its top row is the painting's even navy (#07131C), so on a taller phone the gap above it is that navy and no seam shows."
+  },
+  {
+   "name": "battle/skip",
+   "rect": [
+    786,
+    23,
+    141,
+    63
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0.5,
+      13.5
+     ],
+     [
+      12.5,
+      1.5
+     ],
+     [
+      128,
+      1.5
+     ],
+     [
+      140,
+      13.5
+     ],
+     [
+      140,
+      50
+     ],
+     [
+      128,
+      62
+     ],
+     [
+      12.5,
+      62
+     ],
+     [
+      0.5,
+      50
+     ]
+    ],
+    "feather": 1
+   },
+   "note": "SKIP, cut round its plate: laid exactly over the painted one as the button's face (pressing dims it), and drawn darkened over it once the fight is told and there is nothing left to skip. Lifting it out of the sky left Telea's cone in the clouds."
+  },
+  {
+   "name": "battle/continue",
+   "rect": [
+    206,
+    1446,
+    530,
+    138
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      44.0,
+      5
+     ],
+     [
+      42.0,
+      9
+     ],
+     [
+      39.0,
+      13
+     ],
+     [
+      36.0,
+      17
+     ],
+     [
+      32.0,
+      21
+     ],
+     [
+      27.0,
+      25
+     ],
+     [
+      21.0,
+      29
+     ],
+     [
+      20.0,
+      31
+     ],
+     [
+      20.0,
+      51
+     ],
+     [
+      18.0,
+      55
+     ],
+     [
+      15.0,
+      59
+     ],
+     [
+      11.0,
+      63
+     ],
+     [
+      7.0,
+      67
+     ],
+     [
+      7.0,
+      71
+     ],
+     [
+      11.0,
+      75
+     ],
+     [
+      15.0,
+      79
+     ],
+     [
+      18.0,
+      83
+     ],
+     [
+      20.0,
+      87
+     ],
+     [
+      20.0,
+      107
+     ],
+     [
+      21.0,
+      109
+     ],
+     [
+      27.0,
+      113
+     ],
+     [
+      32.0,
+      117
+     ],
+     [
+      36.0,
+      121
+     ],
+     [
+      39.0,
+      125
+     ],
+     [
+      42.0,
+      129
+     ],
+     [
+      44.0,
+      133
+     ],
+     [
+      483.0,
+      133
+     ],
+     [
+      485.0,
+      129
+     ],
+     [
+      488.0,
+      125
+     ],
+     [
+      491.0,
+      121
+     ],
+     [
+      495.0,
+      117
+     ],
+     [
+      500.0,
+      113
+     ],
+     [
+      506.0,
+      109
+     ],
+     [
+      507.0,
+      107
+     ],
+     [
+      507.0,
+      87
+     ],
+     [
+      509.0,
+      83
+     ],
+     [
+      512.0,
+      79
+     ],
+     [
+      516.0,
+      75
+     ],
+     [
+      520.0,
+      71
+     ],
+     [
+      520.0,
+      67
+     ],
+     [
+      516.0,
+      63
+     ],
+     [
+      512.0,
+      59
+     ],
+     [
+      509.0,
+      55
+     ],
+     [
+      507.0,
+      51
+     ],
+     [
+      507.0,
+      31
+     ],
+     [
+      506.0,
+      29
+     ],
+     [
+      500.0,
+      25
+     ],
+     [
+      495.0,
+      21
+     ],
+     [
+      491.0,
+      17
+     ],
+     [
+      488.0,
+      13
+     ],
+     [
+      485.0,
+      9
+     ],
+     [
+      483.0,
+      5
+     ]
+    ],
+    "feather": 1
+   },
+   "note": "The painted CONTINUE, cut round its gold (the top-left quarter of the outline traced off the gold rim and mirrored: the plate is symmetric about x 469.5, y 1515). Laid over the painted one as the button's face, and drawn darkened over it while the fight runs. Lifting it out of the foliage left Telea's streaks."
+  },
+  {
+   "name": "battle/hp_green",
+   "rect": [
+    42,
+    871,
+    237,
+    28
+   ],
+   "patch": [
+    {
+     "from": [
+      42,
+      871,
+      10,
+      28
+     ],
+     "to": [
+      269,
+      871
+     ],
+     "flip": "h"
+    }
+   ],
+   "note": "The player's HP fill: the painted green, its right end the mirrored twin of its left so a full bar closes on the channel's own chamfer. Drawn as a nine-patch the whole channel long and clipped at the fraction, so a partial bar ends square, as painted."
+  },
+  {
+   "name": "battle/hp_red",
+   "rect": [
+    592,
+    871,
+    156,
+    28
+   ],
+   "patch": [
+    {
+     "from": [
+      592,
+      871,
+      10,
+      28
+     ],
+     "to": [
+      738,
+      871
+     ],
+     "flip": "h"
+    }
+   ],
+   "note": "The rival's HP fill, cut and drawn the same way as the green."
+  }
+ ]
+}

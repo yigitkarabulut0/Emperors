@@ -1,0 +1,45 @@
+.page { display: grid; gap: var(--s6); max-width: 1100px; }
+.form { display: grid; gap: var(--s5); }
+.inline { display: flex; gap: var(--s5); align-items: flex-end; flex-wrap: wrap; }
+.fields { display: flex; gap: var(--s5); align-items: flex-start; flex-wrap: wrap; }
+.fields input { width: 130px; }
+.note { flex: 1; min-width: 180px; }
+.help { font-size: var(--t-small); color: var(--text-3); border-left: 2px solid var(--hair-strong); padding-left: var(--s5); }
+.readout { font-family: var(--f-num); color: var(--gold-3); }
+.warn { color: var(--warn); font-size: var(--t-small); }
+.lede { font-size: var(--t-small); color: var(--text-3); padding: var(--s5) var(--s5) var(--s3); max-width: 78ch; }
+
+.odds { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); padding: 0 var(--s5) var(--s4); font-size: var(--t-small); }
+.odd { color: var(--text-3); font-family: var(--f-num); }
+.odd b { color: var(--text-2); font-family: inherit; font-weight: 600; }
+
+.table { width: 100%; font-size: var(--t-body); }
+.table th {
+  text-align: left; font-size: var(--t-micro); letter-spacing: .09em; text-transform: uppercase;
+  color: var(--text-3); padding: var(--s3) var(--s5); border-bottom: 1px solid var(--hair);
+}
+.table td { padding: var(--s3) var(--s5); border-bottom: 1px solid var(--hair); vertical-align: middle; }
+.table tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.now td { background: color-mix(in srgb, var(--gold-3) 8%, transparent); }
+.setter { display: flex; gap: var(--s3); align-items: center; justify-content: flex-end; }
+.setter select { min-width: 170px; }
+.actions { display: flex; gap: var(--s3); justify-content: flex-end; }
+
+.past { border-top: 1px solid var(--hair); }
+.past summary { cursor: pointer; padding: var(--s4) var(--s5); color: var(--text-3); font-size: var(--t-small); }
+
+.boardRow td { background: color-mix(in srgb, var(--text-3) 5%, transparent); }
+.board { display: grid; gap: var(--s2); list-style: none; padding: 0; margin: 0; max-width: 460px; }
+.board li { display: flex; align-items: baseline; gap: var(--s3); font-size: var(--t-small); }
+.place { font-family: var(--f-num); color: var(--text-3); min-width: 2ch; text-align: right; }
+.points { margin-left: auto; font-family: var(--f-num); color: var(--gold-3); font-variant-numeric: tabular-nums; }
+
+.seasonGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s6); margin: var(--s6) 0; }
+.h3 { font-size: var(--t-micro); letter-spacing: .09em; text-transform: uppercase; color: var(--text-3); margin-bottom: var(--s4); }
+.bands { display: grid; gap: var(--s3); }
+.band { display: grid; grid-template-columns: 9ch 1fr 6ch; gap: var(--s4); align-items: center; font-size: var(--t-small); }
+.bandLabel { color: var(--text-3); font-family: var(--f-num); }
+.bar { height: 8px; background: var(--hair); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--gold-3); border-radius: 4px; }

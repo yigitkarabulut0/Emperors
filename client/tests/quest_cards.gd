@@ -1,10 +1,11 @@
 extends SceneTree
-## A quest card's reward stays inside the card, in every state it can be in.
+## A quest tile's reward stays inside its plate, in every state it can be in.
 ##
 ## The finished card said "CLAIM +396 XP" in a 30-point box that began a third
 ## of the way across a 241-unit card, and ran off its right edge; the gold the
-## task also paid was never shown at all. The card now shows both rewards as a
-## centred pair, and says what state it is in on the bar instead.
+## task also paid was never shown at all. The tile (collect_events.png's, since
+## Wave 3) shows both rewards as a centred pair on its gold-rimmed plate, and
+## says what state it is in on the progress plate instead.
 ##
 ## Run: godot --headless --path client --script tests/quest_cards.gd
 
@@ -34,7 +35,7 @@ func _initialize() -> void:
 	]
 	for quests in cases:
 		screen.set("_quests", quests)
-		screen.call("_paint_quests")
+		screen.call("_paint_tiles")
 		for i in 2:
 			await process_frame
 		var cards: Array = screen.get("_quest_cards")
@@ -45,7 +46,7 @@ func _initialize() -> void:
 		print("FAIL  %d check(s)" % _fails)
 		quit(1)
 		return
-	print("PASS  every quest card keeps its rewards and its state inside the card")
+	print("PASS  every quest tile keeps its rewards and its state inside its plates")
 	quit()
 
 
@@ -60,21 +61,21 @@ func _check_card(card: Dictionary, q: Dictionary) -> void:
 	var tag := "%s (%s)" % [str(q["id"]), "claimed" if q["claimed"] else ("done" if q["done"] else "in progress")]
 	var row: Control = p["reward_row"]
 	var parts: Dictionary = row.get_meta("parts", {})
-	var right_edge := node.size.x - 6.0
+	var right_edge := row.position.x + row.size.x
 	var last_end := -1.0
-	for id in ["xp_icon", "xp", "gold_icon", "gold"]:
+	for id in ["icon_a", "figure_a", "icon_b", "figure_b"]:
 		var c: Control = parts[id]
 		if not c.visible:
 			_fail("%s: the %s is hidden" % [tag, id])
 			continue
 		var x0 := row.position.x + c.position.x
 		var x1 := x0 + _drawn_width(c)
-		if x0 < 6.0 or x1 > right_edge:
-			_fail("%s: the %s runs from x %.0f to %.0f on a card %.0f wide" % [tag, id, x0, x1, node.size.x])
+		if x0 < row.position.x - 0.5 or x1 > right_edge + 0.5:
+			_fail("%s: the %s runs from x %.0f to %.0f on a plate %.0f..%.0f" % [tag, id, x0, x1, row.position.x, right_edge])
 		if x0 < last_end - 0.5:
 			_fail("%s: the %s starts at %.0f, under the %.0f the part before it reaches" % [tag, id, x0, last_end])
 		last_end = x1
-	var gold: Label = parts["gold"]
+	var gold: Label = parts["figure_b"]
 	if not gold.text.begins_with("+"):
 		_fail("%s: the gold reads %s" % [tag, gold.text])
 	var bar: Label = p["progress"]

@@ -18,7 +18,8 @@ const BADGE := 54.0
 ## `odds` is the /v1/army/odds answer; `types` the type ids in the order the
 ## cards show them; `names` their display names.
 static func open(host: Node, odds: Dictionary, types: Array, names: Dictionary) -> Sheet:
-	var s := Sheet.open(host, "RECRUIT ODDS", "The tier a soldier is drawn at, recruited or rerolled, at your level.")
+	var s := Sheet.open(host, "RECRUIT ODDS", "The tier a soldier is drawn at, recruited or rerolled, at your level.",
+		60, "", "pages/header_recruit_odds")
 	var rp: GDScript = load("res://scenes/army/reroll_panel.gd")
 	var by_type := {}
 	for t in odds.get("types", []):

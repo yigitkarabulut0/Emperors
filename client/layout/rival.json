@@ -1,0 +1,494 @@
+{
+  "screen": "rival",
+  "source": "rival.png",
+  "canvas": [
+    941,
+    1672
+  ],
+  "ground": "#0B151F",
+  "fonts": {
+    "title": "Cinzel-Variable.ttf",
+    "body": "EBGaramond[wght].ttf"
+  },
+  "notes": [
+    "A RIVAL'S PAGE (client/scenes/pages/rival_page.gd), from rival.png (art/slices/rival.json): what one lord may see of another, and the spyglass that buys the rest.",
+    "The page is drawn from x 30 to x 910, which is the painting's own frame -- it is a PAGE, not a tab, so the rail is not under it and nothing is shifted.",
+    "What the painting draws EMPTY is filled with type: the name plate, the ribbon under it, the three stat plates, the plate under the portrait and the three gear plates. What the painting draws FULL -- the crest's wolf, the three pieces of gear, the five faces -- is covered by the rival's own, drawn over it rather than lifted off it: an object drawn over another is one crop, and an erase big enough to take a shield off flat ground is three. Each gear window is filled edge to edge by the tier's velvet (ItemGround) before the item is drawn on it, so nothing of the painted sword shows past a dagger.",
+    "The portrait is the rival's avatar drawn UNDER the crowned frame, whose window is opened (rival/portrait_hole) so the frame's inner edge overlaps the face -- the Throne's emperor is drawn the same way, and like the Throne the rival's own worn frame is not drawn here, because two frames on one portrait fight. Their colour, title and seal show on the name plate instead.",
+    "The SCOUTED seal is laid back on the frame's bottom-left corner only while a spyglass report is live. That corner was mirrored out of the background from the frame's own right side, so there is a whole frame under the seal and a whole frame without it. It covers the left end of the plate under the portrait, so the words on that plate start after it while it is shown.",
+    "The rows are not on a perfect grid -- the painting is painted, not drawn -- so the templates carry each instance's own position, and the two rows whose plates drift from their pictures (the gear plates) carry that instance's rect. Measured: the gear windows at x 97/368/639 (pitch 271) and their plates at 75/350/624 (pitch 274.5); the soldier rings at 130/299/469/639.5/806.",
+    "A soldier's tier is the sheet's own numeral diamond (SoldierArt.numeral) laid on the painted empty diamond, at the painted one's size. What the spyglass buys -- each soldier's Might, frozen at the hour it was bought -- is the kit's chip (army/tier_chip) across the foot of the ring, shown only while a report is live: with no chips the page carries no numbers at all, which is what the free page is."
+  ],
+  "elements": [
+    {
+      "id": "back",
+      "kind": "image",
+      "asset": "rival/back",
+      "rect": [
+        30,
+        0,
+        880,
+        1672
+      ]
+    },
+    {
+      "id": "portrait",
+      "kind": "image",
+      "rect": [
+        130,
+        408,
+        210,
+        262
+      ],
+      "note": "The opened window of rival/portrait_hole, measured on the painting (ink 130..340 by 408..670): the avatar is drawn to cover it and the frame laid over its corners."
+    },
+    {
+      "id": "portrait_frame",
+      "kind": "image",
+      "asset": "rival/portrait_hole",
+      "rect": [
+        58,
+        372,
+        350,
+        404
+      ]
+    },
+    {
+      "id": "scouted",
+      "kind": "image",
+      "asset": "rival/scouted",
+      "rect": [
+        58,
+        610,
+        166,
+        168
+      ]
+    },
+    {
+      "id": "seen",
+      "kind": "text",
+      "rect": [
+        164,
+        692,
+        201,
+        42
+      ],
+      "font": "body",
+      "size": 24,
+      "weight": 500,
+      "color": "#B8AE9C",
+      "align": "center",
+      "valign": "center",
+      "sample": "here now",
+      "note": "The plate under the portrait, ink 164..365 by 692..733. The SCOUTED seal covers it as far as x 224, so the words are placed after the seal while it is shown."
+    },
+    {
+      "id": "crest",
+      "kind": "image",
+      "rect": [
+        404,
+        389,
+        176,
+        232
+      ],
+      "note": "The painted shield is ink 418..565 by 392..618; the crest drawn here is the twelve's own cut (91:120) at 176x232, which covers it on every side."
+    },
+    {
+      "id": "name",
+      "kind": "text",
+      "rect": [
+        575,
+        413,
+        284,
+        45
+      ],
+      "font": "title",
+      "size": 32,
+      "weight": 700,
+      "color": "#EDE6D6",
+      "align": "center",
+      "valign": "center",
+      "sample": "Wwwwwwwwwwwwwwww",
+      "note": "The name plate's field, ink 575..859 by 413..457. A patron's seal stands on its right end, so the words are given the plate up to the seal (x 776) when one is shown."
+    },
+    {
+      "id": "vip",
+      "kind": "image",
+      "asset": "icons/vip_seal",
+      "rect": [
+        784,
+        391,
+        89,
+        86
+      ],
+      "note": "Royal Favour's seal, where the painting's own was (ink 790..867 by 392..477, mirrored away in rival/back so the plate is whole under it); the kit's seal at its own 120:116, shown only for a patron."
+    },
+    {
+      "id": "title",
+      "kind": "text",
+      "rect": [
+        584,
+        478,
+        270,
+        41
+      ],
+      "font": "body",
+      "size": 26,
+      "weight": 600,
+      "color": "#EDE6D6",
+      "align": "center",
+      "valign": "center",
+      "sample": "the Unwearied",
+      "note": "The blue ribbon's band, ink 572..865 by 478..518; the box is its middle, clear of both folded tails."
+    },
+    {
+      "id": "level",
+      "kind": "text",
+      "rect": [
+        637,
+        559,
+        220,
+        38
+      ],
+      "font": "body",
+      "size": 27,
+      "weight": 600,
+      "color": "#E7E7E7",
+      "align": "center",
+      "valign": "center",
+      "sample": "Level 42"
+    },
+    {
+      "id": "kingdom",
+      "kind": "text",
+      "rect": [
+        637,
+        620,
+        220,
+        38
+      ],
+      "font": "body",
+      "size": 25,
+      "weight": 500,
+      "color": "#E7E7E7",
+      "align": "center",
+      "valign": "center",
+      "sample": "Lion Banner [LION]"
+    },
+    {
+      "id": "might",
+      "kind": "text",
+      "rect": [
+        637,
+        681,
+        220,
+        41
+      ],
+      "font": "body",
+      "size": 25,
+      "weight": 600,
+      "color": "#E7E7E7",
+      "align": "center",
+      "valign": "center",
+      "sample": "12,480 Might"
+    },
+    {
+      "id": "gear",
+      "kind": "template",
+      "rect": [
+        70,
+        793,
+        254,
+        260
+      ],
+      "instances": [
+        {
+          "pos": [
+            70,
+            793
+          ]
+        },
+        {
+          "pos": [
+            341,
+            793
+          ],
+          "rects": {
+            "name": [
+              9,
+              214,
+              241,
+              33
+            ]
+          }
+        },
+        {
+          "pos": [
+            612,
+            793
+          ],
+          "rects": {
+            "name": [
+              12,
+              214,
+              240,
+              33
+            ]
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "item",
+          "kind": "image",
+          "rect": [
+            27,
+            13,
+            204,
+            179
+          ],
+          "note": "The frame's window, ink 97..300 by 806..984: the tier's velvet fills it and the piece is drawn on that, so the painted sword is gone whatever the rival carries."
+        },
+        {
+          "id": "name",
+          "kind": "text",
+          "rect": [
+            5,
+            214,
+            242,
+            33
+          ],
+          "font": "body",
+          "size": 22,
+          "weight": 600,
+          "color": "#E7E7E7",
+          "align": "center",
+          "valign": "center",
+          "sample": "Wolfsbane Blade"
+        }
+      ]
+    },
+    {
+      "id": "soldier",
+      "kind": "template",
+      "rect": [
+        51,
+        1118,
+        160,
+        184
+      ],
+      "instances": [
+        {
+          "pos": [
+            51,
+            1118
+          ],
+          "assets": {
+            "ring": "rival/ring_1"
+          }
+        },
+        {
+          "pos": [
+            219,
+            1118
+          ],
+          "assets": {
+            "ring": "rival/ring_2"
+          }
+        },
+        {
+          "pos": [
+            389,
+            1118
+          ],
+          "assets": {
+            "ring": "rival/ring_3"
+          }
+        },
+        {
+          "pos": [
+            559,
+            1118
+          ],
+          "assets": {
+            "ring": "rival/ring_4"
+          }
+        },
+        {
+          "pos": [
+            726,
+            1118
+          ],
+          "assets": {
+            "ring": "rival/ring_5"
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "face",
+          "kind": "image",
+          "rect": [
+            12,
+            8,
+            136,
+            118
+          ],
+          "note": "The ring's opening (rival/ring_hole's own two ellipses): the soldier's painting is a 133x164 card, and the band of it this box's shape asks for -- its head and shoulders -- is drawn here, with the ring laid over so what shows is round."
+        },
+        {
+          "id": "ring",
+          "kind": "image",
+          "asset": "rival/ring_1",
+          "rect": [
+            0,
+            0,
+            160,
+            128
+          ],
+          "note": "The painted ring with its window opened, over the soldier: each instance wears its own crop (rival/ring_1..5), cut where that ring stands, so the ground it carries is that ring's own."
+        },
+        {
+          "id": "might_chip",
+          "kind": "ninepatch",
+          "asset": "army/tier_chip",
+          "rect": [
+            38,
+            84,
+            84,
+            28
+          ],
+          "margin": [
+            12,
+            8,
+            12,
+            8
+          ],
+          "note": "What the spyglass bought, across the foot of the ring: hidden until a report is live."
+        },
+        {
+          "id": "might",
+          "kind": "text",
+          "rect": [
+            38,
+            85,
+            84,
+            26
+          ],
+          "font": "body",
+          "size": 20,
+          "weight": 600,
+          "color": "#E9C46A",
+          "align": "center",
+          "valign": "center",
+          "sample": "1,240"
+        },
+        {
+          "id": "tier",
+          "kind": "image",
+          "rect": [
+            52,
+            125,
+            57,
+            57
+          ],
+          "note": "The painted empty diamond, ink 102..159 by 1243..1300 on the first ring; the sheet's own numeral is laid on it at its size."
+        }
+      ]
+    },
+    {
+      "id": "add_friend",
+      "kind": "button",
+      "asset": "rival/add_friend",
+      "rect": [
+        56,
+        1310,
+        284,
+        128
+      ],
+      "action": "add_friend"
+    },
+    {
+      "id": "spy",
+      "kind": "button",
+      "asset": "rival/spy",
+      "rect": [
+        340,
+        1310,
+        262,
+        134
+      ],
+      "action": "spy"
+    },
+    {
+      "id": "spy_cost",
+      "kind": "text",
+      "rect": [
+        375,
+        1397,
+        192,
+        28
+      ],
+      "font": "body",
+      "size": 22,
+      "weight": 600,
+      "color": "#E9C46A",
+      "align": "center",
+      "valign": "center",
+      "sample": "2,520 gold",
+      "note": "The empty plate baked into the SPY button, ink 375..566 by 1397..1424."
+    },
+    {
+      "id": "attack",
+      "kind": "button",
+      "asset": "rival/attack",
+      "rect": [
+        604,
+        1310,
+        284,
+        128
+      ],
+      "action": "attack"
+    },
+    {
+      "id": "report",
+      "kind": "button",
+      "asset": "rival/report",
+      "rect": [
+        184,
+        1461,
+        251,
+        108
+      ],
+      "action": "report",
+      "keep_texture_size": true,
+      "paint_rect": [
+        184,
+        1477,
+        251,
+        78
+      ],
+      "note": "The plate is painted 78 tall, which is 33 points on the phone and under the 44 a thumb needs: the tap target is 108 and the painting keeps its own size in the middle of it."
+    },
+    {
+      "id": "close",
+      "kind": "button",
+      "asset": "rival/close",
+      "rect": [
+        506,
+        1461,
+        251,
+        108
+      ],
+      "action": "close",
+      "keep_texture_size": true,
+      "paint_rect": [
+        506,
+        1477,
+        251,
+        78
+      ],
+      "note": "The plate is painted 78 tall, which is 33 points on the phone and under the 44 a thumb needs: the tap target is 108 and the painting keeps its own size in the middle of it."
+    }
+  ]
+}

@@ -1,7 +1,11 @@
 extends Control
 ## FAMILY — the hero: identity, stats, gear, and the upgrade ledger.
-## Layout: layout/family.json. Estates (holdings), the Treasury and the Legacy
-## fold into the upgrade list below the GRANARY card, in the same card.
+## Layout: layout/family.json. The ledger opens with the STOREHOUSE card, where
+## the estates' income waits to be carried in, the ROYAL TREASURY card under it
+## (the bank: the vault's gold, the purse's, DEPOSIT and WITHDRAW), and the
+## TALENTS / DEEDS / ROAD strip (ROAD opens the Victory Road); estates
+## (holdings) and the Legacy fold into the upgrade list below the GRANARY card,
+## in the same card.
 
 const SCREEN := "family"
 const PITCH := 262.0
@@ -12,10 +16,17 @@ const BUCKET_LABEL := {
 	"steal_cap_bp": "RAID STEAL CAP", "ransom_bp": "RANSOM",
 }
 
-## Each card's painting, by what the upgrade is for. All twenty-one cards used
-## to wear the granary, so the ledger read as one card repeated; three scenes
-## cut from the paintings split it into what it is -- the estate's income, the
-## army, and the realm.
+## Each card's own scene. Every upgrade and holding has one, cut for it as
+## family/ledger_<id> (art/slices/ledger_upgrades.json, ledger_holdings.json);
+## the Granary keeps the painting the card was cut with, and the Legacy wears
+## its gallery of ancestors (ledger_extra.json). The ledger used to wear the
+## granary on every card, then three shared scenes; now no two cards share one.
+const CARD_SCENE := "family/ledger_%s"
+const OWN_SCENE := {"granary": "family/granary_art"}
+const LEGACY_ART := "family/ledger_legacy"
+## An upgrade or holding the server adds before its scene is cut wears its
+## group's picture, never nothing. tests/ledger_scenes.gd keeps every one in the
+## balance on its own.
 const CARD_ART := {"income": "family/granary_art", "army": "family/art_army", "realm": "family/art_realm"}
 const BUCKET_GROUP := {"soldier_atk_bp": "army", "soldier_def_bp": "army", "soldier_spd_bp": "army",
 	"steal_cap_bp": "army", "ransom_bp": "army", "xp_bp": "realm", "energy_regen_bp": "realm"}
@@ -39,6 +50,70 @@ const BUTTON_MARGIN := 28.0
 const GEAR_GHOSTS := ["items/army_spear", "items/army_leather_armor", "items/army_horse"]
 const GEAR_WORDS := ["WEAPON", "ARMOR", "HORSE"]
 
+## The STOREHOUSE card (family_storehouse.png), the ledger's first. The cards
+## under it keep the ledger's own gap (PITCH less a card's 253).
+const STORE_TEMPLATE := "storehouse_card"
+const STORE_GAP := 9.0
+const STORE_CARRY := "/v1/estates/storehouse/carry"
+## The window's painting by how full it is (storehouse_state): swept clean
+## under a third, sacks and crates until it is full, overflowing once it is.
+const STORE_PICTURE := {"empty": "family/storehouse_empty", "half": "family/storehouse_half",
+	"full": "family/storehouse_full"}
+const STORE_HALF_AT := 1.0 / 3.0
+## A carry refused, in the game's words, by the server's code. A vault not yet
+## open is said before anything is asked (VAULT_SHUT).
+const STORE_REFUSALS := {
+	"storehouse_empty": "The storehouse is empty — your estates fill it by the hour",
+	"bad_request": "The gold can go to your purse or the vault",
+}
+const VAULT_SHUT := "The vault opens at level %d"
+## The vault's word rises this far to make room for its fee under it.
+const VAULT_WORD_LIFT := 8.0
+## A full storehouse says so in the warning red: it is filling no more.
+const STORE_FULL_RED := Color("#F0524F")
+## The amount and what it holds share the plate, the second on the first's
+## baseline this far after it, both inside the plate's chamfers.
+const STORE_CAP_GAP := 8.0
+const STORE_AMOUNT_RIGHT := 700.0
+
+## The ROYAL TREASURY card: the bank, right under the storehouse, the owner's
+## painted card (family_treasury.png) laid out as the storehouse's is (its
+## template in layout/family.json). The vault's gold is the snapshot's
+## (player.treasury), the purse's is the pills' (display_gold, so a collect in
+## flight shows at once), whether it is open and its fee are the storehouse
+## view's (treasury_open, treasury_fee_bp) -- the same the storehouse card's To
+## Vault reads. The window shows the vault shut, half open or wide open by its
+## gold (treasury_picture). DEPOSIT and WITHDRAW open the treasury page ready for
+## that move; below its level the card is dimmed and says when it opens, and
+## what is already in the vault can always come out.
+const TREASURY_TEMPLATE := "treasury_card"
+const TREASURY_PAGE := "res://scenes/pages/treasury_page.gd"
+const TREASURY_PICTURE := {"empty": "family/treasury_empty", "half": "family/treasury_half",
+	"full": "family/treasury_full"}
+## "A lot" in the vault, for the picture only: as much as this many full
+## storehouses (the storehouse view's cap). Nothing is computed from it.
+const TREASURY_FULL_STOREHOUSES := 3
+const TREASURY_SAFE := "RAID-PROOF"
+const TREASURY_SHUT := "Opens at level %d"
+const TREASURY_OPENS := "The vault opens at level %d"
+const TREASURY_EMPTY := "The vault is empty"
+const TREASURY_DIMMED := Color(0.55, 0.55, 0.55)
+const TREASURY_AMOUNT_RIGHT := 710.0
+
+## TALENTS, DEEDS and ROAD (family_storehouse.png's strip), under the treasury
+## card where family_treasury.png puts it; the ledger follows it at the
+## ledger's own gap.
+## DEEDS opens the Deeds and ROAD the Victory Road (one page under two tabs);
+## TALENTS opens the tree.
+const HONOURS_TEMPLATE := "honours"
+const HONOURS_STATUS := {"talents": "status_talents"}
+const HONOURS_DIMMED := Color(0.55, 0.55, 0.55)
+const HONOURS_STATUS_SIZE := 26
+const HONOURS_STATUS_MIN := 17
+const ROAD_PAGE := "res://scenes/pages/road_page.gd"
+const DEEDS_PAGE := "res://scenes/pages/deeds_page.gd"
+const TALENTS_PAGE := "res://scenes/pages/talents_page.gd"
+
 var _scroll: ScrollContainer
 var _content: Control
 var _ui: Dictionary = {}
@@ -47,6 +122,14 @@ var _stats: Dictionary
 var _gear: Dictionary
 var _empty_faces: Dictionary = {}     ## slot -> [ghost, word], shown while it is bare
 var _cards: Array = []            ## [{node, parts, kind, data}]
+var _store: Dictionary = {}       ## the storehouse card's {node, parts}
+var _store_painted := ""          ## what it last showed, so the tick repaints on a change only
+var _treasury: Dictionary = {}    ## the ROYAL TREASURY card's {node, parts}
+var _treasury_painted := ""       ## what it last showed
+var _honours: Dictionary = {}     ## the TALENTS / DEEDS / ROAD strip's {node, parts}
+var _road: Dictionary = {}        ## GET /v1/road, for the ROAD card's plate
+var _deeds: Dictionary = {}       ## GET /v1/achievements, for the DEEDS card's plate
+var _talents: Dictionary = {}     ## GET /v1/talents, for the TALENTS card's plate
 var _footer: Control
 var _ground: Control
 var _points_label: Label
@@ -91,6 +174,7 @@ func _ready() -> void:
 		var tile: Control = t["node"]
 		var hit := UI.hotspot(Rect2(Vector2.ZERO, tile.size))
 		hit.pressed.connect(_choose_gear.bind(slot))
+		GuideTargets.register("family.gear." + slot, hit)
 		tile.add_child(hit)
 		# An empty slot shows what goes in it, as the Army's gear tiles do.
 		var paint: Control = t["parts"]["painting"]
@@ -98,6 +182,7 @@ func _ready() -> void:
 			GEAR_WORDS[i], Rect2(0, tile.size.y - 46, tile.size.x, 24), hit)
 	# Stat points: tapping a cell spends one there once the server has granted any.
 	var strip: Control = _ui["stats"][0]["node"]
+	GuideTargets.register("family.stats", strip)
 	for entry in [["attack", Rect2(0, 0, 250, 190)], ["defense", Rect2(250, 0, 250, 190)], ["energy", Rect2(500, 0, 252, 190)]]:
 		var hit := UI.hotspot(entry[1])
 		hit.pressed.connect(_spend_point.bind(entry[0]))
@@ -106,6 +191,10 @@ func _ready() -> void:
 	UI.place(_points_label, Rect2(0, -2, 752, 30))
 	_points_label.visible = false
 	strip.add_child(_points_label)
+	_build_storehouse()
+	_build_treasury()
+	_build_honours()
+	GameState.badges_changed.connect(_paint_honours)
 
 
 func refresh() -> void:
@@ -127,6 +216,12 @@ func _load() -> void:
 	var leg: Api.Response = await Api.get_json("/v1/legacy")
 	if leg.ok:
 		_legacy = leg.data
+	var road: Api.Response = await Api.get_json("/v1/road")
+	if road.ok and road.data is Dictionary:
+		_road = road.data
+	var deeds: Api.Response = await Api.get_json("/v1/achievements")
+	if deeds.ok and deeds.data is Dictionary:
+		_deeds = deeds.data
 	_paint_all()
 
 
@@ -134,7 +229,18 @@ func _paint_all() -> void:
 	_paint_identity()
 	_paint_stats()
 	_paint_gear()
+	_paint_storehouse(true)
+	_paint_treasury(true)
+	_paint_honours()
 	_paint_cards()
+
+
+## The storehouse fills while the screen is open: its gold, its bar, its
+## painting and its countdown follow, repainted only when one of them moves.
+func _process(_dt: float) -> void:
+	if visible:
+		_paint_storehouse()
+		_paint_treasury()
 
 
 # --- identity -----------------------------------------------------------------------
@@ -182,6 +288,9 @@ func _paint_gear() -> void:
 		parts["gem"].texture = Art.gem(str(item.get("tier", "")) if item is Dictionary else "")
 		for n in _empty_faces.get(slot, []):
 			n.visible = not (item is Dictionary)
+		# The worn piece on its rarity's velvet; a bare slot keeps its empty tile.
+		ItemGround.in_gear_tile(painting, parts["art"], "family/gear_tile_empty",
+			str(item.get("tier", "common")) if item is Dictionary else "")
 		if item is Dictionary:
 			painting.texture = Art.item(str(item.get("art", "")))
 			parts["lv"].text = "Lv. %d" % int(item.get("ilvl", 1))
@@ -199,13 +308,412 @@ func _gear_tile(slot: String) -> Dictionary:
 	return {"node": wrap, "parts": wrap.get_meta("parts", {})}
 
 
+# --- the storehouse -----------------------------------------------------------------------
+
+## The STOREHOUSE card: the estates' income, waiting out of a raider's reach
+## until it is carried in. Its figures are the snapshot's (snapshot.storehouse),
+## filled on read by GameState.display_storehouse_milli; nothing here computes
+## one of them.
+func _build_storehouse() -> void:
+	var tpl := Layout.find(SCREEN, STORE_TEMPLATE)
+	_store = Layout.instantiate(tpl)
+	var node: Control = _store["node"]
+	node.position = Layout.rect_of(tpl).position
+	_content.add_child(node)
+	var p: Dictionary = _store["parts"]
+	p["collect"].pressed.connect(_carry.bind("purse"))
+	p["to_vault"].pressed.connect(_carry.bind("treasury"))
+	# The vault's word rises to make room for its fee under it.
+	_lift_word(p["to_vault"])
+
+
+## Raises a plate's word by VAULT_WORD_LIFT to make room for the line under it,
+## in every state of the plate (UI.inset_plate centred it in the painted plate).
+static func _lift_word(b: Button) -> void:
+	var seen := {}
+	for state in ["normal", "hover", "focus", "pressed", "disabled"]:
+		var sb := b.get_theme_stylebox(state)
+		if sb == null or seen.has(sb):
+			continue
+		seen[sb] = true
+		sb.content_margin_top -= VAULT_WORD_LIFT
+		sb.content_margin_bottom += VAULT_WORD_LIFT
+
+
+## Which painting the window wears for a storehouse holding `milli` of
+## `cap_milli`: "empty" under a third, "half" until it is full, "full" at its
+## capacity or over it.
+static func storehouse_state(milli: int, cap_milli: int) -> String:
+	if cap_milli <= 0:
+		return "empty"
+	if milli >= cap_milli:
+		return "full"
+	return "half" if float(milli) >= float(cap_milli) * STORE_HALF_AT else "empty"
+
+
+## How long the storehouse holds, as the server says it (8, and 12 minutes
+## more for each Tithe Barn level): "8h", "9h 36m".
+static func hours_words(hours: float) -> String:
+	var mins := int(round(hours * 60.0))
+	if mins % 60 == 0:
+		return "%dh" % (mins / 60)
+	return "%dh %02dm" % [mins / 60, mins % 60]
+
+
+## What a carry says, from its answer: "+12,345 to the purse", "+11,110 to the
+## vault (1,235 fee)".
+static func carry_words(d: Dictionary) -> String:
+	if str(d.get("to", "")) == "treasury":
+		var fee := int(d.get("fee", 0))
+		var said := "+%s to the vault" % UI.grouped(int(d.get("banked", 0)))
+		return said + (" (%s fee)" % UI.grouped(fee) if fee > 0 else "")
+	return "+%s to the purse" % UI.grouped(int(d.get("carried", 0)))
+
+
+## Paints the card from the snapshot, now. `force` repaints even when nothing
+## it shows has moved (a load, a new snapshot's rate or capacity).
+func _paint_storehouse(force: bool = false) -> void:
+	if _store.is_empty():
+		return
+	var p: Dictionary = _store["parts"]
+	var sh := GameState.storehouse()
+	var milli := GameState.display_storehouse_milli()
+	var cap := int(sh.get("cap_milli", 0))
+	var full := GameState.display_storehouse_full()
+	var left := "" if full else UI.time_left(GameState.display_storehouse_full_in())
+	var open := bool(sh.get("treasury_open", false))
+	var key := "%d|%d|%s|%s|%s|%s|%d" % [milli / 1000, cap, full, left, sh.get("hours", 0), open,
+		int(sh.get("treasury_fee_bp", 0))]
+	if key == _store_painted and not force:
+		return
+	_store_painted = key
+	p["picture"].texture = Art.tex(STORE_PICTURE[storehouse_state(milli, cap)])
+	Layout.set_fill(p["fill"], float(milli) / float(cap) if cap > 0 else 0.0)
+	p["amount"].text = UI.grouped(milli / 1000)
+	var holds := cap / 1000
+	p["capacity"].text = "/ " + (UI.grouped(holds) if holds < 1_000_000 else UI.short_number(holds))
+	_fit_pair(p["amount"], p["capacity"], STORE_AMOUNT_RIGHT)
+	p["holds"].text = "HOLDS " + hours_words(float(sh.get("hours", 0.0))).to_upper()
+	UI.fit_label(p["holds"], 19, 14)
+	var timer: Label = p["full_in"]
+	if full:
+		timer.text = "Full"
+		timer.label_settings.font_color = STORE_FULL_RED
+	else:
+		# A storehouse the estates do not fill (no rate yet) has no time to give.
+		timer.text = "Full in " + left if int(sh.get("per_hour_milli", 0)) > 0 else ""
+		timer.label_settings.font_color = UI.INK
+	UI.fit_label(timer, 24, 16)
+	# The vault's plate says its fee always, and dims until the vault opens; a
+	# tap on it then says the level (_carry).
+	var dim := Color.WHITE if open else Color(0.55, 0.55, 0.55)
+	p["to_vault"].modulate = dim
+	p["vault_fee"].modulate = dim
+	p["vault_fee"].text = "%s%% FEE" % _pct(int(sh.get("treasury_fee_bp", 0)))
+	UI.fit_label(p["vault_fee"], 15, 12)
+
+
+## A figure at the plate's size and the words after it on the same baseline
+## (the gold waiting and what it holds; the vault's gold and "in the vault"),
+## the pair kept inside the plate's chamfered ends, `right` its last unit: a
+## late lord's figures are set smaller rather than run over the plate's edge.
+func _fit_pair(amount: Label, capacity: Label, right: float) -> void:
+	var left := amount.position.x
+	var room := right - left
+	UI.fit_label(capacity, 22, 16)
+	var cs := capacity.label_settings
+	var cap_w := cs.font.get_string_size(capacity.text, HORIZONTAL_ALIGNMENT_LEFT, -1, cs.font_size).x
+	amount.set_meta("box_w", room - cap_w - STORE_CAP_GAP)
+	UI.fit_label(amount, 32, 18)
+	var s := amount.label_settings
+	var amount_w := s.font.get_string_size(amount.text, HORIZONTAL_ALIGNMENT_LEFT, -1, s.font_size).x
+	capacity.position.x = left + amount_w + STORE_CAP_GAP
+	capacity.size.x = cap_w + 2.0
+	# Both are centred in the same box, so their baselines differ by half what
+	# their lines differ by above and below the baseline.
+	var a_up := s.font.get_ascent(s.font_size)
+	var a_down := s.font.get_descent(s.font_size)
+	var c_up := cs.font.get_ascent(cs.font_size)
+	var c_down := cs.font.get_descent(cs.font_size)
+	capacity.position.y = amount.position.y + ((a_up - c_up) - (a_down - c_down)) / 2.0
+
+
+## COLLECT and TO VAULT: the whole storehouse to the purse, or to the vault
+## less the vault's fee. One carry at a time, held until the reload is in
+## (`_busy`); a vault that is not open yet is said here, never asked of the
+## server.
+func _carry(to: String) -> void:
+	if _busy:
+		return
+	var shut := VAULT_SHUT % GameState.unlock_level("bank")
+	if to == "treasury" and not bool(GameState.storehouse().get("treasury_open", false)):
+		GameState.action_failed.emit(shut)
+		return
+	var words := STORE_REFUSALS.duplicate()
+	words["level_too_low"] = shut
+	_busy = true
+	var res: Api.Response = await GameState.act(STORE_CARRY, {"to": to}, words)
+	if res.ok:
+		GameState.toast(carry_words(res.data))
+		await _load()
+	_busy = false
+
+
+# --- the royal treasury -----------------------------------------------------------------
+
+func _build_treasury() -> void:
+	var tpl := Layout.find(SCREEN, TREASURY_TEMPLATE)
+	_treasury = Layout.instantiate(tpl)
+	var node: Control = _treasury["node"]
+	node.position = Layout.rect_of(tpl).position
+	_content.add_child(node)
+	var p: Dictionary = _treasury["parts"]
+	p["deposit"].pressed.connect(_open_treasury.bind("deposit"))
+	p["withdraw"].pressed.connect(_open_treasury.bind("withdraw"))
+	# Both words rise for the line under them (the fee; that taking out is free).
+	_lift_word(p["deposit"])
+	_lift_word(p["withdraw"])
+
+
+static func _vault_gold() -> int:
+	return int(str(GameState.player().get("treasury", "0")))
+
+
+## The card's state, from the snapshot: "open", "shut" (below the vault's
+## level, nothing in it) or "shut_held" (below it, with gold still banked --
+## a Legacy begun can put a lord back under the level with a full vault).
+static func treasury_state(open: bool, vault: int) -> String:
+	if open:
+		return "open"
+	return "shut_held" if vault > 0 else "shut"
+
+
+## Which painting the window wears for `vault` gold, against a storehouse of
+## `cap`: "empty" (shut and barred) with nothing in it, "full" (wide open,
+## spilling) from TREASURY_FULL_STOREHOUSES storehouses' worth, "half" (half
+## open on a modest pile) between. Presentation only, like storehouse_state.
+static func treasury_picture(vault: int, cap: int) -> String:
+	if vault <= 0:
+		return "empty"
+	if cap > 0 and vault >= cap * TREASURY_FULL_STOREHOUSES:
+		return "full"
+	return "half"
+
+
+func _paint_treasury(force: bool = false) -> void:
+	if _treasury.is_empty():
+		return
+	var p: Dictionary = _treasury["parts"]
+	var sh := GameState.storehouse()
+	var vault := _vault_gold()
+	var hand := GameState.display_gold()
+	var state := treasury_state(bool(sh.get("treasury_open", false)), vault)
+	var fee_bp := int(sh.get("treasury_fee_bp", 0))
+	var cap := int(sh.get("cap", 0))
+	var key := "%d|%d|%s|%d|%d|%d" % [vault, hand, state, fee_bp, cap, GameState.unlock_level("bank")]
+	if key == _treasury_painted and not force:
+		return
+	_treasury_painted = key
+	(p["picture"] as TextureRect).texture = Art.tex(TREASURY_PICTURE[treasury_picture(vault, cap)])
+	p["vault"].text = UI.grouped(vault)
+	p["vault_word"].text = "in the vault"
+	_fit_pair(p["vault"], p["vault_word"], TREASURY_AMOUNT_RIGHT)
+	p["on_hand"].text = "On hand  " + UI.grouped(hand)
+	UI.fit_label(p["on_hand"], 24, 16)
+	# The plate under the window: RAID-PROOF, or, below the vault's level, when
+	# it opens, in gold.
+	var plate: Label = p["raid_proof"]
+	if state == "open":
+		plate.text = TREASURY_SAFE
+		plate.label_settings.font_color = Color("#B9C2CC")
+	else:
+		plate.text = TREASURY_SHUT % GameState.unlock_level("bank")
+		plate.label_settings.font_color = UI.GOLD
+	UI.fit_label(plate, 19, 14)
+	p["deposit_fee"].text = "%s%% FEE" % _pct(fee_bp)
+	UI.fit_label(p["deposit_fee"], 15, 12)
+	p["withdraw_note"].text = "FREE"
+	# Shut, the picture and the moves are dimmed; what is banked can still
+	# come out.
+	var shut := state != "open"
+	for id in ["picture", "vault_icon", "deposit", "deposit_fee"]:
+		(p[id] as CanvasItem).modulate = TREASURY_DIMMED if shut else Color.WHITE
+	for id in ["withdraw", "withdraw_note"]:
+		(p[id] as CanvasItem).modulate = TREASURY_DIMMED if state == "shut" else Color.WHITE
+
+
+## DEPOSIT and WITHDRAW: the treasury page, ready for the move (the page it
+## opened, or null). What cannot be done is said here, before a page opens on it.
+func _open_treasury(mode: String) -> Control:
+	var state := treasury_state(bool(GameState.storehouse().get("treasury_open", false)), _vault_gold())
+	if state == "shut" or (state == "shut_held" and mode == "deposit"):
+		GameState.action_failed.emit(TREASURY_OPENS % GameState.unlock_level("bank"))
+		return null
+	if mode == "withdraw" and _vault_gold() <= 0:
+		GameState.action_failed.emit(TREASURY_EMPTY)
+		return null
+	var page: GDScript = load(TREASURY_PAGE)
+	var sheet: Control = page.open(self, _estates.get("treasury", {}), {"mode": mode})
+	sheet.closed.connect(func() -> void: _load())
+	return sheet
+
+
+# --- TALENTS, DEEDS, ROAD ---------------------------------------------------------------
+
+## The strip of three medallion cards under the storehouse: DEEDS opens the
+## Deeds and counts the tiers waiting there (the heartbeat's `achievements`),
+## ROAD the Victory Road and the milestones waiting on it (`road`), and TALENTS
+## the tree, counting the points a lord has not spent.
+func _build_honours() -> void:
+	var tpl := Layout.find(SCREEN, HONOURS_TEMPLATE)
+	_honours = Layout.instantiate(tpl)
+	var node: Control = _honours["node"]
+	node.position = Layout.rect_of(tpl).position
+	_content.add_child(node)
+	var p: Dictionary = _honours["parts"]
+	(p["hit_road"] as BaseButton).pressed.connect(_open_road)
+	(p["hit_deeds"] as BaseButton).pressed.connect(_open_deeds)
+	(p["hit_talents"] as BaseButton).pressed.connect(_open_talents)
+
+
+func _paint_honours() -> void:
+	if _honours.is_empty():
+		return
+	var p: Dictionary = _honours["parts"]
+	var open := GameState.is_unlocked("talents")
+	(p["card_talents"] as CanvasItem).modulate = Color.WHITE if open else HONOURS_DIMMED
+	_honours_status(p["status_talents"], talent_words(_talents, open), UI.INK if open else UI.DIM)
+	_honours_count(p["badge_talents"], p["count_talents"], int(_talents.get("left", 0)) if open else 0)
+	var waiting := road_count(GameState.badges, _road)
+	_honours_status(p["status_road"], road_words(_road, waiting), UI.INK)
+	_honours_count(p["badge_road"], p["count_road"], waiting)
+	var owed := deeds_count(GameState.badges, _deeds)
+	_honours_status(p["status_deeds"], deeds_words(_deeds, owed), UI.INK)
+	_honours_count(p["badge_deeds"], p["count_deeds"], owed)
+
+
+## A card's count: the COURT cards' red disc on its shoulder, 9+ past nine,
+## gone at none.
+func _honours_count(badge: CanvasItem, count: Label, n: int) -> void:
+	badge.visible = n > 0
+	count.visible = n > 0
+	count.text = str(n) if n < 10 else "9+"
+
+
+func _honours_status(l: Label, words: String, col: Color) -> void:
+	if l.text == words and l.label_settings.font_color == col:
+		return
+	l.text = words
+	l.label_settings.font_color = col
+	UI.fit_line(l, HONOURS_STATUS_SIZE, HONOURS_STATUS_MIN)
+
+
+## What waits on the road: the heartbeat's count, or -- before the first beat
+## after a claim elsewhere -- the road's own.
+static func road_count(badges: Dictionary, road: Dictionary) -> int:
+	if badges.has("road"):
+		return int(badges.get("road", 0))
+	return int(road.get("claimable", 0))
+
+
+## The ROAD card's plate: what waits, else the next milestone's level, else
+## that the road is walked. Before the road has been read, nothing.
+static func road_words(road: Dictionary, waiting: int) -> String:
+	if waiting > 0:
+		return "%d reward%s waiting" % [waiting, "" if waiting == 1 else "s"]
+	var stones: Array = road.get("milestones", [])
+	if stones.is_empty():
+		return ""
+	for m in stones:
+		if not bool(m.get("reached", false)):
+			return "Next at level %d" % int(m.get("level", 0))
+	return "The road is walked"
+
+
+## What waits in the Deeds: the heartbeat's count, or -- before the first beat
+## after a claim elsewhere -- the page's own.
+static func deeds_count(badges: Dictionary, deeds: Dictionary) -> int:
+	if badges.has("achievements"):
+		return int(badges.get("achievements", 0))
+	return int(deeds.get("claimable", 0))
+
+
+## The DEEDS card's plate: the tiers waiting, else the medals won of all there
+## are ("12 of 96 medals"). Before the deeds have been read, nothing.
+static func deeds_words(deeds: Dictionary, waiting: int) -> String:
+	if waiting > 0:
+		return "%d medal%s to claim" % [waiting, "" if waiting == 1 else "s"]
+	var all: Array = deeds.get("achievements", [])
+	if all.is_empty():
+		return ""
+	var won := 0
+	var tiers := 0
+	for a in all:
+		if a is Dictionary:
+			won += int(a.get("claimed", 0))
+			tiers += (a.get("tiers", []) as Array).size()
+	if tiers > 0 and won >= tiers:
+		return "Every medal won"
+	return "%d of %d medals" % [won, tiers]
+
+
+## The TALENTS card's plate: the points waiting to be spent, else what has been.
+static func talent_words(tree: Dictionary, unlocked: bool) -> String:
+	if not unlocked:
+		return "Opens at level %d" % maxi(1, int(tree.get("unlock_level", GameState.unlock_level("talents"))))
+	var left := int(tree.get("left", 0))
+	if left > 0:
+		return "%d point%s to spend" % [left, "" if left == 1 else "s"]
+	var spent := int(tree.get("spent", 0))
+	if spent > 0:
+		return "%d rank%s taken" % [spent, "" if spent == 1 else "s"]
+	return "Choose your three"
+
+
+## The tree, after the page changed it: the card follows without a reload.
+func talents_changed(tree: Dictionary) -> void:
+	_talents = tree
+	_paint_honours()
+
+
+func _open_talents() -> void:
+	if not GameState.is_unlocked("talents"):
+		GameState.action_failed.emit("The talent tree opens at level %d" % GameState.unlock_level("talents"))
+		return
+	var res: Api.Response = await Api.get_json("/v1/talents")
+	if not res.ok or not (res.data is Dictionary):
+		GameState.action_failed.emit(res.error)
+		return
+	_talents = res.data
+	var page: Sheet = load(TALENTS_PAGE).open(self, self, _talents)
+	page.closed.connect(func() -> void: _paint_honours())
+
+
+func _open_deeds() -> void:
+	var page: Control = load(DEEDS_PAGE).open(self)
+	# Claims on the page move the count; the DEEDS card follows when it closes
+	# (or when the Victory Road that took its place does).
+	page.connect("closed", func() -> void:
+		_loaded_ms = -100000
+		if is_inside_tree():
+			refresh())
+
+
+func _open_road() -> void:
+	var page: Control = load(ROAD_PAGE).open(self)
+	# Claims on the page move the count; the ROAD card follows when it closes.
+	page.connect("closed", func() -> void:
+		_loaded_ms = -100000
+		if is_inside_tree():
+			refresh())
+
+
 # --- the card ledger --------------------------------------------------------------------
 
 func _card_specs() -> Array:
 	var out: Array = []
 	for u in _estates.get("upgrades", []):
 		out.append({"kind": "upgrade", "data": u})
-	out.append({"kind": "treasury", "data": {}})
 	for h in _estates.get("holdings", []):
 		out.append({"kind": "holding", "data": h})
 	out.append({"kind": "legacy", "data": _legacy})
@@ -216,12 +724,17 @@ func _paint_cards() -> void:
 	var specs := _card_specs()
 	var tpl := Layout.find(SCREEN, "upgrade_card")
 	var origin := Layout.rect_of(tpl).position
+	# The painting's first card (GRANARY) stood where the storehouse now does:
+	# the ledger follows the storehouse and the TALENTS / DEEDS / ROAD strip
+	# under it, at the ledger's own gap.
+	origin.y = Layout.rect_of(Layout.find(SCREEN, HONOURS_TEMPLATE)).end.y + STORE_GAP
 	while _cards.size() < specs.size():
 		var built := Layout.instantiate(tpl)
 		_content.add_child(built["node"])
 		var i := _cards.size()
 		built["node"].position = origin + Vector2(0, i * PITCH)
 		built["parts"]["button"].pressed.connect(_on_card_button.bind(i))
+		if i == 0: GuideTargets.register("family.estates", built["parts"]["button"])
 		# Live button text over the erased plate (the MAX LEVEL plate keeps its label).
 		var btxt := UI.label("", 26, UI.INK, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
 		UI.place(btxt, Rect2(Layout.rect_of(Layout.find(SCREEN, "button")).position, Vector2(326, 90)))
@@ -255,23 +768,33 @@ func _paint_cards() -> void:
 	_content.custom_minimum_size = Vector2(941, maxf(1672, bottom + 120))
 
 
+## The picture on a ledger card: the upgrade's, holding's or Legacy's own
+## scene. Static, so a test can ask it.
+static func card_scene(kind: String, d: Dictionary) -> String:
+	match kind:
+		"legacy":
+			return LEGACY_ART
+	var id := str(d.get("id", ""))
+	if OWN_SCENE.has(id):
+		return OWN_SCENE[id]
+	var own := CARD_SCENE % id
+	if Art.has(own):
+		return own
+	if kind == "upgrade":
+		return CARD_ART[str(BUCKET_GROUP.get(str(d.get("bucket", "")), "income"))]
+	return CARD_ART["income"]
+
+
 func _paint_card(c: Dictionary) -> void:
 	var p: Dictionary = c["parts"]
 	var d: Dictionary = c["data"]
-	var group := "income"
 	var icon := "icons/gold_stack"
 	match c["kind"]:
 		"upgrade":
-			var b := str(d.get("bucket", ""))
-			group = str(BUCKET_GROUP.get(b, "income"))
-			icon = str(BUCKET_ICON.get(b, icon))
-		"treasury":
-			group = "realm"
-			icon = "icons/city_shield"
+			icon = str(BUCKET_ICON.get(str(d.get("bucket", "")), icon))
 		"legacy":
-			group = "realm"
 			icon = "icons/crown_small"
-	p["art"].texture = Art.tex(CARD_ART[group])
+	p["art"].texture = Art.tex(card_scene(str(c["kind"]), d))
 	_set_icon(p["icon"], icon)
 	match c["kind"]:
 		"upgrade":
@@ -305,16 +828,6 @@ func _paint_card(c: Dictionary) -> void:
 				_set_button(c, false, "OPENS AT LEVEL %d" % int(d.get("unlock_level", 1)), true)
 			else:
 				_set_button(c, bool(d.get("maxed", false)), "UPGRADE   %s" % UI.short_number(int(d.get("next_cost", 0))), false)
-		"treasury":
-			var t: Dictionary = _estates.get("treasury", {})
-			p["name"].text = "ROYAL TREASURY"
-			c["next"].text = ""
-			p["level"].text = "VAULT  %s" % UI.short_number(int(str(t.get("vault", GameState.player().get("treasury", "0")))))
-			p["bonus"].text = "RAID-PROOF  ·  %s FEE" % (_pct(int(t.get("deposit_fee_bp", 0))) + "%")
-			if bool(t.get("unlocked", true)) or int(str(t.get("vault", "0"))) > 0:
-				_set_button(c, false, "DEPOSIT / WITHDRAW", false)
-			else:
-				_set_button(c, false, "OPENS AT LEVEL %d" % int(t.get("unlock_level", 1)), true)
 		"legacy":
 			p["name"].text = "LEGACY"
 			p["level"].text = "STACKS %d / %d" % [int(d.get("stacks", 0)), int(d.get("max_stacks", 0))]
@@ -389,10 +902,6 @@ func _on_card_button(i: int) -> void:
 					"confirm_text": "Expand"}):
 				return
 			await _act("/v1/estates/holding", {"id": str(d.get("id", ""))})
-		"treasury":
-			var page: GDScript = load("res://scenes/pages/treasury_page.gd")
-			var sheet: Control = page.open(self, _estates.get("treasury", {}))
-			sheet.closed.connect(func() -> void: _load())
 		"legacy":
 			var resets: Array = d.get("resets", [])
 			var keeps: Array = d.get("keeps", [])

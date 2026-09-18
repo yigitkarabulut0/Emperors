@@ -84,6 +84,38 @@
    ]
   },
   {
+   "name": "shop/reroll_button_free",
+   "rect": [
+    664,
+    558,
+    260,
+    74
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   },
+   "erase": [
+    {
+     "rect": [
+      777,
+      591,
+      92,
+      32
+     ],
+     "sample_x": [
+      768,
+      775
+     ],
+     "sample_x2": [
+      871,
+      878
+     ]
+    }
+   ],
+   "note": "REROLL MARKET for nothing, while the hour's Fresh Wares gives a free restock: the button with its diamond (ink x 782..812, y 595..620, its glow two more) lifted as well as its price (x 817..867), each row run from the plate's colour left of the diamond (x 768..775) to its colour right of the price (x 871..878) -- the plate is 20 brighter on the left -- so the lifted stretch keeps the plate's own shading. FREE is set live, centred under the title's words (x 738..889)."
+  },
+  {
    "name": "shop/card_frame_legendary",
    "rect": [
     174,
@@ -504,6 +536,80 @@
    ]
   },
   {
+   "name": "shop/card_frame_common_t",
+   "rect": [
+    174,
+    1135,
+    361,
+    56
+   ],
+   "inpaint": [
+    [
+     376,
+     1158,
+     140,
+     26
+    ],
+    [
+     388,
+     1190,
+     48,
+     40
+    ],
+    [
+     422,
+     1195,
+     80,
+     22
+    ],
+    [
+     416,
+     1223,
+     70,
+     22
+    ]
+   ],
+   "erase": [
+    {
+     "rect": [
+      372,
+      1247,
+      150,
+      52
+     ],
+     "sample_x": [
+      523,
+      527
+     ]
+    },
+    {
+     "rect": [
+      372,
+      1299,
+      150,
+      60
+     ],
+     "sample_x": [
+      523,
+      527
+     ]
+    }
+   ],
+   "soften": [
+    [
+     177,
+     1138,
+     196,
+     226
+    ]
+   ],
+   "tone": {
+    "saturation": 0.12,
+    "gain": 1.05
+   },
+   "note": "The common card: the painting paints no common card, and the uncommon one stood in, so a common piece sat on a green card round its grey velvet. The same card, drained to grey (the common rarity's ring and badge are grey steel)."
+  },
+  {
    "name": "shop/card_frame_uncommon_b",
    "rect": [
     174,
@@ -577,6 +683,86 @@
      147
     ]
    ]
+  },
+  {
+   "name": "shop/card_frame_common_b",
+   "rect": [
+    174,
+    1177,
+    361,
+    191
+   ],
+   "inpaint": [
+    [
+     376,
+     1158,
+     140,
+     26
+    ],
+    [
+     388,
+     1190,
+     48,
+     40
+    ],
+    [
+     422,
+     1195,
+     80,
+     22
+    ],
+    [
+     416,
+     1223,
+     70,
+     22
+    ]
+   ],
+   "erase": [
+    {
+     "rect": [
+      372,
+      1247,
+      150,
+      52
+     ],
+     "sample_x": [
+      523,
+      527
+     ]
+    },
+    {
+     "rect": [
+      372,
+      1299,
+      150,
+      60
+     ],
+     "sample_x": [
+      523,
+      527
+     ]
+    }
+   ],
+   "soften": [
+    [
+     177,
+     1138,
+     196,
+     226
+    ],
+    [
+     350,
+     1221,
+     176,
+     147
+    ]
+   ],
+   "tone": {
+    "saturation": 0.12,
+    "gain": 1.05
+   },
+   "note": "The common card: the painting paints no common card, and the uncommon one stood in, so a common piece sat on a green card round its grey velvet. The same card, drained to grey (the common rarity's ring and badge are grey steel)."
   },
   {
    "name": "items/dragonblade",

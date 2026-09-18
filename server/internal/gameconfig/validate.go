@@ -166,12 +166,26 @@ func (b *Bundle) Validate() error {
 		name string
 		v    int64
 	}{
-		{"energy_refill_diamonds", b.Progression.Store.EnergyRefillDiamonds},
 		{"shield_diamonds", b.Progression.Store.ShieldDiamonds},
 		{"rename_diamonds", b.Progression.Store.RenameDiamonds},
 	} {
 		if price.v <= 0 {
 			p = append(p, fmt.Sprintf("store.%s must be positive — zero would make it free", price.name))
+		}
+	}
+	// The refill ladder is the daily limit on bought energy. Empty would sell
+	// none -- or, read as zero, sell one for free -- and a price that fell would
+	// make the third refill of a day the cheapest.
+	refills := b.Progression.Store.EnergyRefillPrices
+	if len(refills) == 0 || len(refills) > 6 {
+		p = append(p, fmt.Sprintf("store.energy_refill_prices must hold 1 to 6 prices (the daily limit), has %d", len(refills)))
+	}
+	for i, price := range refills {
+		if price <= 0 {
+			p = append(p, fmt.Sprintf("store.energy_refill_prices[%d] must be positive — zero would make a refill free", i))
+		}
+		if i > 0 && price < refills[i-1] {
+			p = append(p, fmt.Sprintf("store.energy_refill_prices must not fall: refill %d costs %d after %d", i+1, price, refills[i-1]))
 		}
 	}
 
@@ -259,6 +273,15 @@ func (b *Bundle) Validate() error {
 		}
 	}
 
+	// Energy has no overflow path: economy.Settle clamps to the pool whatever
+	// put the energy there, so this flag set true would change nothing and read
+	// as though it had. Said out loud rather than ignored.
+	if b.Progression.Energy.Overflow {
+		p = append(p, "progression.energy.overflow is true and nothing honours it: "+
+			"energy is clamped to the pool on every path, so the flag would promise "+
+			"a behaviour the game does not have")
+	}
+
 	// stat_mult is what a human reads when reasoning about the ladder, and it is
 	// NOT what the game runs on -- tier_mult_bp is. They drifted a whole curve
 	// apart once (13.86x against 7.60x at the top) and nothing noticed, because
@@ -272,6 +295,28 @@ func (b *Bundle) Validate() error {
 				"tier %q: stat_mult %.2f disagrees with tier_mult_bp %d — the readable ladder must match the one the game runs on",
 				t.ID, t.StatMult, want))
 		}
+		// `pips` is the same kind of number and was left unguarded beside it:
+		// read by nothing, so free to drift from the rank it is drawn from.
+		if t.Pips != t.Rank {
+			p = append(p, fmt.Sprintf(
+				"tier %q: pips %d disagrees with rank %d — a tier wears one pip a rank",
+				t.ID, t.Pips, t.Rank))
+		}
+	}
+
+	// And so is `cumulative_xp`: a running total nothing reads, beside the
+	// `xp_to_next` the game actually levels on. Recomputed here for the same
+	// reason stat_mult is -- a readable number must not be free to lie about
+	// the one the game runs on.
+	var run int64
+	for _, l := range b.Progression.Levels {
+		if l.CumulativeXP != run {
+			p = append(p, fmt.Sprintf(
+				"level %d: cumulative_xp %d disagrees with the curve's own running total %d",
+				l.Level, l.CumulativeXP, run))
+			break // one line is the finding; sixty would be the same finding
+		}
+		run += l.XPToNext
 	}
 
 	// --- estates ---
@@ -381,6 +426,25 @@ func (b *Bundle) Validate() error {
 	if b.Items.Price.SellRatioBP >= 10000 {
 		p = append(p, "items price.sell_ratio_bp is 10000 or more — a dismiss would refund the whole recruit and a reroll would cost nothing")
 	}
+
+	// --- rewards, cosmetics ---
+	p = append(p, b.validateQuests()...)
+	p = append(p, b.validateRewards()...)
+	p = append(p, b.validateCommerce()...)
+	p = append(p, b.validateRetention()...)
+	p = append(p, b.validateLiveOps()...)
+	p = append(p, b.validatePvP()...)
+	p = append(p, b.validateSocial()...)
+
+	// --- the campaign, the hunt, the forge, the talents (Wave 7) ---
+	p = append(p, b.validateCampaign()...)
+	p = append(p, b.validateHunt()...)
+	p = append(p, b.validateForge()...)
+	p = append(p, b.validateTalents()...)
+
+	// --- the kingdom's boss and its wars (Wave 8) ---
+	p = append(p, b.validateBoss()...)
+	p = append(p, b.validateWar()...)
 
 	if len(p) > 0 {
 		return fmt.Errorf("invalid game config:\n  - %s", strings.Join(p, "\n  - "))

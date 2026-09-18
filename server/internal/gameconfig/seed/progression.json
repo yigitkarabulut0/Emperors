@@ -91,23 +91,70 @@
         "name": "The Armourer's Friend",
         "blurb": "Buy three things.",
         "min_level": 2
+      },
+      {
+        "id": "campaign_2",
+        "kind": "stages",
+        "target": 2,
+        "tier": 1,
+        "name": "Down the Road",
+        "blurb": "Walk two miles of the campaign.",
+        "min_level": 6
+      },
+      {
+        "id": "campaign_5",
+        "kind": "stages",
+        "target": 5,
+        "tier": 2,
+        "name": "The Long March",
+        "blurb": "Walk five miles of the campaign.",
+        "min_level": 6
+      },
+      {
+        "id": "hunt_1",
+        "kind": "hunts",
+        "target": 1,
+        "tier": 1,
+        "name": "Out of the Gate",
+        "blurb": "Send a soldier to the fields.",
+        "min_level": 8
+      },
+      {
+        "id": "hunt_2",
+        "kind": "hunts",
+        "target": 2,
+        "tier": 2,
+        "name": "Every Road Walked",
+        "blurb": "Send two soldiers out.",
+        "min_level": 8
+      },
+      {
+        "id": "aid_2",
+        "kind": "aids",
+        "target": 2,
+        "tier": 1,
+        "name": "A Hand Offered",
+        "blurb": "Answer two calls for aid.",
+        "needs": "kingdom"
+      },
+      {
+        "id": "boss_2",
+        "kind": "blows",
+        "target": 2,
+        "tier": 2,
+        "name": "Into the Beast",
+        "blurb": "Strike your kingdom's beast twice.",
+        "needs": "kingdom",
+        "min_level": 10
       }
     ]
   },
-  "daily_login": {
-    "rewards": [
-      5,
-      5,
-      10,
-      10,
-      15,
-      15,
-      25
-    ],
-    "reset_on_miss": true
-  },
   "store": {
-    "energy_refill_diamonds": 12,
+    "energy_refill_prices": [
+      20,
+      30,
+      45
+    ],
     "shield_diamonds": 20,
     "shield_hours": 8,
     "rename_diamonds": 100
@@ -146,8 +193,44 @@
       "level": 10
     },
     {
+      "id": "arena",
+      "level": 12
+    },
+    {
+      "id": "bounty",
+      "level": 15
+    },
+    {
+      "id": "friends",
+      "level": 3
+    },
+    {
       "id": "house",
       "level": 20
+    },
+    {
+      "id": "campaign",
+      "level": 6
+    },
+    {
+      "id": "talents",
+      "level": 10
+    },
+    {
+      "id": "hunt",
+      "level": 8
+    },
+    {
+      "id": "forge",
+      "level": 12
+    },
+    {
+      "id": "boss",
+      "level": 10
+    },
+    {
+      "id": "war",
+      "level": 10
     }
   ],
   "avatars": [

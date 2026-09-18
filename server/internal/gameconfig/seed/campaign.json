@@ -1,0 +1,3552 @@
+{
+  "_comment": "Fetih Kampanyasi. Ten chapters of twelve stages against the realm's own garrisons, from level 6 -- four levels before another lord may raid you back. Every garrison is WRITTEN DOWN (a captain and the soldiers behind them) and its Might is computed by a mirror of internal/game/army and recorded here; validate_campaign.go recomputes it in Go and refuses a document that disagrees. A stage pays WAGES (what its energy would have earned at your best job): three times the energy on the first clear, a fifth of that on a repeat -- 0.6 of simply collecting, so farming a stage is always worse than working. Stars: the win is one, half your health left is two, three fifths is three. Stage 6 and stage 12 are bosses and pay a piece of gear the first time they fall. The chests at 12/24/36 stars are the chapter's own.",
+  "section": "campaign",
+  "stages_per_chapter": 12,
+  "boss_stages": [
+    6,
+    12
+  ],
+  "stars": {
+    "win": 1,
+    "two_at_hp_bp": 3000,
+    "three_at_hp_bp": 6000
+  },
+  "first_clear_wages_mult": 3,
+  "repeat_bp": 2000,
+  "chapters": [
+    {
+      "id": "vale",
+      "name": "The Vale",
+      "blurb": "Bandits on the road out of the valley.",
+      "art": "campaign/map_01",
+      "level": 6,
+      "boss_item_tier": "common",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 20,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 40,
+            "items": [
+              {
+                "tier": "common",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 10,
+            "xp_wages": 40
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 6,
+          "energy": 7,
+          "might": 272,
+          "enemy": {
+            "level": 6,
+            "attack": 45,
+            "defense": 49,
+            "hp": 247,
+            "speed": 8,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 1
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 3
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 6,
+          "energy": 7,
+          "might": 272,
+          "enemy": {
+            "level": 6,
+            "attack": 45,
+            "defense": 49,
+            "hp": 247,
+            "speed": 8,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 1
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 3
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 6,
+          "energy": 7,
+          "might": 280,
+          "enemy": {
+            "level": 6,
+            "attack": 43,
+            "defense": 47,
+            "hp": 241,
+            "speed": 7,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 1
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 2
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 7,
+          "energy": 7,
+          "might": 306,
+          "enemy": {
+            "level": 7,
+            "attack": 51,
+            "defense": 51,
+            "hp": 253,
+            "speed": 8,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 1
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 4
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 7,
+          "energy": 7,
+          "might": 310,
+          "enemy": {
+            "level": 7,
+            "attack": 56,
+            "defense": 56,
+            "hp": 268,
+            "speed": 10,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 1
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 3
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 8,
+          "energy": 7,
+          "might": 466,
+          "enemy": {
+            "level": 8,
+            "attack": 58,
+            "defense": 62,
+            "hp": 286,
+            "speed": 11,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 3
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 4
+            },
+            "name": "Reaver Chief"
+          },
+          "first_clear_item_tier": "common"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 8,
+          "energy": 7,
+          "might": 390,
+          "enemy": {
+            "level": 8,
+            "attack": 52,
+            "defense": 56,
+            "hp": 268,
+            "speed": 9,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 3
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 5
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 9,
+          "energy": 7,
+          "might": 420,
+          "enemy": {
+            "level": 9,
+            "attack": 64,
+            "defense": 64,
+            "hp": 292,
+            "speed": 11,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 2
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 10
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 9,
+          "energy": 7,
+          "might": 432,
+          "enemy": {
+            "level": 9,
+            "attack": 64,
+            "defense": 64,
+            "hp": 292,
+            "speed": 11,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 3
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 10
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 10,
+          "energy": 7,
+          "might": 484,
+          "enemy": {
+            "level": 10,
+            "attack": 63,
+            "defense": 67,
+            "hp": 301,
+            "speed": 10,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 3
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 7
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 10,
+          "energy": 8,
+          "might": 496,
+          "enemy": {
+            "level": 10,
+            "attack": 81,
+            "defense": 85,
+            "hp": 355,
+            "speed": 16,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 2
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 11
+            },
+            "name": "Reaver"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 10,
+          "energy": 8,
+          "might": 564,
+          "enemy": {
+            "level": 10,
+            "attack": 67,
+            "defense": 71,
+            "hp": 313,
+            "speed": 11,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 4
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 9
+            },
+            "name": "Reaver Chief"
+          },
+          "first_clear_item_tier": "common"
+        }
+      ]
+    },
+    {
+      "id": "millwater",
+      "name": "The Millwaters",
+      "blurb": "The river villages are paying a toll to somebody.",
+      "art": "campaign/map_02",
+      "level": 11,
+      "boss_item_tier": "common",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 30,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 60,
+            "items": [
+              {
+                "tier": "common",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 12,
+            "xp_wages": 60
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 11,
+          "energy": 8,
+          "might": 412,
+          "enemy": {
+            "level": 11,
+            "attack": 94,
+            "defense": 94,
+            "hp": 382,
+            "speed": 19,
+            "soldiers": [],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 15
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 11,
+          "energy": 8,
+          "might": 418,
+          "enemy": {
+            "level": 11,
+            "attack": 73,
+            "defense": 73,
+            "hp": 319,
+            "speed": 11,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 2
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 10
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 12,
+          "energy": 8,
+          "might": 498,
+          "enemy": {
+            "level": 12,
+            "attack": 69,
+            "defense": 73,
+            "hp": 319,
+            "speed": 10,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 4
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 8
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 12,
+          "energy": 8,
+          "might": 510,
+          "enemy": {
+            "level": 12,
+            "attack": 94,
+            "defense": 98,
+            "hp": 394,
+            "speed": 19,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 2
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 8
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 13,
+          "energy": 8,
+          "might": 548,
+          "enemy": {
+            "level": 13,
+            "attack": 83,
+            "defense": 83,
+            "hp": 349,
+            "speed": 14,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 4
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 14
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 13,
+          "energy": 8,
+          "might": 680,
+          "enemy": {
+            "level": 13,
+            "attack": 104,
+            "defense": 104,
+            "hp": 412,
+            "speed": 21,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 5
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 10
+            },
+            "name": "Toll Baron"
+          },
+          "first_clear_item_tier": "common"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 14,
+          "energy": 8,
+          "might": 630,
+          "enemy": {
+            "level": 14,
+            "attack": 85,
+            "defense": 89,
+            "hp": 367,
+            "speed": 14,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 4
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 15
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 14,
+          "energy": 8,
+          "might": 644,
+          "enemy": {
+            "level": 14,
+            "attack": 83,
+            "defense": 87,
+            "hp": 361,
+            "speed": 14,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 14
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 15,
+          "energy": 9,
+          "might": 710,
+          "enemy": {
+            "level": 15,
+            "attack": 90,
+            "defense": 90,
+            "hp": 370,
+            "speed": 13,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 13
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 15,
+          "energy": 9,
+          "might": 728,
+          "enemy": {
+            "level": 15,
+            "attack": 94,
+            "defense": 94,
+            "hp": 382,
+            "speed": 14,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 15
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 15,
+          "energy": 9,
+          "might": 744,
+          "enemy": {
+            "level": 15,
+            "attack": 87,
+            "defense": 87,
+            "hp": 361,
+            "speed": 12,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 11
+            },
+            "name": "Tollman"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 16,
+          "energy": 9,
+          "might": 998,
+          "enemy": {
+            "level": 16,
+            "attack": 92,
+            "defense": 96,
+            "hp": 388,
+            "speed": 14,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 14
+            },
+            "name": "Toll Baron"
+          },
+          "first_clear_item_tier": "common"
+        }
+      ]
+    },
+    {
+      "id": "timber",
+      "name": "The Timberwood",
+      "blurb": "Deserters hold the forest road and its bridges.",
+      "art": "campaign/map_03",
+      "level": 16,
+      "boss_item_tier": "uncommon",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 40,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 80,
+            "items": [
+              {
+                "tier": "uncommon",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 14,
+            "xp_wages": 80
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 16,
+          "energy": 9,
+          "might": 702,
+          "enemy": {
+            "level": 16,
+            "attack": 88,
+            "defense": 92,
+            "hp": 376,
+            "speed": 12,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 5
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 12
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 17,
+          "energy": 9,
+          "might": 748,
+          "enemy": {
+            "level": 17,
+            "attack": 111,
+            "defense": 111,
+            "hp": 433,
+            "speed": 19,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 15
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 17,
+          "energy": 9,
+          "might": 762,
+          "enemy": {
+            "level": 17,
+            "attack": 103,
+            "defense": 103,
+            "hp": 409,
+            "speed": 16,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 19
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 18,
+          "energy": 9,
+          "might": 844,
+          "enemy": {
+            "level": 18,
+            "attack": 111,
+            "defense": 115,
+            "hp": 445,
+            "speed": 19,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 15
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 18,
+          "energy": 9,
+          "might": 862,
+          "enemy": {
+            "level": 18,
+            "attack": 115,
+            "defense": 119,
+            "hp": 457,
+            "speed": 20,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 17
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 19,
+          "energy": 9,
+          "might": 1114,
+          "enemy": {
+            "level": 19,
+            "attack": 123,
+            "defense": 123,
+            "hp": 469,
+            "speed": 22,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 19
+            },
+            "name": "Deserter Captain"
+          },
+          "first_clear_item_tier": "uncommon"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 19,
+          "energy": 10,
+          "might": 938,
+          "enemy": {
+            "level": 19,
+            "attack": 102,
+            "defense": 102,
+            "hp": 406,
+            "speed": 14,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 15
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 20,
+          "energy": 10,
+          "might": 1124,
+          "enemy": {
+            "level": 20,
+            "attack": 124,
+            "defense": 128,
+            "hp": 484,
+            "speed": 20,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 17
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 20,
+          "energy": 10,
+          "might": 1150,
+          "enemy": {
+            "level": 20,
+            "attack": 122,
+            "defense": 126,
+            "hp": 478,
+            "speed": 20,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "uncommon",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 16
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 20,
+          "energy": 10,
+          "might": 1178,
+          "enemy": {
+            "level": 20,
+            "attack": 126,
+            "defense": 130,
+            "hp": 490,
+            "speed": 21,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 18
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 21,
+          "energy": 10,
+          "might": 1254,
+          "enemy": {
+            "level": 21,
+            "attack": 169,
+            "defense": 169,
+            "hp": 607,
+            "speed": 35,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "common",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 24
+            },
+            "name": "Deserter"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 21,
+          "energy": 10,
+          "might": 1422,
+          "enemy": {
+            "level": 21,
+            "attack": 114,
+            "defense": 114,
+            "hp": 442,
+            "speed": 16,
+            "soldiers": [
+              {
+                "type": "peasant",
+                "tier": "rare",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "common",
+              "ilvl": 18
+            },
+            "name": "Deserter Captain"
+          },
+          "first_clear_item_tier": "uncommon"
+        }
+      ]
+    },
+    {
+      "id": "ravine",
+      "name": "The Ravine",
+      "blurb": "Something older than the realm keeps this gorge.",
+      "art": "campaign/map_04",
+      "level": 22,
+      "boss_item_tier": "uncommon",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 50,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 100,
+            "items": [
+              {
+                "tier": "uncommon",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 16,
+            "xp_wages": 100
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 22,
+          "energy": 10,
+          "might": 1068,
+          "enemy": {
+            "level": 22,
+            "attack": 138,
+            "defense": 142,
+            "hp": 526,
+            "speed": 24,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 5
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 22
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 22,
+          "energy": 10,
+          "might": 1090,
+          "enemy": {
+            "level": 22,
+            "attack": 191,
+            "defense": 195,
+            "hp": 685,
+            "speed": 43,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 3
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 20
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 23,
+          "energy": 10,
+          "might": 1160,
+          "enemy": {
+            "level": 23,
+            "attack": 151,
+            "defense": 151,
+            "hp": 553,
+            "speed": 27,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 4
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 26
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 23,
+          "energy": 10,
+          "might": 1186,
+          "enemy": {
+            "level": 23,
+            "attack": 170,
+            "defense": 170,
+            "hp": 610,
+            "speed": 34,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 5
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 23
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 24,
+          "energy": 11,
+          "might": 1378,
+          "enemy": {
+            "level": 24,
+            "attack": 144,
+            "defense": 148,
+            "hp": 544,
+            "speed": 25,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 23
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 24,
+          "energy": 11,
+          "might": 1710,
+          "enemy": {
+            "level": 24,
+            "attack": 141,
+            "defense": 145,
+            "hp": 535,
+            "speed": 23,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 21
+            },
+            "name": "Warden of the Ravine"
+          },
+          "first_clear_item_tier": "uncommon"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 25,
+          "energy": 11,
+          "might": 1518,
+          "enemy": {
+            "level": 25,
+            "attack": 174,
+            "defense": 174,
+            "hp": 622,
+            "speed": 32,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 21
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 25,
+          "energy": 11,
+          "might": 1556,
+          "enemy": {
+            "level": 25,
+            "attack": 166,
+            "defense": 166,
+            "hp": 598,
+            "speed": 29,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 9
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 29
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 25,
+          "energy": 11,
+          "might": 1592,
+          "enemy": {
+            "level": 25,
+            "attack": 151,
+            "defense": 151,
+            "hp": 553,
+            "speed": 24,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 22
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 26,
+          "energy": 11,
+          "might": 1746,
+          "enemy": {
+            "level": 26,
+            "attack": 151,
+            "defense": 155,
+            "hp": 565,
+            "speed": 24,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 22
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 26,
+          "energy": 11,
+          "might": 1792,
+          "enemy": {
+            "level": 26,
+            "attack": 151,
+            "defense": 155,
+            "hp": 565,
+            "speed": 24,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 22
+            },
+            "name": "Gorge Warden"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 27,
+          "energy": 11,
+          "might": 2108,
+          "enemy": {
+            "level": 27,
+            "attack": 183,
+            "defense": 183,
+            "hp": 649,
+            "speed": 34,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 23
+            },
+            "name": "Warden of the Ravine"
+          },
+          "first_clear_item_tier": "uncommon"
+        }
+      ]
+    },
+    {
+      "id": "cinder",
+      "name": "The Cinder Waste",
+      "blurb": "The black country, and the forge-lords in it.",
+      "art": "campaign/map_05",
+      "level": 27,
+      "boss_item_tier": "rare",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 60,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 120,
+            "items": [
+              {
+                "tier": "rare",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 18,
+            "xp_wages": 120
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 27,
+          "energy": 11,
+          "might": 1482,
+          "enemy": {
+            "level": 27,
+            "attack": 220,
+            "defense": 220,
+            "hp": 760,
+            "speed": 47,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 23
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 28,
+          "energy": 11,
+          "might": 1696,
+          "enemy": {
+            "level": 28,
+            "attack": 200,
+            "defense": 204,
+            "hp": 712,
+            "speed": 40,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 9
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 29
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 28,
+          "energy": 12,
+          "might": 1732,
+          "enemy": {
+            "level": 28,
+            "attack": 160,
+            "defense": 164,
+            "hp": 592,
+            "speed": 26,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 24
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 29,
+          "energy": 12,
+          "might": 1828,
+          "enemy": {
+            "level": 29,
+            "attack": 251,
+            "defense": 251,
+            "hp": 853,
+            "speed": 57,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 30
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 29,
+          "energy": 12,
+          "might": 1868,
+          "enemy": {
+            "level": 29,
+            "attack": 244,
+            "defense": 244,
+            "hp": 832,
+            "speed": 54,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 9
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 28
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 30,
+          "energy": 12,
+          "might": 2420,
+          "enemy": {
+            "level": 30,
+            "attack": 264,
+            "defense": 268,
+            "hp": 904,
+            "speed": 59,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 32
+            },
+            "name": "Forge-lord"
+          },
+          "first_clear_item_tier": "rare"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 30,
+          "energy": 12,
+          "might": 2038,
+          "enemy": {
+            "level": 30,
+            "attack": 260,
+            "defense": 264,
+            "hp": 892,
+            "speed": 58,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 31
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 30,
+          "energy": 12,
+          "might": 2088,
+          "enemy": {
+            "level": 30,
+            "attack": 249,
+            "defense": 253,
+            "hp": 859,
+            "speed": 54,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "uncommon",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 28
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 31,
+          "energy": 12,
+          "might": 2210,
+          "enemy": {
+            "level": 31,
+            "attack": 248,
+            "defense": 248,
+            "hp": 844,
+            "speed": 52,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 9
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 27
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 31,
+          "energy": 12,
+          "might": 2266,
+          "enemy": {
+            "level": 31,
+            "attack": 192,
+            "defense": 192,
+            "hp": 676,
+            "speed": 32,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "uncommon",
+              "ilvl": 33
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 32,
+          "energy": 12,
+          "might": 2654,
+          "enemy": {
+            "level": 32,
+            "attack": 225,
+            "defense": 229,
+            "hp": 787,
+            "speed": 44,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 33
+            },
+            "name": "Forge-thrall"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 32,
+          "energy": 12,
+          "might": 3016,
+          "enemy": {
+            "level": 32,
+            "attack": 280,
+            "defense": 284,
+            "hp": 952,
+            "speed": 63,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 35
+            },
+            "name": "Forge-lord"
+          },
+          "first_clear_item_tier": "rare"
+        }
+      ]
+    },
+    {
+      "id": "frost",
+      "name": "The Frozen Coast",
+      "blurb": "Raiders winter here, and they are not asleep.",
+      "art": "campaign/map_06",
+      "level": 33,
+      "boss_item_tier": "rare",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 70,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 140,
+            "items": [
+              {
+                "tier": "rare",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 20,
+            "xp_wages": 140
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 33,
+          "energy": 13,
+          "might": 2212,
+          "enemy": {
+            "level": 33,
+            "attack": 217,
+            "defense": 217,
+            "hp": 751,
+            "speed": 40,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 29
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 33,
+          "energy": 13,
+          "might": 2258,
+          "enemy": {
+            "level": 33,
+            "attack": 325,
+            "defense": 325,
+            "hp": 1075,
+            "speed": 78,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 29
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 34,
+          "energy": 13,
+          "might": 2480,
+          "enemy": {
+            "level": 34,
+            "attack": 281,
+            "defense": 285,
+            "hp": 955,
+            "speed": 62,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 34
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 34,
+          "energy": 13,
+          "might": 2534,
+          "enemy": {
+            "level": 34,
+            "attack": 229,
+            "defense": 233,
+            "hp": 799,
+            "speed": 44,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 33
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 35,
+          "energy": 13,
+          "might": 2708,
+          "enemy": {
+            "level": 35,
+            "attack": 241,
+            "defense": 241,
+            "hp": 823,
+            "speed": 45,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 34
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 35,
+          "energy": 13,
+          "might": 3360,
+          "enemy": {
+            "level": 35,
+            "attack": 235,
+            "defense": 235,
+            "hp": 805,
+            "speed": 43,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 32
+            },
+            "name": "Raider King"
+          },
+          "first_clear_item_tier": "rare"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 35,
+          "energy": 13,
+          "might": 2830,
+          "enemy": {
+            "level": 35,
+            "attack": 238,
+            "defense": 238,
+            "hp": 814,
+            "speed": 44,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 33
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 36,
+          "energy": 13,
+          "might": 3290,
+          "enemy": {
+            "level": 36,
+            "attack": 351,
+            "defense": 355,
+            "hp": 1165,
+            "speed": 84,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 32
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 36,
+          "energy": 13,
+          "might": 3368,
+          "enemy": {
+            "level": 36,
+            "attack": 281,
+            "defense": 285,
+            "hp": 955,
+            "speed": 59,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 32
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 37,
+          "energy": 13,
+          "might": 3582,
+          "enemy": {
+            "level": 37,
+            "attack": 245,
+            "defense": 245,
+            "hp": 835,
+            "speed": 45,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 34
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 37,
+          "energy": 14,
+          "might": 3670,
+          "enemy": {
+            "level": 37,
+            "attack": 399,
+            "defense": 399,
+            "hp": 1297,
+            "speed": 99,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 40
+            },
+            "name": "Ice Raider"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 38,
+          "energy": 14,
+          "might": 4438,
+          "enemy": {
+            "level": 38,
+            "attack": 324,
+            "defense": 328,
+            "hp": 1084,
+            "speed": 73,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "legendary",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 42
+            },
+            "name": "Raider King"
+          },
+          "first_clear_item_tier": "rare"
+        }
+      ]
+    },
+    {
+      "id": "sands",
+      "name": "The Golden Sands",
+      "blurb": "The caravan road, and whoever is taxing it now.",
+      "art": "campaign/map_07",
+      "level": 38,
+      "boss_item_tier": "epic",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 80,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 160,
+            "items": [
+              {
+                "tier": "epic",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 22,
+            "xp_wages": 160
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 38,
+          "energy": 14,
+          "might": 3122,
+          "enemy": {
+            "level": 38,
+            "attack": 309,
+            "defense": 313,
+            "hp": 1039,
+            "speed": 68,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 38
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 39,
+          "energy": 14,
+          "might": 3302,
+          "enemy": {
+            "level": 39,
+            "attack": 386,
+            "defense": 386,
+            "hp": 1258,
+            "speed": 94,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "rare",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 37
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 39,
+          "energy": 14,
+          "might": 3368,
+          "enemy": {
+            "level": 39,
+            "attack": 381,
+            "defense": 381,
+            "hp": 1243,
+            "speed": 92,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "legendary",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 36
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 40,
+          "energy": 14,
+          "might": 3678,
+          "enemy": {
+            "level": 40,
+            "attack": 268,
+            "defense": 272,
+            "hp": 916,
+            "speed": 50,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "rare",
+              "ilvl": 39
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 40,
+          "energy": 14,
+          "might": 3760,
+          "enemy": {
+            "level": 40,
+            "attack": 333,
+            "defense": 337,
+            "hp": 1111,
+            "speed": 73,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 42
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 40,
+          "energy": 14,
+          "might": 4666,
+          "enemy": {
+            "level": 40,
+            "attack": 318,
+            "defense": 322,
+            "hp": 1066,
+            "speed": 68,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "legendary",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 38
+            },
+            "name": "Rider of the Dunes"
+          },
+          "first_clear_item_tier": "epic"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 41,
+          "energy": 14,
+          "might": 4056,
+          "enemy": {
+            "level": 41,
+            "attack": 422,
+            "defense": 422,
+            "hp": 1366,
+            "speed": 103,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "legendary",
+                "count": 9
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 42
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 41,
+          "energy": 14,
+          "might": 4156,
+          "enemy": {
+            "level": 41,
+            "attack": 322,
+            "defense": 322,
+            "hp": 1066,
+            "speed": 68,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "legendary",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 38
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 42,
+          "energy": 15,
+          "might": 4512,
+          "enemy": {
+            "level": 42,
+            "attack": 344,
+            "defense": 348,
+            "hp": 1144,
+            "speed": 76,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "legendary",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 44
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 42,
+          "energy": 15,
+          "might": 4624,
+          "enemy": {
+            "level": 42,
+            "attack": 577,
+            "defense": 581,
+            "hp": 1843,
+            "speed": 158,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "epic",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 45
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 43,
+          "energy": 15,
+          "might": 4962,
+          "enemy": {
+            "level": 43,
+            "attack": 454,
+            "defense": 454,
+            "hp": 1462,
+            "speed": 113,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "legendary",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 47
+            },
+            "name": "Sand Rider"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 43,
+          "energy": 15,
+          "might": 5622,
+          "enemy": {
+            "level": 43,
+            "attack": 361,
+            "defense": 361,
+            "hp": 1183,
+            "speed": 80,
+            "soldiers": [
+              {
+                "type": "mercenary",
+                "tier": "mystic",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 47
+            },
+            "name": "Rider of the Dunes"
+          },
+          "first_clear_item_tier": "epic"
+        }
+      ]
+    },
+    {
+      "id": "peaks",
+      "name": "The Cloudbreak Peaks",
+      "blurb": "The pass is held. It has always been held.",
+      "art": "campaign/map_08",
+      "level": 44,
+      "boss_item_tier": "epic",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 90,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 180,
+            "items": [
+              {
+                "tier": "epic",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 24,
+            "xp_wages": 180
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 44,
+          "energy": 15,
+          "might": 4246,
+          "enemy": {
+            "level": 44,
+            "attack": 557,
+            "defense": 561,
+            "hp": 1783,
+            "speed": 149,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 5
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 42
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 44,
+          "energy": 15,
+          "might": 4326,
+          "enemy": {
+            "level": 44,
+            "attack": 581,
+            "defense": 585,
+            "hp": 1855,
+            "speed": 158,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "epic",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 45
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 45,
+          "energy": 15,
+          "might": 4634,
+          "enemy": {
+            "level": 45,
+            "attack": 469,
+            "defense": 469,
+            "hp": 1507,
+            "speed": 115,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 48
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 45,
+          "energy": 15,
+          "might": 4734,
+          "enemy": {
+            "level": 45,
+            "attack": 582,
+            "defense": 582,
+            "hp": 1846,
+            "speed": 155,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 44
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 45,
+          "energy": 15,
+          "might": 4838,
+          "enemy": {
+            "level": 45,
+            "attack": 357,
+            "defense": 357,
+            "hp": 1171,
+            "speed": 76,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 6
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 44
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 46,
+          "energy": 15,
+          "might": 6404,
+          "enemy": {
+            "level": 46,
+            "attack": 458,
+            "defense": 462,
+            "hp": 1486,
+            "speed": 111,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 46
+            },
+            "name": "Keeper of the Pass"
+          },
+          "first_clear_item_tier": "epic"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 46,
+          "energy": 16,
+          "might": 5400,
+          "enemy": {
+            "level": 46,
+            "attack": 354,
+            "defense": 358,
+            "hp": 1174,
+            "speed": 75,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 43
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 47,
+          "energy": 16,
+          "might": 5754,
+          "enemy": {
+            "level": 47,
+            "attack": 366,
+            "defense": 366,
+            "hp": 1198,
+            "speed": 77,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 45
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 47,
+          "energy": 16,
+          "might": 5886,
+          "enemy": {
+            "level": 47,
+            "attack": 473,
+            "defense": 473,
+            "hp": 1519,
+            "speed": 115,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 7
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 48
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 48,
+          "energy": 16,
+          "might": 6422,
+          "enemy": {
+            "level": 48,
+            "attack": 625,
+            "defense": 629,
+            "hp": 1987,
+            "speed": 169,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "epic",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 49
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 48,
+          "energy": 16,
+          "might": 6586,
+          "enemy": {
+            "level": 48,
+            "attack": 649,
+            "defense": 653,
+            "hp": 2059,
+            "speed": 177,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 52
+            },
+            "name": "Pass Guard"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 49,
+          "energy": 16,
+          "might": 7748,
+          "enemy": {
+            "level": 49,
+            "attack": 378,
+            "defense": 378,
+            "hp": 1234,
+            "speed": 80,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 47
+            },
+            "name": "Keeper of the Pass"
+          },
+          "first_clear_item_tier": "epic"
+        }
+      ]
+    },
+    {
+      "id": "drowned",
+      "name": "The Drowned City",
+      "blurb": "What the sea left, and what moved into it.",
+      "art": "campaign/map_09",
+      "level": 49,
+      "boss_item_tier": "legendary",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 100,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 200,
+            "items": [
+              {
+                "tier": "legendary",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 26,
+            "xp_wages": 200
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 49,
+          "energy": 16,
+          "might": 5452,
+          "enemy": {
+            "level": 49,
+            "attack": 637,
+            "defense": 637,
+            "hp": 2011,
+            "speed": 172,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 5
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 50
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 50,
+          "energy": 16,
+          "might": 5916,
+          "enemy": {
+            "level": 50,
+            "attack": 406,
+            "defense": 410,
+            "hp": 1330,
+            "speed": 88,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 53
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 50,
+          "energy": 16,
+          "might": 6044,
+          "enemy": {
+            "level": 50,
+            "attack": 666,
+            "defense": 670,
+            "hp": 2110,
+            "speed": 180,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "epic",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 53
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 50,
+          "energy": 16,
+          "might": 6176,
+          "enemy": {
+            "level": 50,
+            "attack": 634,
+            "defense": 638,
+            "hp": 2014,
+            "speed": 169,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "epic",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 49
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 51,
+          "energy": 17,
+          "might": 6536,
+          "enemy": {
+            "level": 51,
+            "attack": 497,
+            "defense": 497,
+            "hp": 1591,
+            "speed": 119,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 8
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 50
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 51,
+          "energy": 17,
+          "might": 8102,
+          "enemy": {
+            "level": 51,
+            "attack": 646,
+            "defense": 646,
+            "hp": 2038,
+            "speed": 172,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 50
+            },
+            "name": "The Drowned Prince"
+          },
+          "first_clear_item_tier": "legendary"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 52,
+          "energy": 17,
+          "might": 7068,
+          "enemy": {
+            "level": 52,
+            "attack": 403,
+            "defense": 407,
+            "hp": 1321,
+            "speed": 86,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 51
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 52,
+          "energy": 17,
+          "might": 7240,
+          "enemy": {
+            "level": 52,
+            "attack": 529,
+            "defense": 533,
+            "hp": 1699,
+            "speed": 130,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 9
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 56
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 53,
+          "energy": 17,
+          "might": 7436,
+          "enemy": {
+            "level": 53,
+            "attack": 495,
+            "defense": 495,
+            "hp": 1585,
+            "speed": 117,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 49
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 53,
+          "energy": 17,
+          "might": 7622,
+          "enemy": {
+            "level": 53,
+            "attack": 539,
+            "defense": 539,
+            "hp": 1717,
+            "speed": 132,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 57
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 54,
+          "energy": 17,
+          "might": 7850,
+          "enemy": {
+            "level": 54,
+            "attack": 407,
+            "defense": 411,
+            "hp": 1333,
+            "speed": 86,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 51
+            },
+            "name": "Drowned Man"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 54,
+          "energy": 17,
+          "might": 8898,
+          "enemy": {
+            "level": 54,
+            "attack": 522,
+            "defense": 526,
+            "hp": 1678,
+            "speed": 127,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 54
+            },
+            "name": "The Drowned Prince"
+          },
+          "first_clear_item_tier": "legendary"
+        }
+      ]
+    },
+    {
+      "id": "road",
+      "name": "The Emperor's Road",
+      "blurb": "The last miles, and the men who want them.",
+      "art": "campaign/map_10",
+      "level": 55,
+      "boss_item_tier": "legendary",
+      "chests": [
+        {
+          "stars": 12,
+          "grant": {
+            "gold_wages": 110,
+            "tokens": {
+              "flask_small": 1
+            }
+          }
+        },
+        {
+          "stars": 24,
+          "grant": {
+            "gold_wages": 220,
+            "items": [
+              {
+                "tier": "legendary",
+                "count": 1
+              }
+            ]
+          }
+        },
+        {
+          "stars": 36,
+          "grant": {
+            "diamonds": 28,
+            "xp_wages": 220
+          }
+        }
+      ],
+      "stages": [
+        {
+          "stage": 1,
+          "kind": "field",
+          "level": 55,
+          "energy": 17,
+          "might": 6318,
+          "enemy": {
+            "level": 55,
+            "attack": 675,
+            "defense": 675,
+            "hp": 2125,
+            "speed": 177,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "epic",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 52
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 2,
+          "kind": "field",
+          "level": 55,
+          "energy": 17,
+          "might": 6440,
+          "enemy": {
+            "level": 55,
+            "attack": 537,
+            "defense": 537,
+            "hp": 1711,
+            "speed": 129,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 55
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 3,
+          "kind": "field",
+          "level": 55,
+          "energy": 18,
+          "might": 6566,
+          "enemy": {
+            "level": 55,
+            "attack": 731,
+            "defense": 731,
+            "hp": 2293,
+            "speed": 197,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "epic",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 59
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 4,
+          "kind": "field",
+          "level": 56,
+          "energy": 18,
+          "might": 6748,
+          "enemy": {
+            "level": 56,
+            "attack": 423,
+            "defense": 427,
+            "hp": 1381,
+            "speed": 88,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 53
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 5,
+          "kind": "field",
+          "level": 56,
+          "energy": 18,
+          "might": 6894,
+          "enemy": {
+            "level": 56,
+            "attack": 451,
+            "defense": 455,
+            "hp": 1465,
+            "speed": 98,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 9
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 60
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 6,
+          "kind": "boss",
+          "level": 57,
+          "energy": 18,
+          "might": 8592,
+          "enemy": {
+            "level": 57,
+            "attack": 455,
+            "defense": 455,
+            "hp": 1465,
+            "speed": 98,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 12
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 60
+            },
+            "name": "The Emperor's Champion"
+          },
+          "first_clear_item_tier": "legendary"
+        },
+        {
+          "stage": 7,
+          "kind": "field",
+          "level": 57,
+          "energy": 18,
+          "might": 7244,
+          "enemy": {
+            "level": 57,
+            "attack": 546,
+            "defense": 546,
+            "hp": 1738,
+            "speed": 130,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 13
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 56
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 8,
+          "kind": "field",
+          "level": 58,
+          "energy": 18,
+          "might": 7446,
+          "enemy": {
+            "level": 58,
+            "attack": 450,
+            "defense": 454,
+            "hp": 1462,
+            "speed": 97,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 59
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 9,
+          "kind": "field",
+          "level": 58,
+          "energy": 18,
+          "might": 7618,
+          "enemy": {
+            "level": 58,
+            "attack": 541,
+            "defense": 545,
+            "hp": 1735,
+            "speed": 129,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "legendary",
+                "count": 14
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 55
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 10,
+          "kind": "field",
+          "level": 59,
+          "energy": 18,
+          "might": 7854,
+          "enemy": {
+            "level": 59,
+            "attack": 550,
+            "defense": 550,
+            "hp": 1750,
+            "speed": 130,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 10
+              }
+            ],
+            "gear": {
+              "tier": "legendary",
+              "ilvl": 56
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 11,
+          "kind": "field",
+          "level": 59,
+          "energy": 18,
+          "might": 8052,
+          "enemy": {
+            "level": 59,
+            "attack": 462,
+            "defense": 462,
+            "hp": 1486,
+            "speed": 99,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "epic",
+              "ilvl": 61
+            },
+            "name": "Imperial Guard"
+          }
+        },
+        {
+          "stage": 12,
+          "kind": "boss",
+          "level": 60,
+          "energy": 18,
+          "might": 9186,
+          "enemy": {
+            "level": 60,
+            "attack": 728,
+            "defense": 732,
+            "hp": 2296,
+            "speed": 191,
+            "soldiers": [
+              {
+                "type": "gladiator",
+                "tier": "mystic",
+                "count": 11
+              }
+            ],
+            "gear": {
+              "tier": "mystic",
+              "ilvl": 57
+            },
+            "name": "The Emperor's Champion"
+          },
+          "first_clear_item_tier": "legendary"
+        }
+      ]
+    }
+  ]
+}

@@ -4,21 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/yigitkarabulut0/emperors/server/internal/db"
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/items"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/talents"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
 )
 
 var (
 	ErrUpgradeMaxed = errors.New("already at maximum level")
-	ErrNoTax        = errors.New("nothing to collect yet")
 )
 
 // loadEffects reads a player's Family upgrades and Territory holdings and folds
@@ -61,19 +63,47 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 		estates.ApplyKingdom(d.Config, &eff, int64(p.Level), kLevels, holdLevels)
 	}
 
-	// Server-wide events feed the SAME buckets as everything else, which is what
-	// makes them safe: each bucket keeps its own cap, so an event can lift a
-	// player toward a ceiling but never past one the game's own upgrades could
-	// not already reach. ApplyBucket stays the single place a percentage is
-	// applied, so the cap is still a cap.
+	// The talent tree feeds the SAME buckets the Family's upgrades do, folded in
+	// exactly here, in the permanent lane, under the same caps (talents.Apply).
+	// A talent that applied its percentage anywhere else would be the second
+	// multiplication site the bucket rule exists to forbid.
+	if int(p.Level) >= d.Config.SectionLevel(d.Config.Talents.Section) || p.Legacy > 0 {
+		spend, err := d.loadTalents(ctx, q, p.ID)
+		if err != nil {
+			return estates.Effects{}, err
+		}
+		if len(spend) > 0 {
+			talents.Apply(d.Config, &eff, int64(p.Level), holdLevels, spend)
+		}
+	}
+
+	// Server-wide events are timed, so they feed each bucket's TEMPORARY lane.
+	// It has its own ceiling, which is what makes them safe and what makes them
+	// work: an event can never push a payout past a number the engine can write
+	// down, and it still reaches a lord whose permanent bonuses already sit at
+	// the cap -- in the permanent lane it gave that lord nothing. ApplyBucket
+	// stays the single place a percentage is applied.
 	for bucket, bp := range d.Boosts.Get() {
-		switch bucket {
-		case gameconfig.BucketCollectIncome:
-			eff.Bonuses.Add(economy.BucketCollectIncome, bp)
-		case gameconfig.BucketXP:
-			eff.Bonuses.Add(economy.BucketXPGain, bp)
-		case gameconfig.BucketLuck:
-			eff.LuckBP += bp
+		if IsBoostable(bucket) {
+			addLiveBonus(&eff, bucket, bp)
+		}
+	}
+
+	// The hour's event and the festival running are server-wide and timed too,
+	// and ride the same lanes (liveops.go).
+	now := d.Now()
+	if h := d.runningHourly(now, gameconfig.HourlyBoost); h != nil {
+		addLiveBonus(&eff, h.Event.Effect.Bucket, h.Event.Effect.BP)
+	}
+	if f := d.festivalAt(now); f != nil {
+		addLiveBonus(&eff, f.Tpl.Effect.Bucket, f.Tpl.Effect.BP)
+	}
+	// The Throne's edict (throne.go), read off the same poll and filed on the
+	// same lanes. It reaches the whole realm, so the check is who the balance
+	// says it reaches and not which kingdom this lord belongs to.
+	if dec := d.Boosts.Decree(); dec != nil && dec.EndsAt.After(now) && d.decreeReaches(dec, p) {
+		if dc := d.Config.PvP.Throne.Decree(dec.ID); dc != nil {
+			addLiveBonus(&eff, dc.Bucket, dc.BP)
 		}
 	}
 
@@ -88,13 +118,37 @@ func (d Deps) loadEffects(ctx context.Context, q *sqlcdb.Queries, p sqlcdb.AppPl
 		eff.LuckBP += int64(p.LuckBp)
 	}
 
-	// A Kingdom Shop draught, on the same terms: it ADDS into the xp bucket
-	// alongside the Scriptorium, the Royal Archives and any live event, and that
-	// bucket's cap is applied once by ApplyBucket. Buying one can lift a player
-	// toward the ceiling, never past it.
+	// A Kingdom Shop draught expires, so it rides the xp bucket's temporary lane
+	// alongside any live event, and that lane's cap is applied once by
+	// ApplyBucket. Buying one can lift a player toward the timed ceiling, never
+	// past it -- and it still works for a scholar whose Scriptorium and Archives
+	// already fill the permanent lane.
 	if p.XpBoostBp != 0 && (p.XpBoostExpiresAt == nil || p.XpBoostExpiresAt.After(d.Now())) {
-		eff.Bonuses.Add(economy.BucketXPGain, int64(p.XpBoostBp))
+		eff.Bonuses.AddTemp(economy.BucketXPGain, int64(p.XpBoostBp))
 	}
+	// A timed bonus this lord was GIVEN -- a welcome back, a reward -- rides the
+	// timed lane like a server event. The player row's boost_until says whether
+	// one can still be live, so the table is read only then: this is the hot
+	// path, run before every action.
+	if p.BoostUntil != nil && p.BoostUntil.After(d.Now()) {
+		boosts, err := q.ListLiveBoosts(ctx, sqlcdb.ListLiveBoostsParams{PlayerID: p.ID, Now: d.Now()})
+		if err != nil {
+			return estates.Effects{}, fmt.Errorf("player boosts: %w", err)
+		}
+		for _, b := range boosts {
+			switch b.Bucket {
+			case gameconfig.BucketCollectIncome:
+				eff.Bonuses.AddTemp(economy.BucketCollectIncome, int64(b.AmountBp))
+			case gameconfig.BucketXP:
+				eff.Bonuses.AddTemp(economy.BucketXPGain, int64(b.AmountBp))
+			case gameconfig.BucketLuck:
+				// A Tax Cart's Lucky Charm: into the luck total, clamped with
+				// the rest of it below.
+				eff.LuckBP += int64(b.AmountBp)
+			}
+		}
+	}
+
 	// Legacy stacks lift income, and they lift it through the SAME capped
 	// buckets as everything else — so ten runs move a player toward a ceiling
 	// the family tree could already reach rather than past it. A terminal sink
@@ -342,13 +396,6 @@ func (d Deps) BuyHolding(ctx context.Context, playerID uuid.UUID, holdingID stri
 		return nil, fmt.Errorf("%w: %s unlocks at level %d", ErrLevelTooLow, h.Name, h.UnlockLevel)
 	}
 
-	// Buying a holding changes the tax RATE, so accrual must be settled at the
-	// old rate first. Otherwise the whole idle period since the last touch would
-	// be retroactively paid at the new, higher rate.
-	if err := d.settleTaxNow(ctx, playerID); err != nil {
-		return nil, err
-	}
-
 	if err := d.buyLevel(ctx, playerID, wantSeq, func(q *sqlcdb.Queries, level int) (int64, error) {
 		cost, ok := h.Cost(level)
 		if !ok {
@@ -425,88 +472,38 @@ func (d Deps) buyLevel(
 			}
 			return fmt.Errorf("apply level: %w", err)
 		}
-		return q.RecordGold(ctx, sqlcdb.RecordGoldParams{
+		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
 			PlayerID: playerID, Delta: -cost, BalanceAfter: after.Gold,
 			Reason: reason, RefID: nil,
-		})
-	})
-}
-
-// settleTaxNow flushes accrual at the current rate.
-func (d Deps) settleTaxNow(ctx context.Context, playerID uuid.UUID) error {
-	q := sqlcdb.New(d.Pool)
-	p, err := q.GetPlayerByID(ctx, playerID)
-	if err != nil {
-		return err
-	}
-	eff, err := d.loadEffects(ctx, q, p)
-	if err != nil {
-		return err
-	}
-	s := estates.SettleTax(
-		estates.TaxState{Milli: p.TaxMilliAccrued, UpdatedAt: p.TaxUpdatedAt},
-		eff.TaxMilliPerHour, eff.OfflineCapSeconds, d.Now())
-	return q.SettleTax(ctx, sqlcdb.SettleTaxParams{
-		ID: playerID, TaxMilliAccrued: s.Milli, TaxUpdatedAt: s.UpdatedAt,
-	})
-}
-
-// ClaimTaxResult reports the collection.
-type ClaimTaxResult struct {
-	Collected int64     `json:"collected"`
-	Snapshot  *Snapshot `json:"snapshot"`
-}
-
-// ClaimTax banks the pending idle income.
-func (d Deps) ClaimTax(ctx context.Context, playerID uuid.UUID, wantSeq int64) (*ClaimTaxResult, error) {
-	var res ClaimTaxResult
-
-	err := db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
-		q := sqlcdb.New(tx)
-
-		p, err := q.LockPlayer(ctx, playerID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return ErrNotFound
-			}
-			return fmt.Errorf("lock player: %w", err)
-		}
-		if err := checkSeq(p, wantSeq); err != nil {
-			return err
-		}
-
-		eff, err := d.loadEffects(ctx, q, p)
-		if err != nil {
-			return err
-		}
-		now := d.Now()
-		s := estates.SettleTax(
-			estates.TaxState{Milli: p.TaxMilliAccrued, UpdatedAt: p.TaxUpdatedAt},
-			eff.TaxMilliPerHour, eff.OfflineCapSeconds, now)
-
-		gold := estates.Whole(s)
-		if gold <= 0 {
-			return ErrNoTax
-		}
-
-		after, err := q.ClaimTax(ctx, sqlcdb.ClaimTaxParams{
-			ID: playerID, Gold: gold, TaxUpdatedAt: now, ActionSeq: wantSeq,
-		})
-		if err != nil {
-			return fmt.Errorf("claim tax: %w", err)
-		}
-		if err := q.RecordGold(ctx, sqlcdb.RecordGoldParams{
-			PlayerID: playerID, Delta: gold, BalanceAfter: after.Gold,
-			Reason: "tax", RefID: nil,
 		}); err != nil {
 			return err
 		}
-		res.Collected = gold
+		kind := deeds.Upgrades
+		if strings.HasPrefix(reason, "holding") {
+			kind = deeds.Holdings
+		}
+		d.recordDeeds(ctx, tx, p, deeds.Deeds{kind: 1})
 		return nil
 	})
-	if err != nil {
-		return nil, err
+}
+
+// addLiveBonus files a server-wide timed bonus -- the hour's event, a
+// festival -- where its bucket's timed bonuses go. Gold and experience ride the
+// timed lanes (ApplyBucket applies them, once, under the timed cap); luck is
+// summed and clamped with the rest of it; renown and the market's discount
+// join their totals, each already bounded where it is spent (the kingdom's
+// daily renown cap, MaxDiscountBP).
+func addLiveBonus(eff *estates.Effects, bucket string, bp int64) {
+	switch bucket {
+	case gameconfig.BucketCollectIncome:
+		eff.Bonuses.AddTemp(economy.BucketCollectIncome, bp)
+	case gameconfig.BucketXP:
+		eff.Bonuses.AddTemp(economy.BucketXPGain, bp)
+	case gameconfig.BucketLuck:
+		eff.LuckBP += bp
+	case gameconfig.BucketReputation:
+		eff.ReputationBP += bp
+	case gameconfig.BucketShopDiscount:
+		eff.ShopDiscount += bp
 	}
-	res.Snapshot, err = d.GetState(ctx, playerID)
-	return &res, err
 }

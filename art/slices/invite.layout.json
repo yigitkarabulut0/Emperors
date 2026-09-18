@@ -1,0 +1,465 @@
+{
+ "screen": "invite",
+ "source": "profile.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "ground": "#09151e",
+ "notes": [
+  "INVITE A FRIEND, drawn on YOUR LORDSHIP's page (profile/page) with the trumpet from its row, its painted FRIENDS heading and a friend's row cut from it.",
+  "YOUR CODE is set large in the painting's empty box; COPY is the kit's quiet plate. The terms are the server's numbers.",
+  "FRIENDS scrolls: one row a friend (pitch 121) -- the empty gold ring carries the tick seal once that friend has earned the reward, the name box the name, the figure box the level, and the right of the row where the painting had GIFT says whether they are rewarded yet.",
+  "ENTER A FRIEND'S CODE shows only while the lord may still enter one (can_claim), with the time left; once a code is entered, one line names whose it was.",
+  "Stretch bands: the list's own height (it shows more rows on a taller phone) and the panel above CLOSE.",
+  "Every text rect is its line (or its sample's lines) centred on the plate or space it was set in: a label cannot be shorter than its lines, so a taller rect set the words' top where the rect's is and dropped them.",
+  "A friend's row: their face in the ring's window (Art.avatar_ring; a worn frame inside it at 0.78, Look.paint_frame), their name through Look.paint_name, and the rewarded seal where the painting has its green dot, on the ring's shoulder."
+ ],
+ "stretch": [
+  [
+   790,
+   300,
+   3
+  ],
+  [
+   1406,
+   60,
+   1
+  ]
+ ],
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "profile/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "title_rule",
+   "kind": "image",
+   "asset": "profile/title_rule",
+   "rect": [
+    278,
+    238,
+    382,
+    26
+   ]
+  },
+  {
+   "id": "title",
+   "kind": "text",
+   "rect": [
+    100,
+    171,
+    741,
+    76
+   ],
+   "font": "title",
+   "size": 56,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "Invite a Friend",
+   "static": true
+  },
+  {
+   "id": "subtitle",
+   "kind": "text",
+   "rect": [
+    110,
+    270.5,
+    721,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 500,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "Bring a friend to the realm, and the Crown rewards you both.",
+   "static": true
+  },
+  {
+   "id": "icon",
+   "kind": "image",
+   "asset": "profile/icon_invite",
+   "rect": [
+    377,
+    322,
+    187,
+    99
+   ]
+  },
+  {
+   "id": "your_code_label",
+   "kind": "text",
+   "rect": [
+    110,
+    435.5,
+    721,
+    31
+   ],
+   "font": "title",
+   "size": 22,
+   "weight": 700,
+   "color": "#C9A24E",
+   "align": "center",
+   "valign": "center",
+   "sample": "YOUR CODE",
+   "static": true
+  },
+  {
+   "id": "code_box",
+   "kind": "ninepatch",
+   "asset": "profile/box",
+   "rect": [
+    150,
+    474,
+    430,
+    100
+   ],
+   "margin": [
+    16,
+    16,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "code",
+   "kind": "text",
+   "rect": [
+    170,
+    488.5,
+    390,
+    71
+   ],
+   "font": "title",
+   "size": 52,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "WWWWWW"
+  },
+  {
+   "id": "copy",
+   "kind": "button",
+   "asset": "inventory/btn_sell_plate",
+   "label": "COPY",
+   "size": 28,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "rect": [
+    596,
+    476,
+    195,
+    96
+   ],
+   "action": "copy"
+  },
+  {
+   "id": "terms",
+   "kind": "text",
+   "rect": [
+    100,
+    605.5,
+    741,
+    65
+   ],
+   "font": "body",
+   "size": 23,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "When a friend who joined with your code reaches level 10, you get 50 diamonds and they get 25, for up to 10 more friends.",
+   "wrap": true
+  },
+  {
+   "id": "friends_heading",
+   "kind": "image",
+   "asset": "profile/friends_heading",
+   "rect": [
+    100,
+    700,
+    741,
+    55
+   ]
+  },
+  {
+   "id": "friends",
+   "kind": "scroll",
+   "rect": [
+    71,
+    766,
+    799,
+    360
+   ],
+   "content": [
+    "friend_row"
+   ]
+  },
+  {
+   "id": "friend_row",
+   "kind": "template",
+   "rect": [
+    71,
+    766,
+    799,
+    113
+   ],
+   "pitch": 121,
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "image",
+     "asset": "profile/friend_row",
+     "rect": [
+      0,
+      0,
+      799,
+      113
+     ]
+    },
+    {
+     "id": "face",
+     "kind": "image",
+     "asset": "portraits/avatar_knight_ring",
+     "rect": [
+      32.5,
+      13,
+      88,
+      88
+     ]
+    },
+    {
+     "id": "mark",
+     "kind": "image",
+     "asset": "icons/tick_seal",
+     "rect": [
+      103,
+      8.5,
+      32,
+      33
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      160,
+      29,
+      270,
+      56
+     ],
+     "font": "body",
+     "size": 26,
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "left",
+     "valign": "center",
+     "sample": "Wwwwwwwwwwwwwwww"
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "rect": [
+      461,
+      31,
+      108,
+      53
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 700,
+     "color": "#E9C46A",
+     "align": "center",
+     "valign": "center",
+     "sample": "Lv 99"
+    },
+    {
+     "id": "state",
+     "kind": "text",
+     "rect": [
+      592,
+      29,
+      184,
+      56
+     ],
+     "font": "title",
+     "size": 20,
+     "weight": 700,
+     "color": "#E9C46A",
+     "align": "center",
+     "valign": "center",
+     "sample": "REWARDED"
+    }
+   ]
+  },
+  {
+   "id": "empty",
+   "kind": "text",
+   "rect": [
+    110,
+    898.5,
+    721,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "No friend has joined with your code yet.",
+   "wrap": true
+  },
+  {
+   "id": "claim_label",
+   "kind": "text",
+   "rect": [
+    110,
+    1141.5,
+    721,
+    31
+   ],
+   "font": "title",
+   "size": 22,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "ENTER A FRIEND'S CODE",
+   "static": true
+  },
+  {
+   "id": "claim_time",
+   "kind": "text",
+   "rect": [
+    110,
+    1176.5,
+    721,
+    29
+   ],
+   "font": "body",
+   "size": 21,
+   "weight": 600,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "You can enter one for another 6d 23h."
+  },
+  {
+   "id": "claim_box",
+   "kind": "ninepatch",
+   "asset": "profile/box",
+   "rect": [
+    110,
+    1214,
+    490,
+    100
+   ],
+   "margin": [
+    16,
+    16,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "friend_code",
+   "kind": "text",
+   "rect": [
+    130,
+    1236.5,
+    450,
+    55
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 700,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "WWWWWW"
+  },
+  {
+   "id": "claim",
+   "kind": "button",
+   "asset": "shop/buy_plate",
+   "label": "CLAIM",
+   "size": 32,
+   "weight": 700,
+   "color": "#F3FBF3",
+   "rect": [
+    616,
+    1216,
+    215,
+    96
+   ],
+   "action": "claim"
+  },
+  {
+   "id": "claim_status",
+   "kind": "text",
+   "rect": [
+    100,
+    1339,
+    741,
+    30
+   ],
+   "font": "body",
+   "size": 22,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "That code is your own, or one from this phone.",
+   "wrap": true
+  },
+  {
+   "id": "claimed",
+   "kind": "text",
+   "rect": [
+    100,
+    1203.5,
+    741,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#F1E9DA",
+   "align": "center",
+   "valign": "center",
+   "sample": "You joined the realm with the code of Wwwwwwwwwwwwwwww.",
+   "wrap": true
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "profile/close",
+   "rect": [
+    340,
+    1474,
+    262,
+    96
+   ],
+   "keep_texture_size": true,
+   "action": "close"
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+/* ------------------------------------------------------------- columns --- */
+/* One series per chart, so no legend: the panel's title names it. Columns are
+   capped at 24px with a 2px surface gap between neighbours, rounded at the data
+   end and square at the baseline. */
+.chart { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--s4); }
+.ticks {
+  display: flex; flex-direction: column; justify-content: space-between;
+  font-family: var(--f-num); font-size: var(--t-micro); color: var(--text-3);
+  text-align: right; padding: 0 0 18px;
+}
+.plotWrap { position: relative; }
+.plot {
+  position: relative;
+  display: flex; align-items: stretch;
+  height: 140px;
+  border-bottom: 1px solid var(--hair-strong);
+  background: linear-gradient(var(--hair), var(--hair)) top / 100% 1px no-repeat;
+}
+.slot {
+  flex: 1; min-width: 0;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 1px;
+  cursor: default;
+  outline-offset: -2px;
+}
+.col {
+  width: 100%; max-width: 24px;
+  border-radius: 4px 4px 0 0;
+  background: var(--gold-4);
+  transition: background var(--d1) var(--ease);
+}
+.slot[data-active="true"] .col { background: var(--gold-2); }
+.axis {
+  display: flex; justify-content: space-between;
+  font-family: var(--f-num); font-size: var(--t-micro); color: var(--text-3);
+  padding-top: var(--s2); height: 18px;
+}
+.tip {
+  position: absolute;
+  transform: translate(-50%, 0);
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r2);
+  background: var(--ink-6);
+  border: 1px solid var(--hair-strong);
+  box-shadow: var(--e2);
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: var(--t-small);
+  z-index: 2;
+}
+.tipStart { transform: translate(0, 0); }
+.tipEnd { transform: translate(-100%, 0); }
+.tipValue { font-family: var(--f-num); color: var(--text); font-weight: 600; }
+.tipLabel { color: var(--text-3); margin-left: var(--s3); }

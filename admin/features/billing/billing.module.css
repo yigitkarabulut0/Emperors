@@ -1,0 +1,45 @@
+.page { display: grid; gap: var(--s6); max-width: 1180px; }
+.filters { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: var(--s6); }
+.explain {
+  font-size: var(--t-small);
+  color: var(--text-3);
+  border-left: 2px solid var(--hair-strong);
+  padding-left: var(--s5);
+  margin: var(--s5) var(--s6);
+}
+.refetching { opacity: 0.55; transition: opacity var(--d2) var(--ease); }
+
+/* A cell with a main line and a quiet second line under it. */
+/* Children keep their own width: a pill in a stretching column became a bar. */
+.twoLine { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1.25; }
+.twoLine > :last-child:not(:first-child) { font-size: var(--t-micro); }
+
+/* What a purchase gave: read in full in the title, cut in the column. */
+.gave {
+  max-width: 260px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--text-2);
+}
+
+.takeBack { display: grid; gap: var(--s4); }
+.inline { display: flex; gap: var(--s4); align-items: flex-end; flex-wrap: wrap; }
+.grow { flex: 1; min-width: 200px; }
+
+/* Label / value pairs down a panel. */
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--s3) var(--s6);
+  margin: 0;
+  font-size: var(--t-body);
+}
+.facts dt { color: var(--text-3); font-size: var(--t-small); }
+/* Words in the panel's face; figures line up through tabular digits alone. */
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* Royal Favour's progress to its next level. */
+.track { display: block; width: 100%; max-width: 220px; height: 6px; border-radius: 3px; background: var(--ink-4); overflow: hidden; margin-top: var(--s3); }
+.fill { display: block; height: 100%; background: var(--gold-4); }
+
+.more { display: flex; justify-content: center; padding: var(--s5); border-top: 1px solid var(--hair); }

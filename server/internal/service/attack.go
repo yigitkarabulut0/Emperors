@@ -17,8 +17,11 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/db/sqlcdb"
 	"github.com/yigitkarabulut0/emperors/server/internal/game"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/combat"
+	"github.com/yigitkarabulut0/emperors/server/internal/game/deeds"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/economy"
 	"github.com/yigitkarabulut0/emperors/server/internal/game/estates"
+	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
+	"github.com/yigitkarabulut0/emperors/server/internal/ledger"
 )
 
 var (
@@ -61,6 +64,7 @@ type TargetView struct {
 	// the client must never work that out for itself.
 	EnergyCost int64 `json:"energy_cost"`
 	IsBot      bool  `json:"is_bot"`
+	Look
 }
 
 // AttackView is the Attack tab.
@@ -72,7 +76,11 @@ type AttackView struct {
 	// Scores left to settle. Shown above the ordinary targets because a raid you
 	// did not choose is the one the player actually wants to answer.
 	Revenge []RevengeEntry `json:"revenge"`
-	Targets []TargetView   `json:"targets"`
+	// How many lords have bought a look at this one's army today (rival.go).
+	// It is here, on the raid page, because being scouted is a thing that
+	// happens TO a lord and they should feel it where the raiding is.
+	ScoutedToday int64        `json:"scouted_today"`
+	Targets      []TargetView `json:"targets"`
 	// The rules of raiding, as numbers, for the sheet behind the notice's (i).
 	Rules RaidRules `json:"rules"`
 }
@@ -87,6 +95,28 @@ type RaidRules struct {
 	ShieldMinutes   int64 `json:"shield_minutes"`
 	CooldownMinutes int64 `json:"cooldown_minutes"`
 	RansomPct       int64 `json:"ransom_pct"`
+	// The ceiling on one raid's take at THIS lord's level (raidCap). The sheet
+	// printed the rate and not the cap, so nobody could see why three per cent
+	// of a rich purse is not three per cent.
+	RaidCap int64 `json:"raid_cap"`
+	// Raiding ends your own protection; a revenge strike does not. Sent so the
+	// rules sheet states the rule the raid actually applies.
+	ShieldBreaks bool `json:"shield_breaks"`
+}
+
+// attackerShieldAfter is the raider's own shield once the raid lands.
+//
+// An ordinary raid ends it (economy.md §10.2). A shield is the right to be left
+// alone; a lord who keeps raiding has waived it, and a shield that survived your
+// own attacks made the eight-hour one in the store a licence to raid while
+// untouchable -- the moment diamonds can be bought, protection for money that
+// never ends. A revenge strike keeps it: answering a raid you did not choose is
+// not starting one.
+func attackerShieldAfter(avenging bool, cur *time.Time) *time.Time {
+	if avenging {
+		return cur
+	}
+	return nil
 }
 
 // Revenge: what a raid you lost buys you back.
@@ -193,11 +223,14 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 			ShieldMinutes:   int64(raidShield / time.Minute),
 			CooldownMinutes: int64(attackCooldown / time.Minute),
 			RansomPct:       ransomPct,
+			RaidCap:         raidCap(int64(me.Level)),
+			ShieldBreaks:    true,
 		},
 	}
 	if rev, err := d.listRevenge(ctx, q, me, eff, now); err == nil {
 		view.Revenge = rev
 	}
+	view.ScoutedToday = d.ScoutedToday(ctx, q, playerID, localDay(now, me.ResetOffsetMinutes))
 	if me.ShieldUntil != nil && me.ShieldUntil.After(now) {
 		view.ShieldUntil = me.ShieldUntil
 	}
@@ -257,6 +290,7 @@ func (d Deps) GetTargets(ctx context.Context, playerID uuid.UUID) (*AttackView, 
 			StealRateBP: raidRateBP,
 			EnergyCost:  view.EnergyCost,
 			IsBot:       r.IsBot,
+			Look:        lookOf(d.Config, r.CosFrame, r.CosTitle, r.CosColor, r.CosCrest, r.VipPoints),
 		}
 		ratioBP := tv.Might * 10000 / myMight
 		cands = append(cands, candidate{
@@ -322,11 +356,28 @@ func (d Deps) estimateSteal(attackerLevel, defenderGold int64) int64 {
 	return d.estimateStealWithCap(attackerLevel, defenderGold, 0)
 }
 
+// raidCap is the ceiling on what one won fight carries off, by the ATTACKER's
+// level, and the one place that ceiling is written down.
+//
+// It was a literal inside estimateStealWithCap, which was fine while the raid
+// was the only thing that used it. A bounty pays a multiple of it, and a second
+// copy of "250 * (10000 + 3500*level)" is the shape of the War Chest bug: two
+// call sites with different arguments, one of which the player read and the
+// other of which the game ran on. The two numbers are declared INSIDE it so a
+// second reader cannot reach them.
+func raidCap(attackerLevel int64) int64 {
+	const (
+		raidCapBase       = 250
+		raidCapPerLevelBP = 3500
+	)
+	return raidCapBase * (10000 + raidCapPerLevelBP*attackerLevel) / 10000
+}
+
 // estimateStealWithCap applies the War Chest bonus to the ceiling.
 func (d Deps) estimateStealWithCap(attackerLevel, defenderGold, capBonusBP int64) int64 {
 	const minSteal = minStealFloor
 	stolen := defenderGold * raidRateBP / 10000
-	cap := 250 * (10000 + 3500*attackerLevel) / 10000
+	cap := raidCap(attackerLevel)
 	if capBonusBP > 0 {
 		cap = cap * (10000 + capBonusBP) / 10000
 	}
@@ -361,14 +412,53 @@ type AttackResult struct {
 	GoldStolen  int64  `json:"gold_stolen"`
 	RansomPaid  int64  `json:"ransom_paid"`
 	XPGained    int64  `json:"xp_gained"`
+	// What a bounty on this head paid the hunter, on top of the take.
+	BountyPaid int64 `json:"bounty_paid,omitempty"`
 	// The level-up grant, when the raid's experience crossed a level.
 	DiamondsGained int64          `json:"diamonds_gained,omitempty"`
 	Replay         *combat.Replay `json:"replay"`
 	Snapshot       *Snapshot      `json:"snapshot"`
 }
 
-// Attack resolves one raid.
+// raidOpts is what makes one raid different from another.
+//
+// A bounty hunt is a RAID: same energy, same steal, same ransom, same revenge
+// token for the loser, same renown. Giving it its own fight path would be a
+// second implementation of the one formula this file exists to keep single --
+// the mistake raidTake was written to undo.
+type raidOpts struct {
+	Revenge bool
+	// Set for a bounty hunt; nil for an ordinary raid.
+	Bounty *bountyHunt
+}
+
+// ignoresShield is the one place the question is asked.
+//
+// A revenge strike always goes through a shield: answering a raid you did not
+// choose is not starting one. A bounty hunt does only when the balance says so,
+// and it does not -- a shield is a shield, the forty-eight hours outlast any
+// shield sold, and the hunted lord is told a price is on their head.
+func (o raidOpts) ignoresShield(cfg *gameconfig.Bundle) bool {
+	return o.Revenge || (o.Bounty != nil && cfg.PvP.Bounty.IgnoresShield)
+}
+
+// battleKind is what app.battles records this fight as.
+func battleKind(o raidOpts) string {
+	if o.Bounty != nil {
+		return "bounty"
+	}
+	return "raid"
+}
+
+// Attack resolves one raid. The signature is unchanged: every caller, route and
+// test is untouched by the extraction.
 func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq int64, wantRevenge bool) (*AttackResult, error) {
+	return d.raid(ctx, playerID, targetID, wantSeq, raidOpts{Revenge: wantRevenge})
+}
+
+// raid is the one fight path: an ordinary raid, a revenge strike and a bounty
+// hunt are the same transaction with three small differences.
+func (d Deps) raid(ctx context.Context, playerID, targetID uuid.UUID, wantSeq int64, opts raidOpts) (*AttackResult, error) {
 	if playerID == targetID {
 		return nil, ErrSelfAttack
 	}
@@ -387,6 +477,7 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 	}
 
 	var res AttackResult
+	var bountyPaid int64
 	err = db.InTx(ctx, d.Pool, func(tx pgx.Tx) error {
 		q := sqlcdb.New(tx)
 
@@ -428,7 +519,7 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 		// the two guards below. Zero rows back means there was no live token and
 		// this is an ordinary raid, which then has to obey them.
 		avenging := false
-		if wantRevenge {
+		if opts.Revenge {
 			if _, err := q.UseRevenge(ctx, sqlcdb.UseRevengeParams{
 				PlayerID: playerID, TargetID: targetID,
 			}); err != nil {
@@ -440,14 +531,24 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			avenging = true
 		}
 
-		if !avenging {
+		if !opts.ignoresShield(d.Config) {
 			if target.ShieldUntil != nil && target.ShieldUntil.After(now) {
 				return ErrShielded
 			}
+		}
+		// The per-pair cooldown. A bounty hunt has its own, looser rule (four a
+		// day on one head, then two hours), checked in checkBountyHunt against
+		// the same app.attack_cooldowns row -- one counter, one answer.
+		if !avenging && opts.Bounty == nil {
 			if cd, err := q.GetCooldown(ctx, sqlcdb.GetCooldownParams{
 				AttackerID: playerID, DefenderID: targetID,
 			}); err == nil && cd.LastAt.Add(attackCooldown).After(now) {
 				return ErrOnCooldown
+			}
+		}
+		if opts.Bounty != nil {
+			if err := d.checkBountyHunt(ctx, q, me, target, opts.Bounty, now); err != nil {
+				return err
 			}
 		}
 
@@ -471,8 +572,8 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			return ErrNotEnoughEnergy
 		}
 
-		attArmy := toCombatArmy(me, mine)
-		defArmy := toCombatArmy(target, theirs)
+		attArmy := myArmy(me, mine)
+		defArmy := theirArmy(target, theirs)
 
 		battleID := uuid.New()
 		rng := game.SeedForString(d.ShopSecret, battleID.String(),
@@ -504,7 +605,7 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 
 		final := spent
 		if up.Refilled {
-			final = economy.Refill(economy.MaxEnergy(d.Config, int64(me.Level), int64(me.StatEnergy), eff.MaxEnergyFlat), now)
+			final = economy.Refill(levelUpMax(d.Config, me, up, eff), now)
 		}
 
 		afterAtt, err := q.ApplyBattleAttacker(ctx, sqlcdb.ApplyBattleAttackerParams{
@@ -516,9 +617,15 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			// This was dropped, so a level-up won on the Attack tab granted its
 			// stat points and none of its diamonds.
 			Diamonds: up.Diamonds,
+			// Raiding ends your own protection; revenge keeps it.
+			ShieldUntil: attackerShieldAfter(avenging, me.ShieldUntil),
 		})
 		if err != nil {
 			return fmt.Errorf("apply attacker: %w", err)
+		}
+		if err := ledger.Diamonds(ctx, q, me, afterAtt, up.Diamonds, ledger.LevelUp,
+			levelRef(me.Level, up.Level)); err != nil {
+			return err
 		}
 
 		defDelta := -stolen + ransom
@@ -574,7 +681,7 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			Rounds:        int32(replay.Rounds),
 			AttackerMight: mine.Totals.Might, DefenderMight: theirs.Totals.Might,
 			GoldStolen: stolen, RansomPaid: ransom, XpAwarded: xp,
-			EnergySpent: cost, Replay: raw,
+			EnergySpent: cost, Replay: raw, Kind: battleKind(opts),
 		}); err != nil {
 			return fmt.Errorf("insert battle: %w", err)
 		}
@@ -582,6 +689,17 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			AttackerID: playerID, DefenderID: targetID,
 		}); err != nil {
 			return fmt.Errorf("cooldown: %w", err)
+		}
+
+		// A won hunt draws its price. AFTER the battle row, because the claim
+		// references it -- the same reason a revenge token is granted here and
+		// not before.
+		if opts.Bounty != nil && won {
+			paid, err := d.drawBounty(ctx, q, &afterAtt, opts.Bounty, target, battleID, now)
+			if err != nil {
+				return err
+			}
+			bountyPaid = paid
 		}
 
 		// The loser of a defence earns the right to strike back.
@@ -612,17 +730,37 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 			return err
 		}
 
-		wins := int64(0)
-		if won {
-			wins = 1
+		raid := deeds.Deeds{
+			deeds.Raids: 1, deeds.Energy: cost, deeds.GoldStolen: stolen,
+			deeds.XP: economy.ApplyBucket(xp, eff.Bonuses, economy.BucketXPGain),
 		}
-		if err := d.bumpQuests(ctx, q, me, 0, wins, 0, cost); err != nil {
-			d.logQuestBump(err)
+		if won {
+			raid[deeds.RaidWins] = 1
+			if avenging {
+				raid[deeds.RevengeWins] = 1
+			}
+		}
+		if opts.Bounty != nil {
+			raid[deeds.BountiesClaimed] = boolToI64(bountyPaid > 0)
+			raid[deeds.BountyGold] = bountyPaid
+		}
+		d.recordDeeds(ctx, tx, me, raid)
+		if !won {
+			// A defence that held is the defender's deed, counted on their week.
+			d.recordDeeds(ctx, tx, target, deeds.Deeds{deeds.DefensesHeld: 1})
+		} else if !target.IsBot {
+			// A raid suffered is the moment Walls and Watchmen is offered to the
+			// lord who was raided. In a savepoint: an offer that cannot be written
+			// never costs the raid.
+			d.softStep(ctx, tx, "raided offer", func(sq *sqlcdb.Queries) error {
+				return d.fireMomentOffers(ctx, sq, target.ID, target.Level, gameconfig.TriggerRaided, now)
+			})
 		}
 
 		res = AttackResult{
 			BattleID: battleID.String(), Perspective: "attacker", Won: won, Revenge: avenging,
-			Gold: stolen, GoldStolen: stolen, RansomPaid: ransom, XPGained: xp,
+			Gold: stolen + bountyPaid, GoldStolen: stolen, RansomPaid: ransom,
+			BountyPaid: bountyPaid, XPGained: xp,
 			DiamondsGained: up.Diamonds, Replay: replay,
 		}
 		return nil
@@ -634,7 +772,20 @@ func (d Deps) Attack(ctx context.Context, playerID, targetID uuid.UUID, wantSeq 
 	return &res, err
 }
 
-func toCombatArmy(p sqlcdb.AppPlayer, v *ArmyView) combat.Army {
+// myArmy is the lord's own army as it marches: whoever is in the yard. A
+// soldier away on an expedition does not fight, which is the whole cost of
+// sending them -- the road pays no energy, so what it costs is the soldier.
+func myArmy(p sqlcdb.AppPlayer, v *ArmyView) combat.Army { return toCombatArmy(p, v, false) }
+
+// theirArmy is a lord's army as it DEFENDS: everybody, away or not.
+//
+// A lord cannot choose when they are raided. If an expedition thinned the
+// defence, sending soldiers out would be a standing invitation -- and the raid
+// band matches on the roster's Might (ArmyView.Totals), so a defence that left
+// soldiers out would be weaker than the number the attacker was matched on.
+func theirArmy(p sqlcdb.AppPlayer, v *ArmyView) combat.Army { return toCombatArmy(p, v, true) }
+
+func toCombatArmy(p sqlcdb.AppPlayer, v *ArmyView, withAway bool) combat.Army {
 	a := combat.Army{PlayerID: p.ID.String(), Name: p.DisplayName, Avatar: p.Avatar, Level: int64(p.Level)}
 	add := func(u UnitView) {
 		// The weapon rides along so the replay can swing the sword the player
@@ -651,9 +802,10 @@ func toCombatArmy(p sqlcdb.AppPlayer, v *ArmyView) combat.Army {
 	}
 	add(v.Hero)
 	for _, s := range v.Slots {
-		if s.Soldier != nil {
-			add(*s.Soldier)
+		if s.Soldier == nil || (!withAway && s.Soldier.Away != nil) {
+			continue
 		}
+		add(*s.Soldier)
 	}
 	return a
 }
@@ -713,6 +865,19 @@ func (d Deps) awardReputation(ctx context.Context, q *sqlcdb.Queries, me sqlcdb.
 	}); err != nil {
 		return fmt.Errorf("kingdom reputation: %w", err)
 	}
+	// The same renown, counted on the WEEK, which is what the Throne is decided
+	// on. The standing figure is cumulative and decays, so "most on Monday"
+	// would crown the same kingdom every Monday and Emperor of the Week would be
+	// over after one. Same transaction, same per-member cap, same scale.
+	//
+	// Note what does NOT call this: the Honour Arena. The Throne is meant to
+	// reward kingdom war, and an arena feeding it would turn the crown into a
+	// five-fights-a-day race carrying none of raiding's punch-down rules.
+	if err := q.BumpKingdomWeek(ctx, sqlcdb.BumpKingdomWeekParams{
+		KingdomID: *me.KingdomID, Uweek: deeds.UWeek(now), Reputation: rep * reputationScale,
+	}); err != nil {
+		return fmt.Errorf("kingdom week: %w", err)
+	}
 
 	// Reputation also levels the kingdom, so a warlike kingdom grows without
 	// anyone donating a coin.
@@ -755,6 +920,8 @@ type BattleLogEntry struct {
 	OpponentAvatar string `json:"opponent_avatar"`
 	OpponentLevel  int64  `json:"opponent_level"`
 	OpponentIsBot  bool   `json:"opponent_is_bot"`
+	// How the opponent looks now (Look).
+	OpponentLook Look `json:"opponent_look"`
 
 	// Signed, from this player's purse: positive is gold that arrived.
 	Gold     int64 `json:"gold"`
@@ -796,7 +963,9 @@ func (d Deps) GetBattleLog(ctx context.Context, playerID uuid.UUID) (*BattleLog,
 			OpponentAvatar: r.OpponentAvatar,
 			OpponentLevel:  int64(r.OpponentLevel),
 			OpponentIsBot:  r.OpponentIsBot,
-			Rounds:         int64(r.Rounds),
+			OpponentLook: lookOf(d.Config, r.OpponentCosFrame, r.OpponentCosTitle, r.OpponentCosColor,
+				r.OpponentCosCrest, r.OpponentVipPoints),
+			Rounds: int64(r.Rounds),
 		}
 		if raided {
 			// A defender loses the stolen gold and is paid the ransom. Exactly
@@ -900,6 +1069,7 @@ type RevengeEntry struct {
 	ExpiresAt   string `json:"expires_at"`
 	// Seconds left, so the countdown needs no clock arithmetic on the phone.
 	ExpiresIn int64 `json:"expires_in"`
+	Look
 }
 
 // revengeListMax bounds the Might lookups one Attack tab read will make.
@@ -948,6 +1118,8 @@ func (d Deps) listRevenge(ctx context.Context, q *sqlcdb.Queries, me sqlcdb.AppP
 		out = append(out, RevengeEntry{
 			BattleID: r.BattleID.String(), PlayerID: r.TargetID.String(),
 			Name: r.TargetName, Avatar: r.TargetAvatar, Level: int64(r.TargetLevel),
+			Look: lookOf(d.Config, r.TargetCosFrame, r.TargetCosTitle, r.TargetCosColor, r.TargetCosCrest,
+				r.TargetVipPoints),
 			Might:       might,
 			Estimate:    d.raidTake(int64(me.Level), r.TargetGold, eff, true),
 			StealRateBP: revengeRateBP,

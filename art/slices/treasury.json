@@ -1,0 +1,166 @@
+{
+ "source": "treasury.png",
+ "crops": [
+  {
+   "name": "treasury/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "erase": [
+    {
+     "rect": [
+      67,
+      1349,
+      393,
+      103
+     ],
+     "sample_x": [
+      463,
+      478
+     ]
+    },
+    {
+     "rect": [
+      40,
+      822,
+      829,
+      9
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    },
+    {
+     "rect": [
+      40,
+      1018,
+      829,
+      12
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    },
+    {
+     "rect": [
+      40,
+      1119,
+      829,
+      11
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    },
+    {
+     "rect": [
+      40,
+      1337,
+      829,
+      10
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    },
+    {
+     "rect": [
+      40,
+      1453,
+      829,
+      12
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    }
+   ]
+  },
+  {
+   "name": "treasury/btn_all_hand",
+   "rect": [
+    62,
+    1250,
+    290,
+    76
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "treasury/btn_half",
+   "rect": [
+    360,
+    1250,
+    223,
+    76
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "treasury/btn_all_vault",
+   "rect": [
+    591,
+    1250,
+    288,
+    76
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "treasury/btn_deposit",
+   "rect": [
+    67,
+    1349,
+    393,
+    103
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "treasury/btn_withdraw",
+   "rect": [
+    481,
+    1349,
+    393,
+    103
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "treasury/btn_close",
+   "rect": [
+    275,
+    1468,
+    391,
+    98
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  }
+ ]
+}

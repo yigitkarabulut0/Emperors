@@ -1,0 +1,219 @@
+{
+  "screen": "settings",
+  "source": "profile.png",
+  "canvas": [
+    941,
+    1672
+  ],
+  "ground": "#0B151F",
+  "stretch": [
+    [
+      800,
+      300,
+      3
+    ],
+    [
+      1406,
+      60,
+      1
+    ]
+  ],
+  "fonts": {
+    "title": "Cinzel-Variable.ttf",
+    "body": "EBGaramond[wght].ttf"
+  },
+  "notes": [
+    "SETTINGS (client/scenes/pages/settings_page.gd), built on YOUR LORDSHIP's own page (profile/page) from the pieces the painting already has: its title and rule, its row plate, its switch (profile/toggle_on and toggle_off, the two the painting stands at its foot) and its CLOSE.",
+    "Every yes-or-no in the realm is that switch. A row is the painted row plate with its word on the left and the switch at its right end, where GIFT stands on a friend's row -- the same place on the same plate, so the eye learns one thing.",
+    "What is here is what App Review 1.2 asks of a game with talking in it and what the plan asks of the profile hub: what the realm may send and when it may not (quiet hours), who may look at this lord and whether they show as here, the Rules of the Hall to read again, the lords they will not hear from, and an address where a person answers.",
+    "The whole page scrolls: the rows run past the frame's foot on a phone, and CLOSE stands on the screen's own bottom rather than at the end of the list.",
+    "The page stretches where the panel is the same all the way down (the list's own middle, and the gap above CLOSE): a taller phone shows more rows rather than the same page floating in the middle of its screen. The scroll across the first band grows with it."
+  ],
+  "elements": [
+    {
+      "id": "page",
+      "kind": "image",
+      "asset": "profile/page",
+      "rect": [
+        0,
+        0,
+        941,
+        1672
+      ]
+    },
+    {
+      "id": "title",
+      "kind": "text",
+      "rect": [
+        100,
+        171,
+        741,
+        76
+      ],
+      "font": "title",
+      "size": 52,
+      "weight": 700,
+      "color": "#E9C46A",
+      "align": "center",
+      "valign": "center",
+      "sample": "SETTINGS",
+      "static": true
+    },
+    {
+      "id": "title_rule",
+      "kind": "image",
+      "asset": "profile/title_rule",
+      "rect": [
+        278,
+        238,
+        382,
+        26
+      ]
+    },
+    {
+      "id": "body",
+      "kind": "scroll",
+      "rect": [
+        71,
+        290,
+        799,
+        1150
+      ],
+      "content": [
+        "row",
+        "head"
+      ]
+    },
+    {
+      "id": "head",
+      "kind": "template",
+      "rect": [
+        0,
+        0,
+        799,
+        52
+      ],
+      "parts": [
+        {
+          "id": "word",
+          "kind": "text",
+          "rect": [
+            12,
+            8,
+            775,
+            40
+          ],
+          "font": "title",
+          "size": 30,
+          "weight": 700,
+          "color": "#E9C46A",
+          "align": "left",
+          "valign": "center",
+          "sample": "WHAT THE REALM MAY SEND"
+        }
+      ]
+    },
+    {
+      "id": "row",
+      "kind": "template",
+      "rect": [
+        0,
+        0,
+        798,
+        106
+      ],
+      "pitch": 114,
+      "parts": [
+        {
+          "id": "plate",
+          "kind": "image",
+          "asset": "profile/row",
+          "rect": [
+            0,
+            8,
+            798,
+            89
+          ],
+          "note": "The hub's own row plate, not a friend's: a settings row has no ring and no boxes, only its word and the switch at the end."
+        },
+        {
+          "id": "word",
+          "kind": "text",
+          "rect": [
+            36,
+            26,
+            450,
+            53
+          ],
+          "font": "body",
+          "size": 30,
+          "weight": 600,
+          "color": "#EDE6D6",
+          "align": "left",
+          "valign": "center",
+          "sample": "When another lord raids me"
+        },
+        {
+          "id": "value",
+          "kind": "text",
+          "rect": [
+            420,
+            26,
+            220,
+            53
+          ],
+          "font": "body",
+          "size": 26,
+          "weight": 600,
+          "color": "#E9C46A",
+          "align": "right",
+          "valign": "center",
+          "sample": "22:00 - 08:00"
+        },
+        {
+          "id": "switch",
+          "kind": "image",
+          "asset": "profile/toggle_off",
+          "rect": [
+            656,
+            23,
+            97,
+            60
+          ]
+        },
+        {
+          "id": "hit",
+          "kind": "hotspot",
+          "rect": [
+            0,
+            0,
+            798,
+            106
+          ],
+          "action": "row",
+          "pass_drag": true,
+          "note": "The whole row, 106 units -- 44 points, the least a thumb may be given. The painted plate is 89, so it stands in the middle of it."
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "kind": "button",
+      "asset": "profile/close",
+      "rect": [
+        340,
+        1474,
+        262,
+        96
+      ],
+      "action": "close",
+      "keep_texture_size": true,
+      "paint_rect": [
+        340,
+        1487,
+        262,
+        70
+      ]
+    }
+  ]
+}

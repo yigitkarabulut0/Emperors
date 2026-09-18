@@ -1,0 +1,24 @@
+{
+  "screen": "chat_rules",
+  "source": "chat_rules.png",
+  "canvas": [941, 1672],
+  "ground": "#0B151F",
+  "fonts": {"title": "Cinzel-Variable.ttf", "body": "EBGaramond[wght].ttf"},
+  "notes": [
+    "THE RULES OF THE HALL (client/scenes/pages/rules_of_the_hall.gd), from chat_rules.png. The page carries one live thing -- the rules themselves, which come from the balance (social.chat.rules) so that changing them is a publish and not a build -- and two plates that are the painting's own with a hotspot over each.",
+    "The writing area is the parchment's own continuous stretch (x 170-778, y 623-1326), measured rather than guessed: the scroll's rolled ends are painted and nothing may be written on them.",
+    "The support address is set under the rules, in the same ink: App Review 1.2 wants a way to reach a person from where the talking is."
+  ],
+  "elements": [
+    {"id": "back", "kind": "image", "asset": "rules/back", "rect": [0, 0, 941, 1672]},
+    {"id": "rules", "kind": "text", "rect": [170, 623, 608, 620], "font": "body", "size": 30,
+      "weight": 500, "color": "#2A2013", "align": "left", "valign": "top", "line_height": 1.5,
+      "wrap": true,
+      "sample": "Speak as you would in your own hall.\nNo abuse, no hate, no threats, and nothing of a private life -- yours or another's.\nNo trade of accounts, gold or anything outside the realm."},
+    {"id": "support", "kind": "text", "rect": [170, 1246, 608, 76], "font": "body", "size": 26,
+      "weight": 500, "color": "#4A3A22", "align": "left", "valign": "top", "wrap": true,
+      "sample": "Write to us at accounts@miavstudios.co.uk"},
+    {"id": "agree", "kind": "button", "rect": [92, 1440, 384, 124]},
+    {"id": "close", "kind": "button", "rect": [510, 1445, 340, 116]}
+  ]
+}

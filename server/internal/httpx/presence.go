@@ -15,15 +15,10 @@ type Presenter interface {
 
 // MarkPresent records every authenticated request against the live board.
 //
-// Placed here rather than at each of the forty-odd handlers for the same reason
-// CreditTax is: one place cannot be forgotten, and the next endpoint anyone adds
-// is counted for free. It costs one mutex and three map writes, which is nothing
-// against a handler that talks to Frankfurt.
-//
-// It runs BEFORE CreditTax deliberately. Presence is a fact about the request
-// arriving; it should not be contingent on a database write that may fail, and
-// it should be recorded even for the player whose estate income query matches no
-// rows -- which is every player without estates.
+// Placed here rather than at each of the forty-odd handlers: one place cannot
+// be forgotten, and the next endpoint anyone adds is counted for free. It costs
+// one mutex and three map writes, which is nothing against a handler that talks
+// to Frankfurt.
 func MarkPresent(p Presenter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

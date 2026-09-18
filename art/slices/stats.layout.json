@@ -1,0 +1,382 @@
+{
+ "screen": "stats",
+ "source": "stats.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "notes": [
+  "The painting is the page (stats/page). Each stat's green plate says what a point buys, the dark one what is in it now, the box how many are placed.",
+  "The minus, plus and ALL of every row and the green confirm are erased from the painting and drawn as their own crops, so each can be dimmed when it cannot be used.",
+  "The confirm's word is set in type over the blank green plate the painting leaves for it."
+ ],
+ "stretch": [
+  [
+   634,
+   11,
+   12
+  ],
+  [
+   962,
+   8,
+   6
+  ],
+  [
+   1186,
+   8,
+   6
+  ],
+  [
+   1412,
+   22,
+   16
+  ]
+ ],
+ "ground": "#010f18",
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "stats/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "points",
+   "kind": "text",
+   "rect": [
+    372,
+    664,
+    292,
+    50
+   ],
+   "font": "title",
+   "size": 36,
+   "weight": 700,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "99 POINTS TO PLACE"
+  },
+  {
+   "id": "gain_attack",
+   "kind": "text",
+   "rect": [
+    276,
+    836,
+    246,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 700,
+   "color": "#F3FBF3",
+   "align": "center",
+   "valign": "center",
+   "sample": "+4 attack a point"
+  },
+  {
+   "id": "now_attack",
+   "kind": "text",
+   "rect": [
+    276,
+    894,
+    245,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "10 in it now"
+  },
+  {
+   "id": "plan_attack",
+   "kind": "text",
+   "rect": [
+    660,
+    808,
+    122,
+    56
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 800,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "+99"
+  },
+  {
+   "id": "minus_attack",
+   "kind": "button",
+   "asset": "stats/btn_minus_attack",
+   "rect": [
+    557,
+    789,
+    96,
+    96
+   ],
+   "action": "minus:attack",
+   "keep_texture_size": true
+  },
+  {
+   "id": "plus_attack",
+   "kind": "button",
+   "asset": "stats/btn_plus_attack",
+   "rect": [
+    786,
+    789,
+    96,
+    96
+   ],
+   "action": "plus:attack",
+   "keep_texture_size": true
+  },
+  {
+   "id": "all_attack",
+   "kind": "button",
+   "asset": "stats/btn_all_attack",
+   "rect": [
+    636,
+    861,
+    178,
+    96
+   ],
+   "action": "all:attack",
+   "keep_texture_size": true
+  },
+  {
+   "id": "gain_defense",
+   "kind": "text",
+   "rect": [
+    275,
+    1060,
+    249,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 700,
+   "color": "#F3FBF3",
+   "align": "center",
+   "valign": "center",
+   "sample": "+4 attack a point"
+  },
+  {
+   "id": "now_defense",
+   "kind": "text",
+   "rect": [
+    276,
+    1117,
+    248,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "10 in it now"
+  },
+  {
+   "id": "plan_defense",
+   "kind": "text",
+   "rect": [
+    660,
+    1032,
+    122,
+    56
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 800,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "+99"
+  },
+  {
+   "id": "minus_defense",
+   "kind": "button",
+   "asset": "stats/btn_minus_defense",
+   "rect": [
+    557,
+    1013,
+    96,
+    96
+   ],
+   "action": "minus:defense",
+   "keep_texture_size": true
+  },
+  {
+   "id": "plus_defense",
+   "kind": "button",
+   "asset": "stats/btn_plus_defense",
+   "rect": [
+    786,
+    1013,
+    96,
+    96
+   ],
+   "action": "plus:defense",
+   "keep_texture_size": true
+  },
+  {
+   "id": "all_defense",
+   "kind": "button",
+   "asset": "stats/btn_all_defense",
+   "rect": [
+    636,
+    1084,
+    178,
+    96
+   ],
+   "action": "all:defense",
+   "keep_texture_size": true
+  },
+  {
+   "id": "gain_energy",
+   "kind": "text",
+   "rect": [
+    275,
+    1282,
+    249,
+    35
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 700,
+   "color": "#F3FBF3",
+   "align": "center",
+   "valign": "center",
+   "sample": "+4 attack a point"
+  },
+  {
+   "id": "now_energy",
+   "kind": "text",
+   "rect": [
+    275,
+    1341,
+    249,
+    33
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 600,
+   "color": "#B8AE9C",
+   "align": "center",
+   "valign": "center",
+   "sample": "10 in it now"
+  },
+  {
+   "id": "plan_energy",
+   "kind": "text",
+   "rect": [
+    660,
+    1256,
+    122,
+    56
+   ],
+   "font": "title",
+   "size": 40,
+   "weight": 800,
+   "color": "#E9C46A",
+   "align": "center",
+   "valign": "center",
+   "sample": "+99"
+  },
+  {
+   "id": "minus_energy",
+   "kind": "button",
+   "asset": "stats/btn_minus_energy",
+   "rect": [
+    557,
+    1237,
+    96,
+    96
+   ],
+   "action": "minus:energy",
+   "keep_texture_size": true
+  },
+  {
+   "id": "plus_energy",
+   "kind": "button",
+   "asset": "stats/btn_plus_energy",
+   "rect": [
+    786,
+    1236,
+    96,
+    96
+   ],
+   "action": "plus:energy",
+   "keep_texture_size": true
+  },
+  {
+   "id": "all_energy",
+   "kind": "button",
+   "asset": "stats/btn_all_energy",
+   "rect": [
+    636,
+    1308,
+    178,
+    96
+   ],
+   "action": "all:energy",
+   "keep_texture_size": true
+  },
+  {
+   "id": "confirm",
+   "kind": "button",
+   "asset": "stats/btn_confirm",
+   "rect": [
+    107,
+    1436,
+    467,
+    101
+   ],
+   "action": "spend"
+  },
+  {
+   "id": "confirm_word",
+   "kind": "text",
+   "rect": [
+    139,
+    1464,
+    403,
+    44
+   ],
+   "font": "title",
+   "size": 32,
+   "weight": 700,
+   "color": "#F7EDCF",
+   "align": "center",
+   "valign": "center",
+   "sample": "SPEND 99 POINTS"
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "stats/btn_close",
+   "rect": [
+    605,
+    1440,
+    234,
+    96
+   ],
+   "action": "close",
+   "keep_texture_size": true
+  }
+ ]
+}

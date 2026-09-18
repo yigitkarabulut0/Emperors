@@ -10,8 +10,19 @@ import s from "./shell.module.css";
 const NAV = [
   { seg: null, href: "/", icon: "◉", label: "Live" },
   { seg: "players", href: "/players", icon: "⚔", label: "Players" },
+  { seg: "analytics", href: "/analytics", icon: "▥", label: "Analytics" },
   { seg: "events", href: "/events", icon: "✦", label: "Events" },
+  { seg: "liveops", href: "/liveops", icon: "☀", label: "Live ops" },
+  { seg: "pvp", href: "/pvp", icon: "⚑", label: "Rekabet" },
+  { seg: "mod", href: "/mod", icon: "⚖", label: "Salonlar" },
+  { seg: "depth", href: "/depth", icon: "⛰", label: "Derinlik" },
+  { seg: "war", href: "/war", icon: "🐉", label: "Boss & savaş" },
+  { seg: "mail", href: "/mail", icon: "✉", label: "Royal Mail" },
   { seg: "economy", href: "/economy", icon: "⚖", label: "Economy" },
+  { seg: "billing", href: "/billing", icon: "¤", label: "Billing" },
+  { seg: "experiments", href: "/experiments", icon: "⚗", label: "A/B tests" },
+  { seg: "promo", href: "/promo", icon: "✧", label: "Promo codes" },
+  { seg: "jobs", href: "/jobs", icon: "⧗", label: "Jobs" },
   { seg: "audit", href: "/audit", icon: "⌗", label: "Audit" },
   { seg: "balance", href: "/balance", icon: "⚙", label: "Balance" },
 ];
@@ -140,7 +151,9 @@ export function AppShell({
               : "no board yet"}
         </span>
         <span className={s.footGrow} />
-        <span className={s.footItem}>{new Date(now).toISOString().slice(11, 19)} UTC</span>
+        {/* The server renders its second and the browser its own: a clock is the
+            one text that is meant to differ, so React is told not to compare it. */}
+        <span className={s.footItem} suppressHydrationWarning>{new Date(now).toISOString().slice(11, 19)} UTC</span>
       </footer>
 
       <Toasts />

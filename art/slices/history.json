@@ -1,0 +1,115 @@
+{
+ "source": "history.png",
+ "_comment": "BATTLE HISTORY on the painted page host. The page is the painting with the tab words and the seven painted rows erased -- the list filled from the page's own ground outside its frame (x 2-20: flat navy, 0.5 of variation down the whole list, where the three columns beside the rows varied 15 with the rows' shadows and striped the list); the rows are drawn live from the four the painting shows, one per outcome (won: gold swords, lost: red sword, held: silver shield, raided: red gauntlet), 113 tall at a 121 pitch as painted. The tab plates are ALL's lit and ON ME's unlit, their words erased: the painting spells the second tab MY RADS, so every tab word is set in type.",
+ "crops": [
+  {
+   "name": "history/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "erase": [
+    {
+     "rect": [
+      41,
+      595,
+      859,
+      871
+     ],
+     "sample_x": [
+      2,
+      20
+     ]
+    }
+   ],
+   "refill": [
+    {
+     "rect": [
+      41,
+      517,
+      859,
+      78
+     ],
+     "band": [
+      596,
+      606
+     ],
+     "samples": [
+      {
+       "rows": [
+        517,
+        594
+       ],
+       "x": [
+        [
+         41,
+         86
+        ],
+        [
+         857,
+         899
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "note": "The painted ALL / MY RADS / ON ME plates are lifted whole (refill, y 517-594 between the subtitle and the list): the tabs are the game's short plates (tabs_sheet_c.png), drawn by TabStrip, so the painting's own, spelled MY RADS, is gone from under them."
+  },
+  {
+   "name": "history/btn_close",
+   "rect": [
+    337,
+    1471,
+    268,
+    85
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "history/row_won",
+   "rect": [
+    44,
+    609,
+    853,
+    113
+   ],
+   "note": "the painting's won row, its seal and all: rows are live, one of four by outcome"
+  },
+  {
+   "name": "history/row_lost",
+   "rect": [
+    44,
+    730,
+    853,
+    113
+   ],
+   "note": "the painting's lost row, its seal and all: rows are live, one of four by outcome"
+  },
+  {
+   "name": "history/row_held",
+   "rect": [
+    44,
+    851,
+    853,
+    113
+   ],
+   "note": "the painting's held row, its seal and all: rows are live, one of four by outcome"
+  },
+  {
+   "name": "history/row_raided",
+   "rect": [
+    44,
+    972,
+    853,
+    113
+   ],
+   "note": "the painting's raided row, its seal and all: rows are live, one of four by outcome"
+  }
+ ]
+}

@@ -1,0 +1,170 @@
+{
+ "source": "page_headers_sheet.png",
+ "_comment": "The painted header scenes of the information pages that stay Sheets (scripts/ui/sheet.gd, header): each is the scene inside the page plate's 8-unit frame, top edge to the row its painted fade reaches the navy (the fade ends in the plate's own colour: ground 6,21,35 against the plate's 9,22,32), top corners chamfered 2 so the scene never covers the frame's corner.",
+ "crops": [
+  {
+   "name": "pages/header_rules",
+   "rect": [
+    38,
+    77,
+    865,
+    327
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      2,
+      0
+     ],
+     [
+      863,
+      0
+     ],
+     [
+      865,
+      2
+     ],
+     [
+      865,
+      327
+     ],
+     [
+      0,
+      327
+     ],
+     [
+      0,
+      2
+     ]
+    ]
+   },
+   "note": "The desk: book, sealed letters, quill, candle. THE RULES OF RAIDING. Drawn 1:1."
+  },
+  {
+   "name": "pages/header_recruit_odds",
+   "rect": [
+    38,
+    446,
+    865,
+    342
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      2,
+      0
+     ],
+     [
+      863,
+      0
+     ],
+     [
+      865,
+      2
+     ],
+     [
+      865,
+      342
+     ],
+     [
+      0,
+      342
+     ],
+     [
+      0,
+      2
+     ]
+    ]
+   },
+   "note": "The recruiting tent and its crowd. RECRUIT ODDS. Drawn 1:1."
+  },
+  {
+   "name": "pages/header_gear",
+   "rect": [
+    38,
+    834,
+    865,
+    339
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      2,
+      0
+     ],
+     [
+      863,
+      0
+     ],
+     [
+      865,
+      2
+     ],
+     [
+      865,
+      339
+     ],
+     [
+      0,
+      339
+     ],
+     [
+      0,
+      2
+     ]
+    ]
+   },
+   "note": "The armoury and its knight. The gear picker. Drawn 1:1."
+  },
+  {
+   "name": "pages/header_reroll",
+   "rect": [
+    38,
+    1213,
+    865,
+    353
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      2,
+      0
+     ],
+     [
+      863,
+      0
+     ],
+     [
+      865,
+      2
+     ],
+     [
+      865,
+      353
+     ],
+     [
+      0,
+      353
+     ],
+     [
+      0,
+      2
+     ]
+    ]
+   },
+   "scale": [
+    784,
+    320
+   ],
+   "note": "The training yard. The reroll panel is 800 wide, so its header is 784 inside the frame: the whole scene drawn down 0.906 rather than cut at the sides, where its knight and targets stand."
+  }
+ ]
+}

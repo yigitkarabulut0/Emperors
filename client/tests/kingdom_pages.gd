@@ -166,8 +166,10 @@ func _the_tabs_swap_what_the_page_shows() -> void:
 	page.set("_loaded_once", true)
 	page.call("_apply")
 
+	# Through the strip itself, as a thumb does.
+	var strip: Control = page.get("_tabs")
 	for mode in ["lords", "works", "ranks", "realm"]:
-		page.call("_show_section", mode)
+		(strip.get("_hits")[mode] as Button).pressed.emit()
 		for i in 3:
 			await process_frame
 		# In the tree, not the node's own flag: a layer hides what is on it.
@@ -285,10 +287,8 @@ func _no_kingdom_shows_only_the_hall() -> void:
 	for id in ["header", "kingdom_name", "stat_members", "realm_card", "lords_panel"]:
 		if (ui[id] as Control).is_visible_in_tree():
 			_fail("with no kingdom, the page still shows the kingdom's %s" % id)
-	for inst in ui["tabs"]:
-		if (inst["node"] as Control).is_visible_in_tree():
-			_fail("with no kingdom, the page still shows the REALM/LORDS/WORKS/RANKS strip")
-			break
+	if (page.get("_tabs") as Control).is_visible_in_tree():
+		_fail("with no kingdom, the page still shows the REALM/LORDS/WORKS/RANKS strip")
 	var hall: Control = page.get("_hall")
 	if hall == null or not hall.is_visible_in_tree():
 		_fail("with no kingdom, the hall is not shown")
@@ -319,9 +319,11 @@ func _the_hall_fits(canvas: Vector2) -> void:
 		var host := Control.new()
 		host.size = canvas
 		root.add_child(host)
-		var hall: Control = load("res://scenes/kingdom/kingdom_hall.gd").new()
+		var hall_script: GDScript = load("res://scenes/kingdom/kingdom_hall.gd")
+		var hall: Control = hall_script.new()
 		hall.setup("hall", _hall_data(waiting), {})
-		hall.position = Vector2(168, 312)
+		# Where the Kingdom page puts it: the painting's own units, from x 0.
+		hall.position = Vector2(0, float(hall_script.get_script_constant_map()["TOP"]))
 		host.add_child(hall)
 		for i in 4:
 			await process_frame
@@ -340,7 +342,7 @@ func _the_hall_fits(canvas: Vector2) -> void:
 				var n: Node = stack.pop_back()
 				for c in n.get_children():
 					stack.append(c)
-				if n is Button and not (n as Button).disabled and (n as Button).text in ["JOIN", "REQUEST", "ACCEPT"]:
+				if n is Button and not (n as Button).disabled and (n as Button).text in ["Join", "Request", "Accept"]:
 					live += 1
 			if live > 0:
 				_fail("%s: %d join button(s) still answer while the player waits" % [_tag, live])
@@ -373,39 +375,36 @@ func _nothing_eats_the_drag(page: Control) -> void:
 			return
 
 
-## The tab strip is four plates the painting cut to four different widths, and
-## each is drawn at the height the painting gave its state. They were being
-## squeezed into one set of numbers -- the lit plate is 206x68 and was going
-## into 200x66 -- so the gold rule under the strip stepped between tabs and the
-## words drifted off the ones the painting baked.
+## The tab strip is the one tab row (scripts/ui/tab_strip.gd): four painted
+## plates of one size, standing on the painting's gold rule, their outer edges
+## on the painted strip's, the one showing lit. Its predecessor nine-patched two
+## emptied plates to four widths and laid word crops over them; the gold rule
+## under it stepped between tabs until each was drawn at the painting's height.
 func _the_strip_matches_the_painting(page: Control, ui: Dictionary) -> void:
-	var L: GDScript = load("res://scripts/ui/layout.gd")
-	var strip: Dictionary = L.find("kingdom", "tabs")
-	var widths: Array = strip.get("widths", [])
-	var tabs: Array = ui.get("tabs", [])
-	if widths.size() != tabs.size() or tabs.is_empty():
-		_fail("the tab strip has %d plates and %d widths" % [tabs.size(), widths.size()])
+	var strip: Control = page.get("_tabs")
+	if strip == null:
+		_fail("the kingdom has no tab strip")
 		return
-	for i in tabs.size():
-		var chip: Control = tabs[i]["parts"]["chip"]
-		var tex: Texture2D = chip.get("texture")
-		if tex == null:
-			_fail("tab %d has no plate" % i)
-			continue
-		if absf(chip.size.x - float(widths[i])) > 0.5:
-			_fail("tab %d is drawn %.0f wide, not the %d the painting cut"
-				% [i, chip.size.x, int(widths[i])])
-		# A plate keeps the height of its own crop; only its width is patched.
-		if absf(chip.size.y - float(tex.get_height())) > 0.5:
-			_fail("tab %d is drawn %.0f tall against a plate of %d -- it is being squeezed"
-				% [i, chip.size.y, tex.get_height()])
-		var word: TextureRect = tabs[i]["parts"]["label"]
-		var spot: Dictionary = strip.get("labels", {}).get(str(TAB_NAMES[i]), {})
-		var lr: Array = spot.get("rect", [])
-		if lr.size() == 4 and word.global_position.distance_to(
-				Vector2(float(lr[0]), float(lr[1]))) > 1.5:
-			_fail("tab %d's word sits at %s, not the %s the painting has"
-				% [i, word.global_position, Vector2(float(lr[0]), float(lr[1]))])
+	var ids: Array = strip.get("ids")
+	if ids != TAB_NAMES:
+		_fail("the strip shows %s" % str(ids))
+		return
+	var first: TextureRect = strip.call("plate", ids[0])
+	for i in ids.size():
+		var p: TextureRect = strip.call("plate", ids[i])
+		var r := Rect2(p.global_position, p.size)
+		if p.size != first.size:
+			_fail("tab %d is %s, tab 0 %s -- the plates are one size" % [i, p.size, first.size])
+		# On the gold rule the painting stands its plates on, y 615.
+		if absf(r.end.y - 615.0) > 1.0:
+			_fail("tab %d stands at y %.0f, not on the rule at 615" % [i, r.end.y])
+		var lit: bool = p.texture.resource_path.ends_with("_lit.png")
+		if lit != (ids[i] == str(page.get("_view"))):
+			_fail("tab %d is %s while %s shows" % [i, "lit" if lit else "unlit", page.get("_view")])
+	var last: TextureRect = strip.call("plate", ids[ids.size() - 1])
+	if absf(first.global_position.x - 151.0) > 1.0 or absf(last.global_position.x + last.size.x - 931.0) > 1.0:
+		_fail("the strip runs %.0f..%.0f, not the painted 151..931"
+			% [first.global_position.x, last.global_position.x + last.size.x])
 
 
 ## The Realm tab is three rows of two cards. Each pair meets within a few units

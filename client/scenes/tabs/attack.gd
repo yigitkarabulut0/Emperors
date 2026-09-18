@@ -1,7 +1,23 @@
 extends Control
-## ATTACK — scores to settle, then matchmade targets, then the battle history.
-## Layout: layout/attack.json. The client never simulates a fight: the server
-## returns the outcome and the client shows it.
+## ATTACK — four ways to make war, on one painted header.
+##
+##   RAID      scores to settle, then matchmade targets, then the history
+##   ARENA     the Honour Arena's ladder (scenes/attack/arena_view.gd)
+##   CAMPAIGN  the Conquest Campaign's map (scenes/attack/campaign_view.gd)
+##   BOUNTIES  the Bounty Board (scenes/attack/bounty_board.gd)
+##
+## The four-tab strip stands in attack.png's own painted band; RAID's own
+## REVENGE / TARGETS strip stands directly under it, and the flow starts under
+## both. The page is layers, and what shows is decided PER LAYER, never per
+## node -- the rule the Kingdom tab learned the hard way (kingdom.gd), and the
+## reason a revenge card cannot turn up on the ARENA.
+##
+## Layout: layout/attack.json; the two bodies bring their own (layout/arena.json,
+## layout/bounties.json) and are laid over this one at (0,0), so every rect in
+## them is a screen coordinate.
+##
+## The client never simulates a fight: the server returns the outcome and the
+## client shows it.
 ##
 ## The page scrolls and its cards flow, top to bottom: however many revenge
 ## strikes are waiting (REVENGE tab), the targets, the history, the notice. It
@@ -15,7 +31,22 @@ extends Control
 ## gold, and that arithmetic lives on the server only.
 
 const SCREEN := "attack"
-const CARD_TOP := 380.0          ## the first card, just under the tabs
+## The Attack tab's four sub-tabs. Each is gated by its own navigation section,
+## and a tab a lord cannot open yet is dimmed and says when it opens rather than
+## swallowing the tap -- a plate that eats a finger reads as a broken screen.
+const SUBS := ["raid", "arena", "campaign", "bounties"]
+const SUB_SCRIPT := {"arena": "res://scenes/attack/arena_view.gd",
+	"campaign": "res://scenes/attack/campaign_view.gd",
+	"bounties": "res://scenes/attack/bounty_board.gd"}
+## Which navigation section opens each. "raid" is the tab's own gate.
+const SUB_SECTION := {"raid": "fight", "arena": "arena", "campaign": "campaign",
+	"bounties": "bounty"}
+## Everything layout/attack.json paints below the strips: RAID's own body.
+const RAID_PARTS := ["revenge_card", "divider_targets", "target_card", "history_panel", "notice_bar"]
+## The first card, under BOTH strips: the four-tab plates stand on the header's
+## gold rule at 353, RAID's own long plates on 452, and the painting's own gap
+## between a rule and the card under it is 11.
+const CARD_TOP := 463.0
 const CARD_GAP := 10.0
 const PANEL_GAP := 20.0
 const EMPTY_H := 190.0
@@ -24,6 +55,14 @@ const EMPTY_H := 190.0
 ## foliage. The live bar is laid exactly over the baked one.
 const FOOT_H := 202.0
 const NOTICE_FROM_FOOT := 131.0
+## Karel the Bandit's card, on the guide's bandit step (scripts/ui/guide.gd):
+## the target card with its painted "Steal up to 3% gold" lifted, since his
+## purse is the server's own figure and no share of anyone's gold; the words
+## above the purse sit where the painting set that line, in the revenge
+## card's live rate type.
+const BANDIT_CARD := "attack/target_card_plain"
+const BANDIT_PURSE_LINE := Rect2(506, 14, 216, 30)
+const BANDIT_PURSE_WORDS := "His purse"
 
 var _scroll: ScrollContainer
 var _content: Control
@@ -36,8 +75,12 @@ var _history_empty: Label
 var _empty: Control              ## the "nothing here" card
 var _empty_title: Label
 var _empty_body: Label
-var _count: Label                ## the number in the REVENGE tab's bubble
-var _tab_labels: Dictionary = {}
+var _subs: TabStrip              ## RAID / ARENA / CAMPAIGN / BOUNTIES
+var _tabs: TabStrip              ## REVENGE / TARGETS, RAID's own row
+var _raid: Control               ## the layer holding RAID's body and Karel
+var _sub_host: Control           ## where a sub-tab's own body is mounted
+var _sub: Control                ## the live sub-tab body, or null on RAID
+var _sub_id := "raid"
 var _page_h := 1672.0
 
 var _data: Dictionary = {}
@@ -46,6 +89,8 @@ var _loaded := false
 var _loaded_ms := -100000
 var _busy := false
 var _view := "revenge"           ## revenge | targets
+var _bandit: Dictionary = {}     ## Karel's card, built once
+var _army_might := -1            ## the lord's might from /v1/army, while the tab is still locked
 
 
 func _ready() -> void:
@@ -69,6 +114,7 @@ func _ready() -> void:
 	var rules := UI.hotspot(Rect2(0, -16, 744, 96), true)
 	rules.pressed.connect(_open_rules)
 	_ui["notice_bar"].add_child(rules)
+	_build_notice_line()
 	_unanchor(_ui["ground_bottom"])
 	_content.move_child(_ui["ground_bottom"], 0)
 	UI.fade_top(_ui["ground_bottom"], 70.0)
@@ -98,24 +144,136 @@ func _ready() -> void:
 	sub.position = Vector2(0, 51)
 	_history_empty.set_meta("sub", sub)
 
-	# Tabs: the painted labelled tabs for the reference state; frames + live labels otherwise.
-	for id in ["tab_revenge", "tab_targets"]:
-		var b: TextureButton = _ui[id]
-		b.pressed.connect(_set_view.bind(id.trim_prefix("tab_")))
-		var l := UI.label(id.trim_prefix("tab_").to_upper(), 31, Color("#F4F0EA"), "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
-		l.visible = false
-		_content.add_child(l)
-		_tab_labels[id] = l
-	# The bubble is painted into the active REVENGE tab, empty; the number is live.
-	_count = UI.label("", 26, Color("#FFF4EC"), "title", 800, HORIZONTAL_ALIGNMENT_CENTER)
-	UI.place(_count, Rect2(447, 283, 44, 42))
-	_count.visible = false
-	_content.add_child(_count)
-
 	_build_empty()
+	_build_bandit()
+	_layer_the_page()
+
+	# RAID / ARENA / CAMPAIGN / BOUNTIES in the painting's own band, and RAID's
+	# own REVENGE / TARGETS directly under it. The four take the short plates
+	# (tabs/short_<id>, already cut); the two take the long ones, as they always
+	# have. A strip never mixes the two, so these are two strips and not one.
+	_subs = TabStrip.make(SUBS, Layout.rect_of(Layout.element(SCREEN, "subtabs")), _sub_id)
+	_subs.changed.connect(_set_sub)
+	_subs.refused.connect(func(_id: String, words: String) -> void: GameState.toast(words))
+	_content.add_child(_subs)
+	_tabs = TabStrip.make(["revenge", "targets"], Layout.rect_of(Layout.element(SCREEN, "tabs")), _view)
+	_tabs.changed.connect(_set_view)
+	_content.add_child(_tabs)
+
 	_apply_tabs()
 	_paint()
 	_fit_page()
+
+
+## Moves what Layout built into the page's layers, keeping the painting's order.
+## RAID's body goes in its own layer so that showing the ARENA hides all of it
+## at once: a hidden layer draws nothing, which is the only way a card cannot
+## come back on a tab it does not belong to.
+func _layer_the_page() -> void:
+	_raid = _layer()
+	_sub_host = _layer()
+	_sub_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mine := {}
+	for id in RAID_PARTS:
+		if not _ui.has(id):
+			continue
+		var v: Variant = _ui[id]
+		if v is Control:
+			mine[v] = true
+		elif v is Array:
+			for inst in v:
+				mine[inst["node"]] = true
+	if _empty != null:
+		mine[_empty] = true
+	if not _bandit.is_empty():
+		mine[_bandit["node"]] = true
+	# Collected first, then moved: reparenting inside the loop mutates the list
+	# being walked, and half the body would stay in the page -- which is exactly
+	# how RAID's notice bar turned up over the ARENA.
+	var move: Array = []
+	for c in _content.get_children():
+		if c != _raid and c != _sub_host and mine.has(c):
+			move.append(c)
+	for c in move:
+		(c as Node).reparent(_raid)
+	# The foliage along the foot is the page's, above every layer.
+	var ground: Control = _ui.get("ground_bottom")
+	if ground != null and ground.get_parent() == _content:
+		_content.move_child(ground, 0)
+
+
+## A full-page layer that ignores the mouse, so the strips, the buttons and the
+## drag that scrolls the page all reach what is underneath.
+func _layer() -> Control:
+	var l := Control.new()
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.position = Vector2.ZERO
+	l.size = Vector2(941, 1672)
+	_content.add_child(l)
+	return l
+
+
+## Opens one of the four. Public, so --sub and the shell can use it.
+func open_sub(which: String) -> void:
+	if not SUBS.has(which):
+		return
+	_set_sub(which)
+
+
+## Which sub-tab is showing, and its body (null on RAID). For tests.
+func sub() -> Control:
+	return _sub
+
+
+func _set_sub(which: String) -> void:
+	if _sub_id == which:
+		return
+	_sub_id = which
+	_free_sub()
+	var on_raid := which == "raid"
+	_raid.visible = on_raid
+	_tabs.visible = on_raid
+	_subs.select(which)
+	_scroll.scroll_vertical = 0
+	if on_raid:
+		_paint()
+		_fit_page()
+		return
+	var script: GDScript = load(SUB_SCRIPT[which])
+	_sub = script.new()
+	_sub.connect("grew", func(_h: float) -> void: _fit_page())
+	if _sub.has_signal("scroll_to"):
+		# A body inside the tab's scroll cannot move it; it asks, and the tab
+		# does it once its own height has been worked out.
+		_sub.connect("scroll_to", func(y: float) -> void:
+			_fit_page()
+			await get_tree().process_frame
+			_scroll.scroll_vertical = int(maxf(0.0, y)))
+	_sub_host.add_child(_sub)
+	_sub.call("refresh")
+	_fit_page()
+
+
+func _free_sub() -> void:
+	if _sub != null:
+		_sub.queue_free()
+		_sub = null
+
+
+## Lights the four, and dims the ones this lord cannot open yet. A dimmed tab
+## still answers: it says when it opens, as the rail's locked entries do.
+func _apply_subs() -> void:
+	if _subs == null:
+		return
+	for id in SUBS:
+		var section := str(SUB_SECTION.get(id, ""))
+		if section == "" or GameState.is_unlocked(section):
+			_subs.set_enabled(id, true)
+		else:
+			_subs.set_off(id, "Unlocks at level %d" % GameState.unlock_level(section))
+	_subs.set_count("bounties", int(GameState.badges.get("bounty_on_me", 0)))
+	_subs.set_count("campaign", int(GameState.badges.get("campaign", 0)))
+	_subs.set_count("raid", (_data.get("revenge", []) as Array).size())
 
 
 func _unanchor(n: Control) -> void:
@@ -128,6 +286,9 @@ func _unanchor(n: Control) -> void:
 
 
 func refresh() -> void:
+	if _sub != null:
+		_sub.call("refresh")
+		return
 	if Time.get_ticks_msec() - _loaded_ms > 3000:
 		_load()
 	else:
@@ -143,6 +304,12 @@ func _load() -> void:
 	if h.ok:
 		_history = h.data.get("entries", [])
 	_loaded = _loaded or (res.ok and h.ok)
+	# Before the tab's own level the targets say nothing of the lord's might;
+	# Karel's card weighs it against his, from the army.
+	if Guide.bandit_step() and not res.ok:
+		var army: Api.Response = await Api.get_json("/v1/army")
+		if army.ok:
+			_army_might = int(army.data.get("totals", {}).get("might", 0))
 	_paint()
 	# Dev: --replay-last opens the most recent battle's playback on arrival.
 	if Env.args.has("replay_last") and not _history.is_empty():
@@ -151,6 +318,8 @@ func _load() -> void:
 
 
 func _set_view(v: String) -> void:
+	if _sub_id != "raid":
+		open_sub("raid")
 	if _view == v:
 		return
 	_view = v
@@ -159,56 +328,43 @@ func _set_view(v: String) -> void:
 	_scroll.scroll_vertical = 0
 
 
+## Lights the tab being shown, and counts the scores waiting on REVENGE in the
+## rail's own bubble -- whichever tab is lit, since it is on TARGETS that a
+## player needs telling. None waiting, no bubble: an empty one reads as though
+## something were.
 func _apply_tabs() -> void:
-	var waiting: int = (_data.get("revenge", []) as Array).size()
-	var spec_r := Layout.element(SCREEN, "tab_revenge")
-	var spec_t := Layout.element(SCREEN, "tab_targets")
-	var rs: Dictionary = spec_r["states"]["active" if _view == "revenge" else "inactive"]
-	var ts: Dictionary = spec_t["states"]["active" if _view == "targets" else "inactive"]
-	for pair in [[_ui["tab_revenge"], rs, "tab_revenge"], [_ui["tab_targets"], ts, "tab_targets"]]:
-		var b: TextureButton = pair[0]
-		var st: Dictionary = pair[1]
-		var asset := str(st["asset"])
-		# The active REVENGE tab has the painting's bubble, emptied; it carries
-		# the number of scores waiting and is only drawn when there is one. An
-		# empty circle -- or a 0 -- reads as though something is waiting.
-		if asset == "attack/tab_revenge" and waiting == 0:
-			asset = "attack/tab_revenge_plain"
-		b.texture_normal = Art.tex(asset)
-		UI.place(b, Layout.rect_of(st))
-		var l: Label = _tab_labels[pair[2]]
-		l.visible = st.has("label")
-		if st.has("label"):
-			var ls: Dictionary = st["label"]
-			UI.place(l, Layout.rect_of(ls))
-			l.label_settings.font_color = Color(str(ls.get("color", "#F4F0EA")))
-			l.label_settings.font_size = int(ls.get("size", 31))
-	_count.visible = _view == "revenge" and waiting > 0
-	_count.text = str(waiting) if waiting < 10 else "9+"
+	_tabs.select(_view)
+	_tabs.set_count("revenge", (_data.get("revenge", []) as Array).size())
+	_apply_subs()
 
 
 # --- the flow ------------------------------------------------------------------------
 
 func _paint() -> void:
 	_apply_tabs()
+	if _sub_id != "raid":
+		return
 	for c in _revenge_cards:
 		c["node"].visible = false
 	for c in _targets:
 		c["node"].visible = false
 	_empty.visible = false
 	_ui["divider_targets"].visible = false
-	if not _loaded:
+	var y := _paint_bandit(CARD_TOP)
+	# Below the tab's own level Karel's card is all it holds: the scores, the
+	# targets and the history are the raiding the lord cannot do yet.
+	if not _loaded or (Guide.bandit_step() and not GameState.is_unlocked("fight")):
 		# Nothing on the painting's sample cards until the server has answered.
 		_history_panel.visible = false
 		_ui["notice_bar"].visible = false
 		return
 	_history_panel.visible = true
 	_ui["notice_bar"].visible = true
+	_paint_notice()
 
 	var revenge: Array = _data.get("revenge", [])
 	var targets: Array = _data.get("targets", [])
 	var my_might := int(_data.get("might", 0))
-	var y := CARD_TOP
 
 	if _view == "revenge":
 		if revenge.is_empty():
@@ -253,7 +409,10 @@ func _paint() -> void:
 func _fit_page() -> void:
 	if _content == null:
 		return
-	var h := maxf(_page_h, _scroll.size.y if _scroll.size.y > 0 else 1672.0)
+	var flow := _page_h
+	if _sub != null and _sub.has_method("height"):
+		flow = float(_sub.call("height")) + NOTICE_FROM_FOOT
+	var h := maxf(flow, _scroll.size.y if _scroll.size.y > 0 else 1672.0)
 	_content.custom_minimum_size = Vector2(941, h)
 	var g: Control = _ui.get("ground_bottom")
 	if g != null:
@@ -298,36 +457,106 @@ func _show_empty(y: float, title: String, body: String) -> float:
 	return y + EMPTY_H + CARD_GAP
 
 
+func _build_bandit() -> void:
+	var tpl := Layout.element(SCREEN, "target_card")
+	var built := Layout.instantiate(tpl, {"assets": {"frame": BANDIT_CARD}})
+	built["node"].position.x = Layout.rect_of(tpl).position.x
+	built["node"].visible = false
+	_content.add_child(built["node"])
+	built["parts"]["attack"].pressed.connect(_fight_bandit)
+	_build_bar(built)
+	var purse := UI.label("", 22, Color("#E6E0D6"), "body", 500, HORIZONTAL_ALIGNMENT_CENTER)
+	UI.place(purse, BANDIT_PURSE_LINE)
+	built["node"].add_child(purse)
+	built["purse"] = purse
+	_bandit = built
+	GuideTargets.register("attack.bandit", built["parts"]["attack"])
+
+
+## Karel's card at `y` while the steward's bandit step runs (the server's
+## preview: name, face, level, might, purse), and where the flow goes on
+## below it. Nothing, and `y` back, otherwise.
+func _paint_bandit(y: float) -> float:
+	if _bandit.is_empty():
+		return y
+	var node: Control = _bandit["node"]
+	node.visible = Guide.bandit_step()
+	if not node.visible:
+		return y
+	var b: Dictionary = GameState.guide().get("bandit", {})
+	var t := {"name": str(b.get("name", "")), "avatar": str(b.get("avatar", "bandit")),
+		"level": int(b.get("level", 1)), "player_id": "bandit"}
+	var p: Dictionary = _bandit["parts"]
+	p["portrait"].texture = Art.tex(Art.avatar(str(t["avatar"])))
+	Look.paint_frame(p["portrait"], t, "square", FRAME_BAND)
+	Look.paint_crest(p["crest"], crest_for(t))
+	var name_box := _part_rect("target_card", "name")
+	name_box.size.x -= NAME_CLEAR
+	Look.paint_name(p["name"], t, str(t["name"]), name_box, NAME_SIZE, 18)
+	p["level"].text = "LEVEL %d" % int(t["level"])
+	_paint_title(_bandit, t, "target_card")
+	var his := int(b.get("might", 0))
+	p["power"].text = UI.grouped(his)
+	UI.fit_label(p["power"], 30, 18)
+	p["amount"].text = UI.grouped(int(b.get("purse", 0)))
+	UI.fit_label(p["amount"], 27, 18)
+	(_bandit["purse"] as Label).text = BANDIT_PURSE_WORDS
+	var mine := int(_data.get("might", _army_might if _army_might >= 0 else 0))
+	p["your_num"].text = UI.grouped(mine)
+	p["their_num"].text = UI.grouped(his)
+	UI.fit_label(p["your_num"], int(p["your_num"].label_settings.font_size), 14)
+	UI.fit_label(p["their_num"], int(p["their_num"].label_settings.font_size), 14)
+	p["attack"].visible = true
+	p["shield"].visible = false
+	_set_bar(_bandit, float(mine) / maxf(1.0, float(mine + his)))
+	node.position.y = y
+	return y + node.size.y + CARD_GAP
+
+
+## Karel's FIGHT: the steward's fight, played on the battle screen (Guide).
+func _fight_bandit() -> void:
+	if _busy:
+		return
+	_busy = true
+	await Guide.fight_bandit(self)
+	_busy = false
+	_paint()
+
+
 func _build_empty() -> void:
-	var np := NinePatchRect.new()
-	np.texture = Art.tex("inventory/card_frame")
-	for m in ["left", "top", "right", "bottom"]:
-		np.set("patch_margin_" + m, 26)
-	np.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UI.place(np, Rect2(180, CARD_TOP, 744, EMPTY_H))
-	np.self_modulate = Color(0.85, 0.85, 0.9)
-	_content.add_child(np)
-	_empty = np
-	var icon := UI.image("icons/shield_small", Rect2(40, 58, 60, 72))
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	np.add_child(icon)
-	_empty_title = UI.label("", 26, UI.GOLD, "title", 700)
-	UI.place(_empty_title, Rect2(126, 26, 580, 40))
-	np.add_child(_empty_title)
-	_empty_body = UI.label("", 22, UI.DIM, "body", 500)
-	_empty_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_empty_body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	UI.place(_empty_body, Rect2(126, 68, 586, 104))
-	np.add_child(_empty_body)
+	# The same object the Honour Arena shows over a thin ladder (UI.empty_card).
+	var card := UI.empty_card(_content, Rect2(180, CARD_TOP, 744, EMPTY_H))
+	_empty = card["node"]
+	_empty_title = card["title"]
+	_empty_body = card["body"]
+
+
+## How a rival looks on a card (scripts/ui/look.gd): the frame they wear over
+## the portrait, its band over the card's own painted frame (133x136 round the
+## 125x127 window); their name in their colour with the seal after it; the
+## title they wear on the level's line, after LEVEL; their crest.
+const FRAME_BAND := 136.0
+const NAME_SIZE := 30
+## The name, and a seal after it, stop this far short of the painted name box's
+## end, so the seal is not pressed against the take's column ("Steal up to...").
+const NAME_CLEAR := 14.0
+## The title rides the level line, after the level, up to where the take's
+## column begins (x 580 of the card).
+const TITLE_RIGHT := 580.0
+const TITLE_GAP := 16.0
 
 
 func _paint_card(c: Dictionary, t: Dictionary, my_might: int, is_revenge: bool) -> void:
 	var p: Dictionary = c["parts"]
+	var card := "revenge_card" if is_revenge else "target_card"
 	p["portrait"].texture = Art.tex(Art.avatar(str(t.get("avatar", ""))))
-	p["crest"].texture = Art.tex(_crest_for(t))
-	p["name"].text = str(t.get("name", ""))
-	UI.fit_label(p["name"], 30, 18)
+	Look.paint_frame(p["portrait"], t, "square", FRAME_BAND)
+	Look.paint_crest(p["crest"], crest_for(t))
+	var name_box := _part_rect(card, "name")
+	name_box.size.x -= NAME_CLEAR
+	Look.paint_name(p["name"], t, str(t.get("name", "")), name_box, NAME_SIZE, 18)
 	p["level"].text = "LEVEL %d" % int(t.get("level", 1))
+	_paint_title(c, t, card)
 	var their := int(t.get("might", 0))
 	p["power"].text = UI.grouped(their)
 	UI.fit_label(p["power"], 30, 18)
@@ -450,9 +679,34 @@ func _seconds_since(iso: String) -> int:
 	return maxi(0, int(Time.get_unix_time_from_system()) - int(then))
 
 
-func _crest_for(t: Dictionary) -> String:
-	var names := ["icons/crest_wolf", "icons/crest_lion", "icons/crest_stag", "icons/crest_eagle"]
-	return names[absi(str(t.get("player_id", t.get("name", ""))).hash()) % names.size()]
+## A rival's crest: the one they wear, else one of the twelve by the lord's id
+## (Art.crest, the rule the hall uses for kingdoms), so the same lord always
+## wears the same crest.
+func crest_for(t: Dictionary) -> String:
+	return Look.crest(t, str(t.get("player_id", t.get("name", ""))))
+
+
+## A part's rect in its card, as the layout measured it.
+func _part_rect(card: String, part: String) -> Rect2:
+	for q in Layout.element(SCREEN, card).get("parts", []):
+		if str(q.get("id", "")) == part:
+			return Layout.rect_of(q)
+	return Rect2()
+
+
+## The title a rival wears, on the level's line after LEVEL: made once per card.
+func _paint_title(c: Dictionary, t: Dictionary, card: String) -> void:
+	var level: Label = c["parts"]["level"]
+	if not c.has("title"):
+		var l := UI.label("", 21, UI.GOLD_DIM, "body", 600)
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		level.get_parent().add_child(l)
+		c["title"] = l
+	var lr := _part_rect(card, "level")
+	var f: Font = level.label_settings.font
+	var x := lr.position.x + f.get_string_size(level.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+		level.label_settings.font_size).x + TITLE_GAP
+	Look.paint_title(c["title"], t, Rect2(x, lr.position.y, TITLE_RIGHT - x, lr.size.y), 21, 13)
 
 
 # --- actions -------------------------------------------------------------------------
@@ -471,16 +725,39 @@ func _attack_target(i: int) -> void:
 	await _attack(targets[i], false)
 
 
+## A raid asked for from somewhere else -- a lord's own page (rival_page.gd) --
+## which lands in this tab's own flow: its confirm, its energy, its refusals and
+## its replay. A lord already on the list is raided as their card would be; one
+## who is not (the list is a band of twelve, and a page is any lord at all) is
+## raided by their id, and the realm answers for whether they may be.
+func raid_lord(player_id: String, lord_name := "") -> void:
+	if player_id == "":
+		return
+	if not _loaded:
+		await _load()
+	for t in _data.get("targets", []):
+		if t is Dictionary and str(t.get("player_id", "")) == player_id:
+			await _attack(t, false)
+			return
+	await _attack({"player_id": player_id, "name": lord_name}, false)
+
+
 func _attack(t: Dictionary, revenge: bool) -> void:
 	if _busy:
 		return
 	_busy = true
 	var cost := int(t.get("energy_cost", _data.get("energy_cost", 0)))
 	var have := GameState.display_energy()
-	var body := "Costs %d energy%s. Win, and steal up to %s gold." % [cost,
-		"" if have >= cost else " -- you have %d" % have, UI.grouped(int(t.get("estimated_steal", 0)))]
+	var body := "Costs %d energy%s." % [cost, "" if have >= cost else " -- you have %d" % have]
+	if t.has("estimated_steal"):
+		# A lord raided from their own page is not on this list and their purse
+		# is not ours to know: the line is left off rather than written as zero.
+		body += " Win, and steal up to %s gold." % UI.grouped(int(t.get("estimated_steal", 0)))
 	if revenge:
 		body = "Revenge: half the energy and a third more gold, shield or no shield.\n" + body
+	var warning := raid_warning(revenge, GameState.display_shield_seconds(), _data.get("rules", {}))
+	if warning != "":
+		body = warning + "\n" + body
 	if not await Dialog.ask(self, {"title": ("Avenge yourself on %s?" if revenge else "Raid %s?") % str(t.get("name", "")),
 			"body": body, "confirm_text": "Attack", "danger": true}):
 		_busy = false
@@ -494,6 +771,17 @@ func _attack(t: Dictionary, revenge: bool) -> void:
 	_busy = false
 
 
+## What raiding costs a lord who is shielded: the shield. Said before the tap,
+## because a shield bought with diamonds and lost to a raid the player did not
+## know would end it is a purchase they were not told the terms of. A revenge
+## strike keeps the shield, and a server that does not break shields (rules
+## without shield_breaks) gets no warning.
+static func raid_warning(revenge: bool, shield_seconds: int, rules: Dictionary) -> String:
+	if revenge or shield_seconds <= 0 or not bool(rules.get("shield_breaks", false)):
+		return ""
+	return "Attacking ends your shield (%s left)." % UI.short_duration(shield_seconds)
+
+
 func _replay(i: int) -> void:
 	if i < _history.size():
 		await _replay_entry(_history[i])
@@ -505,9 +793,17 @@ func _replay_entry(e: Dictionary) -> void:
 	_busy = true
 	var res: Api.Response = await Api.get_json("/v1/battles/%s" % str(e.get("battle_id", "")))
 	if res.ok:
-		await _show_replay(res.data, {"name": str(e.get("opponent_name", "")),
-			"avatar": str(e.get("opponent_avatar", ""))})
+		await _show_replay(res.data, replay_opponent(e))
 	_busy = false
+
+
+## Who a history entry's replay is against: their name and face, and the look
+## the entry carries (opponent_look), so the battle names them in the colour and
+## seal they wear, as a raid card's replay already does.
+static func replay_opponent(e: Dictionary) -> Dictionary:
+	var look: Variant = e.get("opponent_look", {})
+	return {"name": str(e.get("opponent_name", "")), "avatar": str(e.get("opponent_avatar", "")),
+		"look": look if look is Dictionary else {}}
 
 
 ## The animated playback of a fight the server resolved.
@@ -521,6 +817,63 @@ func _show_replay(result: Dictionary, opponent: Dictionary) -> void:
 func _view_all_history() -> void:
 	var page: GDScript = load("res://scenes/pages/history_page.gd")
 	page.open(self, _history, _replay_entry)
+
+
+## THE NOTICE'S LIVE LINE.
+##
+## The painting bakes one sentence into `attack/notice_bar` and the manifest cut
+## `notice_bar_blank` beside it with those words lifted, recording the rect and
+## the type they were set in (attack.layout.json's `alt`). Nothing used it, so
+## the bar could only ever say the one painted thing -- and `scouted_today`, which
+## the server sends BECAUSE being looked over is a thing that happens to a lord
+## and should be felt where the raiding is, was never said anywhere at all.
+##
+## With something live to say the bar wears the blank plate and says it; with
+## nothing, it is the painting's own sentence, unchanged.
+func _build_notice_line() -> void:
+	var bar: Control = _ui.get("notice_bar")
+	if bar == null:
+		return
+	var alt: Dictionary = Layout.element(SCREEN, "notice_bar").get("alt", {})
+	var part: Dictionary = alt.get("text", {})
+	if part.is_empty():
+		return
+	# The alt's rect is the PAINTING's, and the label goes inside the bar, so it
+	# is laid against the bar's own corner.
+	var l := Layout.part(part, -Layout.rect_of(Layout.element(SCREEN, "notice_bar")).position)
+	if l == null:
+		return
+	l.name = "live_line"
+	l.visible = false
+	bar.add_child(l)
+
+
+## What the notice says beyond its painted sentence. Empty keeps the painting.
+static func notice_line(data: Dictionary) -> String:
+	var scouted := int(data.get("scouted_today", 0))
+	if scouted <= 0:
+		return ""
+	if scouted == 1:
+		return "A lord bought a look at your army today."
+	return "%d lords bought a look at your army today." % scouted
+
+
+func _paint_notice() -> void:
+	var bar: TextureRect = _ui.get("notice_bar") as TextureRect
+	if bar == null:
+		return
+	var l: Label = bar.get_node_or_null("live_line") as Label
+	var words := notice_line(_data)
+	if l == null:
+		return
+	if words == "":
+		bar.texture = Art.tex("attack/notice_bar")
+		l.visible = false
+		return
+	bar.texture = Art.tex("attack/notice_bar_blank")
+	l.text = words
+	l.visible = true
+	UI.fit_line(l, int(Layout.element(SCREEN, "notice_bar").get("alt", {}).get("text", {}).get("size", 25)), 18)
 
 
 ## The (i) on the notice: the rules of raiding, with the server's numbers.

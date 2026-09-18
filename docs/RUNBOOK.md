@@ -98,6 +98,10 @@ godot --path client -- --dev-login <user> <pw> --dev-collect 40
 
 # screenshot after N seconds
 godot --path client -- --capture "$PWD/proof/M1/shot.png" --capture-after 5
+
+# a section further down a long screen: the shot is taken with the screen's own
+# scroll run down first (the Royal Store's herald sits ~2600 units down)
+godot --path client -- --dev-login <user> <pw> --page store --scroll 2600   --capture "$PWD/shot.png" --capture-after 7
 ```
 
 ## Smoke test
@@ -109,3 +113,88 @@ python3 scripts/smoke-m1.py [http://localhost:8080]
 27 end-to-end checks over auth, refresh rotation, state, collect, levelling,
 mastery and every refusal path. Run it against any environment before calling a
 deploy good.
+
+## When the phone drops mid-install
+
+`deploy-iphone.sh` sometimes ends in
+
+```
+Internal logic error: Connection was invalidated (CoreDevice ControlChannelConnectionError)
+Network.NWError error 54 - Connection reset by peer
+```
+
+That is the phone's control channel dropping, not a build failure — the .ipa is
+already built. `xcrun devicectl list devices` should show the phone
+`available (paired)`; unlock it, keep it awake, and run the script again (the
+rebuild is cached and quick).
+
+## Changing what `Validate` refuses
+
+A stricter validator runs against the LIVE document at startup as well as at
+publish time, so one the live document fails does not reject a number — it stops
+the server coming back. Check before deploying:
+
+```sh
+psql "$DATABASE_URL" -t -A -c "select v.doc from admin.balance_activations a \
+  join admin.balance_versions v on v.id = a.version_id \
+  order by a.activated_at desc, a.id desc limit 1" > /tmp/live.json
+cd server && EMPERORS_LIVE_DOC=/tmp/live.json \
+  go test -count=1 -run TestTheLiveDocumentStillPasses ./internal/gameconfig/
+```
+
+It skips without the variable, so CI keeps checking the seed and this checks the
+realm. If the live document fails, publish a document that passes FIRST, then
+deploy.
+
+## Switching the adverts on (Herald's Tidings)
+
+The server ships with adverts **shut**, and no deploy of ours opens them: the
+store hides the section, `/v1/ads/watch` answers `herald_shut`, and the callback
+still answers 200. Opening them is the owner's, once there is an AdMob account.
+
+1. In AdMob, make a **rewarded** ad unit for the iOS app and turn on
+   **server-side verification (SSV)**, pointing it at
+
+   ```
+   https://<domain>/v1/ads/admob/ssv
+   ```
+
+   Leave the "user_id"/"custom_data" fields alone: the client fills both, and
+   the server matches them against the ticket it handed out.
+
+2. Put the unit id in `infra/secrets.env` (gitignored, never committed):
+
+   ```
+   EMPERORS_ADMOB_UNIT=ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY
+   ```
+
+   Nothing else is needed. Google's verifier keys are fetched from
+   `https://www.gstatic.com/admob/reward/verifier-keys.json` and refreshed when
+   a callback arrives with a key id this server does not know, so a key rotation
+   needs no deploy. `EMPERORS_ADMOB_KEYS_URL` overrides that URL for a test.
+
+3. `docker compose up -d api` on the VPS, and check the log says
+
+   ```
+   adverts configured unit=... open=true
+   ```
+
+4. `python3 scripts/smoke-ads.py https://<domain>` — against a realm with
+   adverts it drives the whole thing; the signed half needs a key it can sign
+   with, so on the deployed server it checks the store and the refusals and says
+   the rest is skipped.
+
+**`EMPERORS_ADMOB_DEV_KEY` is for a local realm only** — it trusts a key that is
+not Google's, so anyone holding its pair could mint diamonds. `config.Load()`
+refuses to start a prod server with it set. To drive the whole feature locally:
+
+```bash
+openssl ecparam -genkey -name prime256v1 -noout -out /tmp/ad.key
+openssl ec -in /tmp/ad.key -pubout -out /tmp/ad.pub
+EMPERORS_ADMOB_UNIT=ca-app-pub-smoke/1 EMPERORS_ADMOB_DEV_KEY="$(cat /tmp/ad.pub)" ./api
+EMPERORS_SMOKE_AD_KEY=/tmp/ad.key python3 scripts/smoke-ads.py
+```
+
+The **client** needs an AdMob plugin in the build to play one. Without it the
+section still appears on a realm that has adverts and WATCH says the build
+cannot play them, rather than doing nothing.

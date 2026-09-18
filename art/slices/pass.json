@@ -1,0 +1,441 @@
+{
+ "source": "pass.png",
+ "notes": [
+  "THE ROYAL CHARTER -- COURT > SEASON PASS (client/scenes/court/pass_view.gd, layout client/layout/pass.json), cut from pass.png in bands laid where they were painted: the header scene (ROYAL CHARTER and its line baked; the two EMPTY plates, beside the hourglass and under it, left for the season's time and name), the progress strip (the tier medallion's dark centre, the bar's channel emptied of its gold, the points plate, the UNLOCK plate with its word lifted so the lane's state is set in type, and its EMPTY price plate), the FREE / ROYAL headings with the chain's top, one tier row repeated down a scrolling list, and the pedestal's foot pinned to the screen's foot.",
+  "The painting's pills sit higher than the chrome's (theirs y 8..61, the chrome's 21..79) and are wider, so they are lifted whole (Telea under the chrome's own) rather than drawn under; the painted COURT plate (x 169..343, y 74..127) is lifted the same way, CourtBack's plate standing in for it 32 units lower.",
+  "The row is row 3 (plate x 171..923, y 847..968, the gap under it to 973: a pitch of 127, the painting's rows running 126 to 129 apart), its medallion (ring x 497..584, dark centre x 511..570, y 881..941) and the chain through the gap kept; its two tiles are erased to the plate under them and drawn over as their own crops, so a tier not reached can dim its tile and nothing else.",
+  "pass/tile_free is row 4's plain gold tile (x 253..435, y 982..1090), its painted frame-object lifted by a row-by-row ramp between the dark wall on either side of it; pass/tile_royal is row 2's gemmed tile (x 647..840, y 724..834), its potion lifted the same way. Every reward is drawn into them by the game.",
+  "pass/claim is row 2's CLAIM plate (rim x 266..422, y 796..841, corners cut 9), word and all; pass/claim_all the foot's CLAIM ALL (rim x 366..707, y 1493..1587, corners cut 15), drawn over its own place in the foot so it can be dimmed; pass/crown the ROYAL heading's small crown, for the crowned tiers' medallions.",
+  "The foot's painted trophy on the pedestal (a lion-crest frame, x 452..640, y 1231..1440) is not the Charter's frame; it is lifted -- the scene beside it mirrored in from either side, the middle softened -- and the game draws the real one (frames/charter_square, round the lord's face) standing on the pedestal where it stood."
+ ],
+ "crops": [
+  {
+   "name": "pass/header",
+   "rect": [
+    155,
+    0,
+    786,
+    400
+   ],
+   "inpaint": [
+    [
+     163,
+     3,
+     252,
+     60
+    ],
+    [
+     427,
+     3,
+     238,
+     60
+    ],
+    [
+     671,
+     3,
+     258,
+     60
+    ],
+    [
+     165,
+     70,
+     164,
+     62
+    ]
+   ],
+   "patch": [
+    {
+     "from": [
+      348,
+      104,
+      20,
+      28
+     ],
+     "to": [
+      328,
+      104
+     ],
+     "flip": "h"
+    }
+   ],
+   "soften": [
+    [
+     155,
+     0,
+     786,
+     22
+    ],
+    [
+     155,
+     18,
+     28,
+     50
+    ],
+    [
+     398,
+     18,
+     44,
+     50
+    ],
+    [
+     645,
+     18,
+     24,
+     50
+    ],
+    [
+     888,
+     18,
+     53,
+     50
+    ],
+    [
+     160,
+     64,
+     190,
+     44
+    ]
+   ]
+  },
+  {
+   "name": "pass/strip",
+   "rect": [
+    155,
+    400,
+    786,
+    140
+   ],
+   "erase": [
+    {
+     "rect": [
+      321,
+      446,
+      194,
+      21
+     ],
+     "sample_x": [
+      560,
+      670
+     ]
+    }
+   ],
+   "inpaint": [
+    {
+     "text": [
+      752,
+      434,
+      126,
+      34
+     ],
+     "d": 60,
+     "dilate": 5,
+     "radius": 6
+    }
+   ]
+  },
+  {
+   "name": "pass/bar_fill",
+   "rect": [
+    322,
+    447,
+    192,
+    20
+   ],
+   "note": "The bar's gold (x 322..513, y 447..466), drawn along the channel's inside (x 322..683) to the tier's points."
+  },
+  {
+   "name": "pass/headings",
+   "rect": [
+    155,
+    540,
+    786,
+    52
+   ]
+  },
+  {
+   "name": "pass/crown",
+   "rect": [
+    651,
+    550,
+    48,
+    37
+   ],
+   "mode": "darkkey",
+   "k": 45,
+   "floor": 6,
+   "bg": [
+    7,
+    20,
+    28
+   ]
+  },
+  {
+   "name": "pass/row",
+   "rect": [
+    155,
+    847,
+    786,
+    127
+   ],
+   "erase": [
+    {
+     "rect": [
+      251,
+      851,
+      188,
+      114
+     ],
+     "sample_x": [
+      190,
+      240
+     ],
+     "sample_x2": [
+      442,
+      490
+     ]
+    },
+    {
+     "rect": [
+      645,
+      851,
+      198,
+      114
+     ],
+     "sample_x": [
+      596,
+      640
+     ],
+     "sample_x2": [
+      848,
+      915
+     ]
+    }
+   ]
+  },
+  {
+   "name": "pass/tile_free",
+   "rect": [
+    253,
+    982,
+    183,
+    109
+   ],
+   "erase": [
+    {
+     "rect": [
+      300,
+      986,
+      84,
+      100
+     ],
+     "sample_x": [
+      268,
+      296
+     ],
+     "sample_x2": [
+      388,
+      424
+     ]
+    }
+   ]
+  },
+  {
+   "name": "pass/tile_royal",
+   "rect": [
+    647,
+    981,
+    194,
+    111
+   ],
+   "patch": [
+    {
+     "from": [
+      716,
+      1082,
+      30,
+      7
+     ],
+     "to": [
+      799,
+      1082
+     ]
+    }
+   ],
+   "erase": [
+    {
+     "rect": [
+      705,
+      992,
+      77,
+      89
+     ],
+     "sample_x": [
+      699,
+      704
+     ],
+     "sample_x2": [
+      783,
+      795
+     ]
+    },
+    {
+     "rect": [
+      802,
+      992,
+      26,
+      89
+     ],
+     "sample_x": [
+      795,
+      801
+     ]
+    }
+   ]
+  },
+  {
+   "name": "pass/claim",
+   "rect": [
+    265,
+    795,
+    159,
+    48
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 9
+   }
+  },
+  {
+   "name": "pass/foot",
+   "rect": [
+    155,
+    1226,
+    786,
+    446
+   ],
+   "patch": [
+    {
+     "from": [
+      440,
+      1226,
+      60,
+      12
+     ],
+     "to": [
+      520,
+      1226
+     ]
+    },
+    {
+     "from": [
+      394,
+      1238,
+      58,
+      222
+     ],
+     "to": [
+      452,
+      1238
+     ],
+     "flip": "h"
+    },
+    {
+     "from": [
+      394,
+      1238,
+      36,
+      222
+     ],
+     "to": [
+      510,
+      1238
+     ]
+    },
+    {
+     "from": [
+      641,
+      1238,
+      54,
+      222
+     ],
+     "to": [
+      587,
+      1238
+     ],
+     "flip": "h"
+    },
+    {
+     "from": [
+      654,
+      1238,
+      41,
+      222
+     ],
+     "to": [
+      546,
+      1238
+     ]
+    },
+    {
+     "from": [
+      420,
+      1392,
+      18,
+      49
+     ],
+     "to": [
+      438,
+      1392
+     ]
+    }
+   ],
+   "soften": [
+    [
+     539,
+     1238,
+     14,
+     222
+    ],
+    [
+     434,
+     1396,
+     24,
+     44
+    ]
+   ]
+  },
+  {
+   "name": "pass/claim_all",
+   "rect": [
+    365,
+    1492,
+    344,
+    97
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 15
+   }
+  },
+  {
+   "name": "pass/royal_seal",
+   "rect": [
+    590,
+    248,
+    81,
+    62
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     6,
+     5,
+     76,
+     57
+    ],
+    "feather": 1
+   },
+   "note": "The Charter's red wax seal with its gold crown, off the header's scroll (wax x 594..666, y 252..305): the royal lane's mark -- the Delivery's line when a Charter is bought (service/season.go), and the page's own when the lane is opened."
+  }
+ ]
+}

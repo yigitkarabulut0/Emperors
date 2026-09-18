@@ -14,7 +14,7 @@ import (
 )
 
 const activeBoosts = `-- name: ActiveBoosts :many
-SELECT bucket, sum(amount_bp)::bigint AS amount_bp
+SELECT bucket, sum(amount_bp)::bigint AS amount_bp, min(ends_at)::timestamptz AS ends_at
 FROM admin.server_boosts
 WHERE revoked_at IS NULL
   AND starts_at <= $1::timestamptz
@@ -25,9 +25,11 @@ GROUP BY bucket
 type ActiveBoostsRow struct {
 	Bucket   string
 	AmountBp int64
+	EndsAt   time.Time
 }
 
-// Every boost in force at this instant. Read on a poll, never per request.
+// Every boost in force at this instant, per bucket, with when the first of
+// them ends. Read on a poll, never per request.
 func (q *Queries) ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoostsRow, error) {
 	rows, err := q.db.Query(ctx, activeBoosts, now)
 	if err != nil {
@@ -37,7 +39,7 @@ func (q *Queries) ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoos
 	items := []ActiveBoostsRow{}
 	for rows.Next() {
 		var i ActiveBoostsRow
-		if err := rows.Scan(&i.Bucket, &i.AmountBp); err != nil {
+		if err := rows.Scan(&i.Bucket, &i.AmountBp, &i.EndsAt); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -50,12 +52,11 @@ func (q *Queries) ActiveBoosts(ctx context.Context, now time.Time) ([]ActiveBoos
 
 const activeDaily = `-- name: ActiveDaily :many
 SELECT d::date AS day,
-       count(p.id)::bigint AS count
+       count(pd.player_id)::bigint AS count
 FROM generate_series(
         ($1::timestamptz - make_interval(days => $2::int))::date,
         $1::timestamptz::date, '1 day') AS d
-LEFT JOIN app.players p
-       ON p.last_seen_at::date = d::date AND NOT p.is_bot
+LEFT JOIN app.player_days pd ON pd.day = d::date
 GROUP BY d
 ORDER BY d
 `
@@ -70,16 +71,14 @@ type ActiveDailyRow struct {
 	Count int64
 }
 
-// Players seen on each day. "Active" is last_seen_at, and the presence registry
-// is now its only writer.
+// Players who played on each day: everyone who sent an authenticated request
+// that UTC day, from app.player_days.
 //
-// This comment used to claim that "every authenticated request already touches
-// it", and that was simply false: the column was written only as a side effect
-// of the ~18 queries that MUTATE something, so this series counted the players
-// who ACTED and silently missed everyone who merely looked around. Every active
-// number in this file was an undercount of exactly the browsing players. The
-// registry observes every authenticated request -- reads included -- and
-// flushes in a batch, so the name and the number finally agree.
+// This used to count last_seen_at, which is one timestamp per player: each
+// player was counted only on the day they were LAST seen, so a player who came
+// every day showed up once, on today, and every past day of the series was an
+// undercount that grew the further back it went. player_days keeps every day.
+// Days before migration 00033 hold only each player's joining day and last day.
 func (q *Queries) ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]ActiveDailyRow, error) {
 	rows, err := q.db.Query(ctx, activeDaily, arg.Now, arg.Days)
 	if err != nil {
@@ -100,78 +99,21 @@ func (q *Queries) ActiveDaily(ctx context.Context, arg ActiveDailyParams) ([]Act
 	return items, nil
 }
 
-const adminAdjustCurrency = `-- name: AdminAdjustCurrency :one
-UPDATE app.players SET gold = gold + $2, diamonds = diamonds + $3 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
-`
-
-type AdminAdjustCurrencyParams struct {
-	ID       uuid.UUID
-	Gold     int64
-	Diamonds int64
-}
-
-func (q *Queries) AdminAdjustCurrency(ctx context.Context, arg AdminAdjustCurrencyParams) (AppPlayer, error) {
-	row := q.db.QueryRow(ctx, adminAdjustCurrency, arg.ID, arg.Gold, arg.Diamonds)
-	var i AppPlayer
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.DisplayName,
-		&i.Level,
-		&i.Xp,
-		&i.Gold,
-		&i.TreasuryGold,
-		&i.Diamonds,
-		&i.EnergyMilli,
-		&i.EnergyUpdatedAt,
-		&i.StatEnergy,
-		&i.StatAttack,
-		&i.StatDefense,
-		&i.StatPointsUnspent,
-		&i.ShieldUntil,
-		&i.ActionSeq,
-		&i.State,
-		&i.ResetOffsetMinutes,
-		&i.CreatedAt,
-		&i.LastSeenAt,
-		&i.SoldierSlots,
-		&i.FreeSlotClaimed,
-		&i.FreeRecruitClaimed,
-		&i.IsBot,
-		&i.TaxMilliAccrued,
-		&i.TaxUpdatedAt,
-		&i.KingdomID,
-		&i.KingdomRole,
-		&i.KingdomJoinedAt,
-		&i.KingdomDonatedTotal,
-		&i.KingdomFavour,
-		&i.KingdomRepToday,
-		&i.KingdomDonatedToday,
-		&i.KingdomDay,
-		&i.Avatar,
-		&i.TaxMilliPerHour,
-		&i.TaxUnlogged,
-		&i.LuckBp,
-		&i.LuckExpiresAt,
-		&i.XpBoostBp,
-		&i.XpBoostExpiresAt,
-		&i.DailyStreak,
-		&i.DailyClaimedOn,
-		&i.Might,
-		&i.Legacy,
-		&i.KingdomLeftAt,
-	)
-	return i, err
-}
-
 const adminAdjustPlayer = `-- name: AdminAdjustPlayer :one
 UPDATE app.players
 SET gold                = gold + $1::bigint,
-    diamonds            = diamonds + $2::bigint,
+    diamonds            = CASE WHEN $2::bigint >= 0
+                               THEN diamonds + GREATEST(0, $2::bigint - diamond_debt)
+                               ELSE diamonds + $2::bigint END,
+    diamond_debt        = CASE WHEN $2::bigint >= 0
+                               THEN GREATEST(0, diamond_debt - $2::bigint)
+                               ELSE diamond_debt END,
     xp                  = GREATEST(0, xp + $3::bigint),
     stat_points_unspent = GREATEST(0, stat_points_unspent + $4::int)
 WHERE id = $5
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+  AND gold + $1::bigint >= 0
+  AND diamonds + LEAST($2::bigint, 0) >= 0
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
 type AdminAdjustPlayerParams struct {
@@ -190,6 +132,12 @@ type AdminAdjustPlayerParams struct {
 // anyone up: crossing a boundary grants stat points, diamonds and an energy
 // refill, and a panel that silently did all that would be a very surprising
 // "+500 xp". Levels are their own control.
+//
+// The guards are in the WHERE: no row comes back when the grant would leave a
+// negative purse, so the panel reports "out of range" instead of the CHECK
+// constraint surfacing as a 500. A positive diamond grant repays refund debt
+// first, exactly as every other credit does; a removal only ever takes what is
+// there.
 func (q *Queries) AdminAdjustPlayer(ctx context.Context, arg AdminAdjustPlayerParams) (AppPlayer, error) {
 	row := q.db.QueryRow(ctx, adminAdjustPlayer,
 		arg.Gold,
@@ -246,12 +194,83 @@ func (q *Queries) AdminAdjustPlayer(ctx context.Context, arg AdminAdjustPlayerPa
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
 
 const adminGetPlayer = `-- name: AdminGetPlayer :one
-SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at FROM app.players WHERE id = $1
+SELECT id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs FROM app.players WHERE id = $1
 `
 
 // Everything the detail page shows about one player.
@@ -305,6 +324,77 @@ func (q *Queries) AdminGetPlayer(ctx context.Context, id uuid.UUID) (AppPlayer, 
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
@@ -314,7 +404,7 @@ UPDATE app.players
 SET energy_milli      = $1::bigint,
     energy_updated_at = $2::timestamptz
 WHERE id = $3
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
 type AdminSetEnergyParams struct {
@@ -375,6 +465,77 @@ func (q *Queries) AdminSetEnergy(ctx context.Context, arg AdminSetEnergyParams) 
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
@@ -384,7 +545,7 @@ UPDATE app.players
 SET level = $1::int,
     xp    = 0
 WHERE id = $2
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
 type AdminSetLevelParams struct {
@@ -445,6 +606,77 @@ func (q *Queries) AdminSetLevel(ctx context.Context, arg AdminSetLevelParams) (A
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
@@ -454,7 +686,7 @@ UPDATE app.players
 SET luck_bp         = $1::int,
     luck_expires_at = $2
 WHERE id = $3
-RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
 type AdminSetLuckParams struct {
@@ -513,12 +745,83 @@ func (q *Queries) AdminSetLuck(ctx context.Context, arg AdminSetLuckParams) (App
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
 
 const adminSetPlayerState = `-- name: AdminSetPlayerState :one
-UPDATE app.players SET state = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at
+UPDATE app.players SET state = $2 WHERE id = $1 RETURNING id, username, display_name, level, xp, gold, treasury_gold, diamonds, energy_milli, energy_updated_at, stat_energy, stat_attack, stat_defense, stat_points_unspent, shield_until, action_seq, state, reset_offset_minutes, created_at, last_seen_at, soldier_slots, free_slot_claimed, free_recruit_claimed, is_bot, tax_milli_accrued, tax_updated_at, kingdom_id, kingdom_role, kingdom_joined_at, kingdom_donated_total, kingdom_favour, kingdom_rep_today, kingdom_donated_today, kingdom_day, avatar, tax_milli_per_hour, tax_unlogged, luck_bp, luck_expires_at, xp_boost_bp, xp_boost_expires_at, daily_streak, daily_claimed_on, might, legacy, kingdom_left_at, diamond_debt, refills_day, refills_used, boost_until, cos_frame, cos_title, cos_color, cos_crest, mail_bc_seen, vip_points, patron_until, steward_owned, bag_bonus, stipend_until, stipend_claimed, stipend_ref, vip_gift_on, shop_rerolls_day, shop_rerolls_used, storehouse_milli, storehouse_at, storehouse_cap_milli, cart_stock, cart_at, carts_opened, calendar_pos, calendar_cycle, frenzy_meter_milli, frenzy_last_at, frenzy_until, frenzy_energy_left, frenzy_day, frenzy_used, frenzy_ready_at, road_claimed, guide_step, guide_done_at, guide_skipped, winback_at, winback_tier, arena_day, arena_fights_used, arena_refresh_used, arena_first_win_on, bounty_day, bounty_placed, chat_muted_until, chat_strikes, chat_strike_at, chat_rules_version, chat_seen_seq, gift_day, gifts_taken, friend_req_day, friend_reqs, spy_day, spy_used, aid_day, aid_given, aid_asked_at, notif_raid, notif_chat, notif_mail, notif_events, notif_friends, quiet_from, quiet_to, privacy_profile, privacy_online, privacy_requests, talent_respecs
 `
 
 type AdminSetPlayerStateParams struct {
@@ -576,6 +879,77 @@ func (q *Queries) AdminSetPlayerState(ctx context.Context, arg AdminSetPlayerSta
 		&i.Might,
 		&i.Legacy,
 		&i.KingdomLeftAt,
+		&i.DiamondDebt,
+		&i.RefillsDay,
+		&i.RefillsUsed,
+		&i.BoostUntil,
+		&i.CosFrame,
+		&i.CosTitle,
+		&i.CosColor,
+		&i.CosCrest,
+		&i.MailBcSeen,
+		&i.VipPoints,
+		&i.PatronUntil,
+		&i.StewardOwned,
+		&i.BagBonus,
+		&i.StipendUntil,
+		&i.StipendClaimed,
+		&i.StipendRef,
+		&i.VipGiftOn,
+		&i.ShopRerollsDay,
+		&i.ShopRerollsUsed,
+		&i.StorehouseMilli,
+		&i.StorehouseAt,
+		&i.StorehouseCapMilli,
+		&i.CartStock,
+		&i.CartAt,
+		&i.CartsOpened,
+		&i.CalendarPos,
+		&i.CalendarCycle,
+		&i.FrenzyMeterMilli,
+		&i.FrenzyLastAt,
+		&i.FrenzyUntil,
+		&i.FrenzyEnergyLeft,
+		&i.FrenzyDay,
+		&i.FrenzyUsed,
+		&i.FrenzyReadyAt,
+		&i.RoadClaimed,
+		&i.GuideStep,
+		&i.GuideDoneAt,
+		&i.GuideSkipped,
+		&i.WinbackAt,
+		&i.WinbackTier,
+		&i.ArenaDay,
+		&i.ArenaFightsUsed,
+		&i.ArenaRefreshUsed,
+		&i.ArenaFirstWinOn,
+		&i.BountyDay,
+		&i.BountyPlaced,
+		&i.ChatMutedUntil,
+		&i.ChatStrikes,
+		&i.ChatStrikeAt,
+		&i.ChatRulesVersion,
+		&i.ChatSeenSeq,
+		&i.GiftDay,
+		&i.GiftsTaken,
+		&i.FriendReqDay,
+		&i.FriendReqs,
+		&i.SpyDay,
+		&i.SpyUsed,
+		&i.AidDay,
+		&i.AidGiven,
+		&i.AidAskedAt,
+		&i.NotifRaid,
+		&i.NotifChat,
+		&i.NotifMail,
+		&i.NotifEvents,
+		&i.NotifFriends,
+		&i.QuietFrom,
+		&i.QuietTo,
+		&i.PrivacyProfile,
+		&i.PrivacyOnline,
+		&i.PrivacyRequests,
+		&i.TalentRespecs,
 	)
 	return i, err
 }
@@ -1361,6 +1735,55 @@ UPDATE admin.users SET last_login_at = now() WHERE id = $1
 func (q *Queries) TouchAdminLogin(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, touchAdminLogin, id)
 	return err
+}
+
+const upcomingBoosts = `-- name: UpcomingBoosts :many
+SELECT bucket, amount_bp, starts_at, ends_at
+FROM admin.server_boosts
+WHERE revoked_at IS NULL
+  AND starts_at >  $1::timestamptz
+  AND starts_at <= $2::timestamptz
+ORDER BY starts_at
+LIMIT 10
+`
+
+type UpcomingBoostsParams struct {
+	Now   time.Time
+	Until time.Time
+}
+
+type UpcomingBoostsRow struct {
+	Bucket   string
+	AmountBp int64
+	StartsAt time.Time
+	EndsAt   time.Time
+}
+
+// Boosts an operator has scheduled to start within the window, soonest first:
+// what the game can announce before it begins.
+func (q *Queries) UpcomingBoosts(ctx context.Context, arg UpcomingBoostsParams) ([]UpcomingBoostsRow, error) {
+	rows, err := q.db.Query(ctx, upcomingBoosts, arg.Now, arg.Until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UpcomingBoostsRow{}
+	for rows.Next() {
+		var i UpcomingBoostsRow
+		if err := rows.Scan(
+			&i.Bucket,
+			&i.AmountBp,
+			&i.StartsAt,
+			&i.EndsAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const writeAudit = `-- name: WriteAudit :exec

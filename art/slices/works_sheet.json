@@ -1,0 +1,125 @@
+{
+ "source": "works_sheet.png",
+ "note": "R3. Eight scenes, one per Kingdom Work, in balance order (the sheet was painted in that order): granary, library, treasure vault, armoury, gatehouse, courier stables, banner hall, throne room. The sheet paints them 1.41:1 inside a thin gold frame; the cards' windows are 1.25:1, so each scene is cut inside its frame to that shape, centred, and the frame is cut once, hollow, and drawn as a nine-patch at both sizes.",
+ "crops": [
+  {
+   "name": "kingdom/work_royal_granaries",
+   "rect": [
+    57,
+    117,
+    364,
+    292
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_archives",
+   "rect": [
+    519,
+    117,
+    364,
+    292
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_treasury",
+   "rect": [
+    57,
+    475,
+    364,
+    292
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_armoury",
+   "rect": [
+    519,
+    475,
+    364,
+    292
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_bulwark",
+   "rect": [
+    52,
+    833,
+    374,
+    300
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_couriers",
+   "rect": [
+    514,
+    833,
+    374,
+    300
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_banners",
+   "rect": [
+    55,
+    1200,
+    369,
+    296
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_royal_court",
+   "rect": [
+    517,
+    1200,
+    369,
+    296
+   ],
+   "scale": [
+    152,
+    122
+   ]
+  },
+  {
+   "name": "kingdom/work_frame",
+   "rect": [
+    23,
+    110,
+    433,
+    306
+   ],
+   "hollow": 7,
+   "scale": [
+    152,
+    107
+   ],
+   "note": "the painted thin gold frame, hollow, drawn as a nine-patch (margins 8) round every work's scene: 152x122 on the Works page and 86x69 on the Realm panel, so its bars keep the painting's weight at both"
+  }
+ ]
+}

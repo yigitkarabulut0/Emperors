@@ -1,0 +1,190 @@
+{
+  "screen": "history",
+  "source": "history.png",
+  "canvas": [
+    941,
+    1672
+  ],
+  "ground": "#000c14",
+  "fonts": {
+    "title": "Cinzel-Variable.ttf",
+    "body": "EBGaramond[wght].ttf"
+  },
+  "notes": [
+    "The painting is the page (history/page): the title and its line under it are the painting's; the tab words and the seven painted rows are erased.",
+    "The tabs are ALL's lit plate and ON ME's unlit one, each word erased and set in type (the painting spells the second MY RADS): Cinzel 700 at 27, the painted caps' 18-unit core, near white. The page lights the chosen one.",
+    "The list is live: a row per battle from the four the painting shows (history/row_won, _lost, _held, _raided), 113 tall at the painting's 121 pitch, the opponent on the upper plate in the colour they wear, what happened and when on the lower one, the gold in its box.",
+    "One stretch band down the middle of the list panel (its erased ground and the frame's two sides are the same all the way down): on 941x2040 the list shows three rows more."
+  ],
+  "stretch": [
+    [
+      700,
+      700
+    ]
+  ],
+  "elements": [
+    {
+      "id": "page",
+      "kind": "image",
+      "asset": "history/page",
+      "rect": [
+        0,
+        0,
+        941,
+        1672
+      ]
+    },
+    {
+      "id": "tabs",
+      "kind": "template",
+      "rect": [
+        142,
+        499,
+        657,
+        96
+      ],
+      "tabs": [
+        "all",
+        "my_raids",
+        "on_me"
+      ],
+      "note": "ALL / MY RAIDS / ON ME, built by history_page.gd as a TabStrip (scripts/ui/tab_strip.gd) from tabs_sheet_c.png's short plates, the words painted on them. The painting's three plates (243x58 ink in y 534-594, the middle one spelled MY RADS) are lifted from history/page. plate_h 66 is the crop height at which the plates' words (22 painted, of 80) are the painting's 18: 209x66 drawn, the ink 205x62, narrower than the painting's 243 because the short plates are about 3:1. They stand on the painting's floor (the crop's foot at 595, the ink's at 593), grouped with the painting's 15-unit gaps and centred on the page's axis; the rect reaches up to 499 so each tap area is the old buttons' 96 tall.",
+      "plate_h": 66
+    },
+    {
+      "id": "list",
+      "kind": "scroll",
+      "rect": [
+        44,
+        609,
+        853,
+        842
+      ],
+      "content": [
+        {
+          "id": "row",
+          "kind": "template",
+          "rect": [
+            0,
+            0,
+            853,
+            113
+          ],
+          "pitch": 121,
+          "parts": [
+            {
+              "id": "art",
+              "kind": "image",
+              "asset": "history/row_won",
+              "rect": [
+                0,
+                0,
+                853,
+                113
+              ]
+            },
+            {
+              "id": "name",
+              "kind": "text",
+              "rect": [
+                182,
+                17,
+                346,
+                44
+              ],
+              "font": "body",
+              "size": 28,
+              "weight": 700,
+              "color": "#F1E9DA",
+              "align": "left",
+              "valign": "center",
+              "sample": "Wwwwwwwwwwwwwwww"
+            },
+            {
+              "id": "detail",
+              "kind": "text",
+              "rect": [
+                182,
+                73,
+                342,
+                28
+              ],
+              "font": "body",
+              "size": 20,
+              "weight": 600,
+              "color": "#B9C2CC",
+              "align": "left",
+              "valign": "center",
+              "sample": "Raided by  ·  Level 60  ·  23 hours ago"
+            },
+            {
+              "id": "gold",
+              "kind": "text",
+              "rect": [
+                645,
+                33,
+                131,
+                50
+              ],
+              "font": "body",
+              "size": 28,
+              "weight": 700,
+              "color": "#EFC53A",
+              "align": "center",
+              "valign": "center",
+              "sample": "-987,654,321"
+            },
+            {
+              "id": "tap",
+              "kind": "hotspot",
+              "rect": [
+                0,
+                0,
+                853,
+                113
+              ],
+              "action": "replay"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "empty",
+      "kind": "text",
+      "rect": [
+        90,
+        806,
+        761,
+        78
+      ],
+      "font": "body",
+      "size": 28,
+      "weight": 600,
+      "color": "#B9C2CC",
+      "align": "center",
+      "valign": "center",
+      "wrap": true,
+      "sample": "No battles yet. Every raid you make, and every raid on you, is written here."
+    },
+    {
+      "id": "close",
+      "kind": "button",
+      "asset": "history/btn_close",
+      "rect": [
+        337,
+        1465,
+        268,
+        97
+      ],
+      "paint_rect": [
+        337,
+        1471,
+        268,
+        85
+      ],
+      "keep_texture_size": true,
+      "action": "close"
+    }
+  ]
+}

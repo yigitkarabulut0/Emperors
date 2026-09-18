@@ -1,0 +1,366 @@
+{
+ "screen": "arena",
+ "source": "arena.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0b1620",
+ "notes": [
+  "THE HONOUR ARENA -- the Attack tab's ARENA body (client/scenes/attack/arena_view.gd), cut from arena.png (art/slices/arena.json).",
+  "arena.png paints its own header and its own four-tab band, and attack.png's are canonical: the strip stays where client/layout/attack.json puts it and this body is laid 130 units HIGHER than painted -- arena.png's tab rule stands at 483, attack.png's at 353. Every rect here is the painting's y less 130, which puts the league card's top at 362, one unit above attack.png's own first card at 364. The chests.png precedent, and it means a shift that reads wrong is one number here rather than a re-cut.",
+  "league_emblem: the live league's arma (arena/league_<id>, cut from arena_kit.png at 277..304 wide) drawn DOWN into the painted crest's own 248-wide box, which covers the painted lion exactly -- the rule attack.json uses for a rival's portrait.",
+  "bar_track / bar_fill: the painted channel with its gold lifted, and a stretch of that gold drawn along its inside to the lord's rating. The fraction is the SERVER'S (bar_from, bar_to, rating): the client places the fill, it never works out a league threshold.",
+  "ticket: five pips at the painting's own pitch of 63, each drawn lit or spent from its own crop.",
+  "rival: one card, flowed as many times as the server sends. Its portrait sits over the painted one; its crest, name, level and might are the server's."
+ ],
+ "elements": [
+  {
+   "id": "league",
+   "kind": "image",
+   "asset": "arena/league",
+   "rect": [
+    170,
+    362,
+    761,
+    252
+   ]
+  },
+  {
+   "id": "league_emblem",
+   "kind": "image",
+   "rect": [
+    172,
+    365,
+    248,
+    250
+   ]
+  },
+  {
+   "id": "league_name",
+   "kind": "text",
+   "rect": [
+    420,
+    416,
+    270,
+    44
+   ],
+   "font": "title",
+   "size": 30,
+   "weight": 700,
+   "color": "#EDE6D6",
+   "align": "left",
+   "valign": "center",
+   "sample": "GOLD LEAGUE"
+  },
+  {
+   "id": "rating",
+   "kind": "text",
+   "rect": [
+    420,
+    416,
+    270,
+    44
+   ],
+   "font": "title",
+   "size": 30,
+   "weight": 700,
+   "color": "#EFC53A",
+   "align": "right",
+   "valign": "center",
+   "sample": "1,342"
+  },
+  {
+   "id": "bar_track",
+   "kind": "image",
+   "asset": "arena/bar_track",
+   "rect": [
+    402,
+    480,
+    312,
+    38
+   ]
+  },
+  {
+   "id": "bar_fill",
+   "kind": "image",
+   "asset": "arena/bar_fill",
+   "rect": [
+    406,
+    486,
+    198,
+    26
+   ]
+  },
+  {
+   "id": "season",
+   "kind": "text",
+   "rect": [
+    787,
+    426,
+    130,
+    72
+   ],
+   "font": "body",
+   "size": 24,
+   "weight": 500,
+   "color": "#E7E7E7",
+   "align": "center",
+   "valign": "center",
+   "sample": "3d 04h"
+  },
+  {
+   "id": "ticket",
+   "kind": "template",
+   "rect": [
+    400,
+    531,
+    52,
+    59
+   ],
+   "instances": [
+    [
+     400,
+     531
+    ],
+    [
+     463,
+     531
+    ],
+    [
+     526,
+     531
+    ],
+    [
+     589,
+     531
+    ],
+    [
+     652,
+     531
+    ]
+   ],
+   "parts": [
+    {
+     "id": "lit",
+     "kind": "image",
+     "asset": "arena/ticket_lit",
+     "rect": [
+      0,
+      0,
+      52,
+      59
+     ]
+    },
+    {
+     "id": "spent",
+     "kind": "image",
+     "asset": "arena/ticket_spent",
+     "rect": [
+      0,
+      0,
+      52,
+      59
+     ]
+    }
+   ]
+  },
+  {
+   "id": "refresh",
+   "kind": "button",
+   "asset": "arena/refresh",
+   "rect": [
+    725,
+    512,
+    202,
+    95
+   ],
+   "action": "refresh",
+   "paint_rect": [
+    725,
+    522,
+    202,
+    74
+   ],
+   "keep_texture_size": true
+  },
+  {
+   "id": "rival",
+   "kind": "template",
+   "rect": [
+    169,
+    622,
+    762,
+    190
+   ],
+   "instances": [
+    [
+     169,
+     622
+    ],
+    [
+     169,
+     816
+    ],
+    [
+     169,
+     1010
+    ]
+   ],
+   "parts": [
+    {
+     "id": "frame",
+     "kind": "image",
+     "asset": "arena/rival_card",
+     "rect": [
+      0,
+      0,
+      762,
+      190
+     ]
+    },
+    {
+     "id": "portrait",
+     "kind": "image",
+     "rect": [
+      8,
+      10,
+      160,
+      170
+     ]
+    },
+    {
+     "id": "crest",
+     "kind": "image",
+     "rect": [
+      180,
+      20,
+      100,
+      156
+     ]
+    },
+    {
+     "id": "name",
+     "kind": "text",
+     "rect": [
+      296,
+      30,
+      270,
+      56
+     ],
+     "font": "title",
+     "size": 30,
+     "weight": 700,
+     "color": "#EDE6D6",
+     "align": "left",
+     "valign": "center",
+     "sample": "Lord Darius"
+    },
+    {
+     "id": "level",
+     "kind": "text",
+     "rect": [
+      356,
+      95,
+      200,
+      40
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 500,
+     "color": "#E6E0D6",
+     "align": "left",
+     "valign": "center",
+     "sample": "LEVEL 31"
+    },
+    {
+     "id": "might",
+     "kind": "text",
+     "rect": [
+      356,
+      137,
+      232,
+      44
+     ],
+     "font": "body",
+     "size": 24,
+     "weight": 500,
+     "color": "#E6E0D6",
+     "align": "left",
+     "valign": "center",
+     "sample": "2,980  \u00b7  1,310"
+    },
+    {
+     "id": "fight",
+     "kind": "button",
+     "asset": "arena/btn_fight",
+     "rect": [
+      592,
+      15,
+      172,
+      166
+     ],
+     "action": "fight"
+    }
+   ]
+  },
+  {
+   "id": "rewards",
+   "kind": "image",
+   "asset": "arena/rewards",
+   "rect": [
+    169,
+    1198,
+    764,
+    250
+   ]
+  },
+  {
+   "id": "chest",
+   "kind": "template",
+   "rect": [
+    178,
+    1204,
+    182,
+    236
+   ],
+   "instances": [
+    [
+     178,
+     1204
+    ],
+    [
+     368,
+     1204
+    ],
+    [
+     558,
+     1204
+    ],
+    [
+     748,
+     1204
+    ]
+   ],
+   "parts": [
+    {
+     "id": "plate",
+     "kind": "text",
+     "rect": [
+      6,
+      140,
+      170,
+      40
+     ],
+     "font": "body",
+     "size": 23,
+     "weight": 600,
+     "color": "#E7E7E7",
+     "align": "center",
+     "valign": "center",
+     "sample": "1,150"
+    }
+   ]
+  }
+ ]
+}

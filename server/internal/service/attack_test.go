@@ -211,3 +211,51 @@ func TestTheRevengeRateIsTheRevengeTake(t *testing.T) {
 		t.Fatalf("the card says %d bp (%d gold), the strike takes %d", revengeRateBP, printed, take)
 	}
 }
+
+// The ceiling on a won fight is worked out in exactly one place.
+//
+// It was a literal inside estimateStealWithCap, which was fine while the raid
+// was the only thing that used it. The bounty board pays a multiple of it, and
+// the War Chest bug was precisely this shape: two call sites with different
+// arguments, one of which the player read and the other of which the game ran
+// on. Guarded by reading the source, because a second copy compiles.
+func TestTheRaidCapIsWorkedOutInOnePlace(t *testing.T) {
+	var body string
+	for _, f := range []string{"attack.go", "bounty.go", "arena.go"} {
+		src, err := os.ReadFile(f)
+		if err != nil {
+			continue // not written yet
+		}
+		body += string(src)
+	}
+	for _, lit := range []string{"raidCapBase", "raidCapPerLevelBP"} {
+		for _, loc := range regexp.MustCompile(lit).FindAllStringIndex(body, -1) {
+			owner := enclosingFunc(body, loc[0])
+			if owner != "" && !strings.HasPrefix(owner, "func raidCap(") {
+				t.Fatalf("%s used from %q -- the ceiling is raidCap's alone", lit, owner)
+			}
+		}
+	}
+	// The old literal is gone for good. Comments are stripped first, because
+	// raidCap's own doc quotes the formula it replaced.
+	code := regexp.MustCompile(`(?m)//.*$`).ReplaceAllString(body, "")
+	if regexp.MustCompile(`10000\s*\+\s*3500\s*\*`).MatchString(code) {
+		t.Fatal("the raid cap's formula is written out again somewhere -- call raidCap")
+	}
+	i := strings.Index(body, "func (d Deps) estimateStealWithCap(")
+	if i < 0 {
+		t.Fatal("estimateStealWithCap is gone")
+	}
+	if !strings.Contains(body[i:i+400], "raidCap(") {
+		t.Fatal("estimateStealWithCap no longer reads raidCap")
+	}
+}
+
+// And the value itself, so the extraction cannot have quietly changed it.
+func TestTheRaidCapIsTheNumberItWas(t *testing.T) {
+	for _, c := range []struct{ level, want int64 }{{1, 337}, {10, 1125}, {30, 2875}, {60, 5500}} {
+		if got := raidCap(c.level); got != c.want {
+			t.Fatalf("level %d: raidCap %d, want %d", c.level, got, c.want)
+		}
+	}
+}

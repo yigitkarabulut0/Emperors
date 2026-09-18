@@ -1,9 +1,17 @@
 {
-  "army/soldiers_panel:170,538,504,15": "the painted SOLDIERS title stands on the rect's top edge; it is meant to stay",
   "army/card:487,740,137,30": "the attack sword's tip under the name band",
   "army/selected_panel:430,1100,80,34": "the painted GEAR label under the attack figure",
   "army/selected_panel:530,1100,80,34": "the defence shield beside the figure",
+  "army/selected_panel:734,1006,167,16": "the troop bar's gold frame: its bottom highlight runs along the erased green",
+  "army/soldiers_panel:170,538,504,15": "the painted SOLDIERS title stands on the rect's top edge; it is meant to stay",
+  "attack/header:183,266,738,87": "the header's own soldiers and banners stand along the top of the band that lifts the old REVENGE/TARGETS plates, and at its right end; the new tab plates cover the band's edge wherever they stand",
   "chrome/avatar:56,150,50,32": "the level plaque's gold chevron under its number",
+  "deeds/row:223,659,487,21": "the bar's own steel rim: its top highlight runs along the fill's erase",
+  "expedition/page:43,441,861,1054": "the header's landscape stands on this erase's top edge and is meant to: it runs down behind the four cards, which are lifted so the page can light any one of them. Every row the tool sees is covered by a card (the cards' own top line is 441), and looked at (art/qa/expedition_sbs.png) the band is clean ground with the painting's cards and its selection glow gone.",
+  "hall/card_invite:718,621,180,124": "the invitation card's own bottom-right corner scroll, beside the lifted DECLINE",
   "kingdom/header:539,425,349,2": "the level bar's own frame: its top highlight runs along the erase",
-  "army/selected_panel:734,1006,167,16": "the troop bar's gold frame: its bottom highlight runs along the erased green"
+  "offers/card:172,924,301,285": "the first reward tile's own gold frame stands on this erase's right edge, at x 473, and is meant to: the erase lifts the bundle painting out of the card and stops flush against the tiles the card keeps. Looked at (art/qa/offers_sbs.png) the left third is clean navy with the painting's crate gone.",
+  "rankings/page:146,386,650,52": "the podium rings' own crest ornaments, standing just under the lifted period tabs",
+  "rankings/page:74,304,794,76": "the page frame's own gold fleur at the top centre, above the lifted board tabs",
+  "rival/back:56,1462,842,126": "The page's own gold frame: the rails down both sides and the rule under the plates run into this erase's edges, and looked at (art/qa) the band is clean navy with REPORT and CLOSE gone. What the tool sees is the painting's ink, not a stub of theirs."
 }

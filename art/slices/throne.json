@@ -1,0 +1,146 @@
+{
+ "source": "throne.png",
+ "notes": [
+  "THE THRONE -- Emperor of the Week (client/scenes/court/throne_view.gd, layout client/layout/throne.json), hosted over the Kingdom tab the way the Tax Cart is hosted over the COURT: the shell's rail and its three pills stay, the tab under it is hidden, and CourtBack goes back.",
+  "It is a VIEW and not a page for a measured reason: throne.png is a SHELL-KINGDOM painting (docs/art/PAINTING_BRIEFS.md), so the left rail with KINGDOM lit and the three currency pills are baked into it. A PaintedPage lays a near-opaque backdrop over the whole screen on layer 60, which would black out the shell's real rail and draw a painted one in its place. So nothing left of x 155 is cut, and the header's own pills (y 0..80) are inpainted away so the chrome's sit over clean sky.",
+  "Almost nothing else is lifted. The hall, the crowned portrait ring, the two plates under it, THE THRONE and its line, DECREE, the three edict cards with HOUR OF PLENTY / LEARNING / FORTUNE painted on them (the balance carries those three names word for word), DECLARE, its empty timer plate and PAST REIGNS with its four crowned rows are all the painting's, as painted.",
+  "The portrait ring's window is opened with a hole, 16 units larger than the opening, so the emperor's face is drawn UNDER the painted frame -- the rule every framed face in the game follows. The emperor's own worn frame is NOT drawn here: two frames on one portrait fight, and their colour, title and seal show on the name plate instead."
+ ],
+ "crops": [
+  {
+   "name": "throne/hall",
+   "rect": [
+    155,
+    0,
+    786,
+    718
+   ],
+   "inpaint": [
+    [
+     171,
+     0,
+     252,
+     84
+    ],
+    [
+     422,
+     0,
+     251,
+     84
+    ],
+    [
+     669,
+     0,
+     269,
+     84
+    ]
+   ],
+   "note": "The throne hall from the very top down to just above THE THRONE, with the painting's own three pills lifted so the chrome's sit over clean sky. The crowned portrait ring and BOTH empty plates under it -- the crimson one for the emperor's name (y 620..668) and the navy one for his kingdom (686..716) -- come with it."
+  },
+  {
+   "name": "throne/portrait_hole",
+   "rect": [
+    376,
+    424,
+    320,
+    250
+   ],
+   "hole": {
+    "type": "ellipse",
+    "box": [
+     60,
+     52,
+     268,
+     205
+    ]
+   },
+   "note": "The crowned ring alone, its velvet window (x 440..640, y 480..625) opened: the emperor's face is drawn under it and shows through the opening. Laid back over the hall at the same place."
+  },
+  {
+   "name": "throne/title",
+   "rect": [
+    155,
+    710,
+    786,
+    100
+   ],
+   "note": "THE THRONE (caps y 718..772) and its line (772..806), both painted."
+  },
+  {
+   "name": "throne/decree",
+   "rect": [
+    155,
+    805,
+    786,
+    158
+   ],
+   "note": "The DECREE scroll band, its heading painted."
+  },
+  {
+   "name": "throne/decree_hour_of_plenty",
+   "rect": [
+    199,
+    963,
+    226,
+    266
+   ],
+   "note": "HOUR OF PLENTY, whole: the sheaf and the purse, the word, and the empty plate under it for the figure and the minutes."
+  },
+  {
+   "name": "throne/decree_hour_of_learning",
+   "rect": [
+    438,
+    963,
+    226,
+    266
+   ],
+   "note": "HOUR OF LEARNING, whole."
+  },
+  {
+   "name": "throne/decree_hour_of_fortune",
+   "rect": [
+    677,
+    963,
+    226,
+    266
+   ],
+   "note": "HOUR OF FORTUNE, whole."
+  },
+  {
+   "name": "throne/declare",
+   "rect": [
+    267,
+    1239,
+    268,
+    68
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 7
+   },
+   "note": "The crimson DECLARE, drawn back over its own place so it can be dimmed for everyone who is not the Crowned Emperor."
+  },
+  {
+   "name": "throne/past_reigns",
+   "rect": [
+    155,
+    1300,
+    786,
+    320
+   ],
+   "note": "PAST REIGNS with its four crowned rows, whole. Nothing is lifted: four empty rows IS the empty state the painting was given, and a throne that has seen two reigns fills two and leaves two empty -- which is why the balance shows four past reigns and not eight. Lifting four rows off a panel painted to hold them would be work that made the screen less like its painting."
+  },
+  {
+   "name": "throne/crown_small",
+   "rect": [
+    196,
+    1374,
+    56,
+    42
+   ],
+   "mode": "darkkey",
+   "floor": 3,
+   "note": "A reign row's gold crown (ink x 200..245, y 1378..1410), and the mark the Kingdom tab's RANKS list wears on its Throne line. Cut clear of the row's own rim, which a wider crop brought with it as a gold underline."
+  }
+ ]
+}

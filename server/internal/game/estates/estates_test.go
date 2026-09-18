@@ -40,17 +40,58 @@ func TestTaxIsNotAFunctionOfGear(t *testing.T) {
 	}
 }
 
-func TestOfflineCapBounds(t *testing.T) {
+// A storehouse fills at the hourly rate and stops at its capacity: a day away
+// holds exactly what the cap's hours hold, and the rest of the day is lost.
+func TestTheStorehouseStopsAtItsCapacity(t *testing.T) {
 	c := cfg(t)
 	rate := TaxRate(c, 30, map[string]int{}, 0)
-	start := time.Date(2026, 9, 4, 0, 0, 0, 0, time.UTC)
 	capSec := c.Estates.Tax.OfflineCapSeconds
+	capMilli := StorehouseCap(rate, capSec)
+	start := time.Date(2026, 9, 4, 0, 0, 0, 0, time.UTC)
 
-	day := SettleTax(TaxState{UpdatedAt: start}, rate, capSec, start.Add(24*time.Hour))
-	exact := SettleTax(TaxState{UpdatedAt: start}, rate, capSec, start.Add(time.Duration(capSec)*time.Second))
-	if day.Milli != exact.Milli {
-		t.Errorf("a day away accrued %d, the %ds cap allows %d — the cap is not binding",
-			day.Milli, capSec, exact.Milli)
+	day := Fill(Storehouse{At: start}, rate, capMilli, start.Add(24*time.Hour))
+	exact := Fill(Storehouse{At: start}, rate, capMilli, start.Add(time.Duration(capSec)*time.Second))
+	if day.Milli != capMilli || exact.Milli != capMilli {
+		t.Fatalf("a day away holds %d, the cap's hours %d; want both %d", day.Milli, exact.Milli, capMilli)
+	}
+	half := Fill(Storehouse{At: start}, rate, capMilli, start.Add(time.Duration(capSec/2)*time.Second))
+	if half.Milli < capMilli/2-1 || half.Milli > capMilli/2+1 {
+		t.Fatalf("half the cap's hours hold %d; want about %d", half.Milli, capMilli/2)
+	}
+	// Filled in two steps it holds what one step holds: settling often never
+	// lets it past its capacity, as a per-settlement clamp would.
+	mid := Fill(Storehouse{At: start}, rate, capMilli, start.Add(6*time.Hour))
+	twice := Fill(mid, rate, capMilli, start.Add(20*time.Hour))
+	if twice.Milli != capMilli {
+		t.Fatalf("filled in two steps it holds %d; want its capacity %d", twice.Milli, capMilli)
+	}
+	if got := FullIn(0, rate, capMilli); got != time.Duration(capSec)*time.Second {
+		t.Fatalf("an empty storehouse fills in %s; want %ds", got, capSec)
+	}
+	if FullIn(capMilli, rate, capMilli) != 0 {
+		t.Fatal("a full storehouse still has time to fill")
+	}
+	if FullIn(capMilli-1, rate, capMilli) != time.Second {
+		t.Fatalf("a milli short of full reads %s; it must never read zero before it is full", FullIn(capMilli-1, rate, capMilli))
+	}
+}
+
+// What a storehouse already holds over its capacity -- the rate fell -- is
+// kept, and nothing more comes in; nothing fills one with no rate.
+func TestAStorehouseOverItsCapacityKeepsItsGold(t *testing.T) {
+	start := time.Date(2026, 9, 4, 0, 0, 0, 0, time.UTC)
+	s := Fill(Storehouse{Milli: 9000, At: start}, 1000, 5000, start.Add(time.Hour))
+	if s.Milli != 9000 || !s.At.Equal(start.Add(time.Hour)) {
+		t.Fatalf("over its capacity: %+v", s)
+	}
+	s = Fill(Storehouse{Milli: 700, At: start}, 0, 5000, start.Add(time.Hour))
+	if s.Milli != 700 {
+		t.Fatalf("with no rate: %+v", s)
+	}
+	// A clock that went back settles nothing and never moves the anchor back.
+	s = Fill(Storehouse{Milli: 700, At: start}, 1000, 5000, start.Add(-time.Hour))
+	if s.Milli != 700 || !s.At.Equal(start) {
+		t.Fatalf("a clock that went back: %+v", s)
 	}
 }
 

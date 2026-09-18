@@ -10,7 +10,8 @@ crop's erase rects -- the row fills that lift words off flat plates; an
 inpaint repairs painted art, where detail touches every edge by nature --
 looks at the shipped PNG in a thin band just outside each edge, and reports
 short bright runs that touch the edge on a band that is otherwise dark
-ground: the cut end of a glyph. A long run along an edge is a frame line or a
+ground: the cut end of a glyph. An erase with `fade_top` keeps the painting
+along its top edge by design, so that edge is skipped. A long run along an edge is a frame line or a
 bar's rim and is left alone, and so is an edge that runs through painting
 rather than plate.
 
@@ -82,7 +83,10 @@ hits = []
 for mpath in manifests:
     m = json.load(open(mpath)); base = m.get('source')
     for c in m['crops']:
-        rects = [e['rect'] for e in c.get('erase', [])]
+        # An erase that fades in at its top keeps the painting along that edge on
+        # purpose -- the scene falling into a band, not a glyph the rect cut --
+        # so that edge is not a place to look.
+        rects = [(e['rect'], int(e.get('fade_top', 0))) for e in c.get('erase', [])]
         if not rects:
             continue
         png = os.path.join(ROOT, a.assets, c['name'] + '.png')
@@ -90,9 +94,11 @@ for mpath in manifests:
             continue
         img = np.asarray(Image.open(png).convert('RGB')).astype(int)
         cx, cy = c['rect'][0], c['rect'][1]
-        for r in rects:
+        for r, fade in rects:
             local = (r[0] - cx, r[1] - cy, r[2], r[3])
             for edge, s, e in edge_hits(img, local, a.band):
+                if edge == 'top' and fade:
+                    continue
                 key = '%s:%s' % (c['name'], ','.join(str(v) for v in r))
                 if key in reviewed:
                     continue

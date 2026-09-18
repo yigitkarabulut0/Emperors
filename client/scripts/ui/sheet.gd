@@ -11,6 +11,11 @@ extends Control
 ##
 ## Mounts under Nav.overlay_parent() on its own CanvasLayer, sized to the
 ## canvas the game is laid out on and clear of the notch.
+##
+## A page may carry a painted header (art/reference/page_headers_sheet.png): a
+## scene across the top of the plate, inside its frame, above the title, fading
+## into the plate as the paintings' headers fade into the navy. A page without
+## one is laid out exactly as before there were any.
 
 signal closed
 
@@ -19,6 +24,11 @@ const PAD := 34.0
 const GAP := 14.0
 const BUTTON_H := 96.0
 const ARM_DELAY := 0.25
+## The plate's frame (inventory/card_frame: steel, slate, a dark line): a header
+## starts inside it.
+const HEADER_INSET := 8.0
+## How far the title rises into the header's painted fade.
+const HEADER_OVERLAP := 26.0
 
 var body: VBoxContainer
 var foot: HBoxContainer
@@ -34,14 +44,46 @@ var _canvas := Vector2(941, 1672)
 
 
 ## Opens a sheet over the game. `host` is any node of the screen opening it,
-## used to find the canvas.
-static func open(host: Node, title: String, subtitle: String = "", layer: int = 60) -> Sheet:
+## used to find the canvas. `screen` names the page for the game's analytics;
+## empty, it is the title's words ("THE DAILY REWARD" -> page:the_daily_reward).
+## A page whose title is not fixed copy -- a letter's -- names itself.
+## `header` is a painted header scene's asset (pages/header_*), or empty.
+static func open(host: Node, title: String, subtitle: String = "", layer: int = 60, screen: String = "",
+		header: String = "") -> Sheet:
 	var s: Sheet = load("res://scripts/ui/sheet.gd").new()
-	s._build(host, title, subtitle, layer)
+	s._build(host, title, subtitle, layer, header)
+	Api.track("screen", {"name": screen if screen != "" else screen_id(title)})
 	return s
 
 
-func _build(host: Node, title: String, subtitle: String, layer_index: int) -> void:
+## "THE DAILY REWARD" -> "page:the_daily_reward": lower case, words joined by
+## underscores, anything else dropped, as short as the server's ids allow.
+static func screen_id(title: String) -> String:
+	var out := ""
+	for ch in title.to_lower().strip_edges():
+		if (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9"):
+			out += ch
+		elif (ch == " " or ch == "-" or ch == "_") and not out.ends_with("_"):
+			out += "_"
+	return ("page:" + out.trim_suffix("_")).left(48)
+
+
+## A painted scene across the top of a plate `plate_w` wide, inside its frame,
+## at its own proportions and at the width it was cut for (pages/header_* are
+## cut to the frame's inside, so they draw 1:1). Its bottom rows are the
+## painting's own fade into the navy, which is the plate's colour. Returns
+## where it ends. The reroll panel's plate wears one too.
+static func header_art(plate: Control, asset: String, plate_w: float) -> float:
+	var tex: Texture2D = Art.tex(asset)
+	var w := plate_w - HEADER_INSET * 2.0
+	var h := roundf(w * float(tex.get_height()) / float(tex.get_width()))
+	var art := UI.image(asset, Rect2(HEADER_INSET, HEADER_INSET, w, h))
+	art.name = "Header"
+	plate.add_child(art)
+	return HEADER_INSET + h
+
+
+func _build(host: Node, title: String, subtitle: String, layer_index: int, header: String = "") -> void:
 	_layer = CanvasLayer.new()
 	_layer.layer = layer_index
 	Nav.overlay_parent().add_child(_layer)
@@ -68,6 +110,8 @@ func _build(host: Node, title: String, subtitle: String, layer_index: int) -> vo
 	inner_w = rect.size.x - PAD * 2.0
 
 	var y := PAD - 4.0
+	if header != "":
+		y = header_art(_plate, header, rect.size.x) - HEADER_OVERLAP
 	_title = UI.label(title, 40, UI.GOLD, "title", 700, HORIZONTAL_ALIGNMENT_CENTER)
 	UI.place(_title, Rect2(PAD, y, inner_w, 56))
 	UI.fit_label(_title, 40, 26)
@@ -150,7 +194,7 @@ func close() -> void:
 
 ## A plate button, a thumb tall, word in type.
 static func button(word: String, plate: String, col: Color, height: float = BUTTON_H, size: int = 28) -> Button:
-	var b := UI.plate_face(plate, 16)
+	var b := UI.plate_face(plate, Dialog.PLATE_EDGE)
 	b.text = word
 	b.custom_minimum_size = Vector2(0, height)
 	b.add_theme_font_override("font", UI.font("title", 700))

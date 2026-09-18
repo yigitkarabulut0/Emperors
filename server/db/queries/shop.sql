@@ -32,10 +32,15 @@ RETURNING *;
 -- Pays for a reroll and advances the counter in one statement. The WHERE is the
 -- guard: no row comes back if the player cannot afford it, and the window check
 -- stops a reroll bought in one window from applying to the next.
+-- The caller counts the reroll on the lord's day from the locked row, and has
+-- already refused one past the day's cap.
 -- name: PayForReroll :one
 UPDATE app.players
-SET diamonds = diamonds - $2, action_seq = $3
-WHERE id = $1 AND diamonds >= $2
+SET diamonds          = diamonds - sqlc.arg(diamonds)::bigint,
+    action_seq        = sqlc.arg(action_seq),
+    shop_rerolls_day  = sqlc.arg(rerolls_day),
+    shop_rerolls_used = sqlc.arg(rerolls_used)
+WHERE id = sqlc.arg(id) AND diamonds >= sqlc.arg(diamonds)::bigint
 RETURNING *;
 
 -- Advances the reroll and clears what was bought from the shelf it replaced.

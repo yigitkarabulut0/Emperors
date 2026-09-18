@@ -535,20 +535,45 @@
        "rect": [
         534,
         154,
-        210,
+        100,
         96
        ],
        "label": "SELL",
-       "size": 30,
+       "size": 26,
        "color": "#E7DFD1",
        "weight": 600,
        "margin": 14,
        "paint_rect": [
         534,
         154,
-        210,
+        100,
         96
-       ]
+       ],
+       "note": "SELL, halved to make room for FORGE beside it: the wave gave the card a second thing to do with a piece, and the plate nine-patches to whatever width it is given."
+      },
+      {
+       "id": "btn_forge",
+       "kind": "button",
+       "asset": "inventory/btn_sell_plate",
+       "rect": [
+        644,
+        154,
+        100,
+        96
+       ],
+       "label": "FORGE",
+       "size": 26,
+       "color": "#E7DFD1",
+       "weight": 600,
+       "margin": 14,
+       "paint_rect": [
+        644,
+        154,
+        100,
+        96
+       ],
+       "note": "FORGE: three of one slot and one rank, and gold, make one of the rank above. It wears SELL's own plate because it is the same kind of decision -- a piece leaves the bag -- and the word says which.",
+       "action": "forge"
       }
      ]
     }

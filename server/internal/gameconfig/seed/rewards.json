@@ -1,0 +1,94 @@
+{
+  "_comment": "Reward machinery. Tokens are consumables held in a count; paid_ok marks those money may carry. mail is the Royal Mail's housekeeping. limits bound a single reward, so a typo in a letter or a balance field is refused rather than delivered.",
+  "tokens": [
+    {
+      "id": "energy_potion",
+      "name": "Energy Potion",
+      "blurb": "Refills your energy. Counts as one of the day's refills.",
+      "icon": "energy_potion",
+      "paid_ok": true
+    },
+    {
+      "id": "shield_8h",
+      "name": "Protection Charter",
+      "blurb": "Eight hours in which nobody can raid you. Raiding someone yourself ends it.",
+      "icon": "city_shield",
+      "paid_ok": true
+    },
+    {
+      "id": "flask_small",
+      "name": "Small Flask",
+      "blurb": "Restores a tenth of your energy. It is not a refill: the day's refills are untouched.",
+      "icon": "flask_small",
+      "paid_ok": false,
+      "energy_pct": 10
+    },
+    {
+      "id": "flask_large",
+      "name": "Great Flask",
+      "blurb": "Restores a quarter of your energy. It is not a refill: the day's refills are untouched.",
+      "icon": "flask_large",
+      "paid_ok": false,
+      "energy_pct": 25
+    },
+    {
+      "id": "flask_friend",
+      "name": "A Friend's Draught",
+      "blurb": "A friend's gift: a fiftieth of your energy back. It is not a refill.",
+      "icon": "flask_small",
+      "paid_ok": false,
+      "energy_pct": 2
+    },
+    {
+      "id": "pardon",
+      "name": "Royal Pardon",
+      "blurb": "Mends a broken run of daily rewards, as if the missed days had been kept.",
+      "icon": "pardon",
+      "paid_ok": true
+    },
+    {
+      "id": "cart",
+      "name": "Cart Writ",
+      "blurb": "Calls one more Tax Cart, opened after the carts already waiting.",
+      "icon": "cart",
+      "paid_ok": false
+    },
+    {
+      "id": "arena_ticket",
+      "name": "Arena Token",
+      "blurb": "One more fight in the Honour Arena, held until you spend it.",
+      "icon": "arena_ticket",
+      "paid_ok": false
+    }
+  ],
+  "mail": {
+    "default_expiry_days": 30,
+    "purge_after_days": 30,
+    "inbox_limit": 100,
+    "claim_all_max": 50
+  },
+  "promo": {
+    "max_diamonds": 100,
+    "failures_per_hour": 8,
+    "expiry_days": 14
+  },
+  "referral": {
+    "reward_level": 10,
+    "invitee_diamonds": 100,
+    "inviter_diamonds": 100,
+    "claim_days": 7,
+    "inviter_min_hours": 72,
+    "links_per_day": 5,
+    "rewards_total": 20
+  },
+  "limits": {
+    "max_diamonds": 100000,
+    "max_gold": 1000000000,
+    "max_xp": 2000000,
+    "max_wages_energy": 10000,
+    "max_favour": 100000,
+    "max_items": 10,
+    "max_tokens": 50,
+    "max_boost_hours": 72
+  }
+}

@@ -33,13 +33,24 @@ func is_signed_in() -> bool:
 
 func register(username: String, password: String) -> String:
 	var res: Api.Response = await Api.post_json("/v1/auth/register", {
-		"username": username, "password": password, "tz_offset_minutes": _tz_offset_minutes()}, false)
+		"username": username, "password": password, "tz_offset_minutes": _tz_offset_minutes(),
+		"device": device_id()}, false)
 	return _consume(res)
 
 
 func login(username: String, password: String) -> String:
-	var res: Api.Response = await Api.post_json("/v1/auth/login", {"username": username, "password": password}, false)
+	var res: Api.Response = await Api.post_json("/v1/auth/login", {"username": username, "password": password,
+		"device": device_id()}, false)
 	return _consume(res)
+
+
+## The phone's own identifier (identifierForVendor on iOS): the same across
+## reinstalls of the game, never an advertising id. The server keeps only a
+## keyed hash of it, to hold a promo code or a friend's code to one per phone.
+## Sent at sign-in and with those two codes; the server must be deployed before
+## a build that sends it, because it refuses fields it does not know.
+static func device_id() -> String:
+	return OS.get_unique_id()
 
 
 func _consume(res: Api.Response) -> String:

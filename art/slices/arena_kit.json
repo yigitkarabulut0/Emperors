@@ -1,0 +1,572 @@
+{
+ "source": "arena_kit.png",
+ "notes": [
+  "The Honour Arena's kit: the six league emblems the ladder names (pvp.json arena.leagues[].emblem is exactly arena/league_<id>, and Art.tex draws magenta for a key it cannot find), and the three portrait frames the top of the ladder and the Throne hand out.",
+  "The emblems are cut at the painting's own size and never scaled here: the league card draws one down into its 248-wide window, and 'paint big, draw down' is the rule. The frames follow frames_cosmetic_a.json exactly -- one scale per kind so every plain band comes out the same size (square 160, ring 96, the large ring 132, the wardrobe tile 190) -- so an arena frame and a wardrobe frame sit the same on the same portrait.",
+  "frames/imperial is the Throne's regalia, not the arena's, which is why it alone carries no arena_ prefix: the Crowned Emperor wears it for the reign (pvp.json throne.emperor_frame), and the arena's Imperial league is the other way to earn it.",
+  "Keyed off the sheet's own flat navy [8,21,31], measured from its border. Each frame is masked to its own rect so a neighbour's ornament cannot reach into it."
+ ],
+ "crops": [
+  {
+   "name": "arena/league_bronze",
+   "rect": [
+    26,
+    18,
+    279,
+    284
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "note": "The bronze league's emblem, cut at the painting's own size (279x284) and NEVER scaled here: the arena's card draws it down into its 248-wide window, and a crest drawn up is what the rule forbids."
+  },
+  {
+   "name": "arena/league_silver",
+   "rect": [
+    327,
+    17,
+    282,
+    286
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "note": "The silver league's emblem, cut at the painting's own size (282x286) and NEVER scaled here: the arena's card draws it down into its 248-wide window, and a crest drawn up is what the rule forbids."
+  },
+  {
+   "name": "arena/league_gold",
+   "rect": [
+    630,
+    0,
+    286,
+    303
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "note": "The gold league's emblem, cut at the painting's own size (286x303) and NEVER scaled here: the arena's card draws it down into its 248-wide window, and a crest drawn up is what the rule forbids."
+  },
+  {
+   "name": "arena/league_platinum",
+   "rect": [
+    20,
+    302,
+    289,
+    325
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "note": "The platinum league's emblem, cut at the painting's own size (289x325) and NEVER scaled here: the arena's card draws it down into its 248-wide window, and a crest drawn up is what the rule forbids."
+  },
+  {
+   "name": "arena/league_sapphire",
+   "rect": [
+    322,
+    296,
+    291,
+    334
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "note": "The sapphire league's emblem, cut at the painting's own size (291x334) and NEVER scaled here: the arena's card draws it down into its 248-wide window, and a crest drawn up is what the rule forbids."
+  },
+  {
+   "name": "arena/league_imperial",
+   "rect": [
+    622,
+    295,
+    300,
+    340
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "note": "The imperial league's emblem, cut at the painting's own size (300x340) and NEVER scaled here: the arena's card draws it down into its 248-wide window, and a crest drawn up is what the rule forbids."
+  },
+  {
+   "name": "frames/arena_platinum_square",
+   "rect": [
+    132,
+    639,
+    357,
+    318
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      357,
+      0
+     ],
+     [
+      357,
+      318
+     ],
+     [
+      0,
+      318
+     ]
+    ]
+   },
+   "scale": [
+    180,
+    160
+   ],
+   "note": "arena_platinum, square. Scaled so its outer height is the band Look.band_of expects for its kind (160), which is how every frame in the wardrobe is cut: one scale per kind, ornaments outside the band."
+  },
+  {
+   "name": "frames/arena_platinum_ring",
+   "rect": [
+    519,
+    639,
+    302,
+    317
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      302,
+      0
+     ],
+     [
+      302,
+      317
+     ],
+     [
+      0,
+      317
+     ]
+    ]
+   },
+   "scale": [
+    91,
+    96
+   ],
+   "note": "arena_platinum, ring. Scaled so its outer height is the band Look.band_of expects for its kind (96), which is how every frame in the wardrobe is cut: one scale per kind, ornaments outside the band."
+  },
+  {
+   "name": "looks/arena_platinum_ring_large",
+   "rect": [
+    519,
+    639,
+    302,
+    317
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      302,
+      0
+     ],
+     [
+      302,
+      317
+     ],
+     [
+      0,
+      317
+     ]
+    ]
+   },
+   "scale": [
+    126,
+    132
+   ],
+   "note": "The same crop of the same painting at the large ring's band (132), for a portrait whose frame band is wider than 96 (Look.frame_art). Kept in step with arena_kit.json's own ring above."
+  },
+  {
+   "name": "frames/arena_platinum_tile",
+   "rect": [
+    519,
+    639,
+    302,
+    317
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "scale": [
+    181,
+    190
+   ],
+   "note": "The ring whole, fitted into the wardrobe tile's 224x190 art box, as wardrobe.png draws them."
+  },
+  {
+   "name": "frames/arena_sapphire_square",
+   "rect": [
+    125,
+    952,
+    368,
+    322
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      368,
+      0
+     ],
+     [
+      368,
+      322
+     ],
+     [
+      0,
+      322
+     ]
+    ]
+   },
+   "scale": [
+    183,
+    160
+   ],
+   "note": "arena_sapphire, square. Scaled so its outer height is the band Look.band_of expects for its kind (160), which is how every frame in the wardrobe is cut: one scale per kind, ornaments outside the band."
+  },
+  {
+   "name": "frames/arena_sapphire_ring",
+   "rect": [
+    516,
+    960,
+    309,
+    314
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      309,
+      0
+     ],
+     [
+      309,
+      314
+     ],
+     [
+      0,
+      314
+     ]
+    ]
+   },
+   "scale": [
+    94,
+    96
+   ],
+   "note": "arena_sapphire, ring. Scaled so its outer height is the band Look.band_of expects for its kind (96), which is how every frame in the wardrobe is cut: one scale per kind, ornaments outside the band."
+  },
+  {
+   "name": "looks/arena_sapphire_ring_large",
+   "rect": [
+    516,
+    960,
+    309,
+    314
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      309,
+      0
+     ],
+     [
+      309,
+      314
+     ],
+     [
+      0,
+      314
+     ]
+    ]
+   },
+   "scale": [
+    130,
+    132
+   ],
+   "note": "The same crop of the same painting at the large ring's band (132), for a portrait whose frame band is wider than 96 (Look.frame_art). Kept in step with arena_kit.json's own ring above."
+  },
+  {
+   "name": "frames/arena_sapphire_tile",
+   "rect": [
+    516,
+    960,
+    309,
+    314
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "scale": [
+    187,
+    190
+   ],
+   "note": "The ring whole, fitted into the wardrobe tile's 224x190 art box, as wardrobe.png draws them."
+  },
+  {
+   "name": "frames/imperial_square",
+   "rect": [
+    137,
+    1264,
+    348,
+    356
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      348,
+      0
+     ],
+     [
+      348,
+      356
+     ],
+     [
+      0,
+      356
+     ]
+    ]
+   },
+   "scale": [
+    156,
+    160
+   ],
+   "note": "imperial, square. Scaled so its outer height is the band Look.band_of expects for its kind (160), which is how every frame in the wardrobe is cut: one scale per kind, ornaments outside the band."
+  },
+  {
+   "name": "frames/imperial_ring",
+   "rect": [
+    512,
+    1271,
+    318,
+    348
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      318,
+      0
+     ],
+     [
+      318,
+      348
+     ],
+     [
+      0,
+      348
+     ]
+    ]
+   },
+   "scale": [
+    88,
+    96
+   ],
+   "note": "imperial, ring. Scaled so its outer height is the band Look.band_of expects for its kind (96), which is how every frame in the wardrobe is cut: one scale per kind, ornaments outside the band."
+  },
+  {
+   "name": "looks/imperial_ring_large",
+   "rect": [
+    512,
+    1271,
+    318,
+    348
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      318,
+      0
+     ],
+     [
+      318,
+      348
+     ],
+     [
+      0,
+      348
+     ]
+    ]
+   },
+   "scale": [
+    121,
+    132
+   ],
+   "note": "The same crop of the same painting at the large ring's band (132), for a portrait whose frame band is wider than 96 (Look.frame_art). Kept in step with arena_kit.json's own ring above."
+  },
+  {
+   "name": "frames/imperial_tile",
+   "rect": [
+    512,
+    1271,
+    318,
+    348
+   ],
+   "mode": "darkkey",
+   "k": 38,
+   "floor": 4,
+   "bg": [
+    8,
+    21,
+    31
+   ],
+   "scale": [
+    174,
+    190
+   ],
+   "note": "The ring whole, fitted into the wardrobe tile's 224x190 art box, as wardrobe.png draws them."
+  }
+ ]
+}

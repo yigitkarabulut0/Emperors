@@ -1,0 +1,545 @@
+{
+  "_comment": "What money buys. FAIR: time, comfort and looks, never gold, power or a loot box. usd_cents is the price tier in US dollars (what Royal Favour counts); the player's own price is on the App Store transaction. kind is consumable | non_consumable | subscription.",
+  "store_prefix": "com.emperors.game.",
+  "products": [
+    {
+      "id": "gems_60",
+      "store_id": "com.emperors.game.gems.60",
+      "kind": "consumable",
+      "usd_cents": 99,
+      "shelf": "diamonds",
+      "title": "60 Diamonds",
+      "grant": {
+        "diamonds": 60
+      },
+      "first_bonus_bp": 10000
+    },
+    {
+      "id": "gems_330",
+      "store_id": "com.emperors.game.gems.330",
+      "kind": "consumable",
+      "usd_cents": 499,
+      "shelf": "diamonds",
+      "title": "330 Diamonds",
+      "grant": {
+        "diamonds": 330
+      },
+      "first_bonus_bp": 10000
+    },
+    {
+      "id": "gems_700",
+      "store_id": "com.emperors.game.gems.700",
+      "kind": "consumable",
+      "usd_cents": 999,
+      "shelf": "diamonds",
+      "title": "700 Diamonds",
+      "grant": {
+        "diamonds": 700
+      },
+      "first_bonus_bp": 10000,
+      "badge": "most_popular"
+    },
+    {
+      "id": "gems_1500",
+      "store_id": "com.emperors.game.gems.1500",
+      "kind": "consumable",
+      "usd_cents": 1999,
+      "shelf": "diamonds",
+      "title": "1,500 Diamonds",
+      "grant": {
+        "diamonds": 1500
+      },
+      "first_bonus_bp": 10000
+    },
+    {
+      "id": "gems_4000",
+      "store_id": "com.emperors.game.gems.4000",
+      "kind": "consumable",
+      "usd_cents": 4999,
+      "shelf": "diamonds",
+      "title": "4,000 Diamonds",
+      "grant": {
+        "diamonds": 4000
+      },
+      "first_bonus_bp": 10000
+    },
+    {
+      "id": "gems_8500",
+      "store_id": "com.emperors.game.gems.8500",
+      "kind": "consumable",
+      "usd_cents": 9999,
+      "shelf": "diamonds",
+      "title": "8,500 Diamonds",
+      "grant": {
+        "diamonds": 8500
+      },
+      "first_bonus_bp": 10000,
+      "badge": "best_value"
+    },
+    {
+      "id": "starter",
+      "store_id": "com.emperors.game.starter.299",
+      "kind": "consumable",
+      "usd_cents": 299,
+      "shelf": "offers",
+      "title": "The Founder's Crate",
+      "grant": {
+        "diamonds": 300,
+        "tokens": {
+          "energy_potion": 3
+        },
+        "cosmetics": [
+          "frame_founder",
+          "title_founder"
+        ]
+      },
+      "limit": 1,
+      "fallback_diamonds": 100,
+      "offer": {
+        "trigger": "level",
+        "min_level": 8,
+        "hours": 48,
+        "slot": "starter"
+      }
+    },
+    {
+      "id": "starter_499",
+      "store_id": "com.emperors.game.starter.499",
+      "kind": "consumable",
+      "usd_cents": 499,
+      "shelf": "offers",
+      "title": "The Founder's Crate",
+      "grant": {
+        "diamonds": 600,
+        "tokens": {
+          "energy_potion": 5
+        },
+        "cosmetics": [
+          "frame_founder",
+          "title_founder"
+        ]
+      },
+      "limit": 1,
+      "fallback_diamonds": 100,
+      "offer": {
+        "trigger": "level",
+        "min_level": 8,
+        "hours": 48,
+        "slot": "starter"
+      }
+    },
+    {
+      "id": "stipend",
+      "store_id": "com.emperors.game.stipend.30",
+      "kind": "consumable",
+      "usd_cents": 499,
+      "shelf": "passes",
+      "title": "Royal Stipend",
+      "grant": {
+        "diamonds": 300
+      },
+      "stipend": {
+        "days": 30,
+        "daily_diamonds": 60,
+        "renew_within_days": 5
+      }
+    },
+    {
+      "id": "patronage",
+      "store_id": "com.emperors.game.patronage.month",
+      "kind": "subscription",
+      "usd_cents": 699,
+      "shelf": "passes",
+      "title": "Crown Patronage",
+      "patronage": {
+        "period_diamonds": 60,
+        "free_refills_per_day": 1,
+        "bag_bonus": 25,
+        "steward": true,
+        "skip_ads": true,
+        "cosmetics": [
+          "frame_patron",
+          "color_patron"
+        ]
+      }
+    },
+    {
+      "id": "steward",
+      "store_id": "com.emperors.game.comfort.steward",
+      "kind": "non_consumable",
+      "usd_cents": 499,
+      "shelf": "comfort",
+      "title": "The Steward",
+      "entitlement": "steward"
+    },
+    {
+      "id": "quartermaster",
+      "store_id": "com.emperors.game.comfort.quartermaster",
+      "kind": "non_consumable",
+      "usd_cents": 499,
+      "shelf": "comfort",
+      "title": "The Quartermaster",
+      "entitlement": "quartermaster",
+      "bag_bonus": 50
+    },
+    {
+      "id": "largesse",
+      "store_id": "com.emperors.game.largesse",
+      "kind": "consumable",
+      "usd_cents": 999,
+      "shelf": "kingdom",
+      "title": "Royal Largesse",
+      "grant": {
+        "diamonds": 600,
+        "cosmetics": [
+          "title_generous"
+        ]
+      },
+      "fallback_diamonds": 50,
+      "largesse": {
+        "member_grant": {
+          "diamonds": 20,
+          "tokens": {
+            "energy_potion": 1
+          }
+        },
+        "per_member_per_day": 5,
+        "min_member_hours": 24
+      }
+    },
+    {
+      "id": "season_pass",
+      "store_id": "com.emperors.game.season.pass",
+      "kind": "consumable",
+      "usd_cents": 799,
+      "shelf": "charter",
+      "title": "Royal Charter",
+      "grant": {},
+      "season_pass": true,
+      "fallback_diamonds": 900
+    },
+    {
+      "id": "offer_empty",
+      "store_id": "com.emperors.game.offer.empty",
+      "kind": "consumable",
+      "usd_cents": 199,
+      "shelf": "offers",
+      "title": "A Second Wind",
+      "grant": {
+        "diamonds": 150,
+        "tokens": {
+          "energy_potion": 2
+        }
+      },
+      "limit": 1,
+      "offer": {
+        "trigger": "energy_empty",
+        "min_level": 5,
+        "hours": 24
+      }
+    },
+    {
+      "id": "offer_l10",
+      "store_id": "com.emperors.game.offer.l10",
+      "kind": "consumable",
+      "usd_cents": 499,
+      "shelf": "offers",
+      "title": "The Squire's Purse",
+      "grant": {
+        "diamonds": 650,
+        "tokens": {
+          "energy_potion": 3
+        },
+        "cosmetics": [
+          "frame_oak"
+        ]
+      },
+      "limit": 1,
+      "fallback_diamonds": 60,
+      "offer": {
+        "trigger": "level",
+        "min_level": 10,
+        "hours": 24
+      }
+    },
+    {
+      "id": "offer_l20",
+      "store_id": "com.emperors.game.offer.l20",
+      "kind": "consumable",
+      "usd_cents": 999,
+      "shelf": "offers",
+      "title": "The Knight's Coffer",
+      "grant": {
+        "diamonds": 1350,
+        "tokens": {
+          "energy_potion": 5
+        },
+        "cosmetics": [
+          "crest_dragon"
+        ]
+      },
+      "limit": 1,
+      "fallback_diamonds": 75,
+      "offer": {
+        "trigger": "level",
+        "min_level": 20,
+        "hours": 24
+      }
+    },
+    {
+      "id": "offer_l30",
+      "store_id": "com.emperors.game.offer.l30",
+      "kind": "consumable",
+      "usd_cents": 1999,
+      "shelf": "offers",
+      "title": "The Baron's Treasury",
+      "grant": {
+        "diamonds": 2800,
+        "tokens": {
+          "energy_potion": 8
+        },
+        "cosmetics": [
+          "frame_laurel"
+        ]
+      },
+      "limit": 1,
+      "fallback_diamonds": 125,
+      "offer": {
+        "trigger": "level",
+        "min_level": 30,
+        "hours": 24
+      }
+    },
+    {
+      "id": "offer_defeat",
+      "store_id": "com.emperors.game.offer.defeat",
+      "kind": "consumable",
+      "usd_cents": 199,
+      "shelf": "offers",
+      "title": "Walls and Watchmen",
+      "grant": {
+        "diamonds": 100,
+        "tokens": {
+          "shield_8h": 2
+        }
+      },
+      "limit": 1,
+      "offer": {
+        "trigger": "raided",
+        "min_level": 12,
+        "hours": 24
+      }
+    }
+  ],
+  "deals": {
+    "gift": [
+      {
+        "id": "gift_wages",
+        "title": "A Day's Wages",
+        "grant": {
+          "gold_wages": 40
+        },
+        "weight": 40
+      },
+      {
+        "id": "gift_diamonds",
+        "title": "A Handful of Diamonds",
+        "grant": {
+          "diamonds": 5
+        },
+        "weight": 36
+      },
+      {
+        "id": "gift_potion",
+        "title": "An Energy Potion",
+        "grant": {
+          "tokens": {
+            "energy_potion": 1
+          }
+        },
+        "weight": 10
+      },
+      {
+        "id": "gift_scholar",
+        "title": "A Scholar's Purse",
+        "grant": {
+          "xp_wages": 40
+        },
+        "weight": 14
+      }
+    ],
+    "potions": [
+      {
+        "id": "potions_1",
+        "title": "An Energy Potion",
+        "grant": {
+          "tokens": {
+            "energy_potion": 1
+          }
+        },
+        "diamonds": 15,
+        "was": 20,
+        "weight": 40
+      },
+      {
+        "id": "potions_2",
+        "title": "Two Energy Potions",
+        "grant": {
+          "tokens": {
+            "energy_potion": 2
+          }
+        },
+        "diamonds": 28,
+        "was": 40,
+        "weight": 40
+      },
+      {
+        "id": "potions_3",
+        "title": "Three Energy Potions",
+        "grant": {
+          "tokens": {
+            "energy_potion": 3
+          }
+        },
+        "diamonds": 39,
+        "was": 60,
+        "weight": 20
+      }
+    ],
+    "charters": [
+      {
+        "id": "charter_1",
+        "title": "A Protection Charter",
+        "grant": {
+          "tokens": {
+            "shield_8h": 1
+          }
+        },
+        "diamonds": 14,
+        "was": 20,
+        "weight": 60
+      },
+      {
+        "id": "charter_2",
+        "title": "Two Protection Charters",
+        "grant": {
+          "tokens": {
+            "shield_8h": 2
+          }
+        },
+        "diamonds": 26,
+        "was": 40,
+        "weight": 40
+      }
+    ],
+    "cosmetic_off_bp": 3000
+  },
+  "experiments": [
+    {
+      "id": "starter_price",
+      "active": false,
+      "note": "the Founder's Crate at 2.99, or at 4.99 with more in it",
+      "arms": [
+        {
+          "id": "control",
+          "weight": 50,
+          "product": "starter"
+        },
+        {
+          "id": "richer",
+          "weight": 50,
+          "product": "starter_499"
+        }
+      ]
+    }
+  ],
+  "vip": [
+    {
+      "level": 1,
+      "points": 99,
+      "daily_diamonds": 2,
+      "bag_bonus": 0,
+      "cosmetics": []
+    },
+    {
+      "level": 2,
+      "points": 499,
+      "daily_diamonds": 3,
+      "bag_bonus": 5,
+      "cosmetics": []
+    },
+    {
+      "level": 3,
+      "points": 999,
+      "daily_diamonds": 4,
+      "bag_bonus": 5,
+      "cosmetics": [
+        "color_azure"
+      ]
+    },
+    {
+      "level": 4,
+      "points": 1999,
+      "daily_diamonds": 5,
+      "bag_bonus": 10,
+      "cosmetics": []
+    },
+    {
+      "level": 5,
+      "points": 4999,
+      "daily_diamonds": 6,
+      "bag_bonus": 10,
+      "cosmetics": [
+        "frame_laurel_gilded"
+      ]
+    },
+    {
+      "level": 6,
+      "points": 9999,
+      "daily_diamonds": 8,
+      "bag_bonus": 15,
+      "cosmetics": []
+    },
+    {
+      "level": 7,
+      "points": 19999,
+      "daily_diamonds": 10,
+      "bag_bonus": 15,
+      "cosmetics": []
+    },
+    {
+      "level": 8,
+      "points": 49999,
+      "daily_diamonds": 12,
+      "bag_bonus": 20,
+      "cosmetics": []
+    },
+    {
+      "level": 9,
+      "points": 99999,
+      "daily_diamonds": 15,
+      "bag_bonus": 25,
+      "cosmetics": []
+    },
+    {
+      "level": 10,
+      "points": 199999,
+      "daily_diamonds": 20,
+      "bag_bonus": 30,
+      "cosmetics": [
+        "frame_aureole"
+      ]
+    }
+  ],
+  "ads": {
+    "per_day": 5,
+    "cooldown_minutes": 5,
+    "min_level": 3,
+    "ticket_minutes": 30,
+    "grant": {
+      "diamonds": 2
+    }
+  },
+  "refund_flag_count": 2,
+  "refund_flag_days": 90
+}

@@ -1,0 +1,346 @@
+{
+ "screen": "collection",
+ "source": "collection.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#000710",
+ "fonts": {
+  "title": "Cinzel-Variable.ttf",
+  "body": "EBGaramond[wght].ttf"
+ },
+ "notes": [
+  "The painting is the page (collection/page): its header, title, the three slot panels' plates and NEW TO THE WALL are the painting's; its two offer rows are erased and drawn live.",
+  "The long plate by the clover carries what the wall adds up to, and under it what a design and a set are worth.",
+  "The seven frames of each slot panel are the tiers, common to special: the tier's grandest design on the wall in its frame, how many of its three are held under it; a tap lists the three.",
+  "One stretch band down the offer list (its erased ground and the frame's two sides are the same all the way down): on 941x2040 it holds more offers."
+ ],
+ "stretch": [
+  [
+   1260,
+   200
+  ]
+ ],
+ "elements": [
+  {
+   "id": "page",
+   "kind": "image",
+   "asset": "collection/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ]
+  },
+  {
+   "id": "luck",
+   "kind": "text",
+   "rect": [
+    215,
+    455,
+    620,
+    38
+   ],
+   "font": "body",
+   "size": 28,
+   "weight": 700,
+   "color": "#E3BE62",
+   "align": "center",
+   "valign": "center",
+   "sample": "63 of 63 designs  \u00b7  +37.8% luck on every roll"
+  },
+  {
+   "id": "luck_note",
+   "kind": "text",
+   "rect": [
+    215,
+    494,
+    620,
+    28
+   ],
+   "font": "body",
+   "size": 19,
+   "weight": 600,
+   "color": "#B9C2CC",
+   "align": "center",
+   "valign": "center",
+   "sample": "Each design adds 0.6%; all three of a slot and tier, 1.2% more."
+  },
+  {
+   "id": "cell",
+   "kind": "template",
+   "rect": [
+    0,
+    0,
+    96,
+    102
+   ],
+   "instances": [
+    [
+     72,
+     625
+    ],
+    [
+     189,
+     625
+    ],
+    [
+     306,
+     625
+    ],
+    [
+     424,
+     625
+    ],
+    [
+     540,
+     625
+    ],
+    [
+     656,
+     625
+    ],
+    [
+     773,
+     625
+    ],
+    [
+     72,
+     824
+    ],
+    [
+     189,
+     824
+    ],
+    [
+     306,
+     824
+    ],
+    [
+     424,
+     824
+    ],
+    [
+     540,
+     824
+    ],
+    [
+     656,
+     824
+    ],
+    [
+     773,
+     824
+    ],
+    [
+     72,
+     1024
+    ],
+    [
+     189,
+     1024
+    ],
+    [
+     306,
+     1024
+    ],
+    [
+     424,
+     1024
+    ],
+    [
+     540,
+     1024
+    ],
+    [
+     656,
+     1024
+    ],
+    [
+     773,
+     1024
+    ]
+   ],
+   "parts": [
+    {
+     "id": "pic",
+     "kind": "image",
+     "rect": [
+      18,
+      10,
+      60,
+      54
+     ],
+     "fit": "contain"
+    },
+    {
+     "id": "count",
+     "kind": "text",
+     "rect": [
+      10,
+      63,
+      76,
+      20
+     ],
+     "font": "body",
+     "size": 20,
+     "weight": 700,
+     "color": "#F1E9DA",
+     "align": "center",
+     "valign": "center",
+     "sample": "3/3"
+    },
+    {
+     "id": "tap",
+     "kind": "hotspot",
+     "rect": [
+      0,
+      0,
+      96,
+      102
+     ],
+     "action": "tier"
+    }
+   ]
+  },
+  {
+   "id": "offers",
+   "kind": "scroll",
+   "rect": [
+    47,
+    1224,
+    847,
+    264
+   ],
+   "content": [
+    {
+     "id": "offer",
+     "kind": "template",
+     "rect": [
+      0,
+      0,
+      847,
+      128
+     ],
+     "pitch": 135,
+     "parts": [
+      {
+       "id": "art",
+       "kind": "image",
+       "asset": "collection/row",
+       "rect": [
+        0,
+        0,
+        847,
+        128
+       ]
+      },
+      {
+       "id": "pic",
+       "kind": "image",
+       "rect": [
+        47,
+        23,
+        90,
+        84
+       ],
+       "fit": "contain"
+      },
+      {
+       "id": "name",
+       "kind": "text",
+       "rect": [
+        185,
+        26,
+        398,
+        44
+       ],
+       "font": "body",
+       "size": 28,
+       "weight": 700,
+       "color": "#F1E9DA",
+       "align": "left",
+       "valign": "center",
+       "sample": "The Unbroken Breastplate"
+      },
+      {
+       "id": "detail",
+       "kind": "text",
+       "rect": [
+        197,
+        83,
+        377,
+        26
+       ],
+       "font": "title",
+       "size": 18,
+       "weight": 600,
+       "color": "#B9C2CC",
+       "align": "left",
+       "valign": "center",
+       "sample": "LEGENDARY ARMOR"
+      },
+      {
+       "id": "donate",
+       "kind": "button",
+       "asset": "collection/btn_donate",
+       "rect": [
+        616,
+        13,
+        199,
+        95
+       ],
+       "paint_rect": [
+        616,
+        21,
+        199,
+        79
+       ],
+       "keep_texture_size": true,
+       "action": "donate"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "offers_empty",
+   "kind": "text",
+   "rect": [
+    90,
+    1318,
+    761,
+    74
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 600,
+   "color": "#B9C2CC",
+   "align": "center",
+   "valign": "center",
+   "wrap": true,
+   "sample": "Nothing new in your bags: every piece you hold is on the wall already, or worn."
+  },
+  {
+   "id": "close",
+   "kind": "button",
+   "asset": "collection/btn_close",
+   "rect": [
+    306,
+    1492,
+    329,
+    96
+   ],
+   "paint_rect": [
+    306,
+    1502,
+    329,
+    76
+   ],
+   "keep_texture_size": true,
+   "action": "close"
+  }
+ ]
+}

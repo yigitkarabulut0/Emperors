@@ -59,9 +59,57 @@ export function ago(seconds: number): string {
   return duration(seconds) + " ago";
 }
 
+/** A stamp as "2026-09-14 03:49", in UTC. Zoneless stamps from the Go API are
+ *  UTC (see parseUTC); reading them as local time put every audit entry and
+ *  "last seen" an offset away from the ledger beside it. */
 export function shortDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+  const d = parseUTC(iso);
+  if (!d) return iso;
   return d.toISOString().slice(0, 16).replace("T", " ");
+}
+
+/**
+ * The Go API writes some stamps as "2006-01-02 15:04[:05]": UTC, with no zone
+ * marker. `new Date()` reads a zoneless string as LOCAL time (and Safari not at
+ * all), so those are marked as UTC before they are parsed. RFC 3339 passes
+ * through untouched.
+ */
+export function parseUTC(stamp: string | null | undefined): Date | null {
+  if (!stamp) return null;
+  const zoned = /(?:[zZ]|[+-]\d\d:?\d\d)$/.test(stamp);
+  const d = new Date(zoned ? stamp : stamp.replace(" ", "T") + "Z");
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** A share of a whole, as a whole percentage; "—" when there is no whole. */
+export function pctOf(part: number, whole: number): string {
+  if (!whole) return "—";
+  return `${Math.round((part / whole) * 100)}%`;
+}
+
+/**
+ * US cents as dollars: 499 is "$4.99", 123456 is "$1 234.56". The App Store's
+ * price tiers are in US cents (usd_cents); a buyer's own currency is shown
+ * beside it, never converted.
+ */
+export function usd(cents: number | undefined | null): string {
+  if (cents === undefined || cents === null || !Number.isFinite(cents)) return "—";
+  const neg = cents < 0;
+  const abs = Math.abs(Math.trunc(cents));
+  const dollars = Math.floor(abs / 100);
+  const rest = String(abs % 100).padStart(2, "0");
+  return `${neg ? "−" : ""}$${gold(dollars)}.${rest}`;
+}
+
+/** A price in a store's own currency: 4990 milliunits of TRY is "TRY 4.99". */
+export function localPrice(milli: number | null | undefined, currency: string | undefined): string {
+  if (milli === undefined || milli === null || !currency) return "";
+  const units = milli / 1000;
+  return `${currency} ${units.toFixed(units % 1 === 0 ? 0 : 2)}`;
+}
+
+/** "1 purchase", "11 purchases": a count with its noun agreeing. */
+export function count(n: number, one: string, many: string): string {
+  return `${num(n)} ${n === 1 ? one : many}`;
 }

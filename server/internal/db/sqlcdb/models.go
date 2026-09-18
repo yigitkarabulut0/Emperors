@@ -41,6 +41,67 @@ type AdminBalanceVersion struct {
 	CreatedAt time.Time
 }
 
+type AdminHourlyEvent struct {
+	Hour    int64
+	EventID string
+	Source  string
+	SetBy   *string
+	SetAt   time.Time
+	Note    string
+}
+
+type AdminLiveEvent struct {
+	ID         int64
+	TemplateID string
+	StartsAt   time.Time
+	EndsAt     time.Time
+	Frozen     []byte
+	Note       string
+	CreatedBy  string
+	CreatedAt  time.Time
+	RevokedAt  *time.Time
+	RevokedBy  *string
+	SettledAt  *time.Time
+}
+
+type AdminMailBroadcast struct {
+	ID          int64
+	Audience    string
+	Segment     []byte
+	Sender      string
+	Title       string
+	Body        string
+	Attachments []byte
+	IncludeNew  bool
+	ExpiresAt   time.Time
+	SentCount   int32
+	CreatedBy   string
+	CreatedAt   time.Time
+	RevokedAt   *time.Time
+	RevokedBy   *string
+	Note        string
+}
+
+type AdminPeriodClose struct {
+	What     string
+	Period   int64
+	ClosedAt time.Time
+	Lords    int32
+}
+
+type AdminPromoCode struct {
+	Code       string
+	Note       string
+	Reward     []byte
+	MaxUses    int32
+	Uses       int32
+	StartsAt   time.Time
+	ExpiresAt  *time.Time
+	DisabledAt *time.Time
+	CreatedBy  string
+	CreatedAt  time.Time
+}
+
 type AdminServerBoost struct {
 	ID        int64
 	Bucket    string
@@ -73,6 +134,39 @@ type AdminUser struct {
 	LastLoginAt  *time.Time
 }
 
+type AppAdWatch struct {
+	ID            uuid.UUID
+	PlayerID      uuid.UUID
+	Unit          string
+	CreatedAt     time.Time
+	ExpiresAt     time.Time
+	TransactionID *string
+	PaidAt        *time.Time
+	Diamonds      int64
+	KeyID         pgtype.Int8
+}
+
+type AppAnalyticsEvent struct {
+	ID        int64
+	PlayerID  uuid.UUID
+	Name      string
+	Props     []byte
+	ClientAt  *time.Time
+	CreatedAt time.Time
+}
+
+type AppArena struct {
+	PlayerID   uuid.UUID
+	Season     int32
+	Rating     int32
+	Peak       int32
+	Wins       int32
+	Losses     int32
+	Streak     int32
+	Milestones int64
+	LastAt     time.Time
+}
+
 type AppAttackCooldown struct {
 	AttackerID uuid.UUID
 	DefenderID uuid.UUID
@@ -96,6 +190,104 @@ type AppBattle struct {
 	EnergySpent   int64
 	Replay        []byte
 	CreatedAt     time.Time
+	Kind          string
+}
+
+type AppBlock struct {
+	PlayerID  uuid.UUID
+	BlockedID uuid.UUID
+	CreatedAt time.Time
+}
+
+type AppBossHit struct {
+	CycleID  uuid.UUID
+	PlayerID uuid.UUID
+	Hits     int32
+	Damage   int64
+	FirstAt  time.Time
+	LastAt   time.Time
+	PaidAt   *time.Time
+}
+
+type AppBounty struct {
+	ID        uuid.UUID
+	TargetID  uuid.UUID
+	PlacedBy  uuid.UUID
+	Amount    int64
+	Remaining int64
+	FeeBurned int64
+	Plate     string
+	PlacedAt  time.Time
+	ExpiresAt time.Time
+	ClosedAt  *time.Time
+	ClosedAs  *string
+}
+
+type AppBountyClaim struct {
+	ID        int64
+	BountyID  uuid.UUID
+	BattleID  uuid.UUID
+	ClaimerID uuid.UUID
+	TargetID  uuid.UUID
+	PlacerID  uuid.UUID
+	Paid      int64
+	Uweek     int64
+	CreatedAt time.Time
+}
+
+type AppChatMessage struct {
+	ID         uuid.UUID
+	Seq        int64
+	KingdomID  uuid.UUID
+	PlayerID   *uuid.UUID
+	Kind       string
+	SystemKind *string
+	Body       string
+	Shown      string
+	Payload    []byte
+	CreatedAt  time.Time
+	HiddenAt   *time.Time
+	HiddenBy   *string
+	Reports    int16
+}
+
+type AppChatMute struct {
+	ID        int64
+	PlayerID  uuid.UUID
+	Until     time.Time
+	Reason    string
+	ByWhom    string
+	CreatedAt time.Time
+}
+
+type AppChatReport struct {
+	MessageID  uuid.UUID
+	ReporterID uuid.UUID
+	Reason     string
+	CreatedAt  time.Time
+}
+
+type AppDailyKpi struct {
+	Day            pgtype.Date
+	Dau            int32
+	NewLords       int32
+	Payers         int32
+	Purchases      int32
+	GrossCents     int64
+	RefundCents    int64
+	DiamondsEarned int64
+	DiamondsBought int64
+	DiamondsSpent  int64
+	ComputedAt     time.Time
+}
+
+type AppDeletedAccount struct {
+	PlayerID    uuid.UUID
+	JoinedAt    time.Time
+	DeletedAt   time.Time
+	Level       int32
+	Diamonds    int64
+	DiamondDebt int64
 }
 
 type AppDeviceToken struct {
@@ -105,6 +297,63 @@ type AppDeviceToken struct {
 	RevokedAt *time.Time
 	SeenAt    time.Time
 	CreatedAt time.Time
+}
+
+type AppDiamondLedger struct {
+	ID           int64
+	PlayerID     uuid.UUID
+	Delta        int64
+	Gross        int64
+	BalanceAfter int64
+	DebtAfter    int64
+	Reason       string
+	Class        string
+	RefID        *string
+	CreatedAt    time.Time
+}
+
+type AppExpedition struct {
+	ID                  uuid.UUID
+	PlayerID            uuid.UUID
+	SoldierID           uuid.UUID
+	FieldID             string
+	SentAt              time.Time
+	EndsAt              time.Time
+	SettledAt           *time.Time
+	Outcome             *string
+	GoldWages           int64
+	XpWages             int64
+	ItemTier            *string
+	RolledConfigVersion int32
+}
+
+type AppExperimentExposure struct {
+	Experiment string
+	PlayerID   uuid.UUID
+	Arm        string
+	ProductID  string
+	ExposedAt  time.Time
+}
+
+type AppFriend struct {
+	A     uuid.UUID
+	B     uuid.UUID
+	Since time.Time
+}
+
+type AppFriendRequest struct {
+	FromID    uuid.UUID
+	ToID      uuid.UUID
+	CreatedAt time.Time
+}
+
+type AppGift struct {
+	FromID  uuid.UUID
+	ToID    uuid.UUID
+	SentOn  pgtype.Date
+	Token   string
+	SentAt  time.Time
+	TakenAt *time.Time
 }
 
 type AppGoldLedger struct {
@@ -117,6 +366,47 @@ type AppGoldLedger struct {
 	CreatedAt    time.Time
 }
 
+type AppIapNotification struct {
+	ID                    int64
+	NotificationUuid      string
+	Type                  string
+	Subtype               string
+	Environment           string
+	TransactionID         *string
+	OriginalTransactionID *string
+	SignedPayload         string
+	ReceivedAt            time.Time
+	ProcessedAt           *time.Time
+	Outcome               *string
+	Attempts              int32
+	LastError             *string
+	NextAttemptAt         time.Time
+}
+
+type AppIapTransaction struct {
+	ID                    int64
+	Platform              string
+	TransactionID         string
+	OriginalTransactionID string
+	PlayerID              uuid.UUID
+	ProductID             string
+	StoreProductID        string
+	Kind                  string
+	Environment           string
+	PurchasedAt           time.Time
+	ExpiresAt             *time.Time
+	UsdCents              int64
+	PriceMilli            pgtype.Int8
+	Currency              *string
+	Storefront            *string
+	Granted               []byte
+	State                 string
+	RefundedAt            *time.Time
+	RefundNote            *string
+	Signed                string
+	CreatedAt             time.Time
+}
+
 type AppIdentity struct {
 	ID         uuid.UUID
 	PlayerID   uuid.UUID
@@ -125,6 +415,18 @@ type AppIdentity struct {
 	SecretHash *string
 	CreatedAt  time.Time
 	LastUsedAt *time.Time
+}
+
+type AppJobRun struct {
+	JobName    string
+	PeriodKey  string
+	ClaimedAt  time.Time
+	ClaimedBy  string
+	FinishedAt *time.Time
+	LastOkAt   *time.Time
+	LastError  *string
+	RunCount   int64
+	FailCount  int64
 }
 
 type AppKingdom struct {
@@ -138,6 +440,58 @@ type AppKingdom struct {
 	Reputation int64
 	CreatedAt  time.Time
 	JoinPolicy string
+}
+
+type AppKingdomAid struct {
+	ID        uuid.UUID
+	KingdomID uuid.UUID
+	AskerID   uuid.UUID
+	CreatedAt time.Time
+	ExpiresAt time.Time
+	Answers   int16
+}
+
+type AppKingdomAidAnswer struct {
+	AidID    uuid.UUID
+	HelperID uuid.UUID
+	At       time.Time
+}
+
+type AppKingdomBoss struct {
+	ID                  uuid.UUID
+	KingdomID           uuid.UUID
+	BossID              string
+	Level               int32
+	HpMax               int64
+	HpLeft              int64
+	KingdomMight        int64
+	Members             int32
+	StartedAt           time.Time
+	EndsAt              time.Time
+	KilledAt            *time.Time
+	KilledBy            *uuid.UUID
+	SettledAt           *time.Time
+	RolledConfigVersion int32
+}
+
+type AppKingdomGoal struct {
+	ID         uuid.UUID
+	KingdomID  uuid.UUID
+	Day        pgtype.Date
+	Kind       string
+	Target     int64
+	Progress   int64
+	Members    int16
+	StartedAt  time.Time
+	EndsAt     time.Time
+	ClaimUntil time.Time
+}
+
+type AppKingdomGoalPart struct {
+	GoalID   uuid.UUID
+	PlayerID uuid.UUID
+	Amount   int64
+	Claimed  int16
 }
 
 type AppKingdomInvite struct {
@@ -154,11 +508,45 @@ type AppKingdomUpgrade struct {
 	Level     int32
 }
 
+type AppKingdomWeek struct {
+	KingdomID  uuid.UUID
+	Uweek      int64
+	Reputation int64
+}
+
 type AppLeaderboardEntry struct {
 	Board    string
 	Rank     int32
 	PlayerID uuid.UUID
 	Value    int64
+	Place    int32
+}
+
+type AppLordReport struct {
+	ID         int64
+	TargetID   uuid.UUID
+	ReporterID uuid.UUID
+	Reason     string
+	CreatedAt  time.Time
+	ResolvedAt *time.Time
+	ResolvedBy *string
+}
+
+type AppMail struct {
+	ID          int64
+	PlayerID    uuid.UUID
+	Kind        string
+	Sender      string
+	Title       string
+	Body        string
+	Attachments []byte
+	IdemKey     *string
+	BroadcastID pgtype.Int8
+	CreatedAt   time.Time
+	ExpiresAt   time.Time
+	ReadAt      *time.Time
+	ClaimedAt   *time.Time
+	DeletedAt   *time.Time
 }
 
 type AppPlayer struct {
@@ -208,6 +596,112 @@ type AppPlayer struct {
 	Might               int64
 	Legacy              int32
 	KingdomLeftAt       *time.Time
+	DiamondDebt         int64
+	RefillsDay          pgtype.Date
+	RefillsUsed         int16
+	BoostUntil          *time.Time
+	CosFrame            *string
+	CosTitle            *string
+	CosColor            *string
+	CosCrest            *string
+	MailBcSeen          int64
+	VipPoints           int64
+	PatronUntil         *time.Time
+	StewardOwned        bool
+	BagBonus            int32
+	StipendUntil        pgtype.Date
+	StipendClaimed      pgtype.Date
+	StipendRef          *string
+	VipGiftOn           pgtype.Date
+	ShopRerollsDay      pgtype.Date
+	ShopRerollsUsed     int16
+	StorehouseMilli     int64
+	StorehouseAt        time.Time
+	StorehouseCapMilli  int64
+	CartStock           int16
+	CartAt              time.Time
+	CartsOpened         int32
+	CalendarPos         int16
+	CalendarCycle       int32
+	FrenzyMeterMilli    int64
+	FrenzyLastAt        *time.Time
+	FrenzyUntil         *time.Time
+	FrenzyEnergyLeft    int64
+	FrenzyDay           pgtype.Date
+	FrenzyUsed          int16
+	FrenzyReadyAt       *time.Time
+	RoadClaimed         int32
+	GuideStep           int16
+	GuideDoneAt         *time.Time
+	GuideSkipped        bool
+	WinbackAt           *time.Time
+	WinbackTier         int16
+	ArenaDay            pgtype.Date
+	ArenaFightsUsed     int16
+	ArenaRefreshUsed    int16
+	ArenaFirstWinOn     pgtype.Date
+	BountyDay           pgtype.Date
+	BountyPlaced        int16
+	ChatMutedUntil      *time.Time
+	ChatStrikes         int16
+	ChatStrikeAt        *time.Time
+	ChatRulesVersion    int16
+	ChatSeenSeq         int64
+	GiftDay             pgtype.Date
+	GiftsTaken          int16
+	FriendReqDay        pgtype.Date
+	FriendReqs          int16
+	SpyDay              pgtype.Date
+	SpyUsed             int16
+	AidDay              pgtype.Date
+	AidGiven            int16
+	AidAskedAt          *time.Time
+	NotifRaid           bool
+	NotifChat           bool
+	NotifMail           bool
+	NotifEvents         bool
+	NotifFriends        bool
+	QuietFrom           int16
+	QuietTo             int16
+	PrivacyProfile      string
+	PrivacyOnline       bool
+	PrivacyRequests     bool
+	TalentRespecs       int32
+}
+
+type AppPlayerAchievement struct {
+	PlayerID    uuid.UUID
+	Achievement string
+	Claimed     int16
+	ClaimedAt   time.Time
+}
+
+type AppPlayerBoost struct {
+	ID        int64
+	PlayerID  uuid.UUID
+	Bucket    string
+	AmountBp  int32
+	StartsAt  time.Time
+	ExpiresAt time.Time
+	Source    string
+	SourceRef *string
+}
+
+type AppPlayerCampaign struct {
+	PlayerID  uuid.UUID
+	ChapterID string
+	Stage     int32
+	Stars     int32
+	ClearedAt time.Time
+	LastAt    time.Time
+	Clears    int32
+}
+
+type AppPlayerCampaignChest struct {
+	PlayerID  uuid.UUID
+	ChapterID string
+	ChestIx   int32
+	ClaimedAt time.Time
 }
 
 type AppPlayerCollection struct {
@@ -216,10 +710,71 @@ type AppPlayerCollection struct {
 	DonatedAt time.Time
 }
 
+type AppPlayerCosmetic struct {
+	PlayerID   uuid.UUID
+	CosmeticID string
+	Source     string
+	SourceRef  *string
+	AcquiredAt time.Time
+	ExpiresAt  *time.Time
+}
+
+type AppPlayerDay struct {
+	PlayerID uuid.UUID
+	Day      pgtype.Date
+}
+
+type AppPlayerDeal struct {
+	PlayerID uuid.UUID
+	Day      pgtype.Date
+	Slots    []byte
+	Claimed  int32
+}
+
+type AppPlayerDeed struct {
+	PlayerID uuid.UUID
+	Scope    string
+	Period   int64
+	Deed     string
+	Value    int64
+}
+
+type AppPlayerDevice struct {
+	PlayerID   uuid.UUID
+	DeviceHash string
+	FirstSeen  time.Time
+	LastSeen   time.Time
+}
+
+type AppPlayerEntitlement struct {
+	PlayerID      uuid.UUID
+	Entitlement   string
+	TransactionID string
+	GrantedAt     time.Time
+	RevokedAt     *time.Time
+}
+
+type AppPlayerEvent struct {
+	PlayerID    uuid.UUID
+	EventID     int64
+	PointsMilli int64
+	Day         int16
+	DayMilli    int64
+	PointsAt    time.Time
+	Tasks       int32
+	Milestones  int32
+}
+
 type AppPlayerHolding struct {
 	PlayerID  uuid.UUID
 	HoldingID string
 	Level     int32
+}
+
+type AppPlayerHourly struct {
+	PlayerID uuid.UUID
+	Hour     int64
+	Used     int16
 }
 
 type AppPlayerItem struct {
@@ -247,6 +802,22 @@ type AppPlayerJobProgress struct {
 	Collects int64
 }
 
+type AppPlayerOffer struct {
+	PlayerID  uuid.UUID
+	ProductID string
+	FiredAt   time.Time
+	ExpiresAt time.Time
+	SeenAt    *time.Time
+}
+
+type AppPlayerPurchase struct {
+	PlayerID  uuid.UUID
+	ProductID string
+	Bought    int32
+	FirstAt   time.Time
+	LastAt    time.Time
+}
+
 type AppPlayerQuest struct {
 	PlayerID  uuid.UUID
 	Day       pgtype.Date
@@ -257,12 +828,79 @@ type AppPlayerQuest struct {
 	Claimed   int32
 	UpdatedAt time.Time
 	QuestIds  []string
+	Stages    int32
+	Hunts     int32
+	Aids      int32
+	Blows     int32
+}
+
+type AppPlayerSeason struct {
+	PlayerID     uuid.UUID
+	Season       int32
+	PointsMilli  int64
+	Day          int16
+	DayMilli     int64
+	PointsAt     time.Time
+	FreeClaimed  int64
+	RoyalClaimed int64
+	RoyalAt      *time.Time
+	RoyalRef     *string
+	MightStart   pgtype.Int8
+}
+
+type AppPlayerTalent struct {
+	PlayerID uuid.UUID
+	TalentID string
+	Ranks    int32
+}
+
+type AppPlayerToken struct {
+	PlayerID  uuid.UUID
+	Token     string
+	Qty       int64
+	UpdatedAt time.Time
 }
 
 type AppPlayerUpgrade struct {
 	PlayerID  uuid.UUID
 	UpgradeID string
 	Level     int32
+}
+
+type AppPlayerWeekly struct {
+	PlayerID uuid.UUID
+	Week     pgtype.Date
+	TaskIds  []string
+	Claimed  int32
+	Chests   int32
+	Points   int32
+}
+
+type AppPromoFailure struct {
+	ID       int64
+	PlayerID uuid.UUID
+	At       time.Time
+}
+
+type AppPromoRedemption struct {
+	Code       string
+	PlayerID   uuid.UUID
+	DeviceHash string
+	RedeemedAt time.Time
+}
+
+type AppReferral struct {
+	InviteeID  uuid.UUID
+	InviterID  uuid.UUID
+	DeviceHash string
+	LinkedAt   time.Time
+	RewardedAt *time.Time
+}
+
+type AppReferralCode struct {
+	PlayerID  uuid.UUID
+	Code      string
+	CreatedAt time.Time
 }
 
 type AppRevengeToken struct {
@@ -311,4 +949,68 @@ type AppSoldier struct {
 	Name                string
 	RecruitedAt         time.Time
 	RolledConfigVersion int32
+}
+
+type AppSpyReport struct {
+	ID        uuid.UUID
+	ViewerID  uuid.UUID
+	TargetID  uuid.UUID
+	Cost      int64
+	Report    []byte
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+type AppSubscription struct {
+	OriginalTransactionID string
+	PlayerID              uuid.UUID
+	ProductID             string
+	Environment           string
+	Status                string
+	ExpiresAt             time.Time
+	AutoRenew             bool
+	LastTransactionID     string
+	UpdatedAt             time.Time
+}
+
+type AppThrone struct {
+	Uweek      int64
+	KingdomID  uuid.UUID
+	EmperorID  uuid.UUID
+	Reputation int64
+	Members    int32
+	CrownedAt  time.Time
+	ReignEnds  time.Time
+	DecreeID   *string
+	DecreeAt   *time.Time
+	DecreeEnds *time.Time
+}
+
+type AppWar struct {
+	ID        uuid.UUID
+	Week      pgtype.Date
+	AID       uuid.UUID
+	BID       *uuid.UUID
+	APoints   int32
+	BPoints   int32
+	AMight    int64
+	BMight    int64
+	StartsAt  time.Time
+	EndsAt    time.Time
+	SettledAt *time.Time
+	WinnerID  *uuid.UUID
+}
+
+type AppWarAttack struct {
+	ID         int64
+	WarID      uuid.UUID
+	AttackerID uuid.UUID
+	DefenderID uuid.UUID
+	Side       string
+	Won        bool
+	Points     int32
+	HeldPoints int32
+	Routed     bool
+	BattleID   *uuid.UUID
+	CreatedAt  time.Time
 }

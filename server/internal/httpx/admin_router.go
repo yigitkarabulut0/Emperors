@@ -16,6 +16,7 @@ import (
 	"github.com/yigitkarabulut0/emperors/server/internal/admin"
 	"github.com/yigitkarabulut0/emperors/server/internal/adminstream"
 	"github.com/yigitkarabulut0/emperors/server/internal/gameconfig"
+	"github.com/yigitkarabulut0/emperors/server/internal/service"
 )
 
 type adminAPI struct {
@@ -85,8 +86,72 @@ func AdminRouter(svc *admin.Service, log *slog.Logger, stream *AdminStream) http
 		r.Get("/boosts", a.listBoosts)
 		r.Post("/boosts", a.createBoost)
 		r.Post("/boosts/revoke", a.revokeBoost)
+		// The realm's calendar: the hourly schedule, festivals, the season.
+		r.Get("/liveops/hourly", a.hourlySchedule)
+		r.Post("/liveops/hourly", a.setHour)
+		r.Get("/liveops/festivals", a.festivals)
+		r.Post("/liveops/festivals", a.scheduleFestival)
+		r.Post("/liveops/festivals/revoke", a.revokeFestival)
+		r.Get("/liveops/festivals/board", a.festivalBoard)
+		r.Get("/liveops/season", a.seasonSummary)
+
+		// Rekabet (pvp.json): the arena's ladder, the board's escrow, the Throne.
+		r.Get("/pvp/arena", a.pvpArena)
+		r.Get("/pvp/bounties", a.pvpBounties)
+		r.Post("/pvp/bounties/revoke", a.pvpBountyRevoke)
+		r.Get("/pvp/throne", a.pvpThrone)
+		r.Post("/pvp/throne/settle", a.pvpThroneSettle)
+
+		// Sosyal (social.json): the halls' moderation queue.
+		r.Get("/mod/queue", a.modQueue)
+		r.Get("/mod/context", a.modContext)
+		r.Get("/mod/mutes", a.modMutes)
+		r.Post("/mod/hide", a.modHide)
+		r.Post("/mod/mute", a.modMute)
+		r.Post("/mod/unmute", a.modUnmute)
+		r.Post("/mod/clear", a.modClear)
+
+		// PvE ve derinlik (campaign.json, hunt.json, forge.json, talents.json):
+		// the road, the roads, the anvil and the tree, read across the realm.
+		r.Get("/depth", a.depth)
+		r.Get("/kingdom-war", a.kingdomWar)
 
 		r.Get("/audit", a.audit)
+
+		// The Royal Mail from the panel, the diamond ledger, the job board.
+		r.Post("/mail/send", a.mailSend)
+		r.Get("/mail/preview", a.mailPreview)
+		r.Get("/mail/broadcasts", a.mailBroadcasts)
+		r.Post("/mail/revoke", a.mailRevoke)
+		r.Get("/players/diamonds", a.playerDiamonds)
+		r.Get("/jobs", a.jobs)
+
+		// The billing desk: takings, purchases, the App Store's notifications,
+		// and a lord's purchases with what they left.
+		r.Get("/billing/summary", a.billingSummary)
+		r.Get("/billing/transactions", a.billingTransactions)
+		r.Get("/billing/notifications", a.billingNotifications)
+		r.Post("/billing/notifications/retry", a.billingRetry)
+		r.Post("/billing/take-back", a.billingTakeBack)
+		r.Get("/players/billing", a.playerBilling)
+		r.Post("/players/forgive-debt", a.forgiveDebt)
+		r.Post("/players/entitlement", a.entitlement)
+
+		// Dev tools: a server that is not production only (admin/dev.go).
+		r.Get("/dev", a.devTools)
+		r.Post("/dev/timewarp", a.devTimeWarp)
+		r.Post("/dev/deeds", a.devDeeds)
+		r.Post("/dev/jobs/run", a.devRunJob)
+		r.Post("/dev/guide", a.devGuide)
+
+		// A/B tests on offers, with each arm's results.
+		r.Get("/experiments", a.experiments)
+
+		// Promo codes.
+		r.Get("/promo", a.promos)
+		r.Post("/promo", a.promoCreate)
+		r.Post("/promo/disable", a.promoDisable)
+		r.Get("/promo/redemptions", a.promoRedemptions)
 
 		// Who is in the game right now, as a plain read. The stream carries the
 		// same information incrementally; this is what a fresh page load and
@@ -186,8 +251,18 @@ func (a *adminAPI) fail(w http.ResponseWriter, r *http.Request, err error) {
 	// these the panel would show "internal error" for "you typed nothing".
 	case errors.Is(err, admin.ErrNothingToDo):
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, err.Error())
-	case errors.Is(err, admin.ErrOutOfRange):
+	case errors.Is(err, admin.ErrOutOfRange), errors.Is(err, service.ErrBadTakeBack):
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, err.Error())
+	// The billing desk reaches into the game service, whose not-found and
+	// not-configured are the desk's too.
+	case errors.Is(err, service.ErrNotFound):
+		WriteProblem(w, r, http.StatusNotFound, CodeNotFound, "not found")
+	case errors.Is(err, admin.ErrNoGame):
+		WriteProblem(w, r, http.StatusServiceUnavailable, "no_game", err.Error())
+	case errors.Is(err, admin.ErrNoDevTools):
+		WriteProblem(w, r, http.StatusForbidden, "dev_tools_off", err.Error())
+	case errors.Is(err, admin.ErrUnavailable), errors.Is(err, service.ErrIAPUnavailable):
+		WriteProblem(w, r, http.StatusServiceUnavailable, "iap_unavailable", "purchases are not configured on this server")
 	default:
 		a.log.Error("admin error", "err", err, "path", r.URL.Path)
 		WriteProblem(w, r, http.StatusInternalServerError, CodeInternal, err.Error())
@@ -281,7 +356,11 @@ func (a *adminAPI) adjustCurrency(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "player_id must be a uuid")
 		return
 	}
-	row, err := a.svc.AdjustCurrency(r.Context(), who(r), id, req.Gold, req.Diamonds, req.Note)
+	// The older currency-only form of /players/adjust. It used to be a second,
+	// unguarded write path -- no diamond check, no transaction, no diamond
+	// ledger -- so a removal past zero hit the CHECK constraint as a 500. It is
+	// the guarded path now, with nothing but gold and diamonds.
+	row, err := a.svc.AdjustPlayer(r.Context(), who(r), id, req.Gold, req.Diamonds, 0, 0, req.Note)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -515,12 +594,14 @@ func (a *adminAPI) createBoost(w http.ResponseWriter, r *http.Request) {
 		Bucket   string `json:"bucket"`
 		AmountBP int64  `json:"amount_bp"`
 		Hours    int    `json:"hours"`
+		// Hours from now until it starts; 0 starts it at once.
+		StartsIn int    `json:"starts_in_hours"`
 		Note     string `json:"note"`
 	}
 	if !decode(w, r, &req) {
 		return
 	}
-	row, err := a.svc.CreateBoost(r.Context(), who(r), req.Bucket, req.AmountBP, req.Hours, req.Note)
+	row, err := a.svc.CreateBoost(r.Context(), who(r), req.Bucket, req.AmountBP, req.Hours, req.StartsIn, req.Note)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -541,6 +622,99 @@ func (a *adminAPI) revokeBoost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, row)
+}
+
+// --- the realm's calendar ---
+
+func (a *adminAPI) hourlySchedule(w http.ResponseWriter, r *http.Request) {
+	rows, err := a.svc.HourlySchedule(r.Context())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"hours": rows, "table": a.svc.HourlyTable()})
+}
+
+func (a *adminAPI) setHour(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Hour int64 `json:"hour"`
+		// An event of the table to force; "none" to skip; "" to give the hour
+		// back to the roll.
+		Event string `json:"event"`
+		Note  string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	if err := a.svc.SetHour(r.Context(), who(r), req.Hour, req.Event, req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.hourlySchedule(w, r)
+}
+
+func (a *adminAPI) festivals(w http.ResponseWriter, r *http.Request) {
+	v, err := a.svc.Festivals(r.Context())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) scheduleFestival(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Template string `json:"template"`
+		// "YYYY-MM-DD HH:MM" UTC, or hours from now when empty.
+		StartsAt string `json:"starts_at"`
+		StartsIn int    `json:"starts_in_hours"`
+		Note     string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	if _, err := a.svc.ScheduleFestival(r.Context(), who(r), req.Template, req.StartsAt, req.StartsIn, req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.festivals(w, r)
+}
+
+func (a *adminAPI) revokeFestival(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID int64 `json:"id"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	if err := a.svc.RevokeFestival(r.Context(), who(r), req.ID); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.festivals(w, r)
+}
+
+func (a *adminAPI) festivalBoard(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "the festival id is a number")
+		return
+	}
+	rows, err := a.svc.FestivalBoard(r.Context(), id)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"board": rows})
+}
+
+func (a *adminAPI) seasonSummary(w http.ResponseWriter, r *http.Request) {
+	v, err := a.svc.SeasonSummary(r.Context())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
 }
 
 // --- population ---
@@ -571,4 +745,217 @@ func (a *adminAPI) browsePlayers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, v)
+}
+
+// --- Rekabet (Wave 5) ---
+//
+// The arena's ladder, the bounty board's escrow and the Throne. Reads take
+// query params and writes take a body, as every other desk here does, and a
+// write re-renders its own read so the panel never has to ask twice.
+
+func (a *adminAPI) pvpArena(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	v, err := a.svc.ArenaLadder(r.Context(), who(r), limit)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) pvpBounties(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	v, err := a.svc.Bounties(r.Context(), who(r), limit)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) pvpBountyRevoke(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID   string `json:"id"`
+		Note string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	id, err := uuid.Parse(req.ID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "the bounty id is a uuid")
+		return
+	}
+	if _, err := a.svc.RevokeBounty(r.Context(), who(r), id, req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.pvpBounties(w, r)
+}
+
+// --- the moderation desk (admin/social.go) ---
+
+func (a *adminAPI) depth(w http.ResponseWriter, r *http.Request) {
+	hours, _ := strconv.Atoi(r.URL.Query().Get("hours"))
+	v, err := a.svc.Depth(r.Context(), who(r), hours)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+// Krallik Boss ve Savaslari (Wave 8): the beasts standing and the week's wars.
+func (a *adminAPI) kingdomWar(w http.ResponseWriter, r *http.Request) {
+	hours, _ := strconv.Atoi(r.URL.Query().Get("hours"))
+	v, err := a.svc.KingdomWar(r.Context(), who(r), hours)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) modQueue(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	v, err := a.svc.ModQueue(r.Context(), who(r), limit)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) modContext(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.URL.Query().Get("id"))
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "the line's id is a uuid")
+		return
+	}
+	span, _ := strconv.Atoi(r.URL.Query().Get("span"))
+	v, err := a.svc.ModContext(r.Context(), who(r), id, span)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"lines": v})
+}
+
+func (a *adminAPI) modMutes(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	v, err := a.svc.ModMutes(r.Context(), who(r), limit)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"mutes": v})
+}
+
+func (a *adminAPI) modHide(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID   string `json:"id"`
+		Hide bool   `json:"hide"`
+		Note string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	id, err := uuid.Parse(req.ID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "the line's id is a uuid")
+		return
+	}
+	if err := a.svc.HideLine(r.Context(), who(r), id, req.Hide, req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.modQueue(w, r)
+}
+
+func (a *adminAPI) modMute(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlayerID string `json:"player_id"`
+		Minutes  int    `json:"minutes"`
+		Reason   string `json:"reason"`
+		Note     string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	pid, err := uuid.Parse(req.PlayerID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "the lord's id is a uuid")
+		return
+	}
+	if _, err := a.svc.MuteLord(r.Context(), who(r), pid, req.Minutes, req.Reason, req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.modQueue(w, r)
+}
+
+func (a *adminAPI) modUnmute(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlayerID string `json:"player_id"`
+		Note     string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	pid, err := uuid.Parse(req.PlayerID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "the lord's id is a uuid")
+		return
+	}
+	if err := a.svc.UnmuteLord(r.Context(), who(r), pid, req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.modQueue(w, r)
+}
+
+// The lords' queue has one answer of its own: the desk has looked at this
+// lord. What it decided to DO is a mute, or nothing, or a letter -- each with
+// its own button and its own audit line.
+func (a *adminAPI) modClear(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlayerID string `json:"player_id"`
+		Note     string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	pid, err := uuid.Parse(req.PlayerID)
+	if err != nil {
+		WriteProblem(w, r, http.StatusBadRequest, CodeBadRequest, "the lord's id is a uuid")
+		return
+	}
+	if err := a.svc.ClearLordReports(r.Context(), who(r), pid, req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.modQueue(w, r)
+}
+
+func (a *adminAPI) pvpThrone(w http.ResponseWriter, r *http.Request) {
+	v, err := a.svc.Throne(r.Context(), who(r))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, v)
+}
+
+func (a *adminAPI) pvpThroneSettle(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Note string `json:"note"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	if err := a.svc.SettleThrone(r.Context(), who(r), req.Note); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.pvpThrone(w, r)
 }

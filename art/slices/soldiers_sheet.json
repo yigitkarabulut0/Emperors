@@ -1,0 +1,276 @@
+{
+ "source": "soldiers_sheet.png",
+ "_comment": "Soldier portraits (R6): three types (columns: villager=peasant, mercenary, gladiator) by three looks (rows: rough, fine, gilded). Each card is cut 1 px inside the dark line within its gold frame (measured with probe: the painting runs x 32-290, 340-599, 649-908), 22 px below the inner top edge so no chamfered corner of the frame is in the crop, and drawn down to the size its window uses (SLICING_GUIDE: paint big, draw down). Which tiers wear which look: client/scripts/ui/soldier_art.gd.",
+ "crops": [
+  {
+   "name": "portraits/soldier_peasant_rough",
+   "rect": [
+    33,
+    79,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "peasant (rough): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_peasant_rough_large",
+   "rect": [
+    33,
+    79,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "peasant (rough): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_mercenary_rough",
+   "rect": [
+    341,
+    79,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "mercenary (rough): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_mercenary_rough_large",
+   "rect": [
+    341,
+    79,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "mercenary (rough): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_gladiator_rough",
+   "rect": [
+    651,
+    79,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "gladiator (rough): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_gladiator_rough_large",
+   "rect": [
+    651,
+    79,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "gladiator (rough): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_peasant_fine",
+   "rect": [
+    33,
+    610,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "peasant (fine): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_peasant_fine_large",
+   "rect": [
+    33,
+    610,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "peasant (fine): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_mercenary_fine",
+   "rect": [
+    341,
+    610,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "mercenary (fine): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_mercenary_fine_large",
+   "rect": [
+    341,
+    610,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "mercenary (fine): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_gladiator_fine",
+   "rect": [
+    651,
+    610,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "gladiator (fine): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_gladiator_fine_large",
+   "rect": [
+    651,
+    610,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "gladiator (fine): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_peasant_gilded",
+   "rect": [
+    33,
+    1136,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "peasant (gilded): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_peasant_gilded_large",
+   "rect": [
+    33,
+    1136,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "peasant (gilded): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_mercenary_gilded",
+   "rect": [
+    341,
+    1136,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "mercenary (gilded): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_mercenary_gilded_large",
+   "rect": [
+    341,
+    1136,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "mercenary (gilded): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  },
+  {
+   "name": "portraits/soldier_gladiator_gilded",
+   "rect": [
+    651,
+    1136,
+    256,
+    316
+   ],
+   "mode": "rect",
+   "scale": [
+    133,
+    164
+   ],
+   "note": "gladiator (gilded): the card's head-and-chest, below the chamfered corners, drawn down 0.51 into the strip card's portrait window"
+  },
+  {
+   "name": "portraits/soldier_gladiator_gilded_large",
+   "rect": [
+    651,
+    1136,
+    256,
+    362
+   ],
+   "mode": "rect",
+   "scale": [
+    202,
+    286
+   ],
+   "note": "gladiator (gilded): the same framing taller, drawn down 0.78 into the selected soldier's window under army/sel_frame"
+  }
+ ]
+}

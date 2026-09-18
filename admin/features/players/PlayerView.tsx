@@ -6,9 +6,15 @@ import { query, useMutate, useSlice } from "@/store/react";
 import { Button, EmptyState, Field, Panel, Pill, Skeleton, Stat, Stats } from "@/ui/kit";
 import { atLeast } from "@/lib/ops";
 import { bp, gold, num, shortDate } from "@/lib/format";
+import { DiamondLedger } from "./DiamondLedger";
+import { PlayerBilling } from "@/features/billing/PlayerBilling";
+import { DevCard } from "./DevCard";
+import { DailyLoop, type Loop } from "./DailyLoop";
 import s from "./detail.module.css";
 
-type TierOdd = { tier: string; name?: string; pct?: number; chance_bp?: number };
+// items.TierOdd is {tier, bp}. The page read only pct and chance_bp, neither of
+// which the server has ever sent, so every tier showed 0.00% at every luck.
+type TierOdd = { tier: string; name?: string; bp?: number; pct?: number; chance_bp?: number };
 
 type Detail = {
   id: string; username: string; name: string; level: number;
@@ -17,8 +23,10 @@ type Detail = {
   xp: number; xp_to_next: number;
   stat_points_unspent: number; stat_energy: number; stat_attack: number; stat_defense: number;
   energy: number; treasury: string; soldier_slots: number; action_seq: number;
+  diamond_debt: number;
   luck_bp: number; luck_expires_at: string | null;
   odds_now: TierOdd[]; odds_at_luck: TierOdd[]; preview_bp: number;
+  loop?: Loop;
   audit: { admin: string; action: string; note: string; at: string }[];
 };
 
@@ -28,6 +36,7 @@ const TIER_COLOUR: Record<string, string> = {
 };
 
 function pct(o: TierOdd): number {
+  if (typeof o.bp === "number") return o.bp / 100;
   if (typeof o.pct === "number") return o.pct;
   if (typeof o.chance_bp === "number") return o.chance_bp / 100;
   return 0;
@@ -42,6 +51,8 @@ export function PlayerView({ id }: { id: string }) {
   const [d, setD] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState(0);
+  // Bumped after every write, so the diamond history below refetches too.
+  const [stamp, setStamp] = useState(0);
 
   const load = useCallback(async (previewBP = preview) => {
     const res = await query<Detail>("playerDetail", { id, preview: previewBP || undefined });
@@ -72,7 +83,10 @@ export function PlayerView({ id }: { id: string }) {
    *  actually did — a level change resets XP, a luck change moves the odds. */
   async function run(op: Parameters<typeof mutate>[0], body: Record<string, unknown>, success: string, key: string) {
     const res = await mutate(op, body, { key, success });
-    if (res.ok) await load();
+    if (res.ok) {
+      await load();
+      setStamp((n) => n + 1);
+    }
   }
 
   return (
@@ -99,6 +113,9 @@ export function PlayerView({ id }: { id: string }) {
           {d.state === "active"
             ? <Pill tone="ok" dot>active</Pill>
             : <Pill tone="bad" dot hollow>{d.state}</Pill>}
+          {canModerate && (
+            <Link href={`/mail?player=${d.id}`}><Button size="sm">send a letter</Button></Link>
+          )}
           <Link href="/players"><Button size="sm">back to the list</Button></Link>
         </div>
       </header>
@@ -297,6 +314,14 @@ export function PlayerView({ id }: { id: string }) {
           </table>
         )}
       </Panel>
+
+      <PlayerBilling id={d.id} stamp={stamp} onChanged={() => { void load(); setStamp((n) => n + 1); }} />
+
+      <DailyLoop loop={d.loop} />
+
+      <DiamondLedger id={d.id} stamp={stamp} owes={d.diamond_debt ?? 0} />
+
+      <DevCard id={d.id} onChanged={() => { void load(); setStamp((n) => n + 1); }} />
 
       <Panel title="What has been done to this player" flush>
         {d.audit?.length ? (

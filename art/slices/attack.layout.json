@@ -47,128 +47,50 @@
    ]
   },
   {
-   "id": "tab_revenge",
-   "kind": "button",
-   "action": "tab:revenge",
+   "id": "subtabs",
+   "kind": "template",
    "rect": [
     183,
-    276,
-    368,
+    258,
+    738,
     95
    ],
-   "states": {
-    "active": {
-     "asset": "attack/tab_revenge",
-     "rect": [
-      183,
-      284,
-      368,
-      78
-     ]
-    },
-    "inactive": {
-     "asset": "attack/tab_inactive_frame",
-     "rect": [
-      183,
-      288,
-      368,
-      68
-     ],
-     "label": {
-      "kind": "text",
-      "rect": [
-       183,
-       288,
-       368,
-       68
-      ],
-      "font": "title",
-      "size": 31,
-      "cap": 22,
-      "weight": 600,
-      "color": "#C9CDD3",
-      "align": "center",
-      "valign": "center",
-      "sample": "REVENGE"
-     }
-    }
-   },
-   "keep_texture_size": true,
-   "paint_rect": [
-    183,
-    284,
-    368,
-    78
-   ]
+   "tabs": [
+    "raid",
+    "arena",
+    "campaign",
+    "bounties"
+   ],
+   "note": "RAID / ARENA / CAMPAIGN / BOUNTIES, built by attack.gd as a TabStrip from tabs_sheet.json's short plates. The rect is the painted row: its outer edges are the two painted plates' (183 and 921) and its floor is the top of the header's gold rule, y 353, which the painting stands them on. Four short plates come out 178x56 at a gap of 8.7 -- the same family as the Kingdom's 190x60 -- and the header's own painted tabs are erased (attack.json)."
   },
   {
-   "id": "tab_targets",
-   "kind": "button",
-   "action": "tab:targets",
+   "id": "tabs",
+   "kind": "template",
    "rect": [
-    553,
-    274,
-    368,
+    183,
+    357,
+    738,
     95
    ],
-   "states": {
-    "inactive": {
-     "asset": "attack/tab_targets",
-     "rect": [
-      553,
-      288,
-      368,
-      68
-     ]
-    },
-    "active": {
-     "asset": "attack/tab_active_frame",
-     "rect": [
-      553,
-      284,
-      368,
-      78
-     ],
-     "label": {
-      "kind": "text",
-      "rect": [
-       553,
-       284,
-       368,
-       68
-      ],
-      "font": "title",
-      "size": 31,
-      "cap": 22,
-      "weight": 700,
-      "color": "#F4F0EA",
-      "align": "center",
-      "valign": "center",
-      "sample": "TARGETS"
-     }
-    }
-   },
-   "keep_texture_size": true,
-   "paint_rect": [
-    553,
-    288,
-    368,
-    68
-   ]
+   "tabs": [
+    "revenge",
+    "targets"
+   ],
+   "note": "REVENGE / TARGETS, RAID's own row, directly under the four-tab strip: the long plates at their painted 355x88 with the painting's own 28 between them, their tops at 364 -- exactly where attack.png put its first card -- and their floor at 452. The two tap bands (258..353 and 357..452) share no pixel and each is 95 tall, a thumb."
   },
   {
    "id": "revenge_card",
    "kind": "template",
    "rect": [
     178,
-    364,
+    463,
     750,
     224
    ],
    "instances": [
     [
      178,
-     364
+     463
     ]
    ],
    "parts": [
@@ -186,14 +108,15 @@
     {
      "id": "portrait",
      "kind": "image",
-     "asset": "portraits/rival_darius",
+     "asset": "portraits/avatar_king",
      "rect": [
-      22,
-      64,
-      136,
-      136
+      27,
+      69,
+      125,
+      127
      ],
-     "dynamic": "portrait"
+     "dynamic": "portrait",
+     "note": "the rival's own face (Art.avatar, avatars_sheet.json), inside the card's painted frame -- its gold (targets) or copper (raiders) bars stay the card's own, measured at 5 units in"
     },
     {
      "id": "crest",
@@ -306,7 +229,7 @@
    "asset": "attack/divider_targets",
    "rect": [
     180,
-    596,
+    695,
     745,
     42
    ]
@@ -316,7 +239,7 @@
    "kind": "template",
    "rect": [
     178,
-    647,
+    746,
     748,
     228
    ],
@@ -324,15 +247,15 @@
    "instances": [
     [
      178,
-     647
+     746
     ],
     [
      178,
-     876
+     975
     ],
     [
      178,
-     1105
+     1204
     ]
    ],
    "parts": [
@@ -350,14 +273,15 @@
     {
      "id": "portrait",
      "kind": "image",
-     "asset": "portraits/rival_seraphine",
+     "asset": "portraits/avatar_queen",
      "rect": [
-      22,
-      14,
-      136,
-      136
+      27,
+      19,
+      125,
+      127
      ],
-     "dynamic": "portrait"
+     "dynamic": "portrait",
+     "note": "the rival's own face (Art.avatar, avatars_sheet.json), inside the card's painted frame -- its gold (targets) or copper (raiders) bars stay the card's own, measured at 5 units in"
     },
     {
      "id": "crest",
@@ -741,15 +665,15 @@
     "text": {
      "kind": "text",
      "rect": [
-      258,
+      271,
       1556,
-      600,
+      587,
       36
      ],
      "font": "body",
-     "size": 25,
-     "cap": 18,
-     "weight": 500,
+     "size": 21,
+     "cap": 15,
+     "weight": 400,
      "color": "#E9E3D8",
      "align": "left",
      "valign": "center",

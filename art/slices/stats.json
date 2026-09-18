@@ -1,0 +1,357 @@
+{
+ "source": "stats.png",
+ "crops": [
+  {
+   "name": "stats/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "erase": [
+    {
+     "rect": [
+      107,
+      1436,
+      467,
+      101
+     ],
+     "sample_x": [
+      575,
+      604
+     ]
+    },
+    {
+     "rect": [
+      570,
+      803,
+      69,
+      68
+     ],
+     "sample_x": [
+      560,
+      571
+     ]
+    },
+    {
+     "rect": [
+      799,
+      803,
+      70,
+      68
+     ],
+     "sample_x": [
+      870,
+      880
+     ]
+    },
+    {
+     "rect": [
+      636,
+      878,
+      178,
+      61
+     ],
+     "sample_x": [
+      620,
+      636
+     ]
+    },
+    {
+     "rect": [
+      570,
+      1027,
+      70,
+      68
+     ],
+     "sample_x": [
+      560,
+      571
+     ]
+    },
+    {
+     "rect": [
+      799,
+      1026,
+      70,
+      69
+     ],
+     "sample_x": [
+      870,
+      880
+     ]
+    },
+    {
+     "rect": [
+      636,
+      1102,
+      178,
+      60
+     ],
+     "sample_x": [
+      620,
+      636
+     ]
+    },
+    {
+     "rect": [
+      570,
+      1250,
+      70,
+      69
+     ],
+     "sample_x": [
+      560,
+      571
+     ]
+    },
+    {
+     "rect": [
+      799,
+      1250,
+      70,
+      68
+     ],
+     "sample_x": [
+      870,
+      880
+     ]
+    },
+    {
+     "rect": [
+      636,
+      1326,
+      178,
+      60
+     ],
+     "sample_x": [
+      620,
+      636
+     ]
+    },
+    {
+     "rect": [
+      40,
+      634,
+      829,
+      11
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    },
+    {
+     "rect": [
+      40,
+      962,
+      829,
+      8
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    },
+    {
+     "rect": [
+      40,
+      1186,
+      829,
+      8
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    },
+    {
+     "rect": [
+      40,
+      1412,
+      829,
+      22
+     ],
+     "sample_x": [
+      300,
+      640
+     ]
+    }
+   ]
+  },
+  {
+   "name": "stats/btn_minus_attack",
+   "rect": [
+    570,
+    803,
+    69,
+    68
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     68,
+     67
+    ]
+   }
+  },
+  {
+   "name": "stats/btn_plus_attack",
+   "rect": [
+    799,
+    803,
+    70,
+    68
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     69,
+     67
+    ]
+   }
+  },
+  {
+   "name": "stats/btn_all_attack",
+   "rect": [
+    636,
+    878,
+    178,
+    61
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "stats/btn_minus_defense",
+   "rect": [
+    570,
+    1027,
+    70,
+    68
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     69,
+     67
+    ]
+   }
+  },
+  {
+   "name": "stats/btn_plus_defense",
+   "rect": [
+    799,
+    1026,
+    70,
+    69
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     69,
+     68
+    ]
+   }
+  },
+  {
+   "name": "stats/btn_all_defense",
+   "rect": [
+    636,
+    1102,
+    178,
+    60
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "stats/btn_minus_energy",
+   "rect": [
+    570,
+    1250,
+    70,
+    69
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     69,
+     68
+    ]
+   }
+  },
+  {
+   "name": "stats/btn_plus_energy",
+   "rect": [
+    799,
+    1250,
+    70,
+    68
+   ],
+   "mask": {
+    "type": "ellipse",
+    "box": [
+     1,
+     1,
+     69,
+     67
+    ]
+   }
+  },
+  {
+   "name": "stats/btn_all_energy",
+   "rect": [
+    636,
+    1326,
+    178,
+    60
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "stats/btn_confirm",
+   "rect": [
+    107,
+    1436,
+    467,
+    101
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "stats/btn_close",
+   "rect": [
+    605,
+    1441,
+    234,
+    94
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  }
+ ]
+}

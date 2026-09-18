@@ -1,0 +1,46 @@
+{
+ "source": "titles_sheet.png",
+ "_comment": "The reward line of a title cosmetic (icon \"title:<id>\"): the crowned red ribbon's middle, its gold crown over the gold-rimmed band. The whole ribbon is 690x160; in a 46-unit reward box it was a 46x11 sliver. The middle keeps the two things that say 'a title' at 46 -- the crown and the banner's red -- and its ends fade out over 9 units instead of stopping square. Keyed off the sheet's navy (8, 18, 27). Drawn down to 46, 52 and 64; never up.",
+ "crops": [
+  {
+   "name": "rewards/title_scroll",
+   "rect": [
+    340,
+    668,
+    260,
+    146
+   ],
+   "mode": "darkkey",
+   "k": 60,
+   "floor": 3,
+   "bg": [
+    8,
+    18,
+    27
+   ],
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      16,
+      0
+     ],
+     [
+      244,
+      0
+     ],
+     [
+      244,
+      146
+     ],
+     [
+      16,
+      146
+     ]
+    ],
+    "feather": 9
+   },
+   "note": "the crowned ribbon's middle: crown at y 676..735, band y 712..806 on the sheet"
+  }
+ ]
+}

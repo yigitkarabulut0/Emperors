@@ -1,0 +1,120 @@
+{
+  "source": "chat.png",
+  "note": "THE HALL -- the Kingdom tab's CHAT sub-tab (scenes/kingdom/chat_section.gd). The painting's own header and its two tab rows are NOT cut: the Kingdom tab keeps kingdom.png's header, and both rows are TabStrips built from tabs_sheet.json's short plates, as every strip of three or more is. What is cut here is what the hall itself is made of -- the day's rule, a lord's plates and bubble, the realm's horn and scroll, and the bar a line is written on. A round portrait is portraits/avatar_<id>_ring with the lord's own frame over it (Look.paint_frame), the same object the Kingdom's medallions and the rankings' podium draw, so a lord looks the same in the hall as everywhere else.",
+  "crops": [
+    {
+      "name": "chat/divider_left",
+      "rect": [
+        185,
+        552,
+        322,
+        22
+      ],
+      "note": "The day's rule, left half, ending in the painting's diamond. The word between the two halves is live (TODAY, YESTERDAY, a date), so it is set in type between them rather than erased out of one long rule -- an erase across a gold rule leaves a flat bar where the light was."
+    },
+    {
+      "name": "chat/divider_right",
+      "rect": [
+        613,
+        552,
+        304,
+        22
+      ],
+      "note": "The same rule's right half, starting at its own diamond."
+    },
+    {
+      "name": "chat/crown",
+      "rect": [
+        316,
+        610,
+        44,
+        72
+      ],
+      "note": "The crown over a king's or a marshal's name. A member's line has none, which is how the painting marks rank in the hall."
+    },
+    {
+      "name": "chat/name_plate",
+      "rect": [
+        363,
+        610,
+        235,
+        55
+      ],
+      "note": "The gold-rimmed plate a lord's name is set on. Empty as painted."
+    },
+    {
+      "name": "chat/time_plate",
+      "rect": [
+        600,
+        610,
+        172,
+        55
+      ],
+      "note": "The steel-rimmed plate beside it, for when the line was said."
+    },
+    {
+      "name": "chat/bubble",
+      "rect": [
+        316,
+        658,
+        602,
+        104
+      ],
+      "note": "What a lord said: the navy bubble with its tail on the left, toward the portrait. Nine-patched, so a long line grows the bubble and not the tail -- the left margin has to clear the tail (x 316-325) or a stretched bubble drags the point across the page."
+    },
+    {
+      "name": "chat/horn",
+      "rect": [
+        174,
+        955,
+        143,
+        152
+      ],
+      "note": "The herald's horn and banner, drawn beside the FIRST line of a run the realm says. The painting shows it on the first and third system lines and not on the second, which is exactly what a run looks like."
+    },
+    {
+      "name": "chat/scroll",
+      "rect": [
+        318,
+        971,
+        602,
+        98
+      ],
+      "note": "The parchment a system line is written on: a lord joined, gold was given, a Work rose, the treasury was opened. Nine-patched."
+    },
+    {
+      "name": "chat/bar",
+      "rect": [
+        168,
+        1420,
+        772,
+        130
+      ],
+      "erase": [
+        {
+          "rect": [
+            750,
+            1428,
+            172,
+            100
+          ],
+          "sample_x": [
+            736,
+            748
+          ]
+        }
+      ],
+      "note": "The bar a line is written on, with the quill and its parchment field baked in: it is one object at one size (the page's own width), so nothing here is nine-patched and nothing is stretched. SEND is lifted off it row by row from the bar's own navy just left of the plate (x 736-748) and cut separately, because a plate that dims when the hall is shut has to be a button and not a painted patch."
+    },
+    {
+      "name": "chat/send",
+      "rect": [
+        749,
+        1436,
+        168,
+        86
+      ],
+      "note": "SEND, the word baked: it never changes. Dimmed while the hall is shut or the line is empty."
+    }
+  ]
+}

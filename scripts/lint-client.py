@@ -142,5 +142,37 @@ if os.path.exists(venv):
 else:
     print("  SKIP  erase remnants (no art/.venv to read the PNGs with)")
 
+# 9. every event the client tracks is one the server keeps
+#
+# POST /v1/events drops any name or property the server does not list
+# (server/internal/service/events.go), silently, so an old build loses one
+# measurement rather than a batch. The price of that is that a new call to
+# Api.track the server was never told about measures nothing, and nobody would
+# notice. This reads both sides and fails the build instead.
+import re
+events_go = open(os.path.join(ROOT, "server", "internal", "service", "events.go")).read()
+m = re.search(r"var clientEvents = map\[string\]map\[string\]propKind\{(.*?)\n\}", events_go, re.S)
+if not m:
+    fail("could not read the server's event list from service/events.go")
+else:
+    listed = {n: set(re.findall(r'"(\w+)":\s*prop', props))
+              for n, props in re.findall(r'^\s*"(\w+)":\s*\{([^}]*)\}', m.group(1), re.M)}
+    calls, bad = 0, []
+    for f in sorted(glob.glob(os.path.join(CLIENT, "**", "*.gd"), recursive=True)):
+        if "/tests/" in f or "/.godot/" in f: continue
+        for n, line in enumerate(open(f), 1):
+            for name, props in re.findall(r'Api\.track\("(\w+)"(?:\s*,\s*\{([^}]*)\})?', line):
+                calls += 1
+                where = f"{os.path.relpath(f, CLIENT)}:{n}"
+                if name not in listed:
+                    bad.append(f"{where} tracks \"{name}\", which the server does not keep")
+                    continue
+                for key in re.findall(r'"(\w+)"\s*:', props or ""):
+                    if key not in listed[name]:
+                        bad.append(f"{where} sends \"{name}.{key}\", which the server drops")
+    for b in bad: fail(b)
+    if calls == 0: fail("no Api.track call found: the event check is reading the wrong thing")
+    elif not bad: ok(f"all {calls} tracked events are ones the server keeps ({len(listed)} listed)")
+
 print(f"\n{fails} FAILED" if fails else "\nclient lint clean")
 sys.exit(1 if fails else 0)

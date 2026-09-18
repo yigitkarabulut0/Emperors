@@ -15,7 +15,7 @@ const STAT := {"weapon": ["attack", "ATK"], "armor": ["defense", "DEF"], "horse"
 ## Returns the chosen item's id, "__unequip" to take the worn piece off, or ""
 ## when the page was closed. `worn` is the piece in the slot now, or {}.
 static func pick(host: Node, title: String, items: Array, worn: Dictionary) -> String:
-	var s := Sheet.open(host, title, "Tap a piece to wear it.")
+	var s := Sheet.open(host, title, "Tap a piece to wear it.", 60, "", "pages/header_gear")
 	var chosen := [""]
 	if not worn.is_empty():
 		s.heading("WORN NOW")
@@ -53,6 +53,8 @@ static func _row(s: Sheet, it: Dictionary, worn: Dictionary, compare: bool) -> N
 	pic.texture = Art.item(str(it.get("art", "")))
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(pic)
+	# The piece on its rarity's velvet, under the rarity ring drawn over it.
+	ItemGround.under(pic, tier, ItemGround.inset(Rect2(16, 16, 144, 144), 144.0 * ItemGround.RARITY_RING_REACH))
 	row.add_child(UI.image("inventory/frame_" + tier, Rect2(16, 16, 144, 144)))
 	var badge := UI.image("inventory/badge_" + tier, Rect2(178, 18, 93, 38))
 	badge.size = badge.texture.get_size()

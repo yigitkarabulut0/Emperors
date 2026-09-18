@@ -150,29 +150,49 @@ func _track_is_empty_under(tag: String, bar: Control) -> void:
 	var track := Rect2(bar.position, bar.get_meta("full"))
 	# The picture the bar is drawn on is the last one before it that covers the
 	# track; anything under that one is hidden by it.
-	var under: TextureRect = null
+	# A track drawn wider than its painting (the storehouse's) is a nine-patch.
+	var under: Control = null
 	for sib in bar.get_parent().get_children():
 		if sib == bar:
 			break
-		if sib is TextureRect and (sib as TextureRect).texture != null \
+		if (sib is TextureRect and (sib as TextureRect).texture != null \
+				or sib is NinePatchRect and (sib as NinePatchRect).texture != null) \
 				and Rect2(sib.position, sib.size).encloses(track):
 			under = sib
 	if under == null:
 		_fail(tag + ": no picture under the track was found to check")
 		return
 	var at := Rect2(under.position, under.size)
-	var img := Image.load_from_file(under.texture.resource_path)
-	var k := Vector2(img.get_width() / at.size.x, img.get_height() / at.size.y)
+	var tex: Texture2D = under.get("texture")
+	var img := Image.load_from_file(tex.resource_path)
 	var gold := 0
 	for y in range(int(track.position.y), int(track.end.y)):
 		for x in range(int(track.position.x), int(track.end.x)):
-			var c := img.get_pixel(int((x - at.position.x) * k.x), int((y - at.position.y) * k.y))
+			var src := _source_pixel(under, Vector2(x, y) - at.position, Vector2(img.get_width(), img.get_height()))
+			var c := img.get_pixel(clampi(int(src.x), 0, img.get_width() - 1), clampi(int(src.y), 0, img.get_height() - 1))
 			# The fills are gold: bright red and green, little blue. The track's
 			# ground and its silver frame are neither.
 			if c.r > 0.55 and c.g > 0.35 and c.r - c.b > 0.35:
 				gold += 1
 	if gold > 0:
 		_fail("%s: %d pixels of painted fill still stand in the empty track of %s" % [tag, gold, under.texture.resource_path])
+
+
+## Where a point of a drawn picture comes from in its texture: scaled for a
+## TextureRect; for a NinePatchRect its margins at their own size and the middle
+## stretched between them.
+func _source_pixel(pic: Control, p: Vector2, tex: Vector2) -> Vector2:
+	if not (pic is NinePatchRect):
+		return Vector2(p.x * tex.x / pic.size.x, p.y * tex.y / pic.size.y)
+	var np := pic as NinePatchRect
+	var along := func(v: float, drawn: float, full: float, lo: float, hi: float) -> float:
+		if v < lo:
+			return v
+		if v >= drawn - hi:
+			return v - (drawn - full)
+		return lo + (v - lo) * (full - lo - hi) / maxf(drawn - lo - hi, 1.0)
+	return Vector2(along.call(p.x, pic.size.x, tex.x, float(np.patch_margin_left), float(np.patch_margin_right)),
+		along.call(p.y, pic.size.y, tex.y, float(np.patch_margin_top), float(np.patch_margin_bottom)))
 
 
 ## id -> {w: full width, track: bool}, for every element in a layout that

@@ -1,0 +1,545 @@
+{
+ "source": "numerals_sheet.png",
+ "_comment": "Tier numerals I-VII (R7): the plain diamonds (top row) for every card, list and odds cell, and the fleur diamonds (second row) for the one large badge a screen shows -- the selected soldier, the reroll panel's tier. Plain: an opaque cut to the rhombus through the gold rim's four tips (centres measured on the rim, half-width 60, half-height 69), so a badge sits in the same place on every card; its dark slate face is ground-dark and must not be keyed. Fleur: keyed off the ground for the ornament ('floor' clears the ground's grain) with the face held opaque by 'solid'; the side fleurs of neighbours meet, so each is cut at the midpoint between centres, and 2 px lower than the tips' midline so the badge's solid body, not its fleur tips, is centred in the box. Both drawn down to the largest size a screen uses (50x50, 80x124). The reputation hexes further down the sheet are cut by numerals_rep.json.",
+ "crops": [
+  {
+   "name": "army/tier_1",
+   "rect": [
+    14,
+    286,
+    146,
+    146
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      73.0,
+      3.75
+     ],
+     [
+      133.0,
+      72.75
+     ],
+     [
+      73.0,
+      141.75
+     ],
+     [
+      13.0,
+      72.75
+     ]
+    ]
+   },
+   "scale": [
+    50,
+    50
+   ]
+  },
+  {
+   "name": "army/tier_2",
+   "rect": [
+    142,
+    286,
+    146,
+    146
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      72.5,
+      3.75
+     ],
+     [
+      132.5,
+      72.75
+     ],
+     [
+      72.5,
+      141.75
+     ],
+     [
+      12.5,
+      72.75
+     ]
+    ]
+   },
+   "scale": [
+    50,
+    50
+   ]
+  },
+  {
+   "name": "army/tier_3",
+   "rect": [
+    269,
+    286,
+    146,
+    146
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      72.5,
+      3.75
+     ],
+     [
+      132.5,
+      72.75
+     ],
+     [
+      72.5,
+      141.75
+     ],
+     [
+      12.5,
+      72.75
+     ]
+    ]
+   },
+   "scale": [
+    50,
+    50
+   ]
+  },
+  {
+   "name": "army/tier_4",
+   "rect": [
+    397,
+    286,
+    146,
+    146
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      72.5,
+      3.75
+     ],
+     [
+      132.5,
+      72.75
+     ],
+     [
+      72.5,
+      141.75
+     ],
+     [
+      12.5,
+      72.75
+     ]
+    ]
+   },
+   "scale": [
+    50,
+    50
+   ]
+  },
+  {
+   "name": "army/tier_5",
+   "rect": [
+    524,
+    286,
+    146,
+    146
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      73.0,
+      3.75
+     ],
+     [
+      133.0,
+      72.75
+     ],
+     [
+      73.0,
+      141.75
+     ],
+     [
+      13.0,
+      72.75
+     ]
+    ]
+   },
+   "scale": [
+    50,
+    50
+   ]
+  },
+  {
+   "name": "army/tier_6",
+   "rect": [
+    652,
+    286,
+    146,
+    146
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      72.5,
+      3.75
+     ],
+     [
+      132.5,
+      72.75
+     ],
+     [
+      72.5,
+      141.75
+     ],
+     [
+      12.5,
+      72.75
+     ]
+    ]
+   },
+   "scale": [
+    50,
+    50
+   ]
+  },
+  {
+   "name": "army/tier_7",
+   "rect": [
+    779,
+    286,
+    146,
+    146
+   ],
+   "mode": "rect",
+   "mask": {
+    "type": "polygon",
+    "points": [
+     [
+      73.0,
+      3.75
+     ],
+     [
+      133.0,
+      72.75
+     ],
+     [
+      73.0,
+      141.75
+     ],
+     [
+      13.0,
+      72.75
+     ]
+    ]
+   },
+   "scale": [
+    50,
+    50
+   ]
+  },
+  {
+   "name": "army/tier_large_1",
+   "rect": [
+    24,
+    558,
+    128,
+    198
+   ],
+   "mode": "darkkey",
+   "k": 30,
+   "floor": 3,
+   "bg": [
+    8,
+    20,
+    31
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      63.5,
+      36.0
+     ],
+     [
+      107.5,
+      98.0
+     ],
+     [
+      63.5,
+      160.0
+     ],
+     [
+      19.5,
+      98.0
+     ]
+    ]
+   },
+   "scale": [
+    80,
+    124
+   ]
+  },
+  {
+   "name": "army/tier_large_2",
+   "rect": [
+    151,
+    558,
+    128,
+    198
+   ],
+   "mode": "darkkey",
+   "k": 30,
+   "floor": 3,
+   "bg": [
+    8,
+    20,
+    31
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      63.5,
+      36.0
+     ],
+     [
+      107.5,
+      98.0
+     ],
+     [
+      63.5,
+      160.0
+     ],
+     [
+      19.5,
+      98.0
+     ]
+    ]
+   },
+   "scale": [
+    80,
+    124
+   ]
+  },
+  {
+   "name": "army/tier_large_3",
+   "rect": [
+    278,
+    558,
+    128,
+    198
+   ],
+   "mode": "darkkey",
+   "k": 30,
+   "floor": 3,
+   "bg": [
+    8,
+    20,
+    31
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      63.5,
+      36.0
+     ],
+     [
+      107.5,
+      98.0
+     ],
+     [
+      63.5,
+      160.0
+     ],
+     [
+      19.5,
+      98.0
+     ]
+    ]
+   },
+   "scale": [
+    80,
+    124
+   ]
+  },
+  {
+   "name": "army/tier_large_4",
+   "rect": [
+    406,
+    558,
+    128,
+    198
+   ],
+   "mode": "darkkey",
+   "k": 30,
+   "floor": 3,
+   "bg": [
+    8,
+    20,
+    31
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      63.5,
+      36.0
+     ],
+     [
+      107.5,
+      98.0
+     ],
+     [
+      63.5,
+      160.0
+     ],
+     [
+      19.5,
+      98.0
+     ]
+    ]
+   },
+   "scale": [
+    80,
+    124
+   ]
+  },
+  {
+   "name": "army/tier_large_5",
+   "rect": [
+    533,
+    558,
+    128,
+    198
+   ],
+   "mode": "darkkey",
+   "k": 30,
+   "floor": 3,
+   "bg": [
+    8,
+    20,
+    31
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      63.5,
+      36.0
+     ],
+     [
+      107.5,
+      98.0
+     ],
+     [
+      63.5,
+      160.0
+     ],
+     [
+      19.5,
+      98.0
+     ]
+    ]
+   },
+   "scale": [
+    80,
+    124
+   ]
+  },
+  {
+   "name": "army/tier_large_6",
+   "rect": [
+    660,
+    558,
+    128,
+    198
+   ],
+   "mode": "darkkey",
+   "k": 30,
+   "floor": 3,
+   "bg": [
+    8,
+    20,
+    31
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      64.0,
+      36.0
+     ],
+     [
+      108.0,
+      98.0
+     ],
+     [
+      64.0,
+      160.0
+     ],
+     [
+      20.0,
+      98.0
+     ]
+    ]
+   },
+   "scale": [
+    80,
+    124
+   ]
+  },
+  {
+   "name": "army/tier_large_7",
+   "rect": [
+    789,
+    558,
+    128,
+    198
+   ],
+   "mode": "darkkey",
+   "k": 30,
+   "floor": 3,
+   "bg": [
+    8,
+    20,
+    31
+   ],
+   "solid": {
+    "type": "polygon",
+    "points": [
+     [
+      63.5,
+      36.0
+     ],
+     [
+      107.5,
+      98.0
+     ],
+     [
+      63.5,
+      160.0
+     ],
+     [
+      19.5,
+      98.0
+     ]
+    ]
+   },
+   "scale": [
+    80,
+    124
+   ]
+  }
+ ]
+}

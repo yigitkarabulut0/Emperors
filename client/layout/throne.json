@@ -1,0 +1,254 @@
+{
+ "screen": "throne",
+ "source": "throne.png",
+ "canvas": [
+  941,
+  1672
+ ],
+ "ground": "#0B151F",
+ "notes": [
+  "THE THRONE (client/scenes/court/throne_view.gd), from throne.png (art/slices/throne.json), hosted over the Kingdom tab the way the Tax Cart is hosted over the COURT: the shell's rail and its three pills stay, and CourtBack goes back.",
+  "A view and not a page: throne.png is a SHELL-KINGDOM painting, so its own rail and pills are baked in. Nothing left of x 155 is cut, and the header's painted pills are inpainted away so the chrome's sit over clean sky. The painting was drawn at the chrome's own height, so no band is shifted.",
+  "portrait: the emperor's face is drawn UNDER the crowned ring, which is laid back over it with its window opened (throne/portrait_hole) so the ring's inner edge overlaps the face. The emperor's own worn frame is NOT drawn here -- two frames on one portrait fight -- and their colour, title and seal show on the name plate instead.",
+  "card: the three edicts the painting paints, word for word the three the balance carries (hour_of_plenty, hour_of_learning, hour_of_fortune). The one chosen keeps its light; the others are drawn down. Each card's plate says what its edict is worth and how long it runs -- the server's figures, not a share worked out here.",
+  "reign: the four crowned rows PAST REIGNS was painted with. A throne that has seen two reigns fills two and leaves two empty, which is why the balance shows four.",
+  "The reign's clock rides the kingdom's own plate ('Lion Banner  \u00b7  3d 04h'): the painting leaves no band between its line and DECREE, and a clock beside the kingdom says the same thing in the place a reader is already looking."
+ ],
+ "elements": [
+  {
+   "id": "hall",
+   "kind": "image",
+   "asset": "throne/hall",
+   "rect": [
+    155,
+    0,
+    786,
+    718
+   ]
+  },
+  {
+   "id": "portrait",
+   "kind": "image",
+   "rect": [
+    446,
+    486,
+    188,
+    134
+   ]
+  },
+  {
+   "id": "portrait_ring",
+   "kind": "image",
+   "asset": "throne/portrait_hole",
+   "rect": [
+    376,
+    424,
+    320,
+    250
+   ]
+  },
+  {
+   "id": "emperor",
+   "kind": "text",
+   "rect": [
+    423,
+    627,
+    225,
+    30
+   ],
+   "font": "title",
+   "size": 32,
+   "weight": 700,
+   "color": "#EDE6D6",
+   "align": "center",
+   "valign": "center",
+   "sample": "Lord Darius"
+  },
+  {
+   "id": "kingdom",
+   "kind": "text",
+   "rect": [
+    398,
+    666,
+    275,
+    25
+   ],
+   "font": "body",
+   "size": 26,
+   "weight": 500,
+   "color": "#E7E7E7",
+   "align": "center",
+   "valign": "center",
+   "sample": "Lion Banner  \u00b7  3d 04h"
+  },
+  {
+   "id": "title",
+   "kind": "image",
+   "asset": "throne/title",
+   "rect": [
+    155,
+    710,
+    786,
+    100
+   ]
+  },
+  {
+   "id": "decree",
+   "kind": "image",
+   "asset": "throne/decree",
+   "rect": [
+    155,
+    805,
+    786,
+    158
+   ]
+  },
+  {
+   "id": "card",
+   "kind": "template",
+   "rect": [
+    199,
+    963,
+    226,
+    266
+   ],
+   "instances": [
+    [
+     199,
+     963
+    ],
+    [
+     438,
+     963
+    ],
+    [
+     677,
+     963
+    ]
+   ],
+   "parts": [
+    {
+     "id": "face",
+     "kind": "image",
+     "rect": [
+      0,
+      0,
+      226,
+      266
+     ]
+    },
+    {
+     "id": "plate",
+     "kind": "text",
+     "rect": [
+      8,
+      197,
+      210,
+      65
+     ],
+     "font": "body",
+     "size": 23,
+     "weight": 600,
+     "color": "#E7E7E7",
+     "align": "center",
+     "valign": "center",
+     "sample": "+50% gold, 60m"
+    }
+   ]
+  },
+  {
+   "id": "declare",
+   "kind": "button",
+   "asset": "throne/declare",
+   "rect": [
+    267,
+    1226,
+    268,
+    95
+   ],
+   "action": "declare",
+   "paint_rect": [
+    267,
+    1239,
+    268,
+    68
+   ],
+   "keep_texture_size": true
+  },
+  {
+   "id": "timer",
+   "kind": "text",
+   "rect": [
+    556,
+    1245,
+    364,
+    60
+   ],
+   "font": "body",
+   "size": 25,
+   "weight": 500,
+   "color": "#E7E7E7",
+   "align": "center",
+   "valign": "center",
+   "sample": "Hour of Plenty  \u00b7  42m"
+  },
+  {
+   "id": "past_reigns",
+   "kind": "image",
+   "asset": "throne/past_reigns",
+   "rect": [
+    155,
+    1300,
+    786,
+    320
+   ]
+  },
+  {
+   "id": "reign",
+   "kind": "template",
+   "rect": [
+    272,
+    1374,
+    640,
+    48
+   ],
+   "instances": [
+    [
+     272,
+     1374
+    ],
+    [
+     272,
+     1427
+    ],
+    [
+     272,
+     1480
+    ],
+    [
+     272,
+     1533
+    ]
+   ],
+   "parts": [
+    {
+     "id": "words",
+     "kind": "text",
+     "rect": [
+      14,
+      0,
+      612,
+      48
+     ],
+     "font": "body",
+     "size": 23,
+     "weight": 500,
+     "color": "#E7E7E7",
+     "align": "left",
+     "valign": "center",
+     "sample": "Lion Banner  \u00b7  Lord Darius  \u00b7  12,480"
+    }
+   ]
+  }
+ ]
+}

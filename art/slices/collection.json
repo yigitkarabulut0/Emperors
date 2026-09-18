@@ -1,0 +1,65 @@
+{
+ "source": "collection.png",
+ "_comment": "THE COLLECTION on the painted page host. The page is the painting with its two offer rows erased; the offers are live rows cut from the first. The wall's seven rarity frames a slot are the tiers, as the painting has them: each holds the grandest design of that slot and tier on the wall, and how many of its three are.",
+ "crops": [
+  {
+   "name": "collection/page",
+   "rect": [
+    0,
+    0,
+    941,
+    1672
+   ],
+   "erase": [
+    {
+     "rect": [
+      37,
+      1219,
+      868,
+      277
+     ],
+     "sample_x": [
+      2,
+      20
+     ]
+    }
+   ]
+  },
+  {
+   "name": "collection/row",
+   "rect": [
+    47,
+    1224,
+    847,
+    128
+   ],
+   "note": "the first painted offer row, its DONATE and all; DONATE is drawn over it as its own crop"
+  },
+  {
+   "name": "collection/btn_donate",
+   "rect": [
+    663,
+    1245,
+    199,
+    79
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  },
+  {
+   "name": "collection/btn_close",
+   "rect": [
+    306,
+    1502,
+    329,
+    76
+   ],
+   "mask": {
+    "type": "chamfer",
+    "size": 8
+   }
+  }
+ ]
+}
